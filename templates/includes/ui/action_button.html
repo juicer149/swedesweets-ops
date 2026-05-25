@@ -1,0 +1,17 @@
+<a
+  class="{{ action.css_class }}"
+  href="{{ action.href }}"
+  {% if action.aria_label %}aria-label="{{ action.aria_label }}"{% endif %}
+>
+  {% if action.icon %}
+    <span class="button__icon" aria-hidden="true">
+      {% include "includes/ui/icon.html" with name=action.icon only %}
+    </span>
+  {% endif %}
+
+  <span class="button__label">{{ action.label }}</span>
+
+  {% if action.show_arrow|default:True %}
+    <span class="button__arrow" aria-hidden="true">›</span>
+  {% endif %}
+</a>

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Orders | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with page_header=page_header %}
+
+<section
+  id="orders-list"
+  class="list-section"
+  aria-labelledby="orders-title"
+>
+  {% include "includes/table/filter_chips.html" %}
+  {% include "includes/table/sort_select.html" %}
+
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% include "includes/table/sort_headers.html" %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in order_rows %}
+          <tr
+            class="clickable-row"
+            data-tone="{{ row.status.tone.key }}"
+            data-href="{{ row.detail_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="See details for order #{{ row.order.id }}"
+          >
+            <th scope="row">
+              <span class="row-link">
+                #{{ row.order.id }}
+              </span>
+            </th>
+
+            <td>{{ row.order.customer.name }}</td>
+            <td>{{ row.order.created_at|date:"d-m-y" }}</td>
+
+            <td>
+              <span class="{{ row.status.text.css_class }}">
+                {{ row.status.label }}
+              </span>
+            </td>
+
+            <td class="numeric-cell">
+              <strong>{{ row.order.total_boxes|default:0 }}</strong>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="empty-cell" colspan="5">
+              No orders found.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-card-list">
+    {% for row in order_rows %}
+      {% include "includes/ui/card.html" with card=row.card only %}
+    {% empty %}
+      <article class="mobile-card mobile-card--neutral">
+        <p>No orders found.</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
+  <script src="{% static 'js/sort_select.js' %}" defer></script>
+{% endblock %}

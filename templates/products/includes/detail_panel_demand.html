@@ -1,0 +1,27 @@
+<dl class="detail-data-list">
+  <div>
+    <dt>Delivered orders</dt>
+    <dd>{{ demand.delivered_order_count }}</dd>
+  </div>
+
+  <div>
+    <dt>Delivered boxes</dt>
+    <dd>{{ demand.delivered_boxes }}</dd>
+  </div>
+
+  <div>
+    <dt>Average / delivered order</dt>
+    <dd>{{ demand.average_boxes_per_delivered_order }} boxes</dd>
+  </div>
+
+  <div>
+    <dt>Last delivered</dt>
+    <dd>
+      {% if demand.last_delivered_at %}
+        {{ demand.last_delivered_at|date:"Y-m-d H:i" }}
+      {% else %}
+        Never
+      {% endif %}
+    </dd>
+  </div>
+</dl>

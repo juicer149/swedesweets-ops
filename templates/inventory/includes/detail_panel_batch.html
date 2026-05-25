@@ -1,0 +1,80 @@
+<div class="detail-line-list detail-line-list--leading">
+  <article
+    class="detail-line detail-line--linked clickable-row"
+    data-tone="neutral"
+    data-href="{{ product_href }}"
+    tabindex="0"
+    role="link"
+    aria-label="View product {{ batch.product.sku }}"
+  >
+    <span class="detail-line__content">
+      <strong>
+        {{ batch.product.sku }}
+      </strong>
+
+      <span>
+        {{ batch.product.brand }}
+        ·
+        {{ batch.product.name }}
+        ·
+        {{ batch.product.weight_per_box }} g / box
+      </span>
+    </span>
+
+    <a class="text-link detail-line__action" href="{{ product_href }}">
+      View product →
+    </a>
+  </article>
+</div>
+
+<dl class="detail-data-list">
+  <div>
+    <dt>Batch</dt>
+    <dd>{{ batch.batch_id }}</dd>
+  </div>
+
+  <div>
+    <dt>Status</dt>
+    <dd>{{ batch.get_status_display }}</dd>
+  </div>
+
+  <div>
+    <dt>Physical boxes</dt>
+    <dd>{{ stock.physical_boxes }}</dd>
+  </div>
+
+  <div>
+    <dt>Reserved boxes</dt>
+    <dd>{{ stock.reserved_boxes }}</dd>
+  </div>
+
+  <div>
+    <dt>Available boxes</dt>
+    <dd>{{ stock.available_boxes }}</dd>
+  </div>
+
+  <div>
+    <dt>Best before</dt>
+    <dd>{{ batch.best_before|date:"Y-m-d" }}</dd>
+  </div>
+
+  <div>
+    <dt>Location</dt>
+    <dd>{{ batch.location }}</dd>
+  </div>
+
+  <div>
+    <dt>Orderable</dt>
+    <dd>
+      {% if stock.is_orderable %}
+        Yes
+      {% else %}
+        No
+      {% endif %}
+    </dd>
+  </div>
+</dl>
+
+<p class="table-hint">
+  Select the product to view its product detail.
+</p>

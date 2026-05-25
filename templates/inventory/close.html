@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="close-batch-title" title=title description=description %}
+
+<section class="form-section" aria-labelledby="close-batch-title">
+  <form method="post" class="form-card" novalidate>
+    {% csrf_token %}
+
+    <div class="form-card form-card--summary">
+      <dl class="detail-data-list">
+        <div>
+          <dt>Batch</dt>
+          <dd>{{ batch.batch_id }}</dd>
+        </div>
+
+        <div>
+          <dt>Product</dt>
+          <dd>{{ batch.product.sku }}</dd>
+        </div>
+
+        <div>
+          <dt>Boxes</dt>
+          <dd>{{ batch.boxes }}</dd>
+        </div>
+
+        <div>
+          <dt>Status</dt>
+          <dd>{{ batch.get_status_display }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="form-actions">
+      <button class="button button--md button--solid button--tone-danger" type="submit">
+        {{ submit_label }}
+      </button>
+
+      <a class="button button--md button--ghost button--tone-neutral" href="{{ cancel_url }}">
+        Back
+      </a>
+    </div>
+  </form>
+</section>
+{% endblock %}

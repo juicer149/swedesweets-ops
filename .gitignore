@@ -1,0 +1,35 @@
+# Virtual environment
+.venv/
+
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
+
+# Packaging/build artifacts
+*.egg-info/
+build/
+dist/
+
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Test/coverage output
+.coverage
+htmlcov/
+
+# Django/local database
+db.sqlite3
+
+# Uploaded/generated files
+media/
+staticfiles/
+
+# Environment variables/secrets
+.env
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/

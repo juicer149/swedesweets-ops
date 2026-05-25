@@ -1,0 +1,29 @@
+{% if content_lines %}
+  <div class="detail-line-list">
+    {% for line in content_lines %}
+      <article
+        class="detail-line clickable-row"
+        data-tone="neutral"
+        data-href="{% url 'products:detail' product_pk=line.product.pk %}"
+        tabindex="0"
+        role="link"
+        aria-label="View product {{ line.product.sku }}"
+      >
+        <strong>
+          {{ line.quantity_in_boxes }}
+          box{{ line.quantity_in_boxes|pluralize:"es" }}
+          —
+          {{ line.product.name }}
+        </strong>
+
+        <span>
+          SKU: {{ line.product.sku }}
+          ·
+          Unit: {{ line.unit }}
+        </span>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="form-help">No order contents found.</p>
+{% endif %}

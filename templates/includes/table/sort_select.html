@@ -1,0 +1,55 @@
+{% comment %}
+Reusable sort select.
+
+Used for mobile/card layouts where table headers are hidden.
+
+Expected context:
+  table_controls_template.sort_title_id
+  table_controls_template.sort_select_id
+  mobile_sort_fields
+  mobile_sort_direction
+
+Usage:
+  {% include "includes/table/sort_select.html" %}
+{% endcomment %}
+
+<div class="sort-control">
+  <label
+    id="{{ table_controls_template.sort_title_id }}"
+    class="filter-label"
+    for="{{ table_controls_template.sort_select_id }}"
+  >
+    Order by
+  </label>
+
+  <div class="sort-control__field">
+    <select
+      id="{{ table_controls_template.sort_select_id }}"
+      class="sort-select"
+      data-sort-select
+      data-enhanced-select="true"
+      data-enhanced-select-search="false"
+      aria-labelledby="{{ table_controls_template.sort_title_id }}"
+    >
+      {% for field in mobile_sort_fields %}
+        <option
+          value="{{ field.url }}"
+          {% if field.is_active %}selected{% endif %}
+        >
+          {{ field.label }}
+        </option>
+      {% endfor %}
+    </select>
+
+    {% if mobile_sort_direction %}
+      <a
+        class="filter-chip sort-direction-button"
+        href="{{ mobile_sort_direction.url }}"
+        aria-label="Sort {{ mobile_sort_direction.label|lower }}"
+        title="Sort {{ mobile_sort_direction.label|lower }}"
+      >
+        {{ mobile_sort_direction.symbol }}
+      </a>
+    {% endif %}
+  </div>
+</div>

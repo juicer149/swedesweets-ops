@@ -1,0 +1,524 @@
+[
+  {
+    "internal_number": 1,
+    "manufacturer": "Candy People",
+    "brand": "Rambo",
+    "name": "Twist",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 2,
+    "manufacturer": "Cloetta",
+    "brand": "Juleskum",
+    "name": "Jultomteskum",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 3,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Hallon Lakrits Skalle",
+    "weight_per_box": 4000,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 4,
+    "manufacturer": "Fazer",
+    "brand": "Tutti Frutti",
+    "name": "Sour",
+    "weight_per_box": 2000,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 5,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco Brio",
+    "name": "Grädd",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 6,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco Brio",
+    "name": "Frukt",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 7,
+    "manufacturer": "Cloetta",
+    "brand": "Lonka",
+    "name": "Fudge Licorice/Raspberry",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 8,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco",
+    "name": "Djungelvrål",
+    "weight_per_box": 2000,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 9,
+    "manufacturer": "Aroma",
+    "brand": "Aroma",
+    "name": "Geléhallon",
+    "weight_per_box": 4000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 10,
+    "manufacturer": "Fazer",
+    "brand": "Tutti Frutti",
+    "name": "Original",
+    "weight_per_box": 2200,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 11,
+    "manufacturer": "Cloetta",
+    "brand": "Lonka",
+    "name": "Fudge Caramel Seasalt",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 12,
+    "manufacturer": "Fazer",
+    "brand": "Tutti Frutti",
+    "name": "Salt / Salty Fruits",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 13,
+    "manufacturer": "Cloetta",
+    "brand": "Polly",
+    "name": "Original",
+    "weight_per_box": 1500,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 14,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco",
+    "name": "Mini Cola-Lakritsflaska",
+    "weight_per_box": 3000,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 15,
+    "manufacturer": "Cloetta",
+    "brand": "Sockerbitar",
+    "name": "Jordgubb",
+    "weight_per_box": 820,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 16,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco Sisu",
+    "name": "Salty Salmiak",
+    "weight_per_box": 3250,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 17,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco",
+    "name": "Syrliga Snäckor",
+    "weight_per_box": 2280,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 18,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco",
+    "name": "Stor Karamelguf",
+    "weight_per_box": 1900,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 19,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco Zoo",
+    "name": "Original",
+    "weight_per_box": 2200,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 20,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco",
+    "name": "Vattenmeloner",
+    "weight_per_box": 1800,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 21,
+    "manufacturer": "Fazer",
+    "brand": "Tutti Frutti",
+    "name": "Syrlig Melon",
+    "weight_per_box": 3000,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 22,
+    "manufacturer": "Fazer",
+    "brand": "Tutti Frutti",
+    "name": "Summer Rings Sour",
+    "weight_per_box": 1700,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 23,
+    "manufacturer": "Fazer",
+    "brand": "Tyrkisk Peber",
+    "name": "Original",
+    "weight_per_box": 2200,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 24,
+    "manufacturer": "Mormor Lisas",
+    "brand": "Mormor Lisas",
+    "name": "Gammeldags Gräddkola",
+    "weight_per_box": 4000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 25,
+    "manufacturer": "Mormor Lisas",
+    "brand": "Mormor Lisas",
+    "name": "Gammeldags Gräddkola Choklad",
+    "weight_per_box": 4000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 26,
+    "manufacturer": "Mormor Lisas",
+    "brand": "Mormor Lisas",
+    "name": "Gammeldags Gräddkola Jordgubb",
+    "weight_per_box": 4000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 27,
+    "manufacturer": "Mormor Lisas",
+    "brand": "Mormor Lisas",
+    "name": "Pärlsockerboll",
+    "weight_per_box": 1800,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 28,
+    "manufacturer": "Mormor Lisas",
+    "brand": "Mormor Lisas",
+    "name": "Cocosboll",
+    "weight_per_box": 1600,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 29,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Banankola Svamp",
+    "weight_per_box": 1000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 30,
+    "manufacturer": "Mormor Lisas",
+    "brand": "Mormor Lisas",
+    "name": "Milkshake Banana & Toffee",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 31,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Chokladbanan Stor",
+    "weight_per_box": 1200,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 32,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Fizzy Svampar",
+    "weight_per_box": 1000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 33,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Chokladsvampar",
+    "weight_per_box": 1200,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 34,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Skumbananer",
+    "weight_per_box": 1200,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 35,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Gammaldags Polka",
+    "weight_per_box": 1000,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 36,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Smultron",
+    "weight_per_box": 2200,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 37,
+    "manufacturer": "Cloetta",
+    "brand": "Sockerbitar",
+    "name": "Original",
+    "weight_per_box": 820,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 38,
+    "manufacturer": "Cloetta",
+    "brand": "Ahlgrens Bilar",
+    "name": "Limousiner",
+    "weight_per_box": 1020,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 39,
+    "manufacturer": "Osäkert",
+    "brand": "Osäkert",
+    "name": "Citron Lakrits-Skruv",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 40,
+    "manufacturer": "Cloetta",
+    "brand": "Lonka",
+    "name": "Pepparkaksfudge",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 41,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Lemon Raspberry Skalle",
+    "weight_per_box": 2600,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 42,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Fruity Pear Ovals",
+    "weight_per_box": 2600,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 43,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Tutti Frutti Diamond",
+    "weight_per_box": 2600,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 44,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Banana Toffee Ovals",
+    "weight_per_box": 2800,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 45,
+    "manufacturer": "Osäkert",
+    "brand": "Osäkert",
+    "name": "Skumkantareller",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 46,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Cool Cola Skalle",
+    "weight_per_box": 3000,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 47,
+    "manufacturer": "Osäkert",
+    "brand": "Osäkert",
+    "name": "Sommarbär",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 48,
+    "manufacturer": "Cloetta",
+    "brand": "Malaco Bubblizz",
+    "name": "Original",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 49,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Raspberry Salty Licorice Skalle Foam",
+    "weight_per_box": 2800,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 50,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Wild Berry Pomegranate Ovals",
+    "weight_per_box": 2800,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 51,
+    "manufacturer": "BUBS",
+    "brand": "BUBS",
+    "name": "Bubblegum Skalle",
+    "weight_per_box": 2600,
+    "vegan": true,
+    "active": true
+  },
+  {
+    "internal_number": 52,
+    "manufacturer": "Aroma",
+    "brand": "Aroma",
+    "name": "Hallonbåtar",
+    "weight_per_box": 4000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 53,
+    "manufacturer": "Carletti",
+    "brand": "Carletti",
+    "name": "Pastell Mint",
+    "weight_per_box": 5000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 54,
+    "manufacturer": "Franssons Konfektyr",
+    "brand": "Franssons Konfektyr",
+    "name": "Minigrisar – Choklad & Hallongelé",
+    "weight_per_box": 2000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 55,
+    "manufacturer": "Grahns Konfektyr",
+    "brand": "Grahns",
+    "name": "Punschpraliner",
+    "weight_per_box": 3500,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 56,
+    "manufacturer": "Astra Sweets",
+    "brand": "Astra Sweets",
+    "name": "Sura Körsbär",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 57,
+    "manufacturer": "Haribo",
+    "brand": "Osäkert",
+    "name": "Sugar Strawberrys",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  },
+  {
+    "internal_number": 58,
+    "manufacturer": "Haribo",
+    "brand": "Osäkert",
+    "name": "Sura Colanappar",
+    "weight_per_box": 3000,
+    "vegan": false,
+    "active": true
+  }
+]

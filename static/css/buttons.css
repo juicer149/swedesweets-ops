@@ -1,0 +1,677 @@
+/* =============================================================================
+   Buttons
+
+   Buttons are composed from independent layers:
+
+     base:
+       .button
+         Shared button behavior: inline-flex layout, typography, radius,
+         transition, focus handling and disabled handling.
+
+     size:
+       .button--sm
+       .button--md
+       .button--lg
+         Controls only min-height, horizontal padding and, where needed,
+         font size/weight.
+
+     variant:
+       .button--solid
+         High-emphasis filled button. Use for primary submit/create actions.
+
+       .button--soft
+         Low-emphasis tinted button. Use for add/positive secondary actions.
+
+       .button--outline
+         Transparent button with a visible border. Use for secondary actions
+         on light surfaces.
+
+       .button--ghost
+         Neutral secondary button. Use for back/cancel actions where the action
+         should not feel destructive.
+
+       .button--text
+         Text-only button. Use for compact inline actions.
+
+       .button--hero-action
+         Large action button for dashboard/hero surfaces. It consumes the
+         hero variables from the selected tone.
+
+       .button--card-action
+         Action button for cards, mobile cards and detail cards. It consumes
+         the card variables from the selected tone.
+
+     tone:
+       .button--tone-place
+         Order creation / place-order actions. Currently yellow/accent.
+
+       .button--tone-pack
+         Transition-to-packed actions. Currently blue/info.
+
+       .button--tone-deliver
+         Transition-to-delivered actions. Currently green/success.
+
+       .button--tone-positive
+         Generic positive/add action. Currently uses the same green palette
+         as deliver, but does not mean "deliver order".
+
+       .button--tone-danger
+         Destructive or unsafe actions. Currently red/danger.
+
+       .button--tone-neutral
+         Neutral actions. Used for back/cancel/secondary controls.
+
+   New templates should prefer explicit composition, for example:
+     .button.button--md.button--solid.button--tone-place
+     .button.button--md.button--ghost.button--tone-neutral
+     .button.button--sm.button--soft.button--tone-positive
+     .button.button--card-action.button--tone-pack.button--with-icon
+   ============================================================================= */
+
+
+/* =============================================================================
+   Base
+   ============================================================================= */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-5);
+
+  color: var(--button-text, inherit);
+  background: var(--button-bg, transparent);
+  border: 1px solid var(--button-border, transparent);
+  border-radius: var(--radius-pill);
+
+  font-family: var(--font-body);
+  font-size: var(--font-size-16);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: var(--transition-interactive);
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--color-primary-100);
+  outline-offset: 3px;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.58;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button:disabled:hover,
+.button:disabled:focus-visible,
+.button[aria-disabled="true"]:hover,
+.button[aria-disabled="true"]:focus-visible {
+  box-shadow: none;
+  transform: none;
+}
+
+
+/* =============================================================================
+   Sizes
+
+   Size classes are the only layer that controls min-height and padding.
+   ============================================================================= */
+
+.button--sm {
+  min-height: var(--size-control-sm);
+  padding-inline: var(--space-3);
+
+  font-size: var(--font-size-14);
+  font-weight: 800;
+}
+
+.button--md {
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-5);
+}
+
+.button--lg {
+  min-height: var(--size-control-xl);
+  padding-inline: var(--space-6);
+}
+
+
+/* =============================================================================
+   Tone variables
+
+   Tones define meaning and color. Variants consume these variables.
+   ============================================================================= */
+
+.button--tone-neutral {
+  --button-solid-text: var(--color-primary-900);
+  --button-solid-bg: var(--color-neutral-100);
+  --button-solid-border: var(--color-neutral-300);
+  --button-solid-bg-hover: var(--color-primary-50);
+  --button-solid-border-hover: var(--color-primary-500);
+  --button-solid-bg-active: var(--color-primary-100);
+  --button-solid-shadow-hover: var(--shadow-focus-info);
+
+  --button-soft-text: var(--color-neutral-700);
+  --button-soft-bg: transparent;
+  --button-soft-border: var(--color-neutral-300);
+  --button-soft-bg-hover: var(--color-primary-50);
+  --button-soft-border-hover: var(--color-primary-500);
+  --button-soft-bg-active: var(--color-primary-100);
+  --button-soft-shadow-hover: var(--shadow-focus-info);
+
+  --button-outline-text: var(--color-neutral-700);
+  --button-outline-border: var(--color-neutral-300);
+  --button-outline-bg-hover: var(--color-primary-50);
+  --button-outline-border-hover: var(--color-primary-500);
+  --button-outline-bg-active: var(--color-primary-100);
+  --button-outline-shadow-hover: var(--shadow-focus-info);
+
+  --button-text-color: var(--color-neutral-700);
+  --button-text-color-hover: var(--color-primary-900);
+
+  --button-hero-text: var(--color-primary-50);
+  --button-hero-bg: rgba(6, 24, 68, 0.58);
+  --button-hero-bg-hover: var(--color-primary-700);
+  --button-hero-bg-active: var(--color-primary-900);
+  --button-hero-border: var(--color-primary-500);
+  --button-hero-shadow-hover: var(--shadow-accent-glow);
+
+  --button-card-text: var(--color-primary-900);
+  --button-card-bg: var(--color-primary-100);
+  --button-card-bg-hover: var(--color-primary-200);
+  --button-card-bg-active: var(--color-primary-300);
+  --button-card-border: var(--color-primary-500);
+  --button-card-shadow-hover: var(--shadow-accent-glow);
+}
+
+.button--tone-place {
+  --button-solid-text: var(--color-action-place-on-light);
+  --button-solid-bg: var(--color-action-place);
+  --button-solid-border: var(--color-action-place);
+  --button-solid-bg-hover: var(--color-accent-500);
+  --button-solid-border-hover: var(--color-accent-500);
+  --button-solid-bg-active: var(--color-accent-700);
+  --button-solid-shadow-hover: var(--shadow-accent-glow);
+
+  --button-soft-text: var(--color-action-place-on-light);
+  --button-soft-bg: var(--color-action-place-light-bg);
+  --button-soft-border: var(--color-action-place);
+  --button-soft-bg-hover: var(--color-action-place-light-bg-hover);
+  --button-soft-border-hover: var(--color-action-place);
+  --button-soft-bg-active: var(--color-action-place-light-bg-active);
+  --button-soft-shadow-hover: var(--shadow-action-place-on-light);
+
+  --button-outline-text: var(--color-action-place-on-light);
+  --button-outline-border: var(--color-action-place);
+  --button-outline-bg-hover: var(--color-action-place-light-bg-hover);
+  --button-outline-border-hover: var(--color-action-place);
+  --button-outline-bg-active: var(--color-action-place-light-bg-active);
+  --button-outline-shadow-hover: var(--shadow-action-place-on-light);
+
+  --button-text-color: var(--color-action-place-on-light);
+  --button-text-color-hover: var(--color-action-place);
+
+  --button-hero-text: var(--color-action-place-on-dark);
+  --button-hero-bg: rgba(6, 24, 68, 0.58);
+  --button-hero-bg-hover: var(--color-action-place);
+  --button-hero-bg-active: var(--color-accent-800);
+  --button-hero-border: var(--color-action-place);
+  --button-hero-shadow-hover: var(--shadow-accent-glow);
+
+  --button-card-text: var(--color-action-place-on-light);
+  --button-card-bg: var(--color-action-place-light-bg);
+  --button-card-bg-hover: var(--color-action-place-light-bg-hover);
+  --button-card-bg-active: var(--color-action-place-light-bg-active);
+  --button-card-border: var(--color-action-place);
+  --button-card-shadow-hover: var(--shadow-action-place-on-light);
+}
+
+.button--tone-pack {
+  --button-solid-text: var(--color-action-pack-on-light);
+  --button-solid-bg: var(--color-action-pack);
+  --button-solid-border: var(--color-action-pack);
+  --button-solid-bg-hover: var(--color-primary-400);
+  --button-solid-border-hover: var(--color-primary-400);
+  --button-solid-bg-active: var(--color-primary-700);
+  --button-solid-shadow-hover: var(--shadow-pack-glow);
+
+  --button-soft-text: var(--color-action-pack-on-light);
+  --button-soft-bg: var(--color-action-pack-light-bg);
+  --button-soft-border: var(--color-action-pack);
+  --button-soft-bg-hover: var(--color-action-pack-light-bg-hover);
+  --button-soft-border-hover: var(--color-action-pack);
+  --button-soft-bg-active: var(--color-action-pack-light-bg-active);
+  --button-soft-shadow-hover: var(--shadow-action-pack-on-light);
+
+  --button-outline-text: var(--color-action-pack-on-light);
+  --button-outline-border: var(--color-action-pack);
+  --button-outline-bg-hover: var(--color-action-pack-light-bg-hover);
+  --button-outline-border-hover: var(--color-action-pack);
+  --button-outline-bg-active: var(--color-action-pack-light-bg-active);
+  --button-outline-shadow-hover: var(--shadow-action-pack-on-light);
+
+  --button-text-color: var(--color-action-pack-on-light);
+  --button-text-color-hover: var(--color-action-pack);
+
+  --button-hero-text: var(--color-action-pack-on-dark);
+  --button-hero-bg: rgba(6, 24, 68, 0.58);
+  --button-hero-bg-hover: var(--color-action-pack);
+  --button-hero-bg-active: var(--color-primary-800);
+  --button-hero-border: var(--color-action-pack);
+  --button-hero-shadow-hover: var(--shadow-pack-glow);
+
+  --button-card-text: var(--color-action-pack-on-light);
+  --button-card-bg: var(--color-action-pack-light-bg);
+  --button-card-bg-hover: var(--color-action-pack-light-bg-hover);
+  --button-card-bg-active: var(--color-action-pack-light-bg-active);
+  --button-card-border: var(--color-action-pack);
+  --button-card-shadow-hover: var(--shadow-action-pack-on-light);
+}
+
+.button--tone-deliver,
+.button--tone-positive {
+  --button-solid-text: var(--color-primary-50);
+  --button-solid-bg: var(--color-action-deliver);
+  --button-solid-border: var(--color-action-deliver);
+  --button-solid-bg-hover: var(--color-action-deliver-on-light);
+  --button-solid-border-hover: var(--color-action-deliver-on-light);
+  --button-solid-bg-active: var(--color-action-deliver-on-light);
+  --button-solid-shadow-hover: var(--shadow-delivery-glow);
+
+  --button-soft-text: var(--color-action-deliver-on-light);
+  --button-soft-bg: var(--color-action-deliver-light-bg);
+  --button-soft-border: var(--color-action-deliver);
+  --button-soft-bg-hover: var(--color-action-deliver-light-bg-hover);
+  --button-soft-border-hover: var(--color-action-deliver);
+  --button-soft-bg-active: var(--color-action-deliver-light-bg-active);
+  --button-soft-shadow-hover: var(--shadow-action-deliver-on-light);
+
+  --button-outline-text: var(--color-action-deliver-on-light);
+  --button-outline-border: var(--color-action-deliver);
+  --button-outline-bg-hover: var(--color-action-deliver-light-bg-hover);
+  --button-outline-border-hover: var(--color-action-deliver);
+  --button-outline-bg-active: var(--color-action-deliver-light-bg-active);
+  --button-outline-shadow-hover: var(--shadow-action-deliver-on-light);
+
+  --button-text-color: var(--color-action-deliver-on-light);
+  --button-text-color-hover: var(--color-action-deliver);
+
+  --button-hero-text: var(--color-action-deliver-on-dark);
+  --button-hero-bg: rgba(6, 24, 68, 0.58);
+  --button-hero-bg-hover: var(--color-action-deliver);
+  --button-hero-bg-active: var(--color-action-deliver-on-light);
+  --button-hero-border: var(--color-action-deliver);
+  --button-hero-shadow-hover: var(--shadow-delivery-glow);
+
+  --button-card-text: var(--color-action-deliver-on-light);
+  --button-card-bg: var(--color-action-deliver-light-bg);
+  --button-card-bg-hover: var(--color-action-deliver-light-bg-hover);
+  --button-card-bg-active: var(--color-action-deliver-light-bg-active);
+  --button-card-border: var(--color-action-deliver);
+  --button-card-shadow-hover: var(--shadow-action-deliver-on-light);
+}
+
+.button--tone-danger {
+  --button-solid-text: var(--color-primary-50);
+  --button-solid-bg: var(--color-action-danger);
+  --button-solid-border: var(--color-action-danger);
+  --button-solid-bg-hover: var(--color-action-danger-on-light);
+  --button-solid-border-hover: var(--color-action-danger-on-light);
+  --button-solid-bg-active: var(--color-action-danger-on-light);
+  --button-solid-shadow-hover: var(--shadow-danger-glow);
+
+  --button-soft-text: var(--color-action-danger-on-light);
+  --button-soft-bg: var(--color-action-danger-light-bg);
+  --button-soft-border: var(--color-action-danger);
+  --button-soft-bg-hover: var(--color-action-danger-light-bg-hover);
+  --button-soft-border-hover: var(--color-action-danger);
+  --button-soft-bg-active: var(--color-action-danger-light-bg-active);
+  --button-soft-shadow-hover: var(--shadow-action-danger-on-light);
+
+  --button-outline-text: var(--color-action-danger-on-light);
+  --button-outline-border: var(--color-action-danger);
+  --button-outline-bg-hover: var(--color-action-danger-light-bg-hover);
+  --button-outline-border-hover: var(--color-action-danger);
+  --button-outline-bg-active: var(--color-action-danger-light-bg-active);
+  --button-outline-shadow-hover: var(--shadow-action-danger-on-light);
+
+  --button-text-color: var(--color-action-danger-on-light);
+  --button-text-color-hover: var(--color-action-danger);
+
+  --button-hero-text: var(--color-action-danger-on-dark);
+  --button-hero-bg: rgba(6, 24, 68, 0.58);
+  --button-hero-bg-hover: var(--color-action-danger);
+  --button-hero-bg-active: var(--color-action-danger-on-light);
+  --button-hero-border: var(--color-action-danger);
+  --button-hero-shadow-hover: var(--shadow-danger-glow);
+
+  --button-card-text: var(--color-action-danger-on-light);
+  --button-card-bg: var(--color-action-danger-light-bg);
+  --button-card-bg-hover: var(--color-action-danger-light-bg-hover);
+  --button-card-bg-active: var(--color-action-danger-light-bg-active);
+  --button-card-border: var(--color-action-danger);
+  --button-card-shadow-hover: var(--shadow-action-danger-on-light);
+}
+
+
+/* =============================================================================
+   Default tone
+
+   Buttons without an explicit tone behave like place/accent for solid actions
+   and neutral controls for soft/ghost actions.
+   ============================================================================= */
+
+.button:not(
+  .button--tone-place,
+  .button--tone-pack,
+  .button--tone-deliver,
+  .button--tone-positive,
+  .button--tone-danger,
+  .button--tone-neutral
+) {
+  --button-solid-text: var(--color-primary-900);
+  --button-solid-bg: var(--color-accent-600);
+  --button-solid-border: var(--color-accent-600);
+  --button-solid-bg-hover: var(--color-accent-500);
+  --button-solid-border-hover: var(--color-accent-500);
+  --button-solid-bg-active: var(--color-accent-700);
+  --button-solid-shadow-hover: var(--shadow-accent-glow);
+
+  --button-soft-text: var(--color-neutral-700);
+  --button-soft-bg: transparent;
+  --button-soft-border: var(--color-neutral-300);
+  --button-soft-bg-hover: var(--color-primary-50);
+  --button-soft-border-hover: var(--color-primary-500);
+  --button-soft-bg-active: var(--color-primary-100);
+  --button-soft-shadow-hover: var(--shadow-focus-info);
+
+  --button-outline-text: var(--color-primary-800);
+  --button-outline-border: var(--color-accent-600);
+  --button-outline-bg-hover: var(--color-accent-100);
+  --button-outline-border-hover: var(--color-accent-600);
+  --button-outline-bg-active: var(--color-accent-200);
+  --button-outline-shadow-hover: var(--shadow-accent-glow);
+
+  --button-text-color: var(--color-neutral-700);
+  --button-text-color-hover: var(--color-primary-900);
+
+  --button-hero-text: var(--color-primary-50);
+  --button-hero-bg: rgba(6, 24, 68, 0.58);
+  --button-hero-bg-hover: var(--color-primary-700);
+  --button-hero-bg-active: var(--color-primary-900);
+  --button-hero-border: var(--color-accent-600);
+  --button-hero-shadow-hover: var(--shadow-accent-glow);
+
+  --button-card-text: var(--color-primary-900);
+  --button-card-bg: var(--color-primary-100);
+  --button-card-bg-hover: var(--color-primary-200);
+  --button-card-bg-active: var(--color-primary-300);
+  --button-card-border: var(--color-primary-500);
+  --button-card-shadow-hover: var(--shadow-accent-glow);
+}
+
+
+/* =============================================================================
+   Variants
+   ============================================================================= */
+
+.button--solid {
+  color: var(--button-solid-text);
+  background: var(--button-solid-bg);
+  border-color: var(--button-solid-border);
+}
+
+.button--solid:hover,
+.button--solid:focus-visible {
+  background: var(--button-solid-bg-hover);
+  border-color: var(--button-solid-border-hover);
+  box-shadow: var(--button-solid-shadow-hover);
+  transform: var(--transform-lift-scale);
+}
+
+.button--solid:active {
+  background: var(--button-solid-bg-active);
+  border-color: var(--button-solid-bg-active);
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(0);
+}
+
+
+.button--soft {
+  color: var(--button-soft-text);
+  background: var(--button-soft-bg);
+  border-color: var(--button-soft-border);
+}
+
+.button--soft:hover,
+.button--soft:focus-visible {
+  background: var(--button-soft-bg-hover);
+  border-color: var(--button-soft-border-hover);
+  box-shadow: var(--button-soft-shadow-hover);
+  transform: var(--transform-lift);
+}
+
+.button--soft:active {
+  background: var(--button-soft-bg-active);
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(0);
+}
+
+
+.button--outline {
+  color: var(--button-outline-text);
+  background: transparent;
+  border-color: var(--button-outline-border);
+}
+
+.button--outline:hover,
+.button--outline:focus-visible {
+  background: var(--button-outline-bg-hover);
+  border-color: var(--button-outline-border-hover);
+  box-shadow: var(--button-outline-shadow-hover);
+  transform: var(--transform-lift-scale);
+}
+
+.button--outline:active {
+  background: var(--button-outline-bg-active);
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(0);
+}
+
+
+.button--ghost {
+  color: var(--button-soft-text);
+  background: transparent;
+  border-color: var(--button-soft-border);
+}
+
+.button--ghost:hover,
+.button--ghost:focus-visible {
+  background: var(--button-soft-bg-hover);
+  border-color: var(--button-soft-border-hover);
+  box-shadow: var(--button-soft-shadow-hover);
+  transform: var(--transform-lift-scale);
+}
+
+.button--ghost:active {
+  background: var(--button-soft-bg-active);
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(0);
+}
+
+
+.button--text {
+  min-height: auto;
+  padding: 0;
+
+  color: var(--button-text-color);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+
+  font: inherit;
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  cursor: pointer;
+}
+
+.button--text:hover,
+.button--text:focus-visible {
+  color: var(--button-text-color-hover);
+}
+
+.button--text:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-info);
+}
+
+.button--tone-danger.button--text:focus-visible {
+  box-shadow: var(--shadow-focus-danger-strong);
+}
+
+.button--text[hidden] {
+  display: none;
+}
+
+
+/* =============================================================================
+   Hero action buttons
+
+   Used on dark/high-emphasis surfaces.
+   Consumes hero variables from tone classes.
+   ============================================================================= */
+
+.button--hero-action {
+  justify-content: flex-start;
+  min-width: 250px;
+  min-height: var(--size-control-xl);
+  padding-inline: var(--space-6);
+  gap: var(--space-4);
+
+  color: var(--button-hero-text);
+  background: var(--button-hero-bg);
+  border: 1.5px solid var(--button-hero-border);
+}
+
+.button--hero-action .button__icon {
+  color: var(--button-hero-border);
+}
+
+.button--hero-action:hover,
+.button--hero-action:focus-visible {
+  color: var(--color-primary-50);
+  background: var(--button-hero-bg-hover);
+  border-color: var(--button-hero-bg-hover);
+  box-shadow: var(--button-hero-shadow-hover);
+  transform: var(--transform-lift-scale-lg);
+}
+
+.button--hero-action:hover .button__icon,
+.button--hero-action:focus-visible .button__icon {
+  color: currentColor;
+}
+
+.button--hero-action:active {
+  background: var(--button-hero-bg-active);
+  border-color: var(--button-hero-bg-active);
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(0);
+}
+
+
+/* =============================================================================
+   Card action buttons
+
+   Used inside mobile cards and detail cards.
+   Consumes card variables from tone classes.
+   ============================================================================= */
+
+.button--card-action {
+  justify-content: center;
+  width: min(86%, 320px);
+  min-height: var(--size-control-sm);
+  padding-inline: var(--space-5);
+
+  color: var(--button-card-text);
+  background: var(--button-card-bg);
+  border: 1px solid var(--button-card-border);
+  border-radius: var(--radius-control);
+}
+
+.button--card-action:hover,
+.button--card-action:focus-visible {
+  background: var(--button-card-bg-hover);
+  border-color: var(--button-card-border);
+  box-shadow: var(--button-card-shadow-hover);
+  transform: var(--transform-lift);
+}
+
+.button--card-action:active {
+  background: var(--button-card-bg-active);
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(0);
+}
+
+.button--card-action .button__icon {
+  width: 1.2rem;
+  height: 1.2rem;
+
+  color: currentColor;
+}
+
+
+/* =============================================================================
+   Button content
+   ============================================================================= */
+
+.button--with-icon {
+  gap: var(--space-3);
+}
+
+.button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+
+  color: currentColor;
+
+  flex: 0 0 auto;
+}
+
+.button__icon svg {
+  width: 100%;
+  height: 100%;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.button__label {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.button__arrow {
+  margin-left: auto;
+
+  font-size: 1.5em;
+  line-height: 1;
+}

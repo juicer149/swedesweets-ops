@@ -1,0 +1,48 @@
+{% comment %}
+Reusable quick jump search.
+
+Expected context:
+  quick_jump_search:
+    title
+    title_id
+    select_id
+    placeholder
+    aria_label
+    options:
+      label
+      url
+
+Usage:
+  {% include "includes/table/quick_jump_search.html" %}
+{% endcomment %}
+
+{% if quick_jump_search and quick_jump_search.options %}
+  <section
+    class="quick-jump-search"
+    aria-labelledby="{{ quick_jump_search.title_id }}"
+  >
+    <h2
+      id="{{ quick_jump_search.title_id }}"
+      class="quick-jump-search__title"
+    >
+      {{ quick_jump_search.title }}
+    </h2>
+
+    <select
+      id="{{ quick_jump_search.select_id }}"
+      class="quick-jump-search__select"
+      data-enhanced-select="true"
+      data-enhanced-select-search="true"
+      data-quick-jump="true"
+      aria-label="{{ quick_jump_search.aria_label }}"
+    >
+      <option value="">{{ quick_jump_search.placeholder }}</option>
+
+      {% for option in quick_jump_search.options %}
+        <option value="{{ option.url }}">
+          {{ option.label }}
+        </option>
+      {% endfor %}
+    </select>
+  </section>
+{% endif %}

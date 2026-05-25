@@ -1,0 +1,51 @@
+{% if item.href %}
+  <a
+    class="{{ item.css_class }}"
+    href="{{ item.href }}"
+    {% if item.target %}target="{{ item.target }}"{% endif %}
+    {% if item.rel %}rel="{{ item.rel }}"{% endif %}
+    {% if item.aria_label %}aria-label="{{ item.aria_label }}"{% endif %}
+  >
+    {% if item.label %}
+      <span class="{{ item.label_class }}">
+        {{ item.label }}
+      </span>
+    {% endif %}
+
+    {% if item.icon %}
+      <span class="{{ item.icon_class }}" aria-hidden="true">
+        {% include "includes/ui/icon.html" with name=item.icon %}
+      </span>
+    {% endif %}
+
+    <span>{{ item.text }}</span>
+
+    {% if item.subtext %}
+      <span class="{{ item.subtext_class }}">
+        {{ item.subtext }}
+      </span>
+    {% endif %}
+  </a>
+{% else %}
+  <span class="{{ item.css_class }}">
+    {% if item.label %}
+      <span class="{{ item.label_class }}">
+        {{ item.label }}
+      </span>
+    {% endif %}
+
+    {% if item.icon %}
+      <span class="{{ item.icon_class }}" aria-hidden="true">
+        {% include "includes/ui/icon.html" with name=item.icon %}
+      </span>
+    {% endif %}
+
+    <span>{{ item.text }}</span>
+
+    {% if item.subtext %}
+      <span class="{{ item.subtext_class }}">
+        {{ item.subtext }}
+      </span>
+    {% endif %}
+  </span>
+{% endif %}

@@ -1,0 +1,89 @@
+<dl class="detail-data-list">
+  <div>
+    <dt>Total orders</dt>
+    <dd>{{ order_summary.total_orders }}</dd>
+  </div>
+
+  <div>
+    <dt>Placed</dt>
+    <dd>{{ order_summary.placed_orders }}</dd>
+  </div>
+
+  <div>
+    <dt>Packed</dt>
+    <dd>{{ order_summary.packed_orders }}</dd>
+  </div>
+
+  <div>
+    <dt>Delivered</dt>
+    <dd>{{ order_summary.delivered_orders }}</dd>
+  </div>
+
+  <div>
+    <dt>Cancelled</dt>
+    <dd>{{ order_summary.cancelled_orders }}</dd>
+  </div>
+
+  <div>
+    <dt>Last order</dt>
+    <dd>
+      {% if order_summary.last_ordered_at %}
+        {{ order_summary.last_ordered_at|date:"Y-m-d H:i" }}
+      {% else %}
+        Never
+      {% endif %}
+    </dd>
+  </div>
+</dl>
+
+{% if order_rows %}
+  <div class="table-card table-card--embedded">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th class="numeric-cell">Boxes</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in order_rows %}
+          <tr
+            class="clickable-row"
+            data-tone="neutral"
+            data-href="{{ row.order_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="View order #{{ row.order_id }}"
+          >
+            <th scope="row">
+              <span class="row-link">
+                #{{ row.order_id }}
+              </span>
+            </th>
+
+            <td>{{ row.status }}</td>
+
+            <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
+
+            <td class="numeric-cell">
+              <strong>{{ row.boxes }}</strong>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p class="table-hint">
+      Select an order to view its order detail.
+    </p>
+  </div>
+
+  <div class="mobile-card-list">
+    {% for row in order_rows %}
+      {% include "includes/ui/card.html" with card=row.card only %}
+    {% endfor %}
+  </div>
+{% endif %}

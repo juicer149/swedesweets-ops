@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="deliver-order-title" title=title description=description %}
+
+<section class="content-section content-section--wide" aria-labelledby="deliver-order-title">
+  <article class="content-card content-card--wide {{ detail_card.content_card_class }}">
+    {% include "includes/ui/detail_card_header.html" with header=detail_card.header %}
+
+    <section class="delivery-confirmation" aria-labelledby="delivery-confirmation-title">
+      <div class="order-lines__header">
+        <h2 id="delivery-confirmation-title">Delivery confirmation</h2>
+        <p>Confirm that this packed order has reached the customer.</p>
+      </div>
+
+      {% include "includes/ui/detail_panels.html" with detail_panels=detail_card.panels %}
+    </section>
+
+    <form method="post">
+      {% csrf_token %}
+      {% include "includes/ui/detail_actions.html" with primary_action=detail_card.primary_action secondary_action=detail_card.secondary_action secondary_actions=detail_card.secondary_actions %}
+    </form>
+  </article>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/detail_panels.js' %}" defer></script>
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
+{% endblock %}

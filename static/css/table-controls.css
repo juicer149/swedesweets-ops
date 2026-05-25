@@ -1,0 +1,161 @@
+/* =============================================================================
+   Filters
+   ============================================================================= */
+
+.filter-group {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.filter-label {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-12);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-700);
+  text-transform: uppercase;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.filter-chip {
+  flex: 0 0 auto;
+}
+
+
+/* =============================================================================
+   Mobile sort control
+   ============================================================================= */
+
+.sort-control {
+  display: none;
+}
+
+.sort-control__field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  align-items: start;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+/*
+  Native fallback only.
+
+  When Tom Select is active, the visible control is .ts-control.
+  This rule must target only the real select element because Tom Select may copy
+  the sort-select class onto its wrapper.
+*/
+select.sort-select {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 44px 0 16px;
+  border: 1px solid var(--color-primary-900);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  color: var(--color-primary-900);
+  background: var(--color-neutral-50);
+}
+
+select.sort-select.tomselected,
+select.sort-select.ts-hidden-accessible {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.sort-direction-button {
+  width: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  padding-inline: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: var(--font-size-20);
+  line-height: 1;
+}
+
+.sort-arrow {
+  display: inline-block;
+  width: 1ch;
+  font-size: 0.85em;
+  line-height: 1;
+  text-align: center;
+  color: var(--color-primary-700);
+}
+
+
+/* =============================================================================
+   Mobile sort control with Tom Select
+   ============================================================================= */
+
+.sort-control .ts-wrapper {
+  min-width: 0;
+}
+
+.sort-control .ts-control {
+  min-height: 56px;
+  padding: 0 2.4rem 0 1.15rem;
+
+  display: flex;
+  align-items: center;
+
+  color: var(--color-primary-900);
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-primary-900);
+  border-radius: var(--radius-pill);
+
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sort-control .ts-control .item {
+  display: flex;
+  align-items: center;
+  min-height: 100%;
+}
+
+.sort-control .ts-wrapper.focus .ts-control,
+.sort-control .ts-wrapper.dropdown-active .ts-control {
+  background: var(--color-white);
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgb(var(--color-status-info) / 0.16);
+}
+
+.sort-control .ts-wrapper.dropdown-active {
+  z-index: 90;
+}
+
+.sort-control .ts-dropdown {
+  z-index: 100;
+}
+
+.sort-control .ts-dropdown .option {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 1rem;
+}

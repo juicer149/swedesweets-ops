@@ -1,0 +1,35 @@
+<div class="detail-line-list">
+  <article
+    class="detail-line clickable-row"
+    data-tone="neutral"
+    data-href="{% url 'products:detail' product_pk=batch.product.pk %}"
+    tabindex="0"
+    role="link"
+    aria-label="View product {{ batch.product.sku }}"
+  >
+    <strong>
+      {{ batch.product.sku }}
+    </strong>
+
+    <span>
+      {{ batch.product.brand }}
+      ·
+      {{ batch.product.name }}
+      ·
+      {{ batch.product.weight_per_box }} g / box
+    </span>
+  </article>
+</div>
+
+<dl class="detail-data-list">
+  <div>
+    <dt>Product active</dt>
+    <dd>
+      {% if batch.product.active %}
+        Yes
+      {% else %}
+        No
+      {% endif %}
+    </dd>
+  </div>
+</dl>

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="pack-order-title" title=title description=description %}
+
+<section class="content-section content-section--wide" aria-labelledby="pack-order-title">
+  <article class="content-card content-card--wide {{ detail_card.content_card_class }}">
+    {% include "includes/ui/detail_card_header.html" with header=detail_card.header %}
+
+    {% include "includes/ui/detail_panels.html" with detail_panels=detail_card.panels %}
+
+    <section
+      class="pack-list"
+      aria-labelledby="pack-list-title"
+      data-pack-checklist
+    >
+      <div class="order-lines__header">
+        <h2 id="pack-list-title">Pick checklist</h2>
+        <p>Check each batch as it is picked from stock.</p>
+      </div>
+
+      {% if pick_lines %}
+        <div class="pack-list__items">
+          {% for line in pick_lines %}
+            <label class="pack-line">
+              <input
+                class="pack-line__checkbox"
+                type="checkbox"
+                data-pack-line-checkbox
+                aria-label="Picked {{ line.boxes }} boxes of {{ line.product_name }} from batch {{ line.batch_id }}"
+              >
+
+              <span class="pack-line__content">
+                <span class="pack-line__main">
+                  <strong>{{ line.boxes }}</strong>
+                  <span>
+                    box{{ line.boxes|pluralize:"es" }}
+                    —
+                    {{ line.product_name }}
+                  </span>
+                </span>
+
+                <span class="pack-line__meta">
+                  <span>SKU: {{ line.sku }}</span>
+                  <span>Batch: {{ line.batch_id }}</span>
+                  <span>Location: {{ line.location }}</span>
+                </span>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="form-help">
+          No reserved pick lines found for this order.
+        </p>
+      {% endif %}
+    </section>
+
+    <form method="post">
+      {% csrf_token %}
+      {% include "includes/ui/detail_actions.html" with primary_action=detail_card.primary_action secondary_action=detail_card.secondary_action secondary_actions=detail_card.secondary_actions %}
+    </form>
+  </article>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/detail_panels.js' %}" defer></script>
+  <script src="{% static 'js/pack_checklist.js' %}" defer></script>
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
+{% endblock %}

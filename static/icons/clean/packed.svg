@@ -1,0 +1,15 @@
+<svg class="ui-icon-svg" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123.46 134.361">
+    <defs>
+        <style>
+            .cls-1,.cls-2{stroke:currentColor;stroke-miterlimit:10}.cls-1{stroke-width:5px}.cls-2{stroke-width:2px}
+        </style>
+    </defs>
+    <path d="M2.5 25.481h118.46v106.38H2.5z" style="stroke:currentColor;stroke-miterlimit:10;stroke-width:5px;fill:none"/>
+    <g transform="translate(-116.55 -114.409)">
+        <path d="M179.76 138.31c-4.12.55-8.99-1.83-9.05-4.53-.06-2.71 4.71-5.2 8.85-4.75 2.74.3 6.27 2 6.32 4.57s-3.4 4.36-6.12 4.72z" class="cls-2"/>
+        <path d="M171.06 131.8c-.69-2.27-2.25-5.98-6.13-9.46-3.7-3.31-11.69-8.4-16.38-6.47-4.45 1.82-3.33 8.87-3.21 9.58.19 1.18 1.38 8.64 10.13 11.66 7.69 2.66 15.03-.25 15.91-.61" class="cls-2"/>
+        <path d="M185.57 131.85c.67-2.28 2.21-5.98 6.07-9.48 3.67-3.33 11.63-8.44 16.34-6.53 4.46 1.81 3.38 8.85 3.28 9.57-.18 1.18-1.32 8.64-10.05 11.7-7.67 2.69-15.03-.19-15.91-.55" class="cls-2"/>
+    </g>
+    <path d="m182.08 244.46-.01-100.98h-7.58v100.98z" class="cls-1" transform="translate(-116.55 -114.409)"/>
+    <path d="M235.5 193.97H121.07l1.85-6.38H235.5z" class="cls-1" transform="translate(-116.55 -114.409)"/>
+</svg>

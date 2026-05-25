@@ -1,0 +1,24 @@
+{% if action.method == "post" %}
+  <button
+    class="{{ action_class }}"
+    type="submit"
+    {% if action.client_behavior %}data-action-behavior="{{ action.client_behavior }}"{% endif %}
+    {% if action.is_disabled %}disabled{% endif %}
+  >
+    {% if action.icon %}
+      <span class="button__icon" aria-hidden="true">
+        {% include "includes/ui/icon.html" with name=action.icon only %}
+      </span>
+    {% endif %}
+    <span class="button__label">{{ action.label }}</span>
+  </button>
+{% else %}
+  <a class="{{ action_class }}" href="{{ action.href }}">
+    {% if action.icon %}
+      <span class="button__icon" aria-hidden="true">
+        {% include "includes/ui/icon.html" with name=action.icon only %}
+      </span>
+    {% endif %}
+    <span class="button__label">{{ action.label }}</span>
+  </a>
+{% endif %}

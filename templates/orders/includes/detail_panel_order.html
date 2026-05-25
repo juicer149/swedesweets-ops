@@ -1,0 +1,91 @@
+<dl class="detail-data-list">
+  <div>
+    <dt>Order</dt>
+    <dd>#{{ order.id }}</dd>
+  </div>
+
+  <div>
+    <dt>Status</dt>
+    <dd>{{ order.get_status_display }}</dd>
+  </div>
+
+  <div>
+    <dt>Created</dt>
+    <dd>{{ order.created_at|date:"Y-m-d H:i" }}</dd>
+  </div>
+
+  {% if order.placed_at %}
+    <div>
+      <dt>Placed</dt>
+      <dd>
+        {{ order.placed_at|date:"Y-m-d H:i" }}
+        {% if order.placed_by %}by {{ order.placed_by }}{% endif %}
+      </dd>
+    </div>
+  {% endif %}
+
+  {% if order.edited_at %}
+    <div>
+      <dt>Last edited</dt>
+      <dd>
+        {{ order.edited_at|date:"Y-m-d H:i" }}
+        {% if order.edited_by %}by {{ order.edited_by }}{% endif %}
+      </dd>
+    </div>
+  {% endif %}
+
+  {% if order.packed_at %}
+    <div>
+      <dt>Packed</dt>
+      <dd>
+        {{ order.packed_at|date:"Y-m-d H:i" }}
+        {% if order.packed_by %}by {{ order.packed_by }}{% endif %}
+      </dd>
+    </div>
+  {% endif %}
+
+  {% if order.delivered_at %}
+    <div>
+      <dt>Delivered</dt>
+      <dd>
+        {{ order.delivered_at|date:"Y-m-d H:i" }}
+        {% if order.delivered_by %}by {{ order.delivered_by }}{% endif %}
+      </dd>
+    </div>
+  {% endif %}
+
+  {% if order.cancelled_at %}
+    <div>
+      <dt>Cancelled</dt>
+      <dd>
+        {{ order.cancelled_at|date:"Y-m-d H:i" }}
+        {% if order.cancelled_by %}by {{ order.cancelled_by }}{% endif %}
+      </dd>
+    </div>
+  {% endif %}
+
+  {% if order.cancel_reason %}
+    <div>
+      <dt>Cancel reason</dt>
+      <dd>{{ order.get_cancel_reason_display }}</dd>
+    </div>
+  {% endif %}
+
+  {% if order.cancel_note %}
+    <div>
+      <dt>Cancel note</dt>
+      <dd>{{ order.cancel_note }}</dd>
+    </div>
+  {% endif %}
+
+  <div>
+    <dt>Contents</dt>
+    <dd>
+      {{ product_count }}
+      product{{ product_count|pluralize }}
+      ·
+      {{ total_boxes }}
+      box{{ total_boxes|pluralize:"es" }}
+    </dd>
+  </div>
+</dl>

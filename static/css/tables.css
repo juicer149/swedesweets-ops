@@ -1,0 +1,228 @@
+/* =============================================================================
+   Data tables
+   ============================================================================= */
+
+.table-card {
+  width: min(100%, 760px);
+  margin-inline: auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow-x: visible;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+
+.data-table thead tr {
+  border-bottom: 0;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.data-table thead th {
+  padding-bottom: 12px;
+  font-size: var(--font-size-data-table-th);
+  font-weight: 700;
+  line-height: 1.33;
+  color: var(--color-table-heading);
+  border-bottom: 1px solid var(--color-table-rule);
+}
+
+.data-table tbody th,
+.data-table tbody td {
+  font-size: var(--font-size-data-table-td);
+  font-weight: 600;
+  line-height: 1.43;
+  color: var(--color-primary-900);
+}
+
+.data-table tbody tr {
+  filter: drop-shadow(0 1px 2px rgb(var(--color-row-shadow) / 0.05));
+  transition:
+    filter var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.data-table tbody tr:hover {
+  filter: drop-shadow(0 3px 8px rgb(var(--color-row-shadow) / 0.10));
+  transform: translateY(-1px);
+}
+
+.data-table tbody tr > *:first-child {
+  border-top-left-radius: var(--radius-table-row);
+  border-bottom-left-radius: var(--radius-table-row);
+}
+
+.data-table tbody tr > *:last-child {
+  border-top-right-radius: var(--radius-table-row);
+  border-bottom-right-radius: var(--radius-table-row);
+}
+
+.data-table .numeric-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table .numeric-cell strong {
+  font-weight: 800;
+  color: var(--color-primary-900);
+}
+
+/* =============================================================================
+   Data table tone surfaces
+   ============================================================================= */
+
+.data-table tbody tr[data-tone="neutral"] > * {
+  background: var(--color-primary-50);
+}
+
+.data-table tbody tr[data-tone="muted"] > * {
+  background: rgb(var(--color-status-muted) / 0.055);
+}
+
+.data-table tbody tr[data-tone="warning"] > * {
+  background: rgb(var(--color-status-warning) / 0.055);
+}
+
+.data-table tbody tr[data-tone="info"] > * {
+  background: rgb(var(--color-status-info) / 0.06);
+}
+
+.data-table tbody tr[data-tone="success"] > * {
+  background: rgb(var(--color-status-success) / 0.045);
+}
+
+.data-table tbody tr[data-tone="danger"] > * {
+  background: rgb(var(--color-status-danger) / 0.07);
+}
+
+.data-table tbody tr[data-tone="muted"]:hover > * {
+  background: rgb(var(--color-status-muted) / 0.10);
+}
+
+.data-table tbody tr[data-tone="warning"]:hover > * {
+  background: rgb(var(--color-status-warning) / 0.13);
+}
+
+.data-table tbody tr[data-tone="info"]:hover > * {
+  background: rgb(var(--color-status-info) / 0.13);
+}
+
+.data-table tbody tr[data-tone="success"]:hover > * {
+  background: rgb(var(--color-status-success) / 0.09);
+}
+
+.data-table tbody tr[data-tone="danger"]:hover > * {
+  background: rgb(var(--color-status-danger) / 0.13);
+}
+
+/* =============================================================================
+   Row links / clickable table rows
+   ============================================================================= */
+
+.row-link {
+  color: var(--color-primary-900);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.row-link:hover,
+.row-link:focus-visible {
+  text-decoration: none;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:focus-visible {
+  outline: 2px solid var(--color-accent-600);
+  outline-offset: 3px;
+}
+
+.data-table tbody tr.clickable-row:hover > * {
+  background: rgb(var(--color-status-info) / 0.08);
+}
+
+.data-table tbody tr.clickable-row:hover > *:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent-600);
+}
+
+.table-hint {
+  margin: var(--space-3) 0 0;
+  color: var(--color-neutral-600);
+  font-size: var(--font-size-14);
+  font-weight: 600;
+}
+
+.empty-cell {
+  padding-block: var(--space-5);
+  color: var(--color-neutral-600);
+}
+
+/*
+  Tables with links inside cells should not behave like clickable workflow rows.
+  Use this for customers and similar contact tables.
+*/
+
+.data-table--link-cells tbody tr {
+  filter: none;
+  transition: none;
+}
+
+.data-table--link-cells tbody tr:hover {
+  filter: none;
+  transform: none;
+}
+
+.table-card .data-table--link-cells tbody tr:hover > * {
+  background: transparent;
+}
+
+
+
+/* =============================================================================
+   Link-cell helpers
+   ============================================================================= */
+
+.action-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* =============================================================================
+   Boolean / attribute table icons
+   ============================================================================= */
+
+.product-vegan-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-vegan-icon .ui-icon-block,
+.product-vegan-icon .status-text__icon {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+}
+
+.product-vegan-icon--yes svg {
+  width: 100%;
+  height: 100%;
+  --icon-stroke-width: 2.7;
+}
+
+.product-vegan-icon--no .ui-icon-block {
+  stroke-width: 2.2;
+}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Products | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with page_header=page_header %}
+
+<section
+  id="products-list"
+  class="list-section"
+  aria-labelledby="products-title"
+>
+  {% include "includes/table/quick_jump_search.html" %}
+  {% include "includes/table/filter_chips.html" %}
+  {% include "includes/table/sort_select.html" %}
+
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% include "includes/table/sort_headers.html" %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in product_rows %}
+          <tr
+            class="clickable-row"
+            data-tone="{{ row.status.tone.key }}"
+            data-href="{{ row.detail_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="View product {{ row.product.name }}"
+          >
+            <td class="numeric-cell">
+              {% if row.product.internal_number %}
+                <strong>{{ row.product.internal_number }}</strong>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <th scope="row">
+              <span class="row-link">
+                {{ row.product.name }}
+              </span>
+            </th>
+
+            <td>{{ row.product.brand }}</td>
+
+            <td>
+              {% if row.product.manufacturer %}
+                {{ row.product.manufacturer }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td class="numeric-cell">
+              <strong>{{ row.product.weight_per_box }}</strong> g
+            </td>
+
+            <td>
+              {% if row.product.vegan %}
+                <span
+                  class="status-text status-text--success product-vegan-icon product-vegan-icon--yes"
+                  aria-label="Vegan"
+                  title="Vegan"
+                >
+                  {% include "includes/ui/icon_block.html" with name="check" size="sm" class_name="status-text__icon" only %}
+                </span>
+              {% else %}
+                <span
+                  class="status-text status-text--muted product-vegan-icon product-vegan-icon--no"
+                  aria-label="Not vegan"
+                  title="Not vegan"
+                >
+                  {% include "includes/ui/icon_block.html" with name="x" size="sm" class_name="status-text__icon" only %}
+                </span>
+              {% endif %}
+            </td>
+
+            <td>
+              <span class="{{ row.status.text.css_class }}">
+                {{ row.status.label }}
+              </span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="empty-cell" colspan="7">
+              No products found.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-card-list">
+    {% for row in product_rows %}
+      {% include "includes/ui/card.html" with card=row.card only %}
+    {% empty %}
+      <article class="mobile-card mobile-card--neutral">
+        <p>No products found.</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
+  <script src="{% static 'js/sort_select.js' %}" defer></script>
+{% endblock %}

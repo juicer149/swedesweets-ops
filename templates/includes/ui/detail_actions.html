@@ -1,0 +1,33 @@
+{% comment %}
+Reusable detail action row.
+
+Expected context:
+  primary_action
+  secondary_action
+  secondary_actions
+
+DetailAction:
+  label
+  href
+  icon
+  method
+  tone
+  client_behavior
+  is_disabled
+{% endcomment %}
+
+{% if primary_action or secondary_action or secondary_actions %}
+  <div class="form-actions">
+    {% if primary_action %}
+      {% include "includes/ui/detail_action_item.html" with action=primary_action %}
+    {% endif %}
+
+    {% if secondary_action %}
+      {% include "includes/ui/detail_action_item.html" with action=secondary_action %}
+    {% endif %}
+
+    {% for action in secondary_actions %}
+      {% include "includes/ui/detail_action_item.html" with action=action %}
+    {% endfor %}
+  </div>
+{% endif %}

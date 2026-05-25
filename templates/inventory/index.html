@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inventory | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with page_header=page_header %}
+
+<nav class="page-view-switch" aria-label="Inventory view">
+  {% for view_link in view_links %}
+    <a
+      class="chip filter-chip page-view-switch__item{% if view_link.is_active %} chip--active{% endif %}"
+      href="{{ view_link.href }}"
+      {% if view_link.is_active %}aria-current="page"{% endif %}
+    >
+      {{ view_link.label }}
+    </a>
+  {% endfor %}
+</nav>
+
+<section
+  id="inventory-list"
+  class="list-section"
+  aria-labelledby="inventory-title"
+>
+  {% if filters %}
+    {% include "includes/table/filter_chips.html" %}
+  {% endif %}
+
+  {% include "includes/table/sort_select.html" %}
+
+  {% if active_view == "products" %}
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            {% include "includes/table/sort_headers.html" %}
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for row in product_rows %}
+            <tr data-tone="{{ row.status.tone.key }}">
+              <th scope="row">
+                <span class="row-link">
+                  {{ row.sku }}
+                </span>
+                <span class="table-subtext">
+                  {{ row.brand }} · {{ row.product_name }}
+                </span>
+              </th>
+
+              <td class="numeric-cell">
+                {{ row.batch_count }}
+              </td>
+
+              <td class="numeric-cell">
+                <strong>{{ row.physical_boxes }}</strong>
+              </td>
+
+              <td class="numeric-cell">
+                {{ row.reserved_boxes }}
+              </td>
+
+              <td class="numeric-cell">
+                <strong>{{ row.available_boxes }}</strong>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td class="empty-cell" colspan="5">
+                No product stock found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-card-list">
+      {% for row in product_rows %}
+        {% include "includes/ui/card.html" with card=row.card only %}
+      {% empty %}
+        <article class="mobile-card mobile-card--neutral">
+          <p>No product stock found.</p>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            {% include "includes/table/sort_headers.html" %}
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for row in inventory_rows %}
+            <tr
+              class="clickable-row"
+              data-tone="{{ row.status.tone.key }}"
+              data-href="{{ row.detail_href }}"
+              tabindex="0"
+              role="link"
+              aria-label="View batch {{ row.batch.batch_id }}"
+            >
+              <th scope="row">
+                <span class="row-link">
+                  {{ row.batch.batch_id }}
+                </span>
+              </th>
+
+              <td>{{ row.batch.product.sku }}</td>
+
+              <td>
+                <span class="expiry-text expiry-text--{{ row.expiry.state }}">
+                  {{ row.batch.best_before|date:"d-m-y" }}
+                </span>
+              </td>
+
+              <td class="numeric-cell">
+                <strong>{{ row.batch.boxes }}</strong>
+              </td>
+
+              <td>
+                <span class="{{ row.status.text.css_class }}">
+                  {{ row.status.label }}
+                </span>
+              </td>
+
+              <td>{{ row.batch.location }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td class="empty-cell" colspan="6">
+                No inventory batches found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-card-list">
+      {% for row in inventory_rows %}
+        {% include "includes/ui/card.html" with card=row.card only %}
+      {% empty %}
+        <article class="mobile-card mobile-card--neutral">
+          <p>No inventory batches found.</p>
+        </article>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
+  <script src="{% static 'js/sort_select.js' %}" defer></script>
+{% endblock %}

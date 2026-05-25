@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Login | SwedeSweets{% endblock %}
+
+{% block content %}
+<section class="auth-page" aria-labelledby="login-title">
+  <form class="auth-card" method="post">
+    {% csrf_token %}
+
+    <header class="auth-card__header">
+      <p class="auth-card__eyebrow">Operations</p>
+
+      <h1 id="login-title" class="auth-card__title">
+        Login
+      </h1>
+
+      <p class="auth-card__description">
+        Sign in to access SwedeSweets operations.
+      </p>
+    </header>
+
+    {% if form.non_field_errors %}
+      <div class="form-errors">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <label for="{{ form.username.id_for_label }}">
+          Username
+        </label>
+        {{ form.username }}
+        {{ form.username.errors }}
+      </div>
+
+      <div class="form-field form-field--full">
+        <label for="{{ form.password.id_for_label }}">
+          Password
+        </label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+    </div>
+
+    {% if next %}
+      <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+
+    <div class="form-actions auth-card__actions">
+      <button
+        class="button button--lg button--solid button--tone-place auth-card__submit"
+        type="submit"
+      >
+        Login
+      </button>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,55 @@
+/* =============================================================================
+   Detail lists
+
+   Icon + label + value lists used inside detail panels.
+   ============================================================================= */
+
+.detail-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.detail-list__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.detail-list__icon {
+  margin-top: 0.15rem;
+
+  color: var(--color-primary-800);
+}
+
+.detail-list__label {
+  margin: 0 0 var(--space-1);
+
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-neutral-700);
+  text-transform: uppercase;
+}
+
+.detail-list__value {
+  margin: 0;
+
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--color-primary-900);
+}
+
+.detail-list__link {
+  text-decoration: none;
+}
+
+.detail-list__link:hover,
+.detail-list__link:focus-visible {
+  color: var(--color-link);
+  text-decoration: underline;
+}

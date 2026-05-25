@@ -1,0 +1,86 @@
+{% load static %}
+
+{% with namespace=request.resolver_match.namespace url_name=request.resolver_match.url_name %}
+<header class="site-header{% if url_name == 'login' %} site-header--auth{% endif %}">
+  <div class="container">
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a class="site-brand" href="{% url 'index' %}" aria-label="SwedeSweets home">
+        <img
+          class="site-brand__logo"
+          src="{% static 'images/swedesweets-logo.png' %}"
+          alt="SwedeSweets"
+        >
+      </a>
+
+      {% if url_name != "login" %}
+        <div class="site-nav__content">
+          {% if request.user.is_authenticated %}
+            <div class="site-nav__links">
+              <a
+                class="site-nav__link{% if namespace == 'customers' %} site-nav__link--active{% endif %}"
+                href="{% url 'customers:index' %}"
+                {% if namespace == "customers" %}aria-current="page"{% endif %}
+              >
+                <span class="site-nav__icon" aria-hidden="true">
+                  {% include "includes/ui/icon.html" with name="users" %}
+                </span>
+                <span>Customers</span>
+              </a>
+
+              <a
+                class="site-nav__link{% if namespace == 'orders' %} site-nav__link--active{% endif %}"
+                href="{% url 'orders:index' %}"
+                {% if namespace == "orders" %}aria-current="page"{% endif %}
+              >
+                <span class="site-nav__icon" aria-hidden="true">
+                  {% include "includes/ui/icon.html" with name="cart" %}
+                </span>
+                <span>Orders</span>
+              </a>
+
+              <a
+                class="site-nav__link{% if namespace == 'inventory' %} site-nav__link--active{% endif %}"
+                href="{% url 'inventory:index' %}"
+                {% if namespace == "inventory" %}aria-current="page"{% endif %}
+              >
+                <span class="site-nav__icon" aria-hidden="true">
+                  {% include "includes/ui/icon.html" with name="inventory" %}
+                </span>
+                <span>Inventory</span>
+              </a>
+
+              <a
+                class="site-nav__link{% if namespace == 'products' %} site-nav__link--active{% endif %}"
+                href="{% url 'products:index' %}"
+                {% if namespace == "products" %}aria-current="page"{% endif %}
+              >
+                <span class="site-nav__icon" aria-hidden="true">
+                  {% include "includes/ui/icon.html" with name="lollipop" %}
+                </span>
+                <span>Products</span>
+              </a>
+            </div>
+
+            <form
+              class="site-nav__auth-form"
+              method="post"
+              action="{% url 'logout' %}"
+            >
+              {% csrf_token %}
+              <button class="site-nav__auth-action" type="submit">
+                Logout
+              </button>
+            </form>
+          {% else %}
+            <div class="site-nav__auth">
+              <a class="site-nav__auth-action" href="{% url 'login' %}">
+                Login
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+{% endwith %}

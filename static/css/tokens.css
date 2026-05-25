@@ -1,0 +1,321 @@
+:root {
+  /* ==========================================================================
+     Primitive colors
+     ========================================================================== */
+
+  /* Blue */
+  --color-primary-950: #06163d;
+  --color-primary-900: #0b1f51;
+  --color-primary-800: #0b2a79;
+  --color-primary-700: #0b3bad;
+  --color-primary-600: #0947d7;
+  --color-primary-500: #2669ff;
+  --color-primary-400: #6195f5;
+  --color-primary-300: #98bffb;
+  --color-primary-200: #cee3fd;
+  --color-primary-100: #e7f3fd;
+  --color-primary-50: #fcfcfd;
+
+  /* Yellow / gold */
+  --color-accent-900: #6f4e06;
+  --color-accent-800: #a2720b;
+  --color-accent-700: #d99100;
+  --color-accent-600: #f6b51e;
+  --color-accent-500: #ffc445;
+  --color-accent-400: #fcce59;
+  --color-accent-300: #f9dc8b;
+  --color-accent-200: #fdecb9;
+  --color-accent-100: #fff8e0;
+  --color-accent-50: #fffdf2;
+
+  /* Warm grays */
+  --color-neutral-900: #191715;
+  --color-neutral-800: #292622;
+  --color-neutral-700: #3b3834;
+  --color-neutral-600: #66615c;
+  --color-neutral-300: #ded8cf;
+  --color-neutral-200: #ebe4d8;
+  --color-neutral-100: #f6efe4;
+  --color-neutral-50: #fffaf0;
+
+  --color-white: #ffffff;
+  --color-link: var(--color-primary-700);
+
+  --color-table-heading: var(--color-accent-800);
+  --color-table-rule: var(--color-accent-900);
+
+  /* ==========================================================================
+     Semantic status channels
+
+     RGB channels are stored without rgb(...) so they can be reused with
+     different alpha values:
+
+       rgb(var(--color-status-warning) / 0.075)
+       rgb(var(--color-status-warning) / 0.14)
+     ========================================================================== */
+
+  --color-status-warning: 246 181 30;
+  --color-status-info: 38 105 255;
+  --color-status-success: 34 160 90;
+  --color-status-danger: 210 74 74;
+  --color-status-muted: 102 97 92;
+
+  --color-status-warning-text: #8a5a00;
+  --color-status-info-text: var(--color-primary-800);
+  --color-status-success-text: #166534;
+  --color-status-danger-text: #991b1b;
+  --color-status-muted-text: var(--color-neutral-700);
+
+  /* ==========================================================================
+     Domain status aliases
+
+     Orders:
+       placed    -> warning
+       packed    -> info
+       delivered -> success
+       cancelled -> danger
+
+     Inventory:
+       active    -> success
+       depleted  -> warning
+       closed    -> muted
+     ========================================================================== */
+
+  /* Order statuses */
+  --color-status-placed: var(--color-status-warning);
+  --color-status-packed: var(--color-status-info);
+  --color-status-delivered: var(--color-status-success);
+  --color-status-cancelled: var(--color-status-danger);
+
+  --color-status-placed-text: var(--color-status-warning-text);
+  --color-status-packed-text: var(--color-status-info-text);
+  --color-status-delivered-text: var(--color-status-success-text);
+  --color-status-cancelled-text: var(--color-status-danger-text);
+
+  /* Inventory statuses */
+  --color-status-active: var(--color-status-success);
+  --color-status-depleted: var(--color-status-warning);
+  --color-status-closed: var(--color-status-muted);
+
+  --color-status-active-text: var(--color-status-success-text);
+  --color-status-depleted-text: var(--color-status-warning-text);
+  --color-status-closed-text: var(--color-status-muted-text);
+
+  /* Expiry risk */
+  --color-expiry-safe-text: var(--color-neutral-700);
+  --color-expiry-soon-text: var(--color-status-warning-text);
+  --color-expiry-critical-text: var(--color-status-danger-text);
+  --color-expiry-expired-text: var(--color-status-danger-text);
+
+  /* ==========================================================================
+     Operation action colors
+
+     These describe actions, not statuses:
+       place   -> create/place an order
+       pack    -> pack an order
+       deliver -> deliver an order
+       danger  -> destructive/unsafe action
+     ========================================================================== */
+
+  --color-action-place: var(--color-accent-600);
+  --color-action-pack: var(--color-primary-500);
+  --color-action-deliver: #248f4e;
+  --color-action-danger: #d94848;
+
+  /* Action text on dark surfaces */
+  --color-action-place-on-dark: var(--color-primary-50);
+  --color-action-pack-on-dark: var(--color-primary-50);
+  --color-action-deliver-on-dark: #ddf4e4;
+  --color-action-danger-on-dark: var(--color-primary-50);
+
+  /* Action text on light surfaces */
+  --color-action-place-on-light: #201c13;
+  --color-action-pack-on-light: var(--color-primary-900);
+  --color-action-deliver-on-light: #0e3f20;
+  --color-action-danger-on-light: #7f1d1d;
+
+  /* Action backgrounds on light surfaces */
+  --color-action-place-light-bg: var(--color-accent-50);
+  --color-action-place-light-bg-hover: var(--color-accent-100);
+  --color-action-place-light-bg-active: var(--color-accent-200);
+
+  --color-action-pack-light-bg: var(--color-primary-100);
+  --color-action-pack-light-bg-hover: var(--color-primary-200);
+  --color-action-pack-light-bg-active: var(--color-primary-300);
+
+  --color-action-deliver-light-bg: #ddf4e4;
+  --color-action-deliver-light-bg-hover: #cdeed8;
+  --color-action-deliver-light-bg-active: #bce5c9;
+
+  --color-action-danger-light-bg: #fee2e2;
+  --color-action-danger-light-bg-hover: #fecaca;
+  --color-action-danger-light-bg-active: #fca5a5;
+
+  /* ==========================================================================
+     Typography
+     ========================================================================== */
+
+  --font-body: Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading: Lora, Georgia, "Times New Roman", serif;
+
+  --font-size-data-table-td: 0.9375rem;
+  --font-size-data-table-th: 0.8125rem;
+
+  --font-size-12: 0.75rem;
+  --font-size-14: 0.875rem;
+  --font-size-16: 1rem;
+  --font-size-20: 1.25rem;
+  --font-size-24: 1.5rem;
+  --font-size-28: 1.75rem;
+  --font-size-32: 2rem;
+  --font-size-36: 2.25rem;
+  --font-size-48: 3rem;
+
+  --line-height-tight: 1.1;
+  --line-height-body: 1.5;
+
+  --letter-spacing-subtle: 0.04em;
+  --letter-spacing-label: 0.08em;
+
+  /* ==========================================================================
+     Spacing
+     ========================================================================== */
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ==========================================================================
+     Component sizes
+     ========================================================================== */
+
+  --size-icon-sm: 1rem;
+  --size-icon-md: 1.25rem;
+  --size-icon-lg: 2.5rem;
+  --size-icon-xl: 4rem;
+
+  --size-control-xs: 34px;
+  --size-control-sm: 44px;
+  --size-control-md: 46px;
+  --size-control-lg: 48px;
+  --size-control-xl: 56px;
+
+  --width-page: 1040px;
+
+  /* ==========================================================================
+     Radius
+     ========================================================================== */
+
+  --radius-pill: 999px;
+  --radius-control: 10px;
+  --radius-card-inner: 12px;
+  --radius-md: 20px;
+
+  /*
+    Backward-compatible alias. Existing table/form styles can keep using this
+    while we migrate component files one by one.
+  */
+  --radius-table-row: var(--radius-control);
+
+  /* ==========================================================================
+     Borders
+     ========================================================================== */
+
+  --border-subtle: 1px solid var(--color-neutral-300);
+  --border-muted: 1px solid var(--color-neutral-200);
+  --border-strong: 1px solid var(--color-primary-900);
+  --border-accent: 1px solid var(--color-accent-600);
+  --border-focus-accent: 2px solid var(--color-accent-600);
+
+  /* ==========================================================================
+     Motion
+     ========================================================================== */
+
+  --motion-fast: 140ms ease;
+
+  --transform-lift: translateY(-1px);
+  --transform-lift-scale: translateY(-1px) scale(1.01);
+  --transform-lift-scale-lg: translateY(-1px) scale(1.02);
+
+  --transition-surface:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+
+  --transition-control:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    color var(--motion-fast);
+
+  --transition-interactive:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    color var(--motion-fast),
+    transform var(--motion-fast);
+
+  --transition-lift:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    transform var(--motion-fast);
+
+  /* ==========================================================================
+     Shadows
+     ========================================================================== */
+
+  --color-row-shadow: 11 31 81;
+
+  --shadow-accent-glow: 0 0 14px 0 rgb(217 145 0 / 0.40);
+  --shadow-pack-glow: 0 0 16px 0 rgb(38 105 255 / 0.50);
+  --shadow-delivery-glow: 0 0 16px 0 rgb(34 143 76 / 0.50);
+  --shadow-danger-glow: 0 0 16px 0 rgb(210 74 74 / 0.42);
+  --shadow-warning-glow: 0 0 14px 0 rgb(246 181 30 / 0.40);
+
+  --shadow-action-place-on-light: 0 0 22px rgb(245 180 0 / 0.24);
+  --shadow-action-pack-on-light: 0 0 22px rgb(38 120 255 / 0.28);
+  --shadow-action-deliver-on-light: 0 0 22px rgb(31 142 73 / 0.28);
+  --shadow-action-danger-on-light: 0 0 22px rgb(217 72 72 / 0.24);
+
+  --shadow-card-top: 0 -4px 8px rgb(11 31 81 / 0.35);
+  --shadow-pressed: inset 0 2px 4px rgb(0 0 0 / 0.18);
+
+  --shadow-focus-info: 0 0 0 3px rgb(var(--color-status-info) / 0.16);
+  --shadow-focus-danger: 0 0 0 3px rgb(var(--color-status-danger) / 0.10);
+  --shadow-focus-danger-strong: 0 0 0 3px rgb(var(--color-status-danger) / 0.14);
+
+  --shadow-hover-lift: 0 10px 24px rgb(var(--color-row-shadow) / 0.10);
+  --shadow-hover-lift-soft: 0 10px 24px rgb(var(--color-row-shadow) / 0.08);
+
+  --shadow-content-card:
+    0 8px 18px rgb(var(--color-row-shadow) / 0.08),
+    inset 0 5px 0 var(--color-accent-600);
+
+  --shadow-content-card-placed:
+    0 8px 18px rgb(var(--color-row-shadow) / 0.08),
+    inset 0 5px 0 var(--color-accent-600);
+
+  --shadow-content-card-pack:
+    0 8px 18px rgb(var(--color-row-shadow) / 0.08),
+    inset 0 5px 0 var(--color-action-pack);
+
+  --shadow-content-card-deliver:
+    0 8px 18px rgb(var(--color-row-shadow) / 0.08),
+    inset 0 5px 0 var(--color-action-deliver);
+
+  --shadow-content-card-danger:
+    0 8px 18px rgb(var(--color-row-shadow) / 0.08),
+    inset 0 5px 0 var(--color-action-danger);
+
+  --shadow-content-card-muted:
+    0 8px 18px rgb(var(--color-row-shadow) / 0.08),
+    inset 0 5px 0 var(--color-neutral-300);
+}

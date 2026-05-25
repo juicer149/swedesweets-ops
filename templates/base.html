@@ -1,0 +1,41 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}SwedeSweets{% endblock %}</title>
+
+    <!-- <link rel="stylesheet" href="{% static 'vendor/tom-select/css/tom-select.css' %}"> -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  </head>
+
+  <body>
+    {% include "includes/navbar.html" %}
+
+    <main class="site-main">
+      <div class="container">
+        {% if messages %}
+          <div class="messages" aria-live="polite">
+            {% for message in messages %}
+              <p class="message message--{{ message.tags }}">
+                {{ message }}
+              </p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+    {% include "includes/footer.html" %}
+
+    <script src="{% static 'vendor/tom-select/js/tom-select.complete.min.js' %}" defer></script>
+    <script src="{% static 'js/enhanced_selects.js' %}" defer></script>
+    <script src="{% static 'js/quick_jumps.js' %}" defer></script>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

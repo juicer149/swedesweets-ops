@@ -1,0 +1,68 @@
+<div class="detail-list">
+  <div class="detail-list__item">
+    {% include "includes/ui/icon_block.html" with name="users" size="sm" class_name="detail-list__icon" only %}
+
+    <div>
+      <p class="detail-list__label">Customer</p>
+      <a class="detail-list__value detail-list__link" href="{{ customer_detail_href }}">
+        {{ order.customer.name }}
+      </a>
+    </div>
+  </div>
+
+  <div class="detail-list__item">
+    {% include "includes/ui/icon_block.html" with name="mail" size="sm" class_name="detail-list__icon" only %}
+
+    <div>
+      <p class="detail-list__label">Email</p>
+      <a class="detail-list__value detail-list__link" href="mailto:{{ order.customer.email }}">
+        {{ order.customer.email }}
+      </a>
+    </div>
+  </div>
+
+  <div class="detail-list__item">
+    {% include "includes/ui/icon_block.html" with name="phone" size="sm" class_name="detail-list__icon" only %}
+
+    <div>
+      <p class="detail-list__label">Phone</p>
+      <a class="detail-list__value detail-list__link" href="tel:{{ order.customer.phone_number }}">
+        {{ order.customer.phone_number }}
+      </a>
+    </div>
+  </div>
+
+  <div class="detail-list__item">
+    {% include "includes/ui/icon_block.html" with name="map-pin" size="sm" class_name="detail-list__icon" only %}
+
+    <div>
+      <p class="detail-list__label">Address</p>
+
+      {% if customer_maps_href %}
+        <a
+          class="detail-list__value detail-list__link"
+          href="{{ customer_maps_href }}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ order.customer.address }}
+        </a>
+      {% else %}
+        <p class="detail-list__value">
+          {{ order.customer.address }}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="detail-list__item">
+    {% include "includes/ui/icon_block.html" with name="users" size="sm" class_name="detail-list__icon" only %}
+
+    <div>
+      <p class="detail-list__label">Action</p>
+      <a class="detail-list__value detail-list__link" href="{{ customer_detail_href }}">
+        View customer →
+      </a>
+    </div>
+  </div>
+</div>

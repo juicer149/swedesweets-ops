@@ -1,0 +1,43 @@
+{% comment %}
+Reusable sortable table headers.
+
+Expected context:
+  table_sorts:
+    list of sort link objects with:
+      field
+      label
+      url
+      is_active
+      direction
+
+  numeric_table_fields:
+    list of field names that should be right-aligned.
+
+Usage:
+  <thead>
+    <tr>
+      {% include "includes/table/sort_headers.html" %}
+    </tr>
+  </thead>
+{% endcomment %}
+
+{% for sort in table_sorts %}
+  <th
+    {% if sort.field in numeric_table_fields %}class="numeric-cell"{% endif %}
+    scope="col"
+  >
+    <a
+      class="text-link text-link--table-sort {% if sort.is_active %}text-link--active{% endif %}"
+      href="{{ sort.url }}"
+      {% if sort.is_active %}aria-current="page"{% endif %}
+    >
+      <span>{{ sort.label }}</span>
+
+      <span class="sort-arrow" aria-hidden="true">
+        {% if sort.is_active %}
+          {% if sort.direction == "asc" %}↑{% else %}↓{% endif %}
+        {% endif %}
+      </span>
+    </a>
+  </th>
+{% endfor %}

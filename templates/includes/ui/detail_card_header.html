@@ -1,0 +1,30 @@
+{% comment %}
+Reusable detail card header.
+
+Expected context:
+  header
+    eyebrow
+    title
+    status_label
+    status_class
+    status_icon
+{% endcomment %}
+
+<header class="content-card__header">
+  <div>
+    <p class="eyebrow">{{ header.eyebrow }}</p>
+    <h2>{{ header.title }}</h2>
+  </div>
+
+  {% if header.status_label %}
+    <div class="content-card__status">
+      <span class="{{ header.status_class }}">
+        {% if header.status_icon %}
+          {% include "includes/ui/icon_block.html" with name=header.status_icon size="sm" class_name="status-text__icon" only %}
+        {% endif %}
+
+        <span>{{ header.status_label }}</span>
+      </span>
+    </div>
+  {% endif %}
+</header>

@@ -1,0 +1,129 @@
+[
+  {
+    "customer": "nordic_corner",
+    "status": "placed",
+    "lines": [
+      {
+        "internal_number": 4,
+        "boxes": 6
+      },
+      {
+        "internal_number": 3,
+        "boxes": 3
+      },
+      {
+        "internal_number": 23,
+        "boxes": 2
+      }
+    ]
+  },
+  {
+    "customer": "alpine_provisions",
+    "status": "placed",
+    "lines": [
+      {
+        "internal_number": 38,
+        "boxes": 2
+      },
+      {
+        "internal_number": 13,
+        "boxes": 3
+      },
+      {
+        "internal_number": 10,
+        "boxes": 4
+      }
+    ]
+  },
+  {
+    "customer": "sweet_house",
+    "status": "packed",
+    "lines": [
+      {
+        "internal_number": 48,
+        "boxes": 5
+      },
+      {
+        "internal_number": 10,
+        "boxes": 3
+      },
+      {
+        "internal_number": 46,
+        "boxes": 2
+      }
+    ]
+  },
+  {
+    "customer": "cafe_nord",
+    "status": "delivered",
+    "lines": [
+      {
+        "internal_number": 4,
+        "boxes": 7
+      },
+      {
+        "internal_number": 13,
+        "boxes": 2
+      },
+      {
+        "internal_number": 23,
+        "boxes": 3
+      }
+    ]
+  },
+  {
+    "customer": "cafe_nord",
+    "status": "delivered",
+    "lines": [
+      {
+        "internal_number": 3,
+        "boxes": 5
+      },
+      {
+        "internal_number": 41,
+        "boxes": 3
+      },
+      {
+        "internal_number": 49,
+        "boxes": 4
+      }
+    ]
+  },
+  {
+    "customer": "mountain_snacks",
+    "status": "delivered",
+    "lines": [
+      {
+        "internal_number": 50,
+        "boxes": 3
+      },
+      {
+        "internal_number": 51,
+        "boxes": 4
+      },
+      {
+        "internal_number": 22,
+        "boxes": 2
+      }
+    ]
+  },
+  {
+    "customer": "city_kiosk",
+    "status": "cancelled",
+    "cancel_note": "Demo cancellation: customer changed the request.",
+    "lines": [
+      {
+        "internal_number": 3,
+        "boxes": 2
+      },
+      {
+        "internal_number": 10,
+        "boxes": 4
+      },
+      {
+        "internal_number": 56,
+        "boxes": 3
+      }
+    ]
+  }
+]

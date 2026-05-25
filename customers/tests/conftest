@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+import pytest
+
+from customers.models import Customer
+from customers.services import create_customer
+
+
+@pytest.fixture
+def customer() -> Customer:
+    return create_customer(
+        name="Nordic Corner Shop",
+        email="ORDERS@EXAMPLE.FR",
+        phone_number="+33 6 12 34 56 78",
+        country="FR",
+        city="Chamonix-Mont-Blanc",
+        address_line="123 Rue du Mont Blanc",
+    )
+
+
+@pytest.fixture
+def other_customer() -> Customer:
+    return create_customer(
+        name="Swiss Candy Store",
+        email="orders@example.ch",
+        phone_number="+41 44 123 45 67",
+        country="CH",
+        city="Zürich",
+        address_line="Bahnhofstrasse 1",
+    )

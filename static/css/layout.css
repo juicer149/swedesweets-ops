@@ -1,0 +1,171 @@
+/* =============================================================================
+   Site chrome
+   ============================================================================= */
+
+.site-footer {
+  margin-top: var(--space-16);
+  padding-block: var(--space-4);
+
+  color: var(--color-neutral-600);
+  background: var(--color-neutral-50);
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+.site-footer__text {
+  margin: 0;
+  text-align: center;
+  font-size: var(--font-size-14);
+}
+
+@media (max-width: 760px) {
+  .site-footer {
+    display: none;
+  }
+}
+/* =============================================================================
+   Page headers
+   ============================================================================= */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-12) 0 var(--space-8);
+  border-bottom: 4px solid var(--color-primary-900);
+}
+
+.page-header h1 {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-32);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--color-primary-900);
+}
+
+.page-header p {
+  margin-bottom: 0;
+  color: var(--color-neutral-600);
+}
+
+
+/* =============================================================================
+   Auth pages
+   ============================================================================= */
+
+.auth-page {
+  display: grid;
+  justify-items: center;
+  padding-block: var(--space-12) var(--space-16);
+}
+
+.auth-card {
+  width: min(100%, 520px);
+  padding: var(--space-8);
+
+  background: var(--color-white);
+  border: 1px solid var(--color-neutral-200);
+  border-top: 5px solid var(--color-accent-600);
+  border-radius: 24px;
+
+  box-shadow:
+    0 24px 60px rgb(var(--color-row-shadow) / 0.12),
+    0 1px 0 rgb(255 255 255 / 0.9) inset;
+}
+
+.auth-card__header {
+  margin-bottom: var(--space-6);
+}
+
+.auth-card__eyebrow {
+  margin-bottom: var(--space-2);
+
+  color: var(--color-accent-700);
+  font-size: var(--font-size-14);
+  font-weight: 850;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.auth-card__title {
+  margin-bottom: var(--space-2);
+
+  font-family: var(--font-heading);
+  font-size: var(--font-size-32);
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--color-primary-900);
+}
+
+.auth-card__description {
+  margin: 0;
+  color: var(--color-neutral-600);
+}
+
+.auth-card .form-actions {
+  margin-top: var(--space-6);
+}
+
+.auth-card__actions {
+  display: grid;
+  margin-top: var(--space-7);
+}
+
+.auth-card__submit {
+  width: 100%;
+  min-height: 3.4rem;
+
+  border-radius: var(--radius-control);
+
+  font-weight: 850;
+}
+
+
+/* =============================================================================
+   List layout
+   ============================================================================= */
+
+.list-section {
+  padding-top: var(--space-8);
+}
+
+
+/* =============================================================================
+   Mobile layout compensation
+
+   Mobile authenticated pages use a fixed bottom navigation. Add breathing room
+   so content and footer do not sit underneath it.
+   ============================================================================= */
+
+@media (max-width: 760px) {
+  .site-main {
+    padding-bottom: 6.5rem;
+  }
+
+  .site-header--auth + .site-main,
+  .site-header--auth ~ .site-main {
+    padding-bottom: 0;
+  }
+
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding-block: var(--space-8);
+  }
+
+  .page-header .button {
+    width: 100%;
+  }
+
+  .auth-page {
+    padding-block: var(--space-8) var(--space-12);
+  }
+
+  .auth-card {
+    padding: var(--space-6);
+    border-radius: 20px;
+  }
+}

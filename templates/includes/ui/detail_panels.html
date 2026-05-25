@@ -1,0 +1,65 @@
+{% comment %}
+Reusable detail panels.
+
+Expected context:
+  detail_panels
+
+Each panel should have:
+  key
+  label
+  summary
+  body_template
+  icon
+  is_active
+{% endcomment %}
+
+{% if detail_panels %}
+  <section
+    class="detail-panels"
+    data-detail-panels
+    aria-label="Details"
+  >
+    <div class="detail-panels__triggers">
+      {% for panel in detail_panels %}
+        <button
+          class="detail-panel-trigger{% if panel.is_active %} detail-panel-trigger--active{% endif %}"
+          type="button"
+          data-detail-panel-trigger
+          data-detail-panel-key="{{ panel.key }}"
+          aria-expanded="{% if panel.is_active %}true{% else %}false{% endif %}"
+          aria-controls="detail-panel-body-{{ panel.key }}"
+        >
+          <span class="detail-panel-trigger__label">
+            {% if panel.icon %}
+              {% include "includes/ui/icon_block.html" with name=panel.icon size="md" class_name="detail-panel-trigger__icon" only %}
+            {% endif %}
+
+            {{ panel.label }}
+          </span>
+
+          <strong class="detail-panel-trigger__summary">
+            {{ panel.summary }}
+          </strong>
+
+          <span class="detail-panel-trigger__chevron" aria-hidden="true">
+            ⌄
+          </span>
+        </button>
+      {% endfor %}
+    </div>
+
+    <div class="detail-panels__bodies">
+      {% for panel in detail_panels %}
+        <section
+          id="detail-panel-body-{{ panel.key }}"
+          class="detail-panel-body{% if panel.is_active %} detail-panel-body--active{% endif %}"
+          data-detail-panel-body
+          data-detail-panel-key="{{ panel.key }}"
+          {% if not panel.is_active %}hidden{% endif %}
+        >
+          {% include panel.body_template %}
+        </section>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}

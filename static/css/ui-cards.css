@@ -1,0 +1,315 @@
+/* =============================================================================
+   Mobile card lists
+   ============================================================================= */
+
+.mobile-card-list {
+  display: none;
+}
+
+
+/* =============================================================================
+   Generic UI cards
+   ============================================================================= */
+
+.mobile-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+
+  background: var(--color-primary-50);
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 8px 18px rgb(var(--color-row-shadow) / 0.08),
+    0 1px 0 rgb(255 255 255 / 0.85) inset;
+}
+
+.ui-card__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.ui-card__cell {
+  min-width: 0;
+}
+
+.ui-card__cell--left {
+  justify-self: start;
+  text-align: left;
+}
+
+.ui-card__cell--center {
+  justify-self: center;
+  text-align: center;
+}
+
+.ui-card__cell--right {
+  justify-self: end;
+  text-align: right;
+}
+
+.ui-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-2);
+}
+
+
+/* =============================================================================
+   Text atoms
+   ============================================================================= */
+
+.ui-text,
+.ui-card-title,
+.ui-card-id,
+.ui-card-muted,
+.ui-card-strong,
+.ui-card-contact,
+.ui-card-location,
+.ui-card-label,
+.expiry-text,
+.status-text {
+  overflow-wrap: anywhere;
+}
+
+.ui-text {
+  font-size: var(--font-size-14);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-neutral-700);
+}
+
+.ui-card-title {
+  font-size: var(--font-size-20);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--color-primary-900);
+}
+
+.ui-card-id {
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: var(--letter-spacing-subtle);
+  color: var(--color-neutral-700);
+  text-transform: uppercase;
+}
+
+.ui-card-muted {
+  font-size: var(--font-size-12);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--color-neutral-600);
+}
+
+.ui-card-strong {
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--color-primary-900);
+}
+
+
+/* =============================================================================
+   Contact info
+   ============================================================================= */
+
+.ui-card-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+
+  font-size: var(--font-size-14);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--color-primary-800);
+  text-decoration: none;
+}
+
+.ui-card-contact:hover,
+.ui-card-contact:focus-visible {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.ui-card-contact__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+
+  color: currentColor;
+
+  flex: 0 0 auto;
+}
+
+
+/* =============================================================================
+   Label + value stack
+   ============================================================================= */
+
+.ui-card-location,
+.expiry-text {
+  display: inline-grid;
+  gap: 2px;
+}
+
+.ui-card-label {
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: var(--letter-spacing-subtle);
+  color: var(--color-neutral-600);
+  text-transform: uppercase;
+}
+
+.ui-card-location {
+  font-size: var(--font-size-16);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-neutral-700);
+}
+
+
+/* =============================================================================
+   Expiry / date stack
+   ============================================================================= */
+
+.expiry-text__date {
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-neutral-600);
+}
+
+
+/* =============================================================================
+   Status text
+   ============================================================================= */
+
+.status-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-text__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+
+  flex: 0 0 auto;
+}
+
+
+/* =============================================================================
+   Mobile card tones
+   ============================================================================= */
+
+.mobile-card--neutral {
+  background: var(--color-primary-50);
+  border-color: var(--color-neutral-300);
+}
+
+.mobile-card--muted {
+  background: rgb(var(--color-status-muted) / 0.08);
+  border-color: rgb(var(--color-status-muted) / 0.30);
+}
+
+.mobile-card--warning {
+  background: rgb(var(--color-status-warning) / 0.10);
+  border-color: rgb(var(--color-status-warning) / 0.40);
+}
+
+.mobile-card--info {
+  background: rgb(var(--color-status-info) / 0.10);
+  border-color: rgb(var(--color-status-info) / 0.40);
+}
+
+.mobile-card--success {
+  background: rgb(var(--color-status-success) / 0.09);
+  border-color: rgb(var(--color-status-success) / 0.35);
+}
+
+.mobile-card--danger {
+  background: rgb(var(--color-status-danger) / 0.08);
+  border-color: rgb(var(--color-status-danger) / 0.40);
+}
+
+
+/* =============================================================================
+   Domain card hooks
+
+   These are light layout hooks for non-order cards. More complex domain cards
+   should move to their own domain CSS file when they grow.
+   ============================================================================= */
+
+.mobile-card--customer {
+  gap: var(--space-2);
+}
+
+/*
+  Product cards use status tone as a border signal only.
+  The product page is a catalog view, not an operational risk queue.
+*/
+
+.mobile-card--product {
+  gap: var(--space-3);
+  background: var(--color-primary-50);
+}
+
+.mobile-card--product.mobile-card--neutral,
+.mobile-card--product.mobile-card--muted,
+.mobile-card--product.mobile-card--warning,
+.mobile-card--product.mobile-card--info,
+.mobile-card--product.mobile-card--success,
+.mobile-card--product.mobile-card--danger {
+  background: var(--color-primary-50);
+}
+
+.mobile-card--product.mobile-card--success {
+  border-color: rgb(var(--color-status-success) / 0.45);
+}
+
+.mobile-card--product.mobile-card--muted {
+  border-color: var(--color-neutral-300);
+}
+
+.mobile-card--inventory {
+  gap: var(--space-3);
+}
+
+.mobile-card--inventory.mobile-card--muted {
+  background: var(--color-primary-50);
+  border-color: var(--color-neutral-300);
+}
+
+/* =============================================================================
+   Detail panel mobile cards
+   ============================================================================= */
+
+.detail-panel-body .mobile-card-list {
+  margin-top: var(--space-4);
+}
+
+.detail-panel-body .mobile-card {
+  padding: var(--space-4);
+}
+
+.detail-panel-body .mobile-card + .mobile-card {
+  margin-top: var(--space-3);
+}
+
+.detail-panel-body .ui-card__footer {
+  justify-content: flex-start;
+  padding-top: var(--space-3);
+}
+
+.ui-card-strong--compact {
+  font-size: var(--font-size-14);
+}

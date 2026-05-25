@@ -1,0 +1,30 @@
+<div class="form-field {{ field.field.layout_class|default:'form-field--full' }}{% if field.errors %} form-field--error{% endif %}">
+  <label class="form-label" for="{{ field.id_for_label }}">
+    {{ field.label }}
+  </label>
+
+  {% if field.field.tag_toggle %}
+    <label class="{{ field.field.tag_toggle_class }}" for="{{ field.id_for_label }}">
+      {{ field }}
+
+      <span class="product-tag-toggle__surface">
+        {% include "includes/ui/icon_block.html" with name=field.field.tag_toggle_icon size="sm" class_name="product-tag-toggle__icon" only %}
+        <span>{{ field.field.tag_toggle_label }}</span>
+      </span>
+    </label>
+  {% else %}
+    {{ field }}
+  {% endif %}
+
+  {% if field.errors %}
+    <div class="form-field__errors" role="alert">
+      {% for error in field.errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% elif field.help_text %}
+    <p class="form-help">
+      {{ field.help_text }}
+    </p>
+  {% endif %}
+</div>

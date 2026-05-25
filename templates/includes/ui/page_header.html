@@ -1,0 +1,63 @@
+{% comment %}
+Reusable page header.
+
+Preferred context:
+  page_header
+
+PageHeader:
+  title
+  title_id
+  description
+  action
+
+PageHeaderAction:
+  label
+  href
+  icon
+  aria_label
+  css_class
+
+Fallback context:
+  title
+  title_id
+  description
+
+Examples:
+  {% include "includes/ui/page_header.html" with page_header=page_header %}
+
+  {% include "includes/ui/page_header.html" with
+    title_id="product-form-title"
+    title=title
+    description=description
+  %}
+{% endcomment %}
+
+{% firstof page_header.title_id title_id as header_title_id %}
+{% firstof page_header.title title as header_title %}
+{% firstof page_header.description description as header_description %}
+
+<section class="page-header" aria-labelledby="{{ header_title_id }}">
+  <div class="page-header__content">
+    <h1 id="{{ header_title_id }}">{{ header_title }}</h1>
+
+    {% if header_description %}
+      <p>{{ header_description }}</p>
+    {% endif %}
+  </div>
+
+  {% if page_header.action %}
+    <a
+      class="{{ page_header.action.css_class }}"
+      href="{{ page_header.action.href }}"
+      {% if page_header.action.aria_label %}aria-label="{{ page_header.action.aria_label }}"{% endif %}
+    >
+      {% if page_header.action.icon %}
+        <span class="button__icon" aria-hidden="true">
+          {% include "includes/ui/icon.html" with name=page_header.action.icon only %}
+        </span>
+      {% endif %}
+
+      <span class="button__label">{{ page_header.action.label }}</span>
+    </a>
+  {% endif %}
+</section>

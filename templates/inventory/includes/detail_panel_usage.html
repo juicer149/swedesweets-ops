@@ -1,0 +1,62 @@
+{% if usage_rows %}
+  <div class="table-card table-card--embedded">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Customer</th>
+          <th class="numeric-cell">Boxes</th>
+          <th>Allocation</th>
+          <th>Order status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in usage_rows %}
+          <tr
+            class="clickable-row"
+            data-tone="neutral"
+            data-href="{{ row.order_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="View order #{{ row.order_id }}"
+          >
+            <th scope="row">
+              <span class="row-link">
+                #{{ row.order_id }}
+              </span>
+            </th>
+
+            <td>
+              <a class="text-link" href="{{ row.customer_href }}">
+                {{ row.customer_name }}
+              </a>
+            </td>
+
+            <td class="numeric-cell">
+              <strong>{{ row.boxes }}</strong>
+            </td>
+
+            <td>{{ row.allocation_status }}</td>
+
+            <td>{{ row.order_status }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p class="table-hint">
+      Select an order to view its order detail.
+    </p>
+  </div>
+
+  <div class="mobile-card-list">
+    {% for row in usage_rows %}
+      {% include "includes/ui/card.html" with card=row.card only %}
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="form-help">
+    This batch has not been reserved, consumed or cancelled by any order yet.
+  </p>
+{% endif %}

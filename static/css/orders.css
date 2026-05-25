@@ -1,0 +1,341 @@
+/* =============================================================================
+   Order line formset
+
+   Order-specific product rows used by the place-order form.
+   ============================================================================= */
+
+.order-lines {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.order-lines__header {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.order-lines__header h2 {
+  margin-bottom: 0;
+
+  font-family: var(--font-heading);
+  font-size: var(--font-size-24);
+  line-height: 1.15;
+  color: var(--color-primary-900);
+}
+
+.order-lines__header p {
+  margin-bottom: 0;
+
+  color: var(--color-neutral-700);
+}
+
+.order-lines__list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.order-line {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4);
+
+  background: var(--color-white);
+  border: var(--border-subtle);
+  border-radius: var(--radius-card-inner);
+}
+
+.order-line__legend {
+  width: calc(100% - var(--space-4));
+  padding-inline: var(--space-2);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  color: var(--color-primary-900);
+}
+
+.order-line__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.order-lines__controls {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.order-lines__add-button {
+  width: fit-content;
+}
+
+
+/* =============================================================================
+   Pack checklist
+
+   Order-specific pick checklist used by the pack-order page.
+   ============================================================================= */
+
+.pack-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.pack-list__items {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.pack-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+
+  color: var(--color-primary-900);
+  background: var(--color-white);
+  border: var(--border-subtle);
+  border-radius: var(--radius-card-inner);
+
+  cursor: pointer;
+
+  transition: var(--transition-lift);
+}
+
+.pack-line:hover {
+  border-color: var(--color-primary-500);
+  box-shadow: var(--shadow-hover-lift);
+  transform: var(--transform-lift);
+}
+
+.pack-line:has(.pack-line__checkbox:checked) {
+  background: var(--color-action-deliver-light-bg);
+  border-color: var(--color-action-deliver);
+}
+
+.pack-line:has(.pack-line__checkbox:focus-visible) {
+  box-shadow: var(--shadow-focus-info);
+}
+
+.pack-line__checkbox {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+
+  accent-color: var(--color-action-deliver);
+  cursor: pointer;
+}
+
+.pack-line__content {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.pack-line__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+
+  font-size: var(--font-size-16);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.pack-line__main strong {
+  font-size: var(--font-size-20);
+  color: var(--color-action-deliver-on-light);
+}
+
+.pack-line__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-neutral-700);
+}
+
+.pack-line__meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0.2rem 0.55rem;
+
+  background: var(--color-primary-50);
+  border: var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+
+
+/* =============================================================================
+   Delivery confirmation
+
+   Order-specific confirmation section used by the deliver-order page.
+   ============================================================================= */
+
+.delivery-confirmation {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* =============================================================================
+   Order mobile cards
+
+   Order-specific presentation for workflow cards on mobile.
+   ============================================================================= */
+
+.mobile-card--order {
+  gap: var(--space-4);
+  padding: var(--space-3);
+}
+
+.mobile-card--order .ui-card__row {
+  gap: var(--space-2);
+}
+
+.mobile-card--order .ui-card__footer {
+  justify-content: center;
+  padding-top: 0;
+}
+
+
+/* Order-specific text */
+
+.ui-card-order-id {
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--color-neutral-900);
+}
+
+.ui-card-order-status {
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.ui-card-order-customer {
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-24);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--color-primary-950);
+}
+
+.ui-card-order-meta {
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-16);
+  font-weight: 550;
+  line-height: 1.35;
+  color: var(--color-neutral-700);
+}
+
+.ui-card-order-address {
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-16);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--color-neutral-700);
+  text-decoration: none;
+}
+
+.ui-card-order-address--link {
+  color: var(--color-primary-800);
+  text-decoration: none;
+
+  transition:
+    color var(--motion-fast),
+    text-decoration-color var(--motion-fast);
+}
+
+.ui-card-order-address--link:hover,
+.ui-card-order-address--link:focus-visible {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.ui-card-order-link {
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--color-primary-800);
+  text-decoration: none;
+}
+
+.ui-card-order-link:hover,
+.ui-card-order-link:focus-visible {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+
+/* Order card state styling */
+
+.mobile-card--order-draft {
+  background: var(--color-neutral-50);
+  border: var(--border-subtle);
+}
+
+.mobile-card--order-placed {
+  background: var(--color-accent-50);
+  border: 1px solid var(--color-accent-400);
+}
+
+.mobile-card--order-packed {
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-400);
+}
+
+.mobile-card--order-delivered {
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-action-deliver);
+}
+
+.mobile-card--order-cancelled {
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-action-danger);
+}
+
+
+/* Status-specific order text accents */
+
+.mobile-card--order-placed .ui-card-order-id,
+.mobile-card--order-placed .ui-card-order-customer {
+  color: var(--color-action-place-on-light);
+}
+
+.mobile-card--order-packed .ui-card-order-status {
+  color: var(--color-status-packed-text);
+}
+
+.mobile-card--order-delivered .ui-card-order-status,
+.mobile-card--order-delivered .ui-card-order-link {
+  color: var(--color-status-delivered-text);
+}
+
+.mobile-card--order-cancelled .ui-card-order-status,
+.mobile-card--order-cancelled .ui-card-order-link {
+  color: var(--color-status-cancelled-text);
+}

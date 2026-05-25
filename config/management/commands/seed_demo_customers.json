@@ -1,0 +1,65 @@
+[
+  {
+    "key": "nordic_corner",
+    "name": "Nordic Corner Shop",
+    "email": "orders@nordic-corner.example",
+    "phone_number": "+33 6 22 22 22 22",
+    "country": "FR",
+    "city": "Chamonix-Mont-Blanc",
+    "address_line": "12 Route du Marché"
+  },
+  {
+    "key": "alpine_provisions",
+    "name": "Alpine Provisions",
+    "email": "alpine@example.fr",
+    "phone_number": "+33 6 33 33 33 33",
+    "country": "FR",
+    "city": "Sallanches",
+    "address_line": "1 Rue Exemple"
+  },
+  {
+    "key": "sweet_house",
+    "name": "Sweet House Courmayeur",
+    "email": "courmayeur@sweethouse.example",
+    "phone_number": "+39 333 444 44 44",
+    "country": "IT",
+    "city": "Courmayeur",
+    "address_line": "4 Via delle Caramelle"
+  },
+  {
+    "key": "cafe_nord",
+    "name": "Café Nord Martigny",
+    "email": "orders@cafenord.example",
+    "phone_number": "+41 79 555 55 55",
+    "country": "CH",
+    "city": "Martigny",
+    "address_line": "8 Rue du Café"
+  },
+  {
+    "key": "city_kiosk",
+    "name": "City Kiosk",
+    "email": "buy@citykiosk.example",
+    "phone_number": "+33 6 66 66 66 66",
+    "country": "FR",
+    "city": "Cluses",
+    "address_line": "2 Place Centrale"
+  },
+  {
+    "key": "mountain_snacks",
+    "name": "Mountain Snacks Megève",
+    "email": "hello@mountain-snacks.example",
+    "phone_number": "+33 6 88 88 88 88",
+    "country": "FR",
+    "city": "Megève",
+    "address_line": "7 Rue des Alpes"
+  },
+  {
+    "key": "future_customer",
+    "name": "Future Customer Demo",
+    "email": "future.customer@example.fr",
+    "phone_number": "+33 6 77 77 77 77",
+    "country": "FR",
+    "city": "Annecy",
+    "address_line": "99 Rue Pipeline"
+  }
+]

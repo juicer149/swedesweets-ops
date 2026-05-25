@@ -1,0 +1,54 @@
+/* =============================================================================
+   Links
+   ============================================================================= */
+
+.text-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-link);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.text-link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: var(--color-accent-600);
+  transform: translateX(-50%);
+  transition: width var(--motion-fast);
+}
+
+.text-link:hover::after,
+.text-link:focus-visible::after,
+.text-link[aria-current="page"]::after {
+  width: 100%;
+}
+
+.text-link:focus-visible {
+  outline: 2px solid var(--color-accent-600);
+  outline-offset: 5px;
+}
+
+.text-link--light {
+  color: var(--color-primary-50);
+}
+
+.text-link--table-sort {
+  gap: var(--space-1);
+  color: inherit;
+  font-weight: 700;
+}
+
+.text-link--table-sort::after {
+  bottom: -4px;
+  background: var(--color-primary-700);
+}
+
+.text-link--active {
+  font-weight: 800;
+}

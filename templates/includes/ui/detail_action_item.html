@@ -1,0 +1,22 @@
+{% comment %}
+Render one detail action.
+
+Expected context:
+  action
+{% endcomment %}
+
+{% if action.tone == "secondary" %}
+  {% with action_class="button button--md button--ghost button--tone-neutral" %}
+    {% include "includes/ui/detail_action_item_inner.html" with action=action action_class=action_class only %}
+  {% endwith %}
+
+{% elif action.tone == "danger" %}
+  {% with action_class="button button--md button--ghost button--tone-danger" %}
+    {% include "includes/ui/detail_action_item_inner.html" with action=action action_class=action_class only %}
+  {% endwith %}
+
+{% else %}
+  {% with action_class="button button--card-action button--tone-"|add:action.tone|add:" button--with-icon" %}
+    {% include "includes/ui/detail_action_item_inner.html" with action=action action_class=action_class only %}
+  {% endwith %}
+{% endif %}

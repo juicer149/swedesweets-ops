@@ -1,0 +1,212 @@
+/* =============================================================================
+   Base
+   ============================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-body);
+  color: var(--color-neutral-900);
+  background: var(--color-neutral-50);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2 {
+  font-family: var(--font-heading);
+  line-height: var(--line-height-tight);
+  color: var(--color-primary-900);
+}
+
+h1 {
+  margin-bottom: var(--space-4);
+  font-size: clamp(2.5rem, 5vw, var(--font-size-48));
+  font-weight: 500;
+}
+
+h2 {
+  margin-bottom: var(--space-6);
+  font-size: var(--font-size-36);
+  font-weight: 700;
+}
+
+h3 {
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-20);
+  line-height: 1.6;
+  color: var(--color-primary-900);
+}
+
+p {
+  color: var(--color-neutral-600);
+}
+
+.site-main {
+  padding-bottom: var(--space-16);
+}
+
+.container {
+  width: min(100% - 2rem, var(--width-page));
+  margin-inline: auto;
+}
+
+/* =============================================================================
+   Icons
+
+   icon.html owns the shape.
+   CSS owns size, color, stroke and optical corrections.
+   ============================================================================= */
+
+.ui-icon-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke-width, 1.8);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  transform:
+    translate(
+      var(--icon-translate-x, 0),
+      var(--icon-translate-y, 0)
+    )
+    scale(var(--icon-scale, 1));
+  transform-origin: center;
+}
+
+/* Generic stroke helpers */
+.ui-icon-svg--stroke-xs {
+  --icon-stroke-width: 1.05;
+}
+
+.ui-icon-svg--stroke-sm {
+  --icon-stroke-width: 1.25;
+}
+
+.ui-icon-svg--stroke-md {
+  --icon-stroke-width: 1.8;
+}
+
+.ui-icon-svg--stroke-lg {
+  --icon-stroke-width: 2.1;
+}
+
+/* Generic scale helpers */
+.ui-icon-svg--scale-sm {
+  --icon-scale: 0.92;
+}
+
+.ui-icon-svg--scale-lg {
+  --icon-scale: 1.18;
+}
+
+.ui-icon-svg--scale-xl {
+  --icon-scale: 1.32;
+}
+
+/* Icon-specific optical corrections */
+.ui-icon-svg--users {
+  --icon-stroke-width: 1.05;
+  --icon-scale: 1.05;
+}
+
+.ui-icon-svg--tag {
+  --icon-stroke-width: 1.2;
+  --icon-scale: 0.96;
+}
+
+.ui-icon-svg--truck {
+  --icon-scale: 1.35;
+}
+
+.ui-icon-svg--cart {
+  --icon-scale: 1.12;
+  --icon-stroke-width: 2.5;
+}
+
+.ui-icon-svg--box {
+  --icon-scale: 1.16;
+}
+
+.ui-icon-svg--packed {
+  --icon-scale: 1.12;
+}
+
+.ui-icon-svg--inventory {
+  --icon-scale: 1.2;
+}
+
+.ui-icon-svg--x {
+  --icon-scale: 1.02;
+  --icon-stroke-width: 1.9;
+}
+
+.ui-icon-svg--inventory path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 0.9;
+}
+
+.ui-icon-block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
+
+  color: currentColor;
+  flex: 0 0 auto;
+}
+
+.ui-icon-block--sm {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+}
+
+.ui-icon-block--md {
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
+}
+
+.ui-icon-block--lg {
+  width: var(--size-icon-lg);
+  height: var(--size-icon-lg);
+}
+
+.ui-icon-block--xl {
+  width: var(--size-icon-xl);
+  height: var(--size-icon-xl);
+}

@@ -1,0 +1,202 @@
+/* =============================================================================
+   Flash messages
+   ============================================================================= */
+
+.messages {
+  display: grid;
+  gap: var(--space-3);
+  margin-block: var(--space-5);
+}
+
+.message {
+  margin-bottom: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: 10px;
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.message--success {
+  color: var(--color-status-success-text);
+  background: rgb(var(--color-status-success) / 0.10);
+  border: 1px solid rgb(var(--color-status-success) / 0.30);
+}
+
+.message--info {
+  color: var(--color-status-info-text);
+  background: rgb(var(--color-status-info) / 0.10);
+  border: 1px solid rgb(var(--color-status-info) / 0.30);
+}
+
+.message--warning {
+  color: var(--color-status-warning-text);
+  background: rgb(var(--color-status-warning) / 0.12);
+  border: 1px solid rgb(var(--color-status-warning) / 0.35);
+}
+
+.message--error {
+  color: var(--color-status-danger-text);
+  background: rgb(var(--color-status-danger) / 0.10);
+  border: 1px solid rgb(var(--color-status-danger) / 0.30);
+}
+
+
+/* =============================================================================
+   Status text
+   ============================================================================= */
+
+.status-text {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+
+/* =============================================================================
+   Order domain statuses
+   ============================================================================= */
+
+.status-text--draft {
+  color: var(--color-status-muted-text);
+}
+
+.status-text--placed {
+  color: var(--color-status-placed-text);
+}
+
+.status-text--packed {
+  color: var(--color-status-packed-text);
+}
+
+.status-text--delivered {
+  color: var(--color-status-delivered-text);
+}
+
+.status-text--cancelled {
+  color: var(--color-status-cancelled-text);
+}
+
+
+/* =============================================================================
+   Inventory domain statuses
+   ============================================================================= */
+
+.status-text--active {
+  color: var(--color-status-active-text);
+}
+
+.status-text--depleted {
+  color: var(--color-status-depleted-text);
+}
+
+.status-text--closed {
+  color: var(--color-status-closed-text);
+}
+
+
+/* =============================================================================
+   Generic semantic status tones
+   ============================================================================= */
+
+.status-text--neutral {
+  color: var(--color-neutral-700);
+}
+
+.status-text--muted {
+  color: var(--color-status-muted-text);
+}
+
+.status-text--warning {
+  color: var(--color-status-warning-text);
+}
+
+.status-text--info {
+  color: var(--color-status-info-text);
+}
+
+.status-text--success {
+  color: var(--color-status-success-text);
+}
+
+.status-text--danger {
+  color: var(--color-status-danger-text);
+}
+
+
+/* =============================================================================
+   Expiry states
+   ============================================================================= */
+
+.expiry-text {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.expiry-text--safe {
+  color: var(--color-expiry-safe-text);
+}
+
+.expiry-text--soon {
+  color: var(--color-expiry-soon-text);
+}
+
+.expiry-text--critical,
+.expiry-text--expired {
+  color: var(--color-expiry-critical-text);
+}
+
+.expiry-text--muted {
+  color: var(--color-status-muted-text);
+}
+
+
+/* =============================================================================
+   Quantity states
+   ============================================================================= */
+
+.quantity-text {
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.quantity-text--safe {
+  color: var(--color-neutral-700);
+}
+
+.quantity-text--low {
+  color: var(--color-status-warning-text);
+}
+
+.quantity-text--empty {
+  color: var(--color-status-danger-text);
+}
+
+/* =============================================================================
+   Status icon alignment
+   ============================================================================= */
+
+.status-text,
+.ui-card-order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  line-height: 1;
+}
+
+.status-text__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+
+  color: currentColor;
+  flex: 0 0 auto;
+}
+
+/* Optical correction for the wider delivered/truck icon in status labels. */
+.ui-card-order-status .ui-icon-svg--truck,
+.status-text .ui-icon-svg--truck {
+  --icon-scale: 1.28;
+  --icon-translate-y: -0.03em;
+}

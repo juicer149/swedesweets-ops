@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Customers | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with page_header=page_header %}
+
+<section
+  id="customers-list"
+  class="list-section"
+  aria-labelledby="customers-title"
+>
+  {% include "includes/table/sort_select.html" %}
+
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% include "includes/table/sort_headers.html" %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in customer_rows %}
+          <tr
+            class="clickable-row"
+            data-tone="neutral"
+            data-href="{{ row.detail_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="View customer {{ row.customer.name }}"
+          >
+            <th scope="row">
+              <span class="row-link">
+                {{ row.customer.name }}
+              </span>
+            </th>
+
+            <td>
+              <a class="text-link" href="mailto:{{ row.customer.email }}">
+                {{ row.customer.email }}
+              </a>
+            </td>
+
+            <td>
+              <a class="text-link" href="tel:{{ row.customer.phone_number }}">
+                {{ row.customer.phone_number }}
+              </a>
+            </td>
+
+            <td>{{ row.customer.city }}</td>
+
+            <td>{{ row.customer.country_name }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="empty-cell" colspan="5">
+              No customers found.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-card-list">
+    {% for row in customer_rows %}
+      {% include "includes/ui/card.html" with card=row.card only %}
+    {% empty %}
+      <article class="mobile-card mobile-card--neutral">
+        <p>No customers found.</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
+  <script src="{% static 'js/sort_select.js' %}" defer></script>
+{% endblock %}

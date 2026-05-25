@@ -1,0 +1,35 @@
+{% comment %}
+Reusable filter chips.
+
+Expected context:
+  table_controls_template.filters_title_id
+  table_controls_template.filters_aria_label
+  filters
+
+Usage:
+  {% include "includes/table/filter_chips.html" %}
+{% endcomment %}
+
+<div class="filter-group">
+  <h2
+    id="{{ table_controls_template.filters_title_id }}"
+    class="filter-label"
+  >
+    Filters
+  </h2>
+
+  <nav
+    class="filter-chips"
+    aria-label="{{ table_controls_template.filters_aria_label }}"
+  >
+    {% for filter in filters %}
+      <a
+        class="chip filter-chip"
+        href="{{ filter.url }}"
+        {% if filter.is_active %}aria-current="page"{% endif %}
+      >
+        {{ filter.label }}
+      </a>
+    {% endfor %}
+  </nav>
+</div>
