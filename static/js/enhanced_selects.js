@@ -1,9 +1,17 @@
 (function () {
-  function enhanceSelects(root = document) {
+  function isTouchLikeDevice() {
+    return (
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(hover: none)").matches
+    );
+  }
+
+  function enhanceSelects(root = document, options = {}) {
     if (!window.TomSelect) {
       return;
     }
 
+    const shouldOpenAfterEnhance = options.openAfterEnhance === true;
     const selects = root.querySelectorAll("select[data-enhanced-select]");
 
     selects.forEach((select) => {
@@ -20,7 +28,7 @@
         maxOptions: 500,
         placeholder: select.getAttribute("placeholder") || "",
         controlInput: hasSearch
-          ? '<input type="text" autocomplete="off" />'
+          ? '<input type="text" autocomplete="off" autocapitalize="none" spellcheck="false" />'
           : null,
         searchField: ["text"],
         sortField: [{ field: "$order", direction: "asc" }],
@@ -31,6 +39,14 @@
           ? "enhanced-select--searchable"
           : "enhanced-select--static"
       );
+
+      if (!shouldOpenAfterEnhance) {
+        tomSelect.close();
+
+        if (isTouchLikeDevice()) {
+          tomSelect.blur();
+        }
+      }
     });
   }
 

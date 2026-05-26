@@ -339,3 +339,51 @@
 .mobile-card--order-cancelled .ui-card-order-link {
   color: var(--color-status-cancelled-text);
 }
+
+/* =============================================================================
+   Mobile order form controls
+   ============================================================================= */
+
+@media (max-width: 700px) {
+  .order-line__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-lines__controls {
+    width: 100%;
+  }
+
+  .order-lines__add-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Touch devices should not keep pack-line hover state stuck. */
+@media (hover: none), (pointer: coarse) {
+  .pack-line:hover {
+    border-color: var(--color-neutral-300);
+    box-shadow: none;
+    transform: none;
+  }
+
+  .pack-line:has(.pack-line__checkbox:checked):hover {
+    background: var(--color-action-deliver-light-bg);
+    border-color: var(--color-action-deliver);
+  }
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  .order-line__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-lines__controls {
+    width: 100%;
+  }
+
+  .order-lines__add-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

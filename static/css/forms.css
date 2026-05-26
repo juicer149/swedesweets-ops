@@ -145,3 +145,59 @@
   min-width: 160px;
   padding-inline: var(--space-6);
 }
+
+/* =============================================================================
+   Mobile form actions
+
+   Desktop can stay compact. On touch screens, form actions should be easy
+   full-width targets.
+   ============================================================================= */
+
+@media (max-width: 700px) {
+  .form-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+
+    width: 100%;
+    padding-top: var(--space-4);
+  }
+
+  .form-actions .button,
+  .form-actions a.button,
+  .form-actions button.button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+    padding-inline: var(--space-5);
+  }
+}
+
+/* =============================================================================
+   Mobile / touch form actions
+
+   Form actions should be large, predictable tap targets on phones and
+   touch-like layouts. Desktop keeps the compact row layout.
+   ============================================================================= */
+
+@media (max-width: 900px), (pointer: coarse) {
+  .form-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+
+    width: 100%;
+    padding-top: var(--space-5);
+  }
+
+  .form-actions .button,
+  .form-actions a.button,
+  .form-actions button.button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+    padding-inline: var(--space-5);
+  }
+}

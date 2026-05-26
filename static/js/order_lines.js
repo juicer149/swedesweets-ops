@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const number = orderLine.querySelector("[data-order-line-number]");
+
     if (number) {
       number.textContent = String(index + 1);
     }
@@ -97,17 +98,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return wrapper.firstElementChild;
   }
 
-  function focusProductSelect(orderLine) {
-    const productSelect = orderLine.querySelector(
-      "select[data-enhanced-select]"
-    );
-
-    if (productSelect?.tomselect) {
-      productSelect.tomselect.focus();
-      return;
-    }
-
-    productSelect?.focus();
+  function scrollOrderLineIntoView(orderLine) {
+    orderLine.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   }
 
   addProductButton.addEventListener("click", () => {
@@ -119,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enhanceOrderLine(orderLine);
     updateRemoveButtons();
-    focusProductSelect(orderLine);
+    scrollOrderLineIntoView(orderLine);
   });
 
   orderLinesList.addEventListener("click", (event) => {

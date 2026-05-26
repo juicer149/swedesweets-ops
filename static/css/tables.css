@@ -226,3 +226,39 @@
 .product-vegan-icon--no .ui-icon-block {
   stroke-width: 2.2;
 }
+
+/* Touch devices should not keep hover state stuck after tap/hold. */
+@media (hover: none), (pointer: coarse) {
+  .data-table tbody tr:hover {
+    filter: drop-shadow(0 1px 2px rgb(var(--color-row-shadow) / 0.05));
+    transform: none;
+  }
+
+  .data-table tbody tr.clickable-row:hover > *:first-child {
+    box-shadow: none;
+  }
+
+  .data-table tbody tr[data-tone="neutral"]:hover > * {
+    background: var(--color-primary-50);
+  }
+
+  .data-table tbody tr[data-tone="muted"]:hover > * {
+    background: rgb(var(--color-status-muted) / 0.055);
+  }
+
+  .data-table tbody tr[data-tone="warning"]:hover > * {
+    background: rgb(var(--color-status-warning) / 0.055);
+  }
+
+  .data-table tbody tr[data-tone="info"]:hover > * {
+    background: rgb(var(--color-status-info) / 0.06);
+  }
+
+  .data-table tbody tr[data-tone="success"]:hover > * {
+    background: rgb(var(--color-status-success) / 0.045);
+  }
+
+  .data-table tbody tr[data-tone="danger"]:hover > * {
+    background: rgb(var(--color-status-danger) / 0.07);
+  }
+}
