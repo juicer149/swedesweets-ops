@@ -13,19 +13,6 @@ class ProductChoiceField(forms.ModelChoiceField):
 
 
 class BatchForm(forms.Form):
-    batch_id = forms.CharField(
-        required=False,
-        max_length=50,
-        label="Batch ID",
-        help_text="Leave empty to generate one automatically.",
-        widget=forms.TextInput(
-            attrs={
-                "placeholder": "e.g. AHL-20260523-01",
-                "autocomplete": "off",
-            }
-        ),
-    )
-
     product = ProductChoiceField(
         queryset=Product.objects.filter(active=True).order_by(
             "internal_number",
@@ -96,7 +83,7 @@ class BatchForm(forms.Form):
         set_form_field_layout(
             self,
             full=("product",),
-            half=("batch_id", "boxes", "best_before", "location"),
+            half=("boxes", "best_before", "location"),
         )
 
 

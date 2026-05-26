@@ -43,11 +43,10 @@ public API:
 
 from __future__ import annotations
 
-from django.db.models import Sum
-
 from dataclasses import dataclass
 from datetime import date
 from typing import Iterable
+import unicodedata
 
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
@@ -58,9 +57,10 @@ from orders.models import Allocation, Order
 from products.models import Product
 
 
-BATCH_ID_PREFIX = "BATCH"
 BATCH_ID_SEQUENCE_WIDTH = 3
 BATCH_ID_GENERATION_ATTEMPTS = 3
+BATCH_ID_MISSING_PRODUCT_CODE = "PX"
+BATCH_ID_TEXT_PART_LENGTH = 3
 
 
 @dataclass(frozen=True)
@@ -110,7 +110,13 @@ def create_batch(
     meaningful stock-receiving event for this MVP.
 
     If batch_id is provided, it is treated as a manual or external lot code.
-    If batch_id is omitted, a local id is generated as BATCH-YYYYMMDD-NNN.
+    If batch_id is omitted, a product-based id is generated.
+
+    Generated format:
+        P004-TUT-SOU-001
+
+    The prefix is based on product internal number, brand and name. The trailing
+    number is a sequence per product prefix.
     """
 
     today = today or date.today()
@@ -138,7 +144,7 @@ def create_batch(
             ) from exc
 
     for _ in range(BATCH_ID_GENERATION_ATTEMPTS):
-        generated_batch_id = _generate_batch_id(today=today)
+        generated_batch_id = _generate_batch_id(product=product)
 
         try:
             return _create_batch_with_id(
@@ -197,6 +203,7 @@ def update_batch(
 
     return batch
 
+
 @transaction.atomic
 def close_batch(*, batch: InventoryBatch) -> InventoryBatch:
     """Close a batch so it is no longer orderable.
@@ -222,6 +229,7 @@ def close_batch(*, batch: InventoryBatch) -> InventoryBatch:
 
     batch.close()
     return batch
+
 
 def reserved_boxes_for_batch(*, batch: InventoryBatch) -> int:
     """Return boxes reserved from this batch by placed orders."""
@@ -275,7 +283,7 @@ def plan_batch_picks(
 
     if not plan.is_complete:
         raise InsufficientStockError(
-            product_name=product.name,
+            product_name=product.display_name,
             requested_boxes=boxes,
             available_boxes=plan.available_boxes,
             missing_boxes=plan.missing_boxes,
@@ -306,18 +314,17 @@ def _create_batch_with_id(
     )
 
 
-def _generate_batch_id(*, today: date | None = None) -> str:
-    """Generate the next local batch id for today's received stock.
+def _generate_batch_id(*, product: Product) -> str:
+    """Generate the next local batch id for a product.
 
     Format:
-        BATCH-YYYYMMDD-NNN
+        P004-TUT-SOU-001
 
     This is private because batch-id generation is an implementation detail of
     create_batch(), not a separate application use-case.
     """
 
-    today = today or date.today()
-    prefix = f"{BATCH_ID_PREFIX}-{today:%Y%m%d}"
+    prefix = _batch_id_prefix(product)
 
     latest_batch = (
         InventoryBatch.objects
@@ -333,6 +340,42 @@ def _generate_batch_id(*, today: date | None = None) -> str:
         next_number = last_number + 1
 
     return f"{prefix}-{next_number:0{BATCH_ID_SEQUENCE_WIDTH}d}"
+
+
+def _batch_id_prefix(product: Product) -> str:
+    product_code = _batch_product_code(product)
+
+    return (
+        f"{product_code}-"
+        f"{_batch_text_part(product.brand)}-"
+        f"{_batch_text_part(product.name)}"
+    )
+
+
+def _batch_product_code(product: Product) -> str:
+    if product.internal_number:
+        return f"P{product.internal_number:03d}"
+
+    return BATCH_ID_MISSING_PRODUCT_CODE
+
+
+def _batch_text_part(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+
+    characters = [
+        character
+        for character in ascii_value.upper()
+        if character.isalnum()
+    ]
+
+    if not characters:
+        return "XXX"
+
+    return "".join(characters[:BATCH_ID_TEXT_PART_LENGTH]).ljust(
+        BATCH_ID_TEXT_PART_LENGTH,
+        "X",
+    )
 
 
 def _list_candidate_batches_for_picking(

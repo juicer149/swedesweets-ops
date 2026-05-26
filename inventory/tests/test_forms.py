@@ -18,14 +18,15 @@ from inventory.tests.conftest import TODAY
 def test_product_choice_field_label_from_instance(apple):
     field = ProductChoiceField(queryset=type(apple).objects.all())
 
-    assert field.label_from_instance(apple) == "GENERIC-APPLE-5000 · Generic — Apple · 5000 g" 
+    assert field.label_from_instance(apple) == (
+        "GENERIC-APPLE-5000 · Generic — Apple · 5000 g"
+    )
 
 
 @pytest.mark.django_db
 def test_batch_form_accepts_valid_data(apple):
     form = BatchForm(
         data={
-            "batch_id": "A-001",
             "product": str(apple.pk),
             "boxes": "10",
             "best_before": "2026-06-01",
@@ -35,7 +36,8 @@ def test_batch_form_accepts_valid_data(apple):
 
     assert form.is_valid(), form.errors
 
-    assert form.cleaned_data["batch_id"] == "A-001"
+    assert "batch_id" not in form.fields
+    assert "batch_id" not in form.cleaned_data
     assert form.cleaned_data["product"] == apple
     assert form.cleaned_data["boxes"] == 10
     assert form.cleaned_data["best_before"] == date(2026, 6, 1)
@@ -43,26 +45,9 @@ def test_batch_form_accepts_valid_data(apple):
 
 
 @pytest.mark.django_db
-def test_batch_form_allows_empty_batch_id_for_auto_generation(apple):
-    form = BatchForm(
-        data={
-            "batch_id": "",
-            "product": str(apple.pk),
-            "boxes": "10",
-            "best_before": "2026-06-01",
-            "location": "Shelf A1",
-        }
-    )
-
-    assert form.is_valid(), form.errors
-    assert form.cleaned_data["batch_id"] == ""
-
-
-@pytest.mark.django_db
 def test_batch_form_rejects_inactive_product(inactive_product):
     form = BatchForm(
         data={
-            "batch_id": "A-001",
             "product": str(inactive_product.pk),
             "boxes": "10",
             "best_before": "2026-06-01",
@@ -78,7 +63,6 @@ def test_batch_form_rejects_inactive_product(inactive_product):
 def test_batch_form_rejects_zero_boxes(apple):
     form = BatchForm(
         data={
-            "batch_id": "A-001",
             "product": str(apple.pk),
             "boxes": "0",
             "best_before": "2026-06-01",
@@ -94,7 +78,6 @@ def test_batch_form_rejects_zero_boxes(apple):
 def test_batch_form_rejects_invalid_best_before_date(apple):
     form = BatchForm(
         data={
-            "batch_id": "A-001",
             "product": str(apple.pk),
             "boxes": "10",
             "best_before": "not-a-date",

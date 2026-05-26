@@ -35,7 +35,7 @@ def test_create_batch_with_manual_batch_id_normalizes_fields(apple):
 
 
 @pytest.mark.django_db
-def test_create_batch_generates_batch_id_when_missing(apple):
+def test_create_batch_generates_product_based_batch_id_when_missing(apple):
     first = create_batch(
         product=apple,
         boxes=10,
@@ -51,8 +51,59 @@ def test_create_batch_generates_batch_id_when_missing(apple):
         today=TODAY,
     )
 
-    assert first.batch_id == "BATCH-20260514-001"
-    assert second.batch_id == "BATCH-20260514-002"
+    assert first.batch_id == "PX-GEN-APP-001"
+    assert second.batch_id == "PX-GEN-APP-002"
+
+
+@pytest.mark.django_db
+def test_create_batch_generates_internal_number_based_batch_id(apple):
+    apple.internal_number = 7
+    apple.save(update_fields=["internal_number"])
+
+    batch = create_batch(
+        product=apple,
+        boxes=10,
+        best_before=date(2026, 6, 1),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    assert batch.batch_id == "P007-GEN-APP-001"
+
+
+@pytest.mark.django_db
+def test_create_batch_generates_separate_sequences_per_product(apple, banana):
+    apple.internal_number = 1
+    apple.save(update_fields=["internal_number"])
+
+    banana.internal_number = 2
+    banana.save(update_fields=["internal_number"])
+
+    first_apple_batch = create_batch(
+        product=apple,
+        boxes=10,
+        best_before=date(2026, 6, 1),
+        location="Shelf A1",
+        today=TODAY,
+    )
+    first_banana_batch = create_batch(
+        product=banana,
+        boxes=20,
+        best_before=date(2026, 7, 1),
+        location="Shelf B1",
+        today=TODAY,
+    )
+    second_apple_batch = create_batch(
+        product=apple,
+        boxes=30,
+        best_before=date(2026, 8, 1),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    assert first_apple_batch.batch_id == "P001-GEN-APP-001"
+    assert first_banana_batch.batch_id == "P002-GEN-BAN-001"
+    assert second_apple_batch.batch_id == "P001-GEN-APP-002"
 
 
 @pytest.mark.django_db
