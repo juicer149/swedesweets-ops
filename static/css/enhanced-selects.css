@@ -478,3 +478,69 @@ select.ts-hidden-accessible {
     max-height: inherit;
   }
 }
+
+/* =============================================================================
+   Mobile product option layout
+
+   Product search results should read as compact stacked rows on phones.
+   Avoid multi-column/flex wrapping that makes matched numbers jump sideways.
+   ============================================================================= */
+
+@media (max-width: 900px), (pointer: coarse) {
+  .ts-dropdown .option:has(.enhanced-product-option) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .enhanced-product-option {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    width: 100%;
+    min-width: 0;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .enhanced-product-option__top,
+  .enhanced-product-option__meta {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+
+    font-size: var(--font-size-14);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .enhanced-product-option__name {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+
+    font-size: var(--font-size-16);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .enhanced-product-option__meta {
+    color: var(--color-neutral-700);
+  }
+
+  .enhanced-product-option__meta > * + *::before {
+    content: " · ";
+  }
+
+  .ts-dropdown .highlight {
+    display: inline;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font-weight: inherit;
+  }
+}
