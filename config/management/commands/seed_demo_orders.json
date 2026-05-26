@@ -1,6 +1,6 @@
 [
   {
-    "customer": "nordic_corner",
+    "customer": "super_u_les_houches",
     "status": "placed",
     "lines": [
       {
@@ -18,7 +18,7 @@
     ]
   },
   {
-    "customer": "alpine_provisions",
+    "customer": "super_u_chamonix",
     "status": "placed",
     "lines": [
       {
@@ -36,7 +36,7 @@
     ]
   },
   {
-    "customer": "sweet_house",
+    "customer": "creative_studio_66",
     "status": "packed",
     "lines": [
       {
@@ -54,7 +54,7 @@
     ]
   },
   {
-    "customer": "cafe_nord",
+    "customer": "super_u_les_houches",
     "status": "delivered",
     "lines": [
       {
@@ -72,7 +72,7 @@
     ]
   },
   {
-    "customer": "cafe_nord",
+    "customer": "super_u_chamonix",
     "status": "delivered",
     "lines": [
       {
@@ -90,7 +90,7 @@
     ]
   },
   {
-    "customer": "mountain_snacks",
+    "customer": "creative_studio_66",
     "status": "delivered",
     "lines": [
       {
@@ -108,7 +108,7 @@
     ]
   },
   {
-    "customer": "city_kiosk",
+    "customer": "super_u_chamonix",
     "status": "cancelled",
     "cancel_note": "Demo cancellation: customer changed the request.",
     "lines": [
