@@ -4,7 +4,12 @@ from datetime import date
 
 import pytest
 
-from inventory.forms import BatchEditForm, BatchForm, ProductChoiceField, build_batch_edit_initial_data
+from inventory.forms import (
+    BatchEditForm,
+    BatchForm,
+    ProductChoiceField,
+    build_batch_edit_initial_data,
+)
 from inventory.services import create_batch
 from inventory.tests.conftest import TODAY
 
@@ -13,7 +18,7 @@ from inventory.tests.conftest import TODAY
 def test_product_choice_field_label_from_instance(apple):
     field = ProductChoiceField(queryset=type(apple).objects.all())
 
-    assert field.label_from_instance(apple) == "Generic — Apple (5000 g)"
+    assert field.label_from_instance(apple) == "GENERIC-APPLE-5000 · Generic — Apple · 5000 g" 
 
 
 @pytest.mark.django_db
@@ -106,6 +111,7 @@ def test_batch_form_configures_product_select_metadata():
 
     assert form.fields["product"].widget.attrs["data-enhanced-select"] == "true"
     assert form.fields["product"].widget.attrs["data-enhanced-select-search"] == "true"
+
 
 @pytest.mark.django_db
 def test_batch_edit_form_accepts_valid_data():

@@ -47,18 +47,66 @@ class ProductChoiceField(forms.ModelChoiceField):
         self.available_boxes_by_product_id = available_boxes_by_product_id or {}
 
     def label_from_instance(self, product: Product) -> str:
-        code_label = _internal_number_label(product)
-        available_boxes = self.available_boxes_by_product_id.get(product.id)
-        stock_label = ""
+        stock_label = self._stock_label(product)
 
-        if available_boxes is not None:
-            stock_label = f" · {_boxes_label(available_boxes)}"
+        if stock_label:
+            return f"{product.catalog_label} · {stock_label}"
 
-        return (
-            f"{code_label}"
-            f"{product.brand} — {product.name}"
-            f"{stock_label}"
+        return product.catalog_label
+
+    def create_option(
+        self,
+        name,
+        value,
+        label,
+        selected,
+        index,
+        subindex=None,
+        attrs=None,
+    ):
+        option = super().create_option(
+            name=name,
+            value=value,
+            label=label,
+            selected=selected,
+            index=index,
+            subindex=subindex,
+            attrs=attrs,
         )
+
+        if not value:
+            return option
+
+        product = value.instance
+        stock_label = self._stock_label(product)
+
+        option["attrs"].update(
+            {
+                "data-code": product.code_label,
+                "data-brand": product.brand,
+                "data-name": product.display_name,
+                "data-weight": f"{product.weight_per_box} g / box",
+                "data-stock": stock_label,
+                "search": (
+                    f"{product.code_label} "
+                    f"{product.internal_number or ''} "
+                    f"{product.brand} "
+                    f"{product.name} "
+                    f"{product.display_name} "
+                    f"{product.sku}"
+                ),
+            }
+        )
+
+        return option
+
+    def _stock_label(self, product: Product) -> str:
+        available_boxes = self.available_boxes_by_product_id.get(product.id)
+
+        if available_boxes is None:
+            return ""
+
+        return _boxes_label(available_boxes)
 
 
 class OrderCreateForm(forms.Form):
@@ -263,7 +311,7 @@ class BaseOrderLineFormSet(BaseFormSet):
             boxes = form.cleaned_data["quantity_in_boxes"]
 
             requested_boxes_by_product_id[product.id] += boxes
-            product_names_by_id[product.id] = product.name
+            product_names_by_id[product.id] = product.display_name
 
         for product_id, requested_boxes in requested_boxes_by_product_id.items():
             if requested_boxes > MAX_BOXES_PER_PRODUCT_PER_ORDER:
@@ -424,12 +472,3 @@ def _quantity_to_boxes_for_form(
 
 def _boxes_label(boxes: int) -> str:
     return "1 box" if boxes == 1 else f"{boxes} boxes"
-
-
-def _internal_number_label(product: Product) -> str:
-    internal_number = getattr(product, "internal_number", None)
-
-    if internal_number is None:
-        return ""
-
-    return f"#{internal_number} · "

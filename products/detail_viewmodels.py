@@ -189,7 +189,7 @@ def build_product_detail_context(
                 build_back_to_products_action(href=cancel_url),
             ),
         ),
-        title=product.name,
+        title=product.display_name,
         description="",
         cancel_url=cancel_url,
     )
@@ -215,8 +215,8 @@ def build_back_to_products_action(*, href: str) -> DetailAction:
 
 def _build_product_header(product: Product) -> DetailHeader:
     return DetailHeader(
-        eyebrow="Product",
-        title=product.name,
+        eyebrow=product.code_label,
+        title=product.display_name,
         status_label=_product_status_label(product),
         status_class=product_detail_status_class(product),
         status_icon=product_status_icon(product),
@@ -233,7 +233,7 @@ def _build_product_detail_panels(
         DetailPanel(
             key="product",
             label="Product",
-            summary=product.sku,
+            summary=product.display_name,
             body_template="products/includes/detail_panel_product.html",
             icon=PRODUCT_DETAIL_PANEL_ICON,
             is_active=True,

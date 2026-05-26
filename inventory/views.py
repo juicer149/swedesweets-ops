@@ -32,7 +32,7 @@ from inventory.selectors import (
     list_batch_allocations,
     list_batch_rows,
 )
-from inventory.services import create_batch, update_batch, close_batch
+from inventory.services import close_batch, create_batch, update_batch
 
 
 INVENTORY_VIEW_BATCHES = "batches"
@@ -68,16 +68,16 @@ PRODUCT_TABLE_SORTS = [
 ]
 
 PRODUCT_SORTS: dict[str, tuple[str, ...]] = {
-    "product": ("brand", "product_name", "sku"),
-    "-product": ("-brand", "-product_name", "-sku"),
-    "batches": ("batch_count", "brand", "product_name"),
-    "-batches": ("-batch_count", "brand", "product_name"),
-    "physical": ("physical_boxes", "brand", "product_name"),
-    "-physical": ("-physical_boxes", "brand", "product_name"),
-    "reserved": ("reserved_boxes", "brand", "product_name"),
-    "-reserved": ("-reserved_boxes", "brand", "product_name"),
-    "available": ("available_boxes", "brand", "product_name"),
-    "-available": ("-available_boxes", "brand", "product_name"),
+    "product": ("internal_number_sort", "brand", "product_name"),
+    "-product": ("-internal_number_sort", "-brand", "-product_name"),
+    "batches": ("batch_count", "internal_number_sort", "product_name"),
+    "-batches": ("-batch_count", "internal_number_sort", "product_name"),
+    "physical": ("physical_boxes", "internal_number_sort", "product_name"),
+    "-physical": ("-physical_boxes", "internal_number_sort", "product_name"),
+    "reserved": ("reserved_boxes", "internal_number_sort", "product_name"),
+    "-reserved": ("-reserved_boxes", "internal_number_sort", "product_name"),
+    "available": ("available_boxes", "internal_number_sort", "product_name"),
+    "-available": ("-available_boxes", "internal_number_sort", "product_name"),
 }
 
 DEFAULT_PRODUCT_SORT = "product"
@@ -287,6 +287,9 @@ def _build_products_index_context(request) -> dict[str, object]:
         allowed_sorts=PRODUCT_SORTS,
         default_sort=DEFAULT_PRODUCT_SORT,
         filter_query_key=INVENTORY_FILTER_QUERY_KEY,
+        extra_query_params={
+            "view": INVENTORY_VIEW_PRODUCTS,
+        },
     )
 
     product_rows = _sort_product_rows(
@@ -351,11 +354,31 @@ def _sort_product_rows(rows, sort: str):
     sort_key = sort.lstrip("-")
 
     key_functions = {
-        "product": lambda row: (row.brand, row.product_name, row.sku),
-        "batches": lambda row: (row.batch_count, row.brand, row.product_name),
-        "physical": lambda row: (row.physical_boxes, row.brand, row.product_name),
-        "reserved": lambda row: (row.reserved_boxes, row.brand, row.product_name),
-        "available": lambda row: (row.available_boxes, row.brand, row.product_name),
+        "product": lambda row: (
+            row.internal_number_sort,
+            row.brand.casefold(),
+            row.product_name.casefold(),
+        ),
+        "batches": lambda row: (
+            row.batch_count,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
+        "physical": lambda row: (
+            row.physical_boxes,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
+        "reserved": lambda row: (
+            row.reserved_boxes,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
+        "available": lambda row: (
+            row.available_boxes,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
     }
 
     key_function = key_functions.get(

@@ -176,7 +176,7 @@ def edit(request, product_pk: int):
     context = {
         "form": form,
         "product": product,
-        "title": f"Edit - {product.name}",
+        "title": f"Edit - {product.display_name}",
         "description": "",
         "submit_label": "Update product",
         "cancel_url": reverse("products:detail", kwargs={"product_pk": product.pk}),
@@ -240,10 +240,7 @@ def _build_product_quick_jump_search(product_rows):
         aria_label="Find product",
         options=[
             QuickJumpOption(
-                label=(
-                    f"{row.product.internal_number} · "
-                    f"{row.product.brand} — {row.product.name}"
-                ),
+                label=row.product.catalog_label,
                 url=row.detail_href,
             )
             for row in product_rows

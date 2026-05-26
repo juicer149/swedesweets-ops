@@ -293,4 +293,4 @@ def test_batch_string_contains_batch_product_and_boxes(apple):
         today=TODAY,
     )
 
-    assert str(batch) == f"A-001 - {apple.sku} (10 boxes)"
+    assert str(batch) == f"A-001 - {apple.display_name} (10 boxes)"

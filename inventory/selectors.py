@@ -24,8 +24,8 @@ DEFAULT_BATCH_SORT = "best_before"
 BATCH_SORTS: dict[str, tuple[str, ...]] = {
     "batch": ("batch_id",),
     "-batch": ("-batch_id",),
-    "product": ("product__name", "batch_id"),
-    "-product": ("-product__name", "batch_id"),
+    "product": ("product__internal_number", "product__brand", "product__name", "batch_id"),
+    "-product": ("-product__internal_number", "-product__brand", "-product__name", "batch_id"),
     "best_before": ("best_before", "batch_id"),
     "-best_before": ("-best_before", "batch_id"),
     "boxes": ("boxes", "batch_id"),
@@ -55,31 +55,78 @@ class BatchListRow:
 
 @dataclass(frozen=True)
 class PhysicalStockRow:
-    product_id: int
-    sku: str
-    product_name: str
-    brand: str
+    product: Product
     boxes: int
     batch_count: int
+
+    @property
+    def product_id(self) -> int:
+        return self.product.id
+
+    @property
+    def sku(self) -> str:
+        return self.product.sku
+
+    @property
+    def internal_number_sort(self) -> int:
+        return self.product.internal_number or 999_999
+
+    @property
+    def code_label(self) -> str:
+        return self.product.code_label
+
+    @property
+    def catalog_label(self) -> str:
+        return self.product.catalog_label
+
+    @property
+    def product_name(self) -> str:
+        return self.product.display_name
+
+    @property
+    def brand(self) -> str:
+        return self.product.brand
 
 
 @dataclass(frozen=True)
 class AvailableStockRow:
-    product_id: int
-    sku: str
-    product_name: str
-    brand: str
+    product: Product
     batch_count: int
     physical_boxes: int
     reserved_boxes: int
     available_boxes: int
 
+    @property
+    def product_id(self) -> int:
+        return self.product.id
+
+    @property
+    def sku(self) -> str:
+        return self.product.sku
+
+    @property
+    def internal_number_sort(self) -> int:
+        return self.product.internal_number or 999_999
+
+    @property
+    def code_label(self) -> str:
+        return self.product.code_label
+
+    @property
+    def catalog_label(self) -> str:
+        return self.product.catalog_label
+
+    @property
+    def product_name(self) -> str:
+        return self.product.display_name
+
+    @property
+    def brand(self) -> str:
+        return self.product.brand
+
 
 @dataclass(frozen=True)
-class _PhysicalStockByProductIdRow:
-    sku: str
-    product_name: str
-    brand: str
+class _PhysicalStockTotals:
     physical_boxes: int
     batch_count: int
 
@@ -122,65 +169,44 @@ def list_batches(
 
 
 def physical_boxes_by_product() -> list[PhysicalStockRow]:
-    rows = (
-        InventoryBatch.objects
-        .filter(
-            status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
-        )
-        .values(
-            "product_id",
-            "product__sku",
-            "product__name",
-            "product__brand",
-        )
-        .annotate(
-            total_boxes=Sum("boxes"),
-            batch_count=Count("id"),
-        )
-        .order_by("product__brand", "product__name", "product__sku")
-    )
+    stock_totals_by_product_id = _physical_stock_totals_by_product_id()
+    products_by_id = _products_by_id(stock_totals_by_product_id.keys())
 
-    return [
+    rows = [
         PhysicalStockRow(
-            product_id=row["product_id"],
-            sku=row["product__sku"],
-            product_name=row["product__name"],
-            brand=row["product__brand"],
-            boxes=row["total_boxes"] or 0,
-            batch_count=row["batch_count"] or 0,
+            product=product,
+            boxes=stock_totals_by_product_id[product_id].physical_boxes,
+            batch_count=stock_totals_by_product_id[product_id].batch_count,
         )
-        for row in rows
+        for product_id, product in products_by_id.items()
     ]
+
+    return sorted(rows, key=lambda row: row.product.catalog_sort_key)
 
 
 def available_boxes_by_product() -> list[AvailableStockRow]:
-    physical_rows = _physical_boxes_by_product_id()
+    stock_totals_by_product_id = _physical_stock_totals_by_product_id()
     reserved_boxes_by_product_id = _reserved_boxes_by_product_id()
+    products_by_id = _products_by_id(stock_totals_by_product_id.keys())
 
     rows: list[AvailableStockRow] = []
 
-    for product_id, physical_row in physical_rows.items():
+    for product_id, product in products_by_id.items():
+        stock_totals = stock_totals_by_product_id[product_id]
         reserved_boxes = reserved_boxes_by_product_id.get(product_id, 0)
-        available_boxes = physical_row.physical_boxes - reserved_boxes
+        available_boxes = stock_totals.physical_boxes - reserved_boxes
 
         rows.append(
             AvailableStockRow(
-                product_id=product_id,
-                sku=physical_row.sku,
-                product_name=physical_row.product_name,
-                brand=physical_row.brand,
-                batch_count=physical_row.batch_count,
-                physical_boxes=physical_row.physical_boxes,
+                product=product,
+                batch_count=stock_totals.batch_count,
+                physical_boxes=stock_totals.physical_boxes,
                 reserved_boxes=reserved_boxes,
                 available_boxes=max(available_boxes, 0),
             )
         )
 
-    return sorted(
-        rows,
-        key=lambda row: (row.brand, row.product_name, row.sku),
-    )
+    return sorted(rows, key=lambda row: row.product.catalog_sort_key)
 
 
 def available_boxes_by_product_id() -> dict[int, int]:
@@ -214,7 +240,13 @@ def list_available_batches() -> QuerySet[InventoryBatch]:
             boxes__gt=0,
         )
         .select_related("product")
-        .order_by("product__sku", "best_before", "batch_id")
+        .order_by(
+            "product__internal_number",
+            "product__brand",
+            "product__name",
+            "best_before",
+            "batch_id",
+        )
     )
 
 
@@ -223,13 +255,25 @@ def list_depleted_batches() -> QuerySet[InventoryBatch]:
         InventoryBatch.objects
         .filter(status=InventoryBatch.Status.DEPLETED)
         .select_related("product")
-        .order_by("product__sku", "batch_id")
+        .order_by(
+            "product__internal_number",
+            "product__brand",
+            "product__name",
+            "batch_id",
+        )
     )
 
 
 def list_expiring_batch_rows_for_dashboard(
     *,
     limit: int = 3,
+    today: date | None = None,
+) -> list[BatchListRow]:
+    return list_expiring_batch_rows(today=today)[:limit]
+
+
+def list_expiring_batch_rows(
+    *,
     today: date | None = None,
 ) -> list[BatchListRow]:
     today = today or timezone.localdate()
@@ -241,7 +285,7 @@ def list_expiring_batch_rows_for_dashboard(
             boxes__gt=0,
         )
         .select_related("product")
-        .order_by("best_before", "batch_id")[:limit]
+        .order_by("best_before", "batch_id")
     )
 
     return _build_batch_rows(
@@ -261,10 +305,9 @@ def count_expiring_batches() -> int:
     )
 
 
-def list_low_stock_products_for_dashboard(
+def list_low_stock_products(
     *,
     threshold: int = 10,
-    limit: int = 3,
 ) -> list[AvailableStockRow]:
     rows = [
         row
@@ -274,19 +317,26 @@ def list_low_stock_products_for_dashboard(
 
     return sorted(
         rows,
-        key=lambda row: (row.available_boxes, row.brand, row.product_name),
-    )[:limit]
+        key=lambda row: (
+            row.available_boxes,
+            row.product.catalog_sort_key,
+        ),
+    )
+
+
+def list_low_stock_products_for_dashboard(
+    *,
+    threshold: int = 10,
+    limit: int = 3,
+) -> list[AvailableStockRow]:
+    return list_low_stock_products(threshold=threshold)[:limit]
 
 
 def count_low_stock_products(
     *,
     threshold: int = 10,
 ) -> int:
-    return sum(
-        1
-        for row in available_boxes_by_product()
-        if row.available_boxes <= threshold
-    )
+    return len(list_low_stock_products(threshold=threshold))
 
 
 def build_expiry_info(
@@ -350,6 +400,7 @@ def list_batch_allocations(*, batch: InventoryBatch) -> list[Allocation]:
         .order_by("-order__created_at", "-id")
     )
 
+
 def _build_batch_rows(
     *,
     batches: QuerySet[InventoryBatch],
@@ -377,19 +428,14 @@ def _batch_status_rank_expression() -> Case:
     )
 
 
-def _physical_boxes_by_product_id() -> dict[int, _PhysicalStockByProductIdRow]:
+def _physical_stock_totals_by_product_id() -> dict[int, _PhysicalStockTotals]:
     rows = (
         InventoryBatch.objects
         .filter(
             status=InventoryBatch.Status.ACTIVE,
             boxes__gt=0,
         )
-        .values(
-            "product_id",
-            "product__sku",
-            "product__name",
-            "product__brand",
-        )
+        .values("product_id")
         .annotate(
             total_boxes=Sum("boxes"),
             batch_count=Count("id"),
@@ -397,14 +443,20 @@ def _physical_boxes_by_product_id() -> dict[int, _PhysicalStockByProductIdRow]:
     )
 
     return {
-        row["product_id"]: _PhysicalStockByProductIdRow(
-            sku=row["product__sku"],
-            product_name=row["product__name"],
-            brand=row["product__brand"],
+        row["product_id"]: _PhysicalStockTotals(
             physical_boxes=row["total_boxes"] or 0,
             batch_count=row["batch_count"] or 0,
         )
         for row in rows
+    }
+
+
+def _products_by_id(product_ids) -> dict[int, Product]:
+    products = Product.objects.filter(id__in=product_ids)
+
+    return {
+        product.id: product
+        for product in products
     }
 
 

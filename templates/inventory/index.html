@@ -42,11 +42,8 @@
           {% for row in product_rows %}
             <tr data-tone="{{ row.status.tone.key }}">
               <th scope="row">
-                <span class="row-link">
-                  {{ row.sku }}
-                </span>
                 <span class="table-subtext">
-                  {{ row.brand }} · {{ row.product_name }}
+                  {{ row.catalog_label }}
                 </span>
               </th>
 
@@ -111,7 +108,7 @@
                 </span>
               </th>
 
-              <td>{{ row.batch.product.sku }}</td>
+              <td>{{ row.batch.product.display_name }}</td>
 
               <td>
                 <span class="expiry-text expiry-text--{{ row.expiry.state }}">

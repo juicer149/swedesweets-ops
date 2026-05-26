@@ -97,6 +97,7 @@ class TableControls:
     active_sort: str = ""
     filter_query_key: str = ""
     default_sort: str = ""
+    extra_query_params: dict[str, str] | None = None
 
     @classmethod
     def from_request_values(
@@ -110,12 +111,11 @@ class TableControls:
         allowed_sorts: dict[str, tuple[str, ...]] | None = None,
         default_sort: str = "",
         filter_query_key: str = "",
+        extra_query_params: dict[str, str] | None = None,
     ) -> TableControls:
-        filters = filters or [] 
-        allowed_sorts = allowed_sorts or {}
 
         active_filter = _normalize_filter(
-            requested_filter,
+            requested_filter=requested_filter,
             filters=filters,
         )
         active_sort = _normalize_optional_sort(
@@ -131,6 +131,7 @@ class TableControls:
             active_sort=active_sort,
             filter_query_key=filter_query_key,
             default_sort=default_sort,
+            extra_query_params=extra_query_params,
         )
 
     def build_filter_links(
@@ -245,7 +246,7 @@ class TableControls:
         filter_value: str,
         sort: str,
     ) -> str:
-        params: dict[str, str] = {}
+        params: dict[str, str] = dict(self.extra_query_params or {}) 
 
         if filter_value and self.filter_query_key:
             params[self.filter_query_key] = filter_value

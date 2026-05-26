@@ -85,10 +85,22 @@ def test_product_catalog_fields_can_change_without_changing_sku():
 
 
 @pytest.mark.django_db
-def test_display_name_returns_product_name():
-    product = product_factory(name="Tyrkisk Peber")
+def test_display_name_returns_brand_and_product_name():
+    product = product_factory(brand="Tyrkisk Peber", name="Original")
 
-    assert product.display_name() == "Tyrkisk Peber"
+    assert product.display_name == "Tyrkisk Peber — Original"
+
+
+@pytest.mark.django_db
+def test_catalog_label_includes_code_display_name_and_weight():
+    product = product_factory(
+        internal_number=23,
+        brand="Tyrkisk Peber",
+        name="Original",
+        weight_per_box=2200,
+    )
+
+    assert product.catalog_label == "#23 · Tyrkisk Peber — Original · 2200 g"
 
 
 @pytest.mark.django_db

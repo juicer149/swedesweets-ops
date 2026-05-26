@@ -8,19 +8,12 @@
     aria-label="View product {{ batch.product.sku }}"
   >
     <span class="detail-line__content">
-      <strong>
-        {{ batch.product.sku }}
-      </strong>
-
       <span>
-        {{ batch.product.brand }}
-        ·
-        {{ batch.product.name }}
-        ·
-        {{ batch.product.weight_per_box }} g / box
+        {{ batch.product.catalog_label }}
       </span>
     </span>
 
+    <!-- change class from text-link -->
     <a class="text-link detail-line__action" href="{{ product_href }}">
       View product →
     </a>

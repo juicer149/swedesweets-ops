@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import pytest
 
+from orders.datatypes import OrderLineInput
 from orders.forms import (
     MAX_BOXES_PER_PRODUCT_PER_ORDER,
     OrderCancelForm,
@@ -16,7 +17,6 @@ from orders.forms import (
     build_product_choice_context,
 )
 from orders.models import Order
-from orders.datatypes import OrderLineInput
 from orders.services import create_order
 
 
@@ -41,7 +41,7 @@ def test_order_create_form_rejects_missing_customer():
 
 
 @pytest.mark.django_db
-def test_product_choice_field_label_includes_internal_number_and_stock(apple):
+def test_product_choice_field_label_includes_internal_number_weight_and_stock(apple):
     field = ProductChoiceField(
         queryset=type(apple).objects.all(),
         available_boxes_by_product_id={
@@ -49,7 +49,9 @@ def test_product_choice_field_label_includes_internal_number_and_stock(apple):
         },
     )
 
-    assert field.label_from_instance(apple) == "#1 · Generic — Apple · 12 boxes"
+    assert field.label_from_instance(apple) == (
+        "#1 · Generic — Apple · 5000 g · 12 boxes"
+    )
 
 
 @pytest.mark.django_db
@@ -189,7 +191,10 @@ def test_order_line_formset_rejects_more_than_available_stock(apple, stocked_inv
     )
 
     assert not formset.is_valid()
-    assert "Only 150 boxes available for Apple." in formset.non_form_errors()
+    assert (
+        "Only 150 boxes available for Generic — Apple."
+        in formset.non_form_errors()
+    )
 
 
 @pytest.mark.django_db

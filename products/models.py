@@ -210,14 +210,39 @@ class Product(models.Model):
                 "sku cannot be changed after product creation"
             )
 
+    @property
     def display_name(self, *, language: str = "sv") -> str:
-        """Return display name.
+        """Human-readable product name for cards, selects and links."""
+        parts = [self.brand, self.name]
+        return " — ".join(str(part) for part in parts if part)
 
-        MVP uses the Swedish/internal product name. The language argument keeps
-        the call site future-compatible with product translations.
-        """
+    @property
+    def code_label(self) -> str:
+        """Short code label for internal use and compact displays."""
+        if self.internal_number:
+            return f"#{self.internal_number}"
+        return self.sku
 
-        return self.name
+    @property
+    def catalog_label(self) -> str:
+        """Full operational label for searchable selects."""
+        return(
+            f"{self.code_label} · "
+            f"{self.display_name} · "
+            f"{self.weight_per_box} g"
+        )
+
+
+    @property
+    def catalog_sort_key(self) -> tuple[int, str, str, int, str]: 
+        return(
+            self.internal_number or 999_999,
+            self.brand.casefold(),
+            self.name.casefold(),
+            self.weight_per_box,
+            self.sku,
+        )
+
 
     def grams_to_boxes(self, *, grams: int) -> int:
         """Convert grams into whole boxes for this product."""
@@ -254,7 +279,7 @@ class Product(models.Model):
         return Decimal(grams) / Decimal("1000")
 
     def __str__(self) -> str:
-        return self.sku
+        return self.display_name
 
 
 class ProductProfile(models.Model):

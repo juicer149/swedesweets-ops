@@ -62,7 +62,8 @@ class BatchPageRow:
 @dataclass(frozen=True)
 class ProductStockPageRow:
     product_id: int
-    sku: str
+    code_label: str
+    catalog_label: str
     product_name: str
     brand: str
     batch_count: int
@@ -135,7 +136,8 @@ def build_product_stock_page_row(row: AvailableStockRow) -> ProductStockPageRow:
 
     return ProductStockPageRow(
         product_id=row.product_id,
-        sku=row.sku,
+        code_label=row.code_label,
+        catalog_label=row.catalog_label,
         product_name=row.product_name,
         brand=row.brand,
         batch_count=row.batch_count,
@@ -157,53 +159,38 @@ def _batch_card(
         tone=status.tone,
         css_class=INVENTORY_CARD_CLASS,
         rows=(
-            _batch_header_row(row, status),
-            _batch_product_and_stock_row(row),
-            _batch_location_and_expiry_row(row),
+            UiCardRow(
+                left=UiText(
+                    text=row.batch.batch_id,
+                    css_class=INVENTORY_BATCH_TITLE_CLASS,
+                ),
+                right=status.text,
+            ),
+            UiCardRow(
+                left=UiText(
+                    text=row.batch.product.display_name,
+                    css_class=INVENTORY_PRODUCT_SKU_CLASS,
+                ),
+                right=UiText(
+                    text=batch_boxes_label(row.batch),
+                    css_class=INVENTORY_BOXES_CLASS,
+                ),
+            ),
+            UiCardRow(
+                left=UiText(
+                    text=row.batch.location,
+                    css_class=INVENTORY_LOCATION_CLASS,
+                    label=INVENTORY_LOCATION_LABEL,
+                ),
+                right=UiText(
+                    text=row.expiry.label,
+                    css_class=expiry_css_class(row),
+                    subtext=row.batch.best_before.strftime("%d-%m-%y"),
+                    subtext_class="expiry-text__date",
+                ),
+            ),
         ),
         action=_batch_detail_action(detail_href),
-    )
-
-
-def _batch_header_row(
-    row: BatchListRow,
-    status: StatusPresentation,
-) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=row.batch.batch_id,
-            css_class=INVENTORY_BATCH_TITLE_CLASS,
-        ),
-        right=status.text,
-    )
-
-
-def _batch_product_and_stock_row(row: BatchListRow) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=row.batch.product.sku,
-            css_class=INVENTORY_PRODUCT_SKU_CLASS,
-        ),
-        right=UiText(
-            text=batch_boxes_label(row.batch),
-            css_class=INVENTORY_BOXES_CLASS,
-        ),
-    )
-
-
-def _batch_location_and_expiry_row(row: BatchListRow) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=row.batch.location,
-            css_class=INVENTORY_LOCATION_CLASS,
-            label=INVENTORY_LOCATION_LABEL,
-        ),
-        right=UiText(
-            text=row.expiry.label,
-            css_class=expiry_css_class(row),
-            subtext=row.batch.best_before.strftime("%d-%m-%y"),
-            subtext_class="expiry-text__date",
-        ),
     )
 
 
@@ -224,62 +211,33 @@ def _product_stock_card(
         tone=status.tone,
         css_class=INVENTORY_CARD_CLASS,
         rows=(
-            _product_stock_header_row(row, status),
-            _product_stock_identity_row(row),
-            _product_stock_batch_row(row),
-            _product_stock_quantity_row(row),
-        ),
-    )
-
-
-def _product_stock_header_row(
-    row: AvailableStockRow,
-    status: StatusPresentation,
-) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=row.sku,
-            css_class=INVENTORY_BATCH_TITLE_CLASS,
-        ),
-        right=status.text,
-    )
-
-
-def _product_stock_identity_row(row: AvailableStockRow) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=row.product_name,
-            css_class=INVENTORY_PRODUCT_SKU_CLASS,
-        ),
-        right=UiText(
-            text=row.brand,
-            css_class=INVENTORY_META_CLASS,
-        ),
-    )
-
-
-def _product_stock_batch_row(row: AvailableStockRow) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=product_batch_count_label(row),
-            css_class=INVENTORY_META_CLASS,
-        ),
-        right=UiText(
-            text=product_physical_boxes_label(row),
-            css_class=INVENTORY_META_CLASS,
-        ),
-    )
-
-
-def _product_stock_quantity_row(row: AvailableStockRow) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=product_reserved_boxes_label(row),
-            css_class=INVENTORY_META_CLASS,
-        ),
-        right=UiText(
-            text=product_available_boxes_label(row),
-            css_class=INVENTORY_BOXES_CLASS,
+            UiCardRow(
+                left=UiText(
+                    text=row.catalog_label,
+                    css_class=INVENTORY_BATCH_TITLE_CLASS,
+                ),
+                right=status.text,
+            ),
+            UiCardRow(
+                left=UiText(
+                    text=product_batch_count_label(row),
+                    css_class=INVENTORY_META_CLASS,
+                ),
+                right=UiText(
+                    text=product_physical_boxes_label(row),
+                    css_class=INVENTORY_META_CLASS,
+                ),
+            ),
+            UiCardRow(
+                left=UiText(
+                    text=product_reserved_boxes_label(row),
+                    css_class=INVENTORY_META_CLASS,
+                ),
+                right=UiText(
+                    text=product_available_boxes_label(row),
+                    css_class=INVENTORY_BOXES_CLASS,
+                ),
+            ),
         ),
     )
 

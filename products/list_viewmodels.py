@@ -111,7 +111,7 @@ def _product_header_row(
 def _product_title_row(product: Product) -> UiCardRow:
     return UiCardRow(
         left=UiText(
-            text=product.name,
+            text=product.display_name,
             css_class=PRODUCT_TITLE_CLASS,
         ),
     )
@@ -121,8 +121,7 @@ def _product_brand_row(product: Product) -> UiCardRow:
     return UiCardRow(
         left=UiText(
             text=(
-                f"{product_brand_label(product)}"
-                f" · {product_manufacturer_label(product)}"
+                f"{product_manufacturer_label(product)}"
             ),
             css_class=PRODUCT_BRAND_CLASS,
         ),

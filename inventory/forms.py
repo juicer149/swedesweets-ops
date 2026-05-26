@@ -9,7 +9,7 @@ from products.models import Product
 
 class ProductChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, product: Product) -> str:
-        return f"{product.brand} — {product.name} ({product.weight_per_box} g)"
+        return product.catalog_label
 
 
 class BatchForm(forms.Form):
@@ -28,6 +28,7 @@ class BatchForm(forms.Form):
 
     product = ProductChoiceField(
         queryset=Product.objects.filter(active=True).order_by(
+            "internal_number",
             "brand",
             "name",
             "weight_per_box",
