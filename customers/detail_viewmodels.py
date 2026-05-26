@@ -20,7 +20,6 @@ from orders.models import Order
 
 
 CUSTOMER_EDIT_LABEL = "Edit customer"
-CUSTOMER_BACK_TO_CUSTOMERS_LABEL = "Back to customers"
 
 
 @dataclass(frozen=True)
@@ -77,7 +76,6 @@ def build_customer_detail_context(
             ),
             secondary_actions=(
                 build_edit_customer_action(href=edit_url),
-                build_back_to_customers_action(href=cancel_url),
             ),
         ),
         title=customer.name,
@@ -89,15 +87,6 @@ def build_customer_detail_context(
 def build_edit_customer_action(*, href: str) -> DetailAction:
     return DetailAction(
         label=CUSTOMER_EDIT_LABEL,
-        href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
-    )
-
-
-def build_back_to_customers_action(*, href: str) -> DetailAction:
-    return DetailAction(
-        label=CUSTOMER_BACK_TO_CUSTOMERS_LABEL,
         href=href,
         method=ACTION_METHOD_GET,
         tone=ACTION_TONE_SECONDARY,

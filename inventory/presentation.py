@@ -27,8 +27,6 @@ INVENTORY_BATCH_ACTION_LABEL = "View batch →"
 INVENTORY_VIEW_BATCHES_LABEL = "Batches"
 INVENTORY_VIEW_PRODUCTS_LABEL = "Products"
 
-INVENTORY_BACK_TO_LIST_LABEL = "Back to inventory"
-
 
 INVENTORY_STATUS_ACTIVE = StatusPresentation(
     value=InventoryBatch.Status.ACTIVE,

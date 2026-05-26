@@ -17,7 +17,7 @@ DetailAction:
 {% endcomment %}
 
 {% if primary_action or secondary_action or secondary_actions %}
-  <div class="form-actions">
+  <div class="form-actions detail-actions">
     {% if primary_action %}
       {% include "includes/ui/detail_action_item.html" with action=primary_action %}
     {% endif %}

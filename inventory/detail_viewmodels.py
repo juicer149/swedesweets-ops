@@ -19,7 +19,6 @@ from orders.mini_cards import build_order_usage_mini_card
 
 from inventory.models import InventoryBatch
 from inventory.presentation import (
-    INVENTORY_BACK_TO_LIST_LABEL,
     batch_detail_card_class,
     batch_detail_status_class,
     batch_status_icon,
@@ -131,7 +130,6 @@ def build_batch_detail_context(
             content_card_class=batch_detail_card_class(batch),
             secondary_actions=_build_secondary_actions(
                 batch=batch,
-                cancel_url=cancel_url,
                 edit_url=edit_url,
                 close_url=close_url,
             ),
@@ -160,19 +158,9 @@ def build_close_batch_action(*, href: str) -> DetailAction:
     )
 
 
-def build_back_to_inventory_action(*, href: str) -> DetailAction:
-    return DetailAction(
-        label=INVENTORY_BACK_TO_LIST_LABEL,
-        href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
-    )
-
-
 def _build_secondary_actions(
     *,
     batch: InventoryBatch,
-    cancel_url: str,
     edit_url: str,
     close_url: str,
 ) -> tuple[DetailAction, ...]:
@@ -184,8 +172,6 @@ def _build_secondary_actions(
 
         if close_url:
             actions.append(build_close_batch_action(href=close_url))
-
-    actions.append(build_back_to_inventory_action(href=cancel_url))
 
     return tuple(actions)
 
@@ -262,6 +248,7 @@ def _build_usage_rows(allocations: list[Allocation]) -> list[BatchUsageRow]:
         )
 
     return rows
+
 
 def _usage_summary(usage_count: int) -> str:
     if usage_count == 1:

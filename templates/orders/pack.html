@@ -4,9 +4,7 @@
 {% block title %}{{ title }} | SwedeSweets{% endblock %}
 
 {% block content %}
-{% include "includes/ui/page_header.html" with title_id="pack-order-title" title=title description=description %}
-
-<section class="content-section content-section--wide" aria-labelledby="pack-order-title">
+<section class="content-section content-section--wide content-section--detail">
   <article class="content-card content-card--wide {{ detail_card.content_card_class }}">
     {% include "includes/ui/detail_card_header.html" with header=detail_card.header %}
 

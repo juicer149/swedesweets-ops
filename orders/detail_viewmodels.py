@@ -19,8 +19,6 @@ from common.detail_cards import (
 from orders.datatypes import PickLine
 from orders.models import Order, OrderLine
 from orders.presentation import (
-    ORDER_BACK_TO_ORDER_LABEL,
-    ORDER_BACK_TO_ORDERS_LABEL,
     ORDER_CANCEL_LABEL,
     ORDER_CONFIRM_DELIVER_LABEL,
     ORDER_CONFIRM_PACK_LABEL,
@@ -170,24 +168,6 @@ def build_cancel_order_action(*, href: str) -> DetailAction:
         icon="x",
         method=ACTION_METHOD_GET,
         tone=ACTION_TONE_DANGER,
-    )
-
-
-def build_back_to_orders_action(*, href: str) -> DetailAction:
-    return DetailAction(
-        label=ORDER_BACK_TO_ORDERS_LABEL,
-        href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
-    )
-
-
-def build_back_to_order_action(*, href: str) -> DetailAction:
-    return DetailAction(
-        label=ORDER_BACK_TO_ORDER_LABEL,
-        href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
     )
 
 

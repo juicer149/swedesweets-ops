@@ -41,8 +41,6 @@ ORDER_CONFIRM_PACK_LABEL = "Confirm packed"
 ORDER_CONFIRM_DELIVER_LABEL = "Confirm delivered"
 ORDER_EDIT_LABEL = "Edit order"
 ORDER_CANCEL_LABEL = "Cancel order"
-ORDER_BACK_TO_ORDERS_LABEL = "Back to orders"
-ORDER_BACK_TO_ORDER_LABEL = "Back to order"
 
 ORDER_CARD_CLASS_BY_STATUS = {
     Order.Status.DRAFT: "mobile-card--order-draft",

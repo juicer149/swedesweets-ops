@@ -26,7 +26,6 @@ PRODUCT_INVENTORY_PANEL_ICON = "inventory"
 PRODUCT_DEMAND_PANEL_ICON = "truck"
 
 PRODUCT_EDIT_LABEL = "Edit product"
-PRODUCT_BACK_TO_PRODUCTS_LABEL = "Back to products"
 
 PRODUCT_TAG_ICON_CLASS = "product-tag__icon"
 PRODUCT_TAG_VEGAN_CLASS = "product-tag product-tag--vegan"

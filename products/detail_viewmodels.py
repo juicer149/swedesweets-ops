@@ -21,7 +21,6 @@ from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow
 from products.models import Product
 from products.presentation import (
-    PRODUCT_BACK_TO_PRODUCTS_LABEL,
     PRODUCT_DEMAND_PANEL_ICON,
     PRODUCT_DETAIL_PANEL_ICON,
     PRODUCT_EDIT_LABEL,
@@ -186,7 +185,6 @@ def build_product_detail_context(
             content_card_class=product_detail_card_class(product),
             secondary_actions=(
                 build_edit_product_action(href=edit_url),
-                build_back_to_products_action(href=cancel_url),
             ),
         ),
         title=product.display_name,
@@ -198,15 +196,6 @@ def build_product_detail_context(
 def build_edit_product_action(*, href: str) -> DetailAction:
     return DetailAction(
         label=PRODUCT_EDIT_LABEL,
-        href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
-    )
-
-
-def build_back_to_products_action(*, href: str) -> DetailAction:
-    return DetailAction(
-        label=PRODUCT_BACK_TO_PRODUCTS_LABEL,
         href=href,
         method=ACTION_METHOD_GET,
         tone=ACTION_TONE_SECONDARY,
@@ -279,6 +268,7 @@ def _build_batch_rows(
         )
 
     return rows
+
 
 def _product_status_label(product: Product) -> str:
     return "Active" if product.active else "Inactive"
