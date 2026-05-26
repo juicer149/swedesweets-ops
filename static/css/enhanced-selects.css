@@ -2,10 +2,6 @@
    Enhanced selects: Tom Select overrides
    ============================================================================= */
 
-/*
-  Tom Select keeps the original <select> in the DOM so normal form submit still
-  works. Once enhanced, the original select must be visually hidden.
-*/
 select.tomselected,
 select.ts-hidden-accessible {
   position: absolute !important;
@@ -21,9 +17,17 @@ select.ts-hidden-accessible {
   border: 0 !important;
 }
 
+/* =============================================================================
+   Base wrapper/control
+   ============================================================================= */
+
 .ts-wrapper {
   position: relative;
+
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
   font-family: var(--font-body);
 }
 
@@ -31,13 +35,30 @@ select.ts-hidden-accessible {
   z-index: 70;
 }
 
-.ts-control {
-  min-height: 48px;
-  padding: 0.8rem 0.95rem;
+.ts-control,
+.ts-dropdown,
+.ts-dropdown-content,
+.ts-dropdown .option,
+.enhanced-select-option,
+.enhanced-product-option,
+.enhanced-product-selected {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
 
+.ts-control {
   display: flex;
   align-items: center;
   gap: 0;
+
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 0.8rem 0.95rem;
+
+  overflow: hidden;
 
   color: var(--color-primary-900);
   background: var(--color-white);
@@ -68,6 +89,8 @@ select.ts-hidden-accessible {
 
 .ts-control .item {
   flex: 1 1 auto;
+
+  width: 100%;
   min-width: 0;
   max-width: 100%;
 
@@ -78,14 +101,6 @@ select.ts-hidden-accessible {
   color: var(--color-primary-900);
 }
 
-.ts-control input::placeholder {
-  color: var(--color-neutral-600);
-}
-
-/*
-  Tom Select places a real <input> inside .ts-control for searchable selects.
-  It is not a normal form field visually, so remove inherited input styling.
-*/
 .ts-control > input {
   min-width: 0;
   min-height: 0 !important;
@@ -102,13 +117,17 @@ select.ts-hidden-accessible {
   outline: none !important;
 }
 
+.ts-control input::placeholder {
+  color: var(--color-neutral-600);
+}
+
+/* =============================================================================
+   Searchable vs static single selects
+   ============================================================================= */
+
 /*
   Closed searchable single selects should look like one normal select field.
   The internal search input must not steal width from the selected text.
-
-  Important:
-  After a value is chosen, Tom Select may keep focus while the dropdown is closed.
-  Therefore this must depend on dropdown-active only, not focus.
 */
 .enhanced-select--searchable.single:not(.dropdown-active) .ts-control > input {
   flex: 0 0 0 !important;
@@ -120,7 +139,6 @@ select.ts-hidden-accessible {
 
 /*
   Open searchable single selects should behave like one search field.
-  Hide the selected item and let the search input occupy the full control.
 */
 .enhanced-select--searchable.single.dropdown-active .ts-control .item {
   display: none;
@@ -138,7 +156,7 @@ select.ts-hidden-accessible {
 }
 
 /*
-  Static single selects should keep their selected text visible.
+  Static single selects keep their selected text visible.
   Examples: country and mobile order-by.
 */
 .enhanced-select--static.single .ts-control .item {
@@ -149,6 +167,10 @@ select.ts-hidden-accessible {
   display: none !important;
 }
 
+/* =============================================================================
+   Dropdown
+   ============================================================================= */
+
 .ts-dropdown {
   position: absolute;
   top: 100%;
@@ -156,7 +178,13 @@ select.ts-hidden-accessible {
   z-index: 80;
 
   width: 100%;
+  max-width: 100%;
+  max-height: min(18rem, 42vh);
   margin-top: 0.35rem;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 
   color: var(--color-primary-900);
   background: var(--color-white);
@@ -170,13 +198,21 @@ select.ts-hidden-accessible {
   box-shadow:
     0 18px 40px rgb(var(--color-row-shadow) / 0.18),
     0 1px 0 rgb(255 255 255 / 0.85) inset;
+}
 
-  overflow: hidden;
+.ts-dropdown-content {
+  max-height: inherit;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .ts-dropdown .option {
   display: flex;
   align-items: center;
+
+  width: 100%;
   min-height: 44px;
   padding: 0 0.85rem;
 
@@ -199,6 +235,17 @@ select.ts-hidden-accessible {
   color: var(--color-neutral-600);
 }
 
+.ts-dropdown .highlight {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: inherit;
+}
+
+/* =============================================================================
+   Native-looking wrapper cleanup
+   ============================================================================= */
+
 .ts-wrapper.form-control,
 .ts-wrapper.form-select {
   padding: 0;
@@ -206,9 +253,10 @@ select.ts-hidden-accessible {
 }
 
 .ts-wrapper.single .ts-control::after {
+  right: 1rem;
+
   border-color: var(--color-primary-800) transparent transparent transparent;
   border-width: 5px 5px 0 5px;
-  right: 1rem;
 }
 
 .ts-wrapper.single.dropdown-active .ts-control::after {
@@ -217,54 +265,64 @@ select.ts-hidden-accessible {
 }
 
 /* =============================================================================
-   Enhanced product picker options
+   Generic options
+   ============================================================================= */
+
+.enhanced-select-option {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* =============================================================================
+   Product options
    ============================================================================= */
 
 .ts-dropdown .option:has(.enhanced-product-option) {
   display: block;
+
+  width: 100%;
   min-height: 0;
   padding: 0;
+
+  overflow: hidden;
 }
 
 .enhanced-product-option {
   display: grid;
+  grid-template-columns: 1fr;
   gap: var(--space-1);
+
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 0.75rem 0.95rem;
 }
 
-.enhanced-product-option__top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.4rem;
+.enhanced-product-option__main {
+  min-width: 0;
+  max-width: 100%;
 
-  font-size: var(--font-size-14);
-  font-weight: 850;
-  line-height: 1.25;
-  color: var(--color-primary-900);
-}
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 
-.enhanced-product-option__code {
-  color: var(--color-primary-950);
-}
-
-.enhanced-product-option__brand {
-  color: var(--color-primary-900);
-}
-
-.enhanced-product-option__name {
-  overflow-wrap: anywhere;
-
-  font-size: var(--font-size-18);
+  font-size: var(--font-size-16);
   font-weight: 850;
   line-height: 1.25;
   color: var(--color-primary-950);
 }
 
 .enhanced-product-option__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 
   font-size: var(--font-size-14);
   font-weight: 700;
@@ -272,110 +330,37 @@ select.ts-hidden-accessible {
   color: var(--color-neutral-700);
 }
 
+/* =============================================================================
+   Selected product display
+   ============================================================================= */
+
 .enhanced-product-selected {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
+  display: block;
+
+  width: 100%;
   min-width: 0;
   max-width: 100%;
+
+  overflow: hidden;
 }
 
 .enhanced-product-selected > span:first-child {
+  display: block;
+
+  width: 100%;
   min-width: 0;
+  max-width: 100%;
+
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-.enhanced-product-selected__stock {
-  flex: 0 0 auto;
-  color: var(--color-neutral-600);
-  font-size: var(--font-size-14);
-  font-weight: 700;
-}
-
-@media (max-width: 700px) {
-  .ts-dropdown {
-    max-height: min(68vh, 520px);
-    overflow-y: auto;
-  }
-
-  .enhanced-product-option {
-    padding: 0.85rem 1rem;
-  }
-
-  .enhanced-product-option__name {
-    font-size: var(--font-size-20);
-  }
-
-  .enhanced-product-option__meta {
-    display: grid;
-    gap: 0.15rem;
-  }
-
-  .enhanced-product-selected {
-    display: block;
-  }
-
-  .enhanced-product-selected__stock {
-    display: none;
-  }
 }
 
 /* =============================================================================
-   Mobile enhanced selects
-
-   Keep Tom Select usable on touch screens:
-   - bigger tap targets
-   - dropdown stays inside the form/card width
-   - selected product labels truncate instead of overflowing sideways
+   Mobile / touch
    ============================================================================= */
 
-.ts-control,
-.ts-dropdown,
-.ts-dropdown .option,
-.enhanced-product-option,
-.enhanced-product-selected {
-  box-sizing: border-box;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.ts-control {
-  overflow: hidden;
-}
-
-.ts-control .item {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.enhanced-product-selected {
-  overflow: hidden;
-}
-
-.enhanced-product-selected > span:first-child {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.ts-dropdown {
-  width: 100%;
-  max-width: 100%;
-}
-
-.enhanced-product-option__top,
-.enhanced-product-option__name,
-.enhanced-product-option__meta {
-  min-width: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 700px) {
+@media (max-width: 900px), (pointer: coarse) {
   .ts-control {
     min-height: 3.75rem;
     padding: 1rem;
@@ -395,152 +380,29 @@ select.ts-hidden-accessible {
 
     width: 100%;
     max-width: 100%;
-    max-height: min(42vh, 360px);
-
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    max-height: min(14rem, 34vh);
   }
 
   .ts-dropdown .option {
     width: 100%;
-    min-height: 3.75rem;
+    min-height: 3.5rem;
   }
 
   .enhanced-product-option {
-    width: 100%;
-    padding: 0.9rem 1rem;
+    padding: 0.85rem 1rem;
   }
 
-  .enhanced-product-option__top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.45rem;
-
-    font-size: var(--font-size-14);
-    line-height: 1.25;
-  }
-
-  .enhanced-product-option__name {
+  .enhanced-product-option__main {
     font-size: var(--font-size-18);
-    line-height: 1.2;
-  }
-
-  .enhanced-product-option__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.6rem;
-
-    font-size: var(--font-size-14);
     line-height: 1.25;
   }
 
-  .enhanced-product-selected {
-    display: block;
-    width: 100%;
-  }
-
-  .enhanced-product-selected > span:first-child {
-    display: block;
-  }
-
-  .enhanced-product-selected__stock {
+  /*
+    On phones the product select should identify the product only.
+    Weight and other operational metadata belong on product/inventory detail,
+    not inside the order picker.
+  */
+  .enhanced-product-option__meta {
     display: none;
-  }
-}
-
-/* =============================================================================
-   Scroll-contained Tom Select dropdowns
-
-   Dropdowns should behave like small scroll panels, not page-length lists.
-   ============================================================================= */
-
-.ts-dropdown {
-  max-height: min(18rem, 42vh);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.ts-dropdown-content {
-  max-height: inherit;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-@media (max-width: 900px), (pointer: coarse) {
-  .ts-dropdown {
-    max-height: min(16rem, 38vh);
-  }
-
-  .ts-dropdown-content {
-    max-height: inherit;
-  }
-}
-
-/* =============================================================================
-   Mobile product option layout
-
-   Product search results should read as compact stacked rows on phones.
-   Avoid multi-column/flex wrapping that makes matched numbers jump sideways.
-   ============================================================================= */
-
-@media (max-width: 900px), (pointer: coarse) {
-  .ts-dropdown .option:has(.enhanced-product-option) {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .enhanced-product-option {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
-    width: 100%;
-    min-width: 0;
-    padding: 0.75rem 0.9rem;
-  }
-
-  .enhanced-product-option__top,
-  .enhanced-product-option__meta {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-
-    font-size: var(--font-size-14);
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-  }
-
-  .enhanced-product-option__name {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-
-    font-size: var(--font-size-16);
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-  }
-
-  .enhanced-product-option__meta {
-    color: var(--color-neutral-700);
-  }
-
-  .enhanced-product-option__meta > * + *::before {
-    content: " · ";
-  }
-
-  .ts-dropdown .highlight {
-    display: inline;
-    padding: 0;
-    border-radius: 0;
-    background: transparent;
-    color: inherit;
-    font-weight: inherit;
   }
 }

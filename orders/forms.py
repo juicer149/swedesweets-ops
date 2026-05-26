@@ -23,7 +23,7 @@ MIN_ORDER_QUANTITY = Decimal("0.001")
 
 # Ops guardrail, not an inventory invariant.
 # Adjust this if your real customers can reasonably order more per product.
-MAX_BOXES_PER_PRODUCT_PER_ORDER = 500
+MAX_BOXES_PER_PRODUCT_PER_ORDER = 50
 
 
 class CustomerChoiceField(forms.ModelChoiceField):
@@ -37,22 +37,8 @@ class CustomerChoiceField(forms.ModelChoiceField):
 
 
 class ProductChoiceField(forms.ModelChoiceField):
-    def __init__(
-        self,
-        *args,
-        available_boxes_by_product_id: dict[int, int] | None = None,
-        **kwargs,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.available_boxes_by_product_id = available_boxes_by_product_id or {}
-
     def label_from_instance(self, product: Product) -> str:
-        stock_label = self._stock_label(product)
-
-        if stock_label:
-            return f"{product.catalog_label} · {stock_label}"
-
-        return product.catalog_label
+        return f"{product.code_label} · {product.display_name}" 
 
     def create_option(
         self,
@@ -78,7 +64,6 @@ class ProductChoiceField(forms.ModelChoiceField):
             return option
 
         product = value.instance
-        stock_label = self._stock_label(product)
 
         option["attrs"].update(
             {
@@ -86,7 +71,6 @@ class ProductChoiceField(forms.ModelChoiceField):
                 "data-brand": product.brand,
                 "data-name": product.display_name,
                 "data-weight": f"{product.weight_per_box} g / box",
-                "data-stock": stock_label,
                 "search": (
                     f"{product.code_label} "
                     f"{product.internal_number or ''} "
@@ -99,14 +83,6 @@ class ProductChoiceField(forms.ModelChoiceField):
         )
 
         return option
-
-    def _stock_label(self, product: Product) -> str:
-        available_boxes = self.available_boxes_by_product_id.get(product.id)
-
-        if available_boxes is None:
-            return ""
-
-        return _boxes_label(available_boxes)
 
 
 class OrderCreateForm(forms.Form):
@@ -189,17 +165,11 @@ class OrderLineForm(forms.Form):
         self,
         *args,
         product_queryset=None,
-        available_boxes_by_product_id: dict[int, int] | None = None,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
-        available_boxes_by_product_id = available_boxes_by_product_id or {}
-
         self.fields["product"].queryset = product_queryset or Product.objects.none()
-        self.fields["product"].available_boxes_by_product_id = (
-            available_boxes_by_product_id
-        )
 
         set_form_field_layout(
             self,
@@ -286,9 +256,6 @@ class BaseOrderLineFormSet(BaseFormSet):
         kwargs.update(
             {
                 "product_queryset": self.product_choice_context.queryset,
-                "available_boxes_by_product_id": (
-                    self.product_choice_context.available_boxes_by_product_id
-                ),
             }
         )
 
