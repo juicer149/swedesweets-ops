@@ -7,23 +7,27 @@
         data-href="{% url 'products:detail' product_pk=line.product.pk %}"
         tabindex="0"
         role="link"
-        aria-label="View product {{ line.product.sku }}"
+        aria-label="View product {{ line.product.display_name }}"
       >
         <strong>
           {{ line.quantity_in_boxes }}
           box{{ line.quantity_in_boxes|pluralize:"es" }}
           —
-          {{ line.product.name }}
+          {{ line.product.display_name }}
         </strong>
 
         <span>
-          SKU: {{ line.product.sku }}
+          {{ line.product.catalog_label }}
           ·
           Unit: {{ line.unit }}
         </span>
       </article>
     {% endfor %}
   </div>
+
+  <p class="table-hint">
+    Select a product to view its product detail.
+  </p>
 {% else %}
   <p class="form-help">No order contents found.</p>
 {% endif %}

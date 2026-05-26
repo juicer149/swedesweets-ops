@@ -1,26 +1,23 @@
-<div class="detail-line-list detail-line-list--leading">
-  <article
-    class="detail-line detail-line--linked clickable-row"
-    data-tone="neutral"
+<dl class="detail-data-list">
+  <div
+    class="detail-data-list__product-row clickable-row"
     data-href="{{ product_href }}"
     tabindex="0"
     role="link"
-    aria-label="View product {{ batch.product.sku }}"
+    aria-label="View product {{ batch.product.display_name }}"
   >
-    <span class="detail-line__content">
-      <span>
+    <dt>Product</dt>
+    <dd>
+      <span class="detail-data-list__product-label">
         {{ batch.product.catalog_label }}
       </span>
-    </span>
 
-    <!-- change class from text-link -->
-    <a class="text-link detail-line__action" href="{{ product_href }}">
-      View product →
-    </a>
-  </article>
-</div>
+      <span class="detail-data-list__product-arrow" aria-hidden="true">
+        →
+      </span>
+    </dd>
+  </div>
 
-<dl class="detail-data-list">
   <div>
     <dt>Batch</dt>
     <dd>{{ batch.batch_id }}</dd>
@@ -67,7 +64,3 @@
     </dd>
   </div>
 </dl>
-
-<p class="table-hint">
-  Select the product to view its product detail.
-</p>
