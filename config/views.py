@@ -34,7 +34,7 @@ DASHBOARD_EXPIRING_DAYS = 45
 def index(request):
     placed_count = count_placed_orders()
     packed_count = count_packed_orders()
-    expiring_count = count_expiring_batches()
+    expiring_count = count_expiring_batches(days=DASHBOARD_EXPIRING_DAYS)
     low_stock_count = count_low_stock_products(threshold=LOW_STOCK_THRESHOLD)
 
     orders_url = reverse("orders:index")

@@ -8,7 +8,7 @@ create objects, or perform business workflows.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from django.db.models import Case, Count, IntegerField, QuerySet, Sum, Value, When
 from django.utils import timezone
@@ -267,22 +267,30 @@ def list_depleted_batches() -> QuerySet[InventoryBatch]:
 def list_expiring_batch_rows_for_dashboard(
     *,
     limit: int = 3,
+    days: int = 45,
     today: date | None = None,
 ) -> list[BatchListRow]:
-    return list_expiring_batch_rows(today=today)[:limit]
+    return list_expiring_batch_rows(
+        days=days,
+        today=today,
+    )[:limit]
 
 
 def list_expiring_batch_rows(
     *,
+    days: int = 45,
     today: date | None = None,
 ) -> list[BatchListRow]:
     today = today or timezone.localdate()
+    cutoff_date = today + timedelta(days=days)
 
     batches = (
         InventoryBatch.objects
         .filter(
             status=InventoryBatch.Status.ACTIVE,
             boxes__gt=0,
+            best_before__gte=today,
+            best_before__lte=cutoff_date,
         )
         .select_related("product")
         .order_by("best_before", "batch_id")
@@ -294,12 +302,21 @@ def list_expiring_batch_rows(
     )
 
 
-def count_expiring_batches() -> int:
+def count_expiring_batches(
+    *,
+    days: int = 45,
+    today: date | None = None,
+) -> int:
+    today = today or timezone.localdate()
+    cutoff_date = today + timedelta(days=days)
+
     return (
         InventoryBatch.objects
         .filter(
             status=InventoryBatch.Status.ACTIVE,
             boxes__gt=0,
+            best_before__gte=today,
+            best_before__lte=cutoff_date,
         )
         .count()
     )
