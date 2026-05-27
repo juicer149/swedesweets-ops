@@ -11,10 +11,7 @@ from common.table_controls import (
     TableControlsTemplate,
     TableFilter,
     TableSortField,
-    QuickJumpOption,
-    QuickJumpSearch,
 )
-
 from inventory.errors import InvalidStockOperation
 from orders.detail_viewmodels import (
     build_deliver_action,
@@ -387,23 +384,4 @@ def _get_order_for_detail(order_id: int) -> Order:
         )
         .prefetch_related("lines__product"),
         pk=order_id,
-    )
-
-def _build_product_quick_jump_search(product_rows):
-    return QuickJumpSearch(
-        title="Find product",
-        title_id="products-quick-jump-title",
-        select_id="products-quick-jump",
-        placeholder="Search product",
-        aria_label="Find product",
-        options=[
-            QuickJumpOption(
-                label=(
-                    f"{row.product.internal_number} · "
-                    f"{row.product.brand} — {row.product.name}"
-                ),
-                url=row.detail_href,
-            )
-            for row in product_rows
-        ],
     )

@@ -1,29 +1,27 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
 from django import forms
-from django.db.models import Q
 from django.forms import BaseFormSet, formset_factory
 
 from common.form_layout import set_form_field_layout
 from customers.models import Customer
-from inventory.selectors import available_boxes_by_product_id
 from orders.datatypes import OrderLineInput
 from orders.models import Order, OrderLine
+from orders.order_limits import (
+    MAX_BOXES_PER_PRODUCT_PER_ORDER,
+    is_unusually_large_order_line,
+)
+from orders.product_choices import build_product_choice_context
 from products.models import Product
 from products.units import quantity_to_boxes
 
 
 DEFAULT_ORDER_LINE_COUNT = 1
 MIN_ORDER_QUANTITY = Decimal("0.001")
-
-# Ops guardrail, not an inventory invariant.
-# Adjust this if your real customers can reasonably order more per product.
-MAX_BOXES_PER_PRODUCT_PER_ORDER = 50
 
 
 class CustomerChoiceField(forms.ModelChoiceField):
@@ -37,8 +35,27 @@ class CustomerChoiceField(forms.ModelChoiceField):
 
 
 class ProductChoiceField(forms.ModelChoiceField):
+    def __init__(
+        self,
+        *args,
+        available_boxes_by_product_id: dict[int, int] | None = None,
+        **kwargs,
+    ) -> None:
+        self.available_boxes_by_product_id = available_boxes_by_product_id or {}
+        super().__init__(*args, **kwargs)
+
     def label_from_instance(self, product: Product) -> str:
-        return f"{product.code_label} · {product.display_name}" 
+        available_boxes = self.available_boxes_by_product_id.get(product.id)
+
+        if available_boxes is None:
+            return f"{product.code_label} · {product.display_name}"
+
+        return (
+            f"{product.code_label} · "
+            f"{product.display_name} · "
+            f"{product.weight_per_box} g · "
+            f"{_boxes_label(available_boxes)}"
+        )
 
     def create_option(
         self,
@@ -64,6 +81,7 @@ class ProductChoiceField(forms.ModelChoiceField):
             return option
 
         product = value.instance
+        available_boxes = self.available_boxes_by_product_id.get(product.id, 0)
 
         option["attrs"].update(
             {
@@ -71,6 +89,7 @@ class ProductChoiceField(forms.ModelChoiceField):
                 "data-brand": product.brand,
                 "data-name": product.display_name,
                 "data-weight": f"{product.weight_per_box} g / box",
+                "data-available-boxes": str(available_boxes),
                 "search": (
                     f"{product.code_label} "
                     f"{product.internal_number or ''} "
@@ -165,11 +184,20 @@ class OrderLineForm(forms.Form):
         self,
         *args,
         product_queryset=None,
+        available_boxes_by_product_id: dict[int, int] | None = None,
         **kwargs,
     ) -> None:
+        self.available_boxes_by_product_id = available_boxes_by_product_id or {}
+
         super().__init__(*args, **kwargs)
 
-        self.fields["product"].queryset = product_queryset or Product.objects.none()
+        product_field = self.fields["product"]
+        product_field.queryset = product_queryset or Product.objects.none()
+
+        if isinstance(product_field, ProductChoiceField):
+            product_field.available_boxes_by_product_id = (
+                self.available_boxes_by_product_id
+            )
 
         set_form_field_layout(
             self,
@@ -206,7 +234,17 @@ class OrderLineForm(forms.Form):
             unit=unit,
         )
 
-        if boxes > MAX_BOXES_PER_PRODUCT_PER_ORDER:
+        cleaned_data["quantity_in_boxes"] = boxes
+
+        available_boxes = self.available_boxes_by_product_id.get(product.id)
+
+        if (
+            is_unusually_large_order_line(boxes=boxes)
+            and not _is_stock_shortage(
+                requested_boxes=boxes,
+                available_boxes=available_boxes,
+            )
+        ):
             self.add_error(
                 "quantity",
                 (
@@ -215,9 +253,6 @@ class OrderLineForm(forms.Form):
                     "per product."
                 ),
             )
-            return cleaned_data
-
-        cleaned_data["quantity_in_boxes"] = boxes
 
         return cleaned_data
 
@@ -256,6 +291,9 @@ class BaseOrderLineFormSet(BaseFormSet):
         kwargs.update(
             {
                 "product_queryset": self.product_choice_context.queryset,
+                "available_boxes_by_product_id": (
+                    self.product_choice_context.available_boxes_by_product_id
+                ),
             }
         )
 
@@ -281,17 +319,6 @@ class BaseOrderLineFormSet(BaseFormSet):
             product_names_by_id[product.id] = product.display_name
 
         for product_id, requested_boxes in requested_boxes_by_product_id.items():
-            if requested_boxes > MAX_BOXES_PER_PRODUCT_PER_ORDER:
-                product_name = product_names_by_id[product_id]
-
-                raise forms.ValidationError(
-                    (
-                        f"{product_name} is unusually large. "
-                        f"Maximum is {_boxes_label(MAX_BOXES_PER_PRODUCT_PER_ORDER)} "
-                        "per order."
-                    )
-                )
-
             available_boxes = self.product_choice_context.available_boxes_by_product_id.get(
                 product_id,
                 0,
@@ -304,6 +331,17 @@ class BaseOrderLineFormSet(BaseFormSet):
                     (
                         f"Only {_boxes_label(available_boxes)} available "
                         f"for {product_name}."
+                    )
+                )
+
+            if is_unusually_large_order_line(boxes=requested_boxes):
+                product_name = product_names_by_id[product_id]
+
+                raise forms.ValidationError(
+                    (
+                        f"{product_name} is unusually large. "
+                        f"Maximum is {_boxes_label(MAX_BOXES_PER_PRODUCT_PER_ORDER)} "
+                        "per order."
                     )
                 )
 
@@ -346,61 +384,6 @@ class OrderCancelForm(forms.Form):
     )
 
 
-@dataclass(frozen=True)
-class ProductChoiceContext:
-    queryset: Any
-    available_boxes_by_product_id: dict[int, int]
-
-
-def build_product_choice_context(*, order: Order | None = None) -> ProductChoiceContext:
-    available_boxes = available_boxes_by_product_id()
-
-    if order is not None:
-        for line in order.lines.all():
-            available_boxes[line.product_id] = (
-                available_boxes.get(line.product_id, 0)
-                + line.quantity_in_boxes
-            )
-
-    orderable_product_ids = {
-        product_id
-        for product_id, boxes in available_boxes.items()
-        if boxes > 0
-    }
-
-    existing_product_ids = set()
-
-    if order is not None:
-        existing_product_ids = set(
-            order.lines.values_list("product_id", flat=True)
-        )
-
-    allowed_product_ids = orderable_product_ids | existing_product_ids
-
-    if not allowed_product_ids:
-        queryset = Product.objects.none()
-    else:
-        queryset = (
-            Product.objects
-            .filter(
-                Q(active=True)
-                | Q(id__in=existing_product_ids),
-                id__in=allowed_product_ids,
-            )
-            .order_by(
-                "internal_number",
-                "brand",
-                "name",
-                "weight_per_box",
-            )
-        )
-
-    return ProductChoiceContext(
-        queryset=queryset,
-        available_boxes_by_product_id=available_boxes,
-    )
-
-
 def build_order_line_inputs(
     formset: BaseOrderLineFormSet,
 ) -> list[OrderLineInput]:
@@ -435,6 +418,17 @@ def _quantity_to_boxes_for_form(
         )
     except ValueError as error:
         raise forms.ValidationError(str(error)) from error
+
+
+def _is_stock_shortage(
+    *,
+    requested_boxes: int,
+    available_boxes: int | None,
+) -> bool:
+    if available_boxes is None:
+        return False
+
+    return requested_boxes > available_boxes
 
 
 def _boxes_label(boxes: int) -> str:

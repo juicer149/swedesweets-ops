@@ -171,6 +171,7 @@ def pack_order(*, order: Order, user=None) -> Order:
             InventoryBatch.objects
             .select_for_update()
             .filter(id__in=boxes_by_batch_id.keys())
+            .order_by("id")
         )
     }
 

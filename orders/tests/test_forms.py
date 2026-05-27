@@ -14,8 +14,8 @@ from orders.forms import (
     ProductChoiceField,
     build_order_line_initial_data,
     build_order_line_inputs,
-    build_product_choice_context,
 )
+from orders.product_choices import build_product_choice_context
 from orders.models import Order
 from orders.services import create_order
 
