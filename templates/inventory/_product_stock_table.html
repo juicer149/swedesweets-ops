@@ -1,0 +1,60 @@
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        {% include "includes/table/sort_headers.html" %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for row in product_rows %}
+        <tr
+          class="clickable-row"
+          data-tone="{{ row.status.tone.key }}"
+          data-href="{{ row.product_href }}"
+          tabindex="0"
+          role="link"
+          aria-label="View product {{ row.product_name }}"
+        >
+          <th scope="row">
+            <span class="row-link">
+              {{ row.catalog_label }}
+            </span>
+          </th>
+
+          <td class="numeric-cell">
+            {{ row.batch_count }}
+          </td>
+
+          <td class="numeric-cell">
+            <strong>{{ row.physical_boxes }}</strong>
+          </td>
+
+          <td class="numeric-cell">
+            {{ row.reserved_boxes }}
+          </td>
+
+          <td class="numeric-cell">
+            <strong>{{ row.available_boxes }}</strong>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td class="empty-cell" colspan="5">
+            No product stock found.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="mobile-card-list">
+  {% for row in product_rows %}
+    {% include "includes/ui/card.html" with card=row.card only %}
+  {% empty %}
+    <article class="mobile-card mobile-card--neutral">
+      <p>No product stock found.</p>
+    </article>
+  {% endfor %}
+</div>

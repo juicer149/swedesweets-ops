@@ -132,63 +132,6 @@
   box-shadow: 0 0 0 3px rgb(var(--color-status-info) / 0.16);
 }
 
-/* =============================================================================
-   Page view switch
-   ============================================================================= */
-
-.page-view-switch {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-3);
-
-  max-width: var(--layout-content-width);
-  margin: var(--space-5) auto var(--space-8);
-  padding: 0 var(--space-4);
-}
-
-.page-view-switch__item {
-  min-height: 42px;
-  padding: 9px 22px;
-
-  color: var(--color-primary-900);
-  background: var(--color-surface);
-  border: 2px solid var(--color-accent-600);
-
-  font-size: var(--font-size-16);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-
-  box-shadow: var(--shadow-sm);
-}
-
-.page-view-switch__item:hover {
-  color: var(--color-primary-900);
-  background: var(--color-accent-100);
-  border-color: var(--color-accent-700);
-  box-shadow: var(--shadow-accent-glow);
-}
-
-.page-view-switch__item[aria-current="page"],
-.page-view-switch__item.chip--active {
-  color: var(--color-primary-950);
-  background: var(--color-accent-500);
-  border-color: var(--color-accent-700);
-  box-shadow: var(--shadow-accent-glow);
-}
-
-@media (max-width: 700px) {
-  .page-view-switch {
-    margin-top: var(--space-4);
-    margin-bottom: var(--space-5);
-  }
-
-  .page-view-switch__item {
-    flex: 1;
-    min-height: 40px;
-    padding-inline: var(--space-4);
-  }
-}
 
 /* =============================================================================
    Product attribute chips

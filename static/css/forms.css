@@ -81,6 +81,34 @@
 }
 
 
+/* Neutral summary card shown above edit forms.
+   It gives immutable context without competing with the editable form card. */
+
+.form-summary-card {
+  width: min(100%, var(--form-card-max-width));
+  margin: 0 auto var(--space-5);
+  padding: var(--space-5);
+
+  background: rgb(255 255 255 / 0.72);
+  border: 1px solid var(--color-primary-300);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgb(var(--color-row-shadow) / 0.07);
+}
+
+.form-summary-card__list {
+  margin: 0;
+}
+
+.form-summary-card__list > div {
+  padding-block: 0;
+}
+
+@media (max-width: 700px) {
+  .form-summary-card {
+    padding: var(--space-4);
+  }
+}
+
 /* =============================================================================
    Form help and errors
    ============================================================================= */
@@ -144,34 +172,6 @@
 .form-actions .button {
   min-width: 160px;
   padding-inline: var(--space-6);
-}
-
-/* =============================================================================
-   Mobile form actions
-
-   Desktop can stay compact. On touch screens, form actions should be easy
-   full-width targets.
-   ============================================================================= */
-
-@media (max-width: 700px) {
-  .form-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-4);
-
-    width: 100%;
-    padding-top: var(--space-4);
-  }
-
-  .form-actions .button,
-  .form-actions a.button,
-  .form-actions button.button {
-    width: 100%;
-    min-width: 0;
-    justify-content: center;
-    text-align: center;
-    padding-inline: var(--space-5);
-  }
 }
 
 /* =============================================================================

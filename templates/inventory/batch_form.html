@@ -7,8 +7,8 @@
 
 <section class="form-section" aria-labelledby="batch-form-title">
   {% if batch %}
-    <div class="form-card form-card--summary">
-      <dl class="detail-data-list">
+    <aside class="form-summary-card" aria-label="Batch summary">
+      <dl class="detail-data-list form-summary-card__list">
         <div>
           <dt>Batch</dt>
           <dd>{{ batch.batch_id }}</dd>
@@ -16,7 +16,7 @@
 
         <div>
           <dt>Product</dt>
-          <dd>{{ batch.product.sku }}</dd>
+          <dd>{{ batch.product.catalog_label }}</dd>
         </div>
 
         <div>
@@ -24,7 +24,7 @@
           <dd>{{ batch.get_status_display }}</dd>
         </div>
       </dl>
-    </div>
+    </aside>
   {% endif %}
 
   {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}

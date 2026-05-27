@@ -21,16 +21,21 @@ from inventory.forms import (
 )
 from inventory.list_viewmodels import (
     build_batch_page_rows,
+    build_batch_quick_jump_search,
     build_inventory_view_links,
     build_product_stock_page_rows,
+    build_product_stock_quick_jump_search,
 )
 from inventory.models import InventoryBatch
 from inventory.selectors import (
     BATCH_SORTS,
     DEFAULT_BATCH_SORT,
+    DEFAULT_PRODUCT_STOCK_SORT,
+    PRODUCT_STOCK_SORTS,
     available_boxes_by_product,
     list_batch_allocations,
     list_batch_rows,
+    sort_available_stock_rows,
 )
 from inventory.services import close_batch, create_batch, update_batch
 
@@ -59,28 +64,13 @@ BATCH_TABLE_SORTS = [
     TableSortField("location", "Location"),
 ]
 
-PRODUCT_TABLE_SORTS = [
+PRODUCT_STOCK_TABLE_SORTS = [
     TableSortField("product", "Product"),
     TableSortField("batches", "Batches"),
     TableSortField("physical", "Physical"),
     TableSortField("reserved", "Reserved"),
     TableSortField("available", "Available"),
 ]
-
-PRODUCT_SORTS: dict[str, tuple[str, ...]] = {
-    "product": ("internal_number_sort", "brand", "product_name"),
-    "-product": ("-internal_number_sort", "-brand", "-product_name"),
-    "batches": ("batch_count", "internal_number_sort", "product_name"),
-    "-batches": ("-batch_count", "internal_number_sort", "product_name"),
-    "physical": ("physical_boxes", "internal_number_sort", "product_name"),
-    "-physical": ("-physical_boxes", "internal_number_sort", "product_name"),
-    "reserved": ("reserved_boxes", "internal_number_sort", "product_name"),
-    "-reserved": ("-reserved_boxes", "internal_number_sort", "product_name"),
-    "available": ("available_boxes", "internal_number_sort", "product_name"),
-    "-available": ("-available_boxes", "internal_number_sort", "product_name"),
-}
-
-DEFAULT_PRODUCT_SORT = "product"
 
 INVENTORY_LIST_ANCHOR = "inventory-list"
 INVENTORY_FILTER_QUERY_KEY = "status"
@@ -205,40 +195,6 @@ def create(request):
     return render(request, "inventory/batch_form.html", context)
 
 
-def _build_batches_index_context(request) -> dict[str, object]:
-    controls = TableControls.from_request_values(
-        base_path=request.path,
-        anchor=INVENTORY_LIST_ANCHOR,
-        requested_filter=request.GET.get(INVENTORY_FILTER_QUERY_KEY, ""),
-        requested_sort=request.GET.get("sort", ""),
-        filters=INVENTORY_FILTERS,
-        allowed_sorts=BATCH_SORTS,
-        default_sort=DEFAULT_BATCH_SORT,
-        filter_query_key=INVENTORY_FILTER_QUERY_KEY,
-    )
-
-    batch_rows = list_batch_rows(
-        status=controls.active_filter or None,
-        sort=controls.active_sort,
-    )
-
-    return {
-        "page_header": _inventory_page_header(),
-        "active_view": INVENTORY_VIEW_BATCHES,
-        "view_links": _inventory_view_links(active_view=INVENTORY_VIEW_BATCHES),
-        "inventory_rows": build_batch_page_rows(batch_rows),
-        "product_rows": [],
-        "filters": controls.build_filter_links(INVENTORY_FILTERS),
-        "table_sorts": controls.build_table_sort_links(BATCH_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(BATCH_TABLE_SORTS),
-        "mobile_sort_direction": controls.build_mobile_sort_direction(),
-        "table_controls_template": INVENTORY_TABLE_CONTROLS_TEMPLATE,
-        "numeric_table_fields": ["boxes"],
-        "active_status": controls.active_filter,
-        "active_sort": controls.active_sort,
-    }
-
-
 @login_required
 def close(request, batch_pk: int):
     batch = _get_batch_for_detail(batch_pk)
@@ -277,6 +233,42 @@ def close(request, batch_pk: int):
     return render(request, "inventory/close.html", context)
 
 
+def _build_batches_index_context(request) -> dict[str, object]:
+    controls = TableControls.from_request_values(
+        base_path=request.path,
+        anchor=INVENTORY_LIST_ANCHOR,
+        requested_filter=request.GET.get(INVENTORY_FILTER_QUERY_KEY, ""),
+        requested_sort=request.GET.get("sort", ""),
+        filters=INVENTORY_FILTERS,
+        allowed_sorts=BATCH_SORTS,
+        default_sort=DEFAULT_BATCH_SORT,
+        filter_query_key=INVENTORY_FILTER_QUERY_KEY,
+    )
+
+    batch_page_rows = build_batch_page_rows(
+        list_batch_rows(
+            status=controls.active_filter or None,
+            sort=controls.active_sort,
+        )
+    )
+
+    return {
+        "page_header": _inventory_page_header(),
+        "active_view": INVENTORY_VIEW_BATCHES,
+        "view_links": _inventory_view_links(active_view=INVENTORY_VIEW_BATCHES),
+        "quick_jump_search": build_batch_quick_jump_search(batch_page_rows),
+        "inventory_rows": batch_page_rows,
+        "product_rows": [],
+        "filters": controls.build_filter_links(INVENTORY_FILTERS),
+        "table_sorts": controls.build_table_sort_links(BATCH_TABLE_SORTS),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(BATCH_TABLE_SORTS),
+        "mobile_sort_direction": controls.build_mobile_sort_direction(),
+        "table_controls_template": INVENTORY_TABLE_CONTROLS_TEMPLATE,
+        "numeric_table_fields": ["boxes"],
+        "active_status": controls.active_filter,
+        "active_sort": controls.active_sort,
+    }
+
 def _build_products_index_context(request) -> dict[str, object]:
     controls = TableControls.from_request_values(
         base_path=request.path,
@@ -284,28 +276,31 @@ def _build_products_index_context(request) -> dict[str, object]:
         requested_filter="",
         requested_sort=request.GET.get("sort", ""),
         filters=[],
-        allowed_sorts=PRODUCT_SORTS,
-        default_sort=DEFAULT_PRODUCT_SORT,
+        allowed_sorts=PRODUCT_STOCK_SORTS,
+        default_sort=DEFAULT_PRODUCT_STOCK_SORT,
         filter_query_key=INVENTORY_FILTER_QUERY_KEY,
         extra_query_params={
             "view": INVENTORY_VIEW_PRODUCTS,
         },
     )
 
-    product_rows = _sort_product_rows(
-        rows=available_boxes_by_product(),
-        sort=controls.active_sort,
+    product_page_rows = build_product_stock_page_rows(
+        sort_available_stock_rows(
+            rows=available_boxes_by_product(),
+            sort=controls.active_sort,
+        )
     )
 
     return {
         "page_header": _inventory_page_header(),
         "active_view": INVENTORY_VIEW_PRODUCTS,
         "view_links": _inventory_view_links(active_view=INVENTORY_VIEW_PRODUCTS),
+        "quick_jump_search": build_product_stock_quick_jump_search(product_page_rows),
         "inventory_rows": [],
-        "product_rows": build_product_stock_page_rows(product_rows),
+        "product_rows": product_page_rows,
         "filters": [],
-        "table_sorts": controls.build_table_sort_links(PRODUCT_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(PRODUCT_TABLE_SORTS),
+        "table_sorts": controls.build_table_sort_links(PRODUCT_STOCK_TABLE_SORTS),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(PRODUCT_STOCK_TABLE_SORTS),
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": INVENTORY_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": [
@@ -317,7 +312,6 @@ def _build_products_index_context(request) -> dict[str, object]:
         "active_status": "",
         "active_sort": controls.active_sort,
     }
-
 
 def _inventory_page_header() -> PageHeader:
     return PageHeader(
@@ -347,50 +341,6 @@ def _active_inventory_view(value: str) -> str:
         return value
 
     return INVENTORY_DEFAULT_VIEW
-
-
-def _sort_product_rows(rows, sort: str):
-    reverse_sort = sort.startswith("-")
-    sort_key = sort.lstrip("-")
-
-    key_functions = {
-        "product": lambda row: (
-            row.internal_number_sort,
-            row.brand.casefold(),
-            row.product_name.casefold(),
-        ),
-        "batches": lambda row: (
-            row.batch_count,
-            row.internal_number_sort,
-            row.product_name.casefold(),
-        ),
-        "physical": lambda row: (
-            row.physical_boxes,
-            row.internal_number_sort,
-            row.product_name.casefold(),
-        ),
-        "reserved": lambda row: (
-            row.reserved_boxes,
-            row.internal_number_sort,
-            row.product_name.casefold(),
-        ),
-        "available": lambda row: (
-            row.available_boxes,
-            row.internal_number_sort,
-            row.product_name.casefold(),
-        ),
-    }
-
-    key_function = key_functions.get(
-        sort_key,
-        key_functions[DEFAULT_PRODUCT_SORT],
-    )
-
-    return sorted(
-        rows,
-        key=key_function,
-        reverse=reverse_sort,
-    )
 
 
 def _get_batch_for_detail(batch_pk: int) -> InventoryBatch:

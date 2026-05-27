@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from django.urls import reverse
+from common.table_controls import QuickJumpOption, QuickJumpSearch
 
 from common.ui import (
     QuantityInfo,
@@ -62,6 +63,7 @@ class BatchPageRow:
 @dataclass(frozen=True)
 class ProductStockPageRow:
     product_id: int
+    product_href: str
     code_label: str
     catalog_label: str
     product_name: str
@@ -121,7 +123,7 @@ def build_batch_page_row(row: BatchListRow) -> BatchPageRow:
         ),
     )
 
-
+# och denna kan jag ta bort? då den heter samma som den under?
 def build_product_stock_page_rows(
     rows: list[AvailableStockRow],
 ) -> list[ProductStockPageRow]:
@@ -133,9 +135,11 @@ def build_product_stock_page_rows(
 
 def build_product_stock_page_row(row: AvailableStockRow) -> ProductStockPageRow:
     status = product_stock_status_presentation(row)
+    product_href = reverse("products:detail", kwargs={"product_pk": row.product_id})
 
     return ProductStockPageRow(
         product_id=row.product_id,
+        product_href=product_href,
         code_label=row.code_label,
         catalog_label=row.catalog_label,
         product_name=row.product_name,
@@ -145,8 +149,62 @@ def build_product_stock_page_row(row: AvailableStockRow) -> ProductStockPageRow:
         reserved_boxes=row.reserved_boxes,
         available_boxes=row.available_boxes,
         status=status,
-        card=_product_stock_card(row=row, status=status),
+        card=_product_stock_card(
+            row=row,
+            status=status,
+            product_href=product_href,
+        ),
     )
+
+
+def build_batch_quick_jump_search(
+    rows: list[BatchPageRow],
+) -> QuickJumpSearch:
+    return QuickJumpSearch(
+        title="Find batch",
+        title_id="inventory-batch-search-title",
+        select_id="inventory-batch-search",
+        placeholder="Search batch, product or location",
+        aria_label="Search inventory batches",
+        options=[
+            QuickJumpOption(
+                label=_batch_quick_jump_label(row),
+                url=row.detail_href,
+            )
+            for row in rows
+        ],
+    )
+
+
+def build_product_stock_quick_jump_search(
+    rows: list[ProductStockPageRow],
+) -> QuickJumpSearch:
+    return QuickJumpSearch(
+        title="Find product stock",
+        title_id="inventory-product-stock-search-title",
+        select_id="inventory-product-stock-search",
+        placeholder="Search product stock",
+        aria_label="Search product stock",
+        options=[
+            QuickJumpOption(
+                label=_product_stock_quick_jump_label(row),
+                url=row.product_href,
+            )
+            for row in rows
+        ],
+    )
+
+
+def _batch_quick_jump_label(row: BatchPageRow) -> str:
+    return (
+        f"{row.batch.batch_id} · "
+        f"{row.batch.product.code_label} · "
+        f"{row.batch.product.display_name}"
+    )
+
+
+def _product_stock_quick_jump_label(row: ProductStockPageRow) -> str:
+    return f"{row.code_label} · {row.product_name}"
 
 
 def _batch_card(
@@ -206,6 +264,7 @@ def _product_stock_card(
     *,
     row: AvailableStockRow,
     status: StatusPresentation,
+    product_href: str,
 ) -> UiCard:
     return UiCard(
         tone=status.tone,
@@ -239,8 +298,12 @@ def _product_stock_card(
                 ),
             ),
         ),
+        action=UiText(
+            text="View product →",
+            href=product_href,
+            css_class=INVENTORY_ACTION_CLASS,
+        ),
     )
-
 
 def _batch_detail_href(batch: InventoryBatch) -> str:
     return reverse("inventory:detail", kwargs={"batch_pk": batch.pk})

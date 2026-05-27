@@ -15,6 +15,8 @@ from common.ui import (
     TONE_SUCCESS,
     TONE_WARNING,
 )
+from inventory.expiry import EXPIRY_SOON_DAYS
+from inventory.low_stock import LOW_STOCK_THRESHOLD
 from inventory.selectors import (
     count_expiring_batches,
     count_low_stock_products,
@@ -26,15 +28,11 @@ from orders.selectors import (
 )
 
 
-LOW_STOCK_THRESHOLD = 20
-DASHBOARD_EXPIRING_DAYS = 45
-
-
 @login_required
 def index(request):
     placed_count = count_placed_orders()
     packed_count = count_packed_orders()
-    expiring_count = count_expiring_batches(days=DASHBOARD_EXPIRING_DAYS)
+    expiring_count = count_expiring_batches(days=EXPIRY_SOON_DAYS)
     low_stock_count = count_low_stock_products(threshold=LOW_STOCK_THRESHOLD)
 
     orders_url = reverse("orders:index")
@@ -121,11 +119,11 @@ def index(request):
                     expiring_count,
                     singular=(
                         f"batch expiring in the next "
-                        f"{DASHBOARD_EXPIRING_DAYS} days"
+                        f"{EXPIRY_SOON_DAYS} days"
                     ),
                     plural=(
                         f"batches expiring in the next "
-                        f"{DASHBOARD_EXPIRING_DAYS} days"
+                        f"{EXPIRY_SOON_DAYS} days"
                     ),
                 ),
                 href=f"{inventory_url}?sort=best_before#inventory-list",
@@ -142,7 +140,7 @@ def index(request):
                     singular="product running low",
                     plural="products running low",
                 ),
-                href=f"{inventory_url}#inventory-list",
+                href=f"{inventory_url}?view=products&sort=available#inventory-list",
                 action_label="View →",
                 tone=TONE_WARNING if low_stock_count else TONE_SUCCESS,
                 empty_text="No low stock products.",

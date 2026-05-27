@@ -1,0 +1,144 @@
+/* =============================================================================
+   Section navigation
+
+   Local page navigation for switching between sibling views, for example:
+   Inventory: Batches / Product stock.
+
+   This follows the main navigation language:
+   muted link text + accent underline for the active view.
+
+   Global navigation is .site-nav.
+   Local page navigation is .section-nav.
+   ============================================================================= */
+
+.section-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-6);
+
+  margin-block: var(--space-5) var(--space-4);
+  padding-bottom: var(--space-1);
+
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.section-nav__link {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: var(--size-control-md);
+  padding: 0 var(--space-1);
+
+  color: var(--color-link);
+  background: transparent;
+  border: 0;
+
+  font-family: var(--font-body);
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+
+  transition:
+    color var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.section-nav__link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(-1 * var(--space-2) - 1px);
+
+  width: 0;
+  height: 3px;
+
+  background: var(--color-accent-600);
+  border-radius: var(--radius-pill);
+
+  transform: translateX(-50%);
+  transition: width var(--motion-fast);
+}
+
+.section-nav__link:hover,
+.section-nav__link:focus-visible,
+.section-nav__link--active,
+.section-nav__link[aria-current="page"] {
+  color: var(--color-primary-900);
+}
+
+.section-nav__link:hover,
+.section-nav__link:focus-visible {
+  transform: translateY(-1px);
+}
+
+.section-nav__link:hover::after,
+.section-nav__link:focus-visible::after,
+.section-nav__link--active::after,
+.section-nav__link[aria-current="page"]::after {
+  width: 100%;
+}
+
+.section-nav__link:focus-visible {
+  outline: 2px solid var(--color-accent-600);
+  outline-offset: 5px;
+}
+
+/* Touch devices should not keep hover lift stuck. */
+
+@media (hover: none), (pointer: coarse) {
+  .section-nav__link:hover {
+    color: var(--color-link);
+    transform: none;
+  }
+
+  .section-nav__link:hover::after {
+    width: 0;
+  }
+
+  .section-nav__link--active:hover,
+  .section-nav__link[aria-current="page"]:hover {
+    color: var(--color-primary-900);
+  }
+
+  .section-nav__link--active:hover::after,
+  .section-nav__link[aria-current="page"]:hover::after {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .section-nav {
+    justify-content: space-around;
+    gap: var(--space-4);
+
+    margin-block: var(--space-4) var(--space-4);
+    padding-inline: 0;
+    padding-bottom: var(--space-2);
+  }
+
+  .section-nav__link {
+    flex: 1;
+    min-height: var(--size-control-md);
+    padding-inline: var(--space-2);
+
+    font-size: var(--font-size-14);
+  }
+
+  .section-nav__link::after {
+    bottom: calc(-1 * var(--space-2) - 1px);
+    height: 4px;
+  }
+
+  .section-nav__link:hover::after,
+  .section-nav__link:focus-visible::after,
+  .section-nav__link--active::after,
+  .section-nav__link[aria-current="page"]::after {
+    width: min(72%, 9rem);
+  }
+}

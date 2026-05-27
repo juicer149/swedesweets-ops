@@ -10,8 +10,6 @@ from inventory.forms import (
     ProductChoiceField,
     build_batch_edit_initial_data,
 )
-from inventory.services import create_batch
-from inventory.tests.conftest import TODAY
 
 
 @pytest.mark.django_db
@@ -127,14 +125,13 @@ def test_batch_edit_form_rejects_negative_boxes():
 
 
 @pytest.mark.django_db
-def test_build_batch_edit_initial_data(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_build_batch_edit_initial_data(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
-        today=TODAY,
     )
 
     assert build_batch_edit_initial_data(batch) == {

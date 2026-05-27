@@ -1,75 +1,99 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
 
 import pytest
 
-from inventory.services import create_batch
+from inventory.models import InventoryBatch
+from inventory.tests.factories import batch_factory as make_batch
 from products.models import Product
-from products.services import create_product
+from products.tests.factories import product_factory
 
 
 TODAY = date(2026, 5, 14)
 
+BatchFactory = Callable[..., InventoryBatch]
+
 
 @pytest.fixture
 def apple() -> Product:
-    result = create_product(
+    return product_factory(
         brand="Generic",
         name="Apple",
         weight_per_box=5000,
     )
-    return result.item
 
 
 @pytest.fixture
 def banana() -> Product:
-    result = create_product(
+    return product_factory(
         brand="Generic",
         name="Banana",
         weight_per_box=6000,
     )
-    return result.item
 
 
 @pytest.fixture
 def inactive_product() -> Product:
-    result = create_product(
+    product = product_factory(
         brand="Generic",
         name="Inactive Product",
         weight_per_box=7000,
     )
-    product = result.item
     product.active = False
     product.save(update_fields=["active"])
     return product
 
 
 @pytest.fixture
-def stocked_inventory(apple: Product, banana: Product):
-    apple_early = create_batch(
-        batch_id="A-001",
+def batch_factory() -> BatchFactory:
+    def factory(
+        *,
+        product: Product,
+        batch_id: str = "A-001",
+        boxes: int = 10,
+        best_before: date | None = None,
+        location: str = "Shelf A1",
+    ) -> InventoryBatch:
+        return make_batch(
+            product=product,
+            batch_id=batch_id,
+            boxes=boxes,
+            best_before=best_before,
+            location=location,
+            today=TODAY,
+        )
+
+    return factory
+
+
+@pytest.fixture
+def stocked_inventory(
+    apple: Product,
+    banana: Product,
+    batch_factory: BatchFactory,
+):
+    apple_early = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=100,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
-        today=TODAY,
     )
-    apple_late = create_batch(
-        batch_id="A-002",
+    apple_late = batch_factory(
         product=apple,
+        batch_id="A-002",
         boxes=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
-        today=TODAY,
     )
-    banana_batch = create_batch(
-        batch_id="B-001",
+    banana_batch = batch_factory(
         product=banana,
+        batch_id="B-001",
         boxes=80,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
-        today=TODAY,
     )
 
     return {

@@ -149,14 +149,11 @@ def test_create_batch_rejects_today_as_best_before_date(apple):
 
 
 @pytest.mark.django_db
-def test_create_batch_rejects_duplicate_batch_id(apple):
-    create_batch(
-        batch_id="A-001",
+def test_create_batch_rejects_duplicate_batch_id(apple, batch_factory):
+    batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     with pytest.raises(InvalidStockOperation, match="Batch A-001 already exists"):
@@ -171,14 +168,11 @@ def test_create_batch_rejects_duplicate_batch_id(apple):
 
 
 @pytest.mark.django_db
-def test_update_batch_updates_boxes_best_before_and_location(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_update_batch_updates_boxes_best_before_and_location(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     updated = update_batch(
@@ -197,14 +191,11 @@ def test_update_batch_updates_boxes_best_before_and_location(apple):
 
 
 @pytest.mark.django_db
-def test_update_batch_can_deplete_batch_when_boxes_are_zero(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_update_batch_can_deplete_batch_when_boxes_are_zero(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     updated = update_batch(
@@ -221,14 +212,11 @@ def test_update_batch_can_deplete_batch_when_boxes_are_zero(apple):
 
 
 @pytest.mark.django_db
-def test_update_batch_rejects_closed_batch(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_update_batch_rejects_closed_batch(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
     batch.close()
 
@@ -242,14 +230,11 @@ def test_update_batch_rejects_closed_batch(apple):
 
 
 @pytest.mark.django_db
-def test_close_batch_closes_batch_without_changing_boxes(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_close_batch_closes_batch_without_changing_boxes(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     closed = close_batch(batch=batch)
@@ -260,36 +245,31 @@ def test_close_batch_closes_batch_without_changing_boxes(apple):
 
 
 @pytest.mark.django_db
-def test_reserved_boxes_for_batch_is_zero_without_allocations(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_reserved_boxes_for_batch_is_zero_without_allocations(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     assert reserved_boxes_for_batch(batch=batch) == 0
 
 
 @pytest.mark.django_db
-def test_plan_batch_picks_uses_fefo_order(apple):
-    late = create_batch(
-        batch_id="A-002",
+def test_plan_batch_picks_uses_fefo_order(apple, batch_factory):
+    late = batch_factory(
         product=apple,
+        batch_id="A-002",
         boxes=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
-        today=TODAY,
     )
-    early = create_batch(
-        batch_id="A-001",
+    early = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=100,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
-        today=TODAY,
     )
 
     picks = plan_batch_picks(
@@ -305,22 +285,18 @@ def test_plan_batch_picks_uses_fefo_order(apple):
 
 
 @pytest.mark.django_db
-def test_plan_batch_picks_respects_existing_reserved_boxes(apple):
-    early = create_batch(
+def test_plan_batch_picks_respects_existing_reserved_boxes(apple, batch_factory):
+    early = batch_factory(
+        product=apple,
         batch_id="A-001",
-        product=apple,
         boxes=100,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
-    late = create_batch(
-        batch_id="A-002",
+    late = batch_factory(
         product=apple,
+        batch_id="A-002",
         boxes=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
-        today=TODAY,
     )
 
     picks = plan_batch_picks(
@@ -338,14 +314,14 @@ def test_plan_batch_picks_respects_existing_reserved_boxes(apple):
 
 
 @pytest.mark.django_db
-def test_plan_batch_picks_mutates_reserved_boxes_mapping_for_later_lines(apple):
-    early = create_batch(
-        batch_id="A-001",
+def test_plan_batch_picks_mutates_reserved_boxes_mapping_for_later_lines(
+    apple,
+    batch_factory,
+):
+    early = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=100,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     reserved_boxes_by_batch_id: dict[int, int] = {}
@@ -372,14 +348,11 @@ def test_plan_batch_picks_rejects_non_positive_request(apple):
 
 
 @pytest.mark.django_db
-def test_plan_batch_picks_raises_when_stock_is_insufficient(apple):
-    create_batch(
-        batch_id="A-001",
+def test_plan_batch_picks_raises_when_stock_is_insufficient(apple, batch_factory):
+    batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     with pytest.raises(InsufficientStockError):

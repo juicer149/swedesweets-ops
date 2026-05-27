@@ -63,6 +63,10 @@ class TableSortLink:
 class QuickJumpOption:
     label: str
     url: str
+    # TODO: Support separate search_text and rank_key.
+    # Current enhanced select searches the rendered label text only, so a query
+    # like "3" may rank "#13" before "#3". Keep labels intentionally small until
+    # quick jump ranking is centralized in common JS/template code.
 
 
 @dataclass(frozen=True)

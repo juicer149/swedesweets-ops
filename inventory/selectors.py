@@ -9,11 +9,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta
+from typing import Callable, TypeAlias
 
 from django.db.models import Case, Count, IntegerField, QuerySet, Sum, Value, When
 from django.utils import timezone
 
 from common.table_tools import normalize_sort
+from inventory.expiry import EXPIRY_SOON_DAYS, ExpiryInfo, build_expiry_info
+from inventory.low_stock import LOW_STOCK_THRESHOLD, is_low_stock
 from inventory.models import InventoryBatch
 from orders.models import Allocation, Order
 from products.models import Product
@@ -36,15 +39,20 @@ BATCH_SORTS: dict[str, tuple[str, ...]] = {
     "-location": ("-location", "batch_id"),
 }
 
-EXPIRY_CRITICAL_DAYS = 14
-EXPIRY_SOON_DAYS = 60
+DEFAULT_PRODUCT_STOCK_SORT = "product"
 
-
-@dataclass(frozen=True)
-class ExpiryInfo:
-    state: str
-    label: str
-    days_left: int
+PRODUCT_STOCK_SORTS: dict[str, tuple[str, ...]] = {
+    "product": ("internal_number_sort", "brand", "product_name"),
+    "-product": ("-internal_number_sort", "-brand", "-product_name"),
+    "batches": ("batch_count", "internal_number_sort", "product_name"),
+    "-batches": ("-batch_count", "internal_number_sort", "product_name"),
+    "physical": ("physical_boxes", "internal_number_sort", "product_name"),
+    "-physical": ("-physical_boxes", "internal_number_sort", "product_name"),
+    "reserved": ("reserved_boxes", "internal_number_sort", "product_name"),
+    "-reserved": ("-reserved_boxes", "internal_number_sort", "product_name"),
+    "available": ("available_boxes", "internal_number_sort", "product_name"),
+    "-available": ("-available_boxes", "internal_number_sort", "product_name"),
+}
 
 
 @dataclass(frozen=True)
@@ -129,6 +137,9 @@ class AvailableStockRow:
 class _PhysicalStockTotals:
     physical_boxes: int
     batch_count: int
+
+
+ProductStockSortKey: TypeAlias = Callable[[AvailableStockRow], tuple[object, ...]]
 
 
 def list_batch_rows(
@@ -216,6 +227,28 @@ def available_boxes_by_product_id() -> dict[int, int]:
     }
 
 
+def sort_available_stock_rows(
+    *,
+    rows: list[AvailableStockRow],
+    sort: str | None,
+) -> list[AvailableStockRow]:
+    normalized_sort = normalize_sort(
+        sort,
+        allowed_sorts=PRODUCT_STOCK_SORTS,
+        default_sort=DEFAULT_PRODUCT_STOCK_SORT,
+    )
+
+    reverse_sort = normalized_sort.startswith("-")
+    sort_key = normalized_sort.lstrip("-")
+    key_function = _product_stock_sort_key_functions()[sort_key]
+
+    return sorted(
+        rows,
+        key=key_function,
+        reverse=reverse_sort,
+    )
+
+
 def list_available_batches_for_product(
     *,
     product: Product,
@@ -267,7 +300,7 @@ def list_depleted_batches() -> QuerySet[InventoryBatch]:
 def list_expiring_batch_rows_for_dashboard(
     *,
     limit: int = 3,
-    days: int = 45,
+    days: int = EXPIRY_SOON_DAYS,
     today: date | None = None,
 ) -> list[BatchListRow]:
     return list_expiring_batch_rows(
@@ -278,7 +311,7 @@ def list_expiring_batch_rows_for_dashboard(
 
 def list_expiring_batch_rows(
     *,
-    days: int = 45,
+    days: int = EXPIRY_SOON_DAYS,
     today: date | None = None,
 ) -> list[BatchListRow]:
     today = today or timezone.localdate()
@@ -304,7 +337,7 @@ def list_expiring_batch_rows(
 
 def count_expiring_batches(
     *,
-    days: int = 45,
+    days: int = EXPIRY_SOON_DAYS,
     today: date | None = None,
 ) -> int:
     today = today or timezone.localdate()
@@ -324,12 +357,15 @@ def count_expiring_batches(
 
 def list_low_stock_products(
     *,
-    threshold: int = 10,
+    threshold: int = LOW_STOCK_THRESHOLD,
 ) -> list[AvailableStockRow]:
     rows = [
         row
         for row in available_boxes_by_product()
-        if row.available_boxes <= threshold
+        if is_low_stock(
+            available_boxes=row.available_boxes,
+            threshold=threshold,
+        )
     ]
 
     return sorted(
@@ -343,7 +379,7 @@ def list_low_stock_products(
 
 def list_low_stock_products_for_dashboard(
     *,
-    threshold: int = 10,
+    threshold: int = LOW_STOCK_THRESHOLD,
     limit: int = 3,
 ) -> list[AvailableStockRow]:
     return list_low_stock_products(threshold=threshold)[:limit]
@@ -351,51 +387,9 @@ def list_low_stock_products_for_dashboard(
 
 def count_low_stock_products(
     *,
-    threshold: int = 10,
+    threshold: int = LOW_STOCK_THRESHOLD,
 ) -> int:
     return len(list_low_stock_products(threshold=threshold))
-
-
-def build_expiry_info(
-    *,
-    best_before: date,
-    today: date,
-) -> ExpiryInfo:
-    days_left = (best_before - today).days
-
-    if days_left < 0:
-        return ExpiryInfo(
-            state="expired",
-            label="Expired",
-            days_left=days_left,
-        )
-
-    if days_left == 0:
-        return ExpiryInfo(
-            state="critical",
-            label="Expires today",
-            days_left=days_left,
-        )
-
-    if days_left <= EXPIRY_CRITICAL_DAYS:
-        return ExpiryInfo(
-            state="critical",
-            label=f"Expires in {days_left} days",
-            days_left=days_left,
-        )
-
-    if days_left <= EXPIRY_SOON_DAYS:
-        return ExpiryInfo(
-            state="soon",
-            label=f"Expires in {days_left} days",
-            days_left=days_left,
-        )
-
-    return ExpiryInfo(
-        state="safe",
-        label="Best before",
-        days_left=days_left,
-    )
 
 
 def list_batch_allocations(*, batch: InventoryBatch) -> list[Allocation]:
@@ -491,4 +485,34 @@ def _reserved_boxes_by_product_id() -> dict[int, int]:
     return {
         row["batch__product_id"]: row["total_reserved"] or 0
         for row in rows
+    }
+
+
+def _product_stock_sort_key_functions() -> dict[str, ProductStockSortKey]:
+    return {
+        "product": lambda row: (
+            row.internal_number_sort,
+            row.brand.casefold(),
+            row.product_name.casefold(),
+        ),
+        "batches": lambda row: (
+            row.batch_count,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
+        "physical": lambda row: (
+            row.physical_boxes,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
+        "reserved": lambda row: (
+            row.reserved_boxes,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
+        "available": lambda row: (
+            row.available_boxes,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
     }

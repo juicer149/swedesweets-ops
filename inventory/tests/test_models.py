@@ -9,8 +9,6 @@ from inventory.errors import (
     InvalidStockOperation,
 )
 from inventory.models import InventoryBatch, normalize_batch_id, normalize_location
-from inventory.services import create_batch
-from inventory.tests.conftest import TODAY
 
 
 def test_normalize_batch_id_strips_and_uppercases():
@@ -46,14 +44,11 @@ def test_batch_save_normalizes_batch_id_and_location(apple):
 
 
 @pytest.mark.django_db
-def test_new_batch_with_positive_boxes_is_active_and_available(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_new_batch_with_positive_boxes_is_active_and_available(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     assert batch.status == InventoryBatch.Status.ACTIVE
@@ -61,14 +56,14 @@ def test_new_batch_with_positive_boxes_is_active_and_available(apple):
 
 
 @pytest.mark.django_db
-def test_pick_reduces_boxes_and_keeps_batch_active_when_boxes_remain(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_pick_reduces_boxes_and_keeps_batch_active_when_boxes_remain(
+    apple,
+    batch_factory,
+):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.pick(boxes=1)
@@ -80,14 +75,11 @@ def test_pick_reduces_boxes_and_keeps_batch_active_when_boxes_remain(apple):
 
 
 @pytest.mark.django_db
-def test_pick_depletes_batch_when_last_box_is_removed(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_pick_depletes_batch_when_last_box_is_removed(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.pick(boxes=3)
@@ -99,14 +91,11 @@ def test_pick_depletes_batch_when_last_box_is_removed(apple):
 
 
 @pytest.mark.django_db
-def test_pick_rejects_non_positive_boxes(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_pick_rejects_non_positive_boxes(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     with pytest.raises(InvalidStockOperation, match="boxes must be positive"):
@@ -114,14 +103,11 @@ def test_pick_rejects_non_positive_boxes(apple):
 
 
 @pytest.mark.django_db
-def test_pick_rejects_more_boxes_than_available(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_pick_rejects_more_boxes_than_available(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     with pytest.raises(InvalidStockOperation, match="Cannot remove 4 boxes"):
@@ -129,14 +115,11 @@ def test_pick_rejects_more_boxes_than_available(apple):
 
 
 @pytest.mark.django_db
-def test_adjust_boxes_sets_absolute_physical_count(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_adjust_boxes_sets_absolute_physical_count(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.adjust_boxes(boxes=10)
@@ -147,14 +130,11 @@ def test_adjust_boxes_sets_absolute_physical_count(apple):
 
 
 @pytest.mark.django_db
-def test_adjust_boxes_can_deplete_batch(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_adjust_boxes_can_deplete_batch(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.adjust_boxes(boxes=0)
@@ -166,14 +146,11 @@ def test_adjust_boxes_can_deplete_batch(apple):
 
 
 @pytest.mark.django_db
-def test_adjust_boxes_can_reactivate_depleted_batch(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_adjust_boxes_can_reactivate_depleted_batch(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=1,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.pick(boxes=1)
@@ -190,14 +167,11 @@ def test_adjust_boxes_can_reactivate_depleted_batch(apple):
 
 
 @pytest.mark.django_db
-def test_adjust_boxes_rejects_negative_count(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_adjust_boxes_rejects_negative_count(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=3,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     with pytest.raises(InvalidStockOperation, match="boxes must be non-negative"):
@@ -205,14 +179,11 @@ def test_adjust_boxes_rejects_negative_count(apple):
 
 
 @pytest.mark.django_db
-def test_close_marks_batch_closed_without_changing_box_count(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_close_marks_batch_closed_without_changing_box_count(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.close()
@@ -224,14 +195,11 @@ def test_close_marks_batch_closed_without_changing_box_count(apple):
 
 
 @pytest.mark.django_db
-def test_closed_batch_cannot_be_picked_or_adjusted(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_closed_batch_cannot_be_picked_or_adjusted(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.close()
@@ -245,14 +213,14 @@ def test_closed_batch_cannot_be_picked_or_adjusted(apple):
 
 
 @pytest.mark.django_db
-def test_closed_batch_cannot_be_reopened_by_saving_positive_boxes(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_closed_batch_cannot_be_reopened_by_saving_positive_boxes(
+    apple,
+    batch_factory,
+):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.close()
@@ -265,14 +233,11 @@ def test_closed_batch_cannot_be_reopened_by_saving_positive_boxes(apple):
 
 
 @pytest.mark.django_db
-def test_closed_batch_cannot_transition_back_to_active(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_closed_batch_cannot_transition_back_to_active(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     batch.close()
@@ -283,14 +248,11 @@ def test_closed_batch_cannot_transition_back_to_active(apple):
 
 
 @pytest.mark.django_db
-def test_batch_string_contains_batch_product_and_boxes(apple):
-    batch = create_batch(
-        batch_id="A-001",
+def test_batch_string_contains_batch_product_and_boxes(apple, batch_factory):
+    batch = batch_factory(
         product=apple,
+        batch_id="A-001",
         boxes=10,
-        best_before=date(2026, 6, 1),
-        location="Shelf A1",
-        today=TODAY,
     )
 
     assert str(batch) == f"A-001 - {apple.display_name} (10 boxes)"
