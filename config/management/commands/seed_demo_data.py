@@ -14,9 +14,7 @@ from customers.models import Customer, normalize_customer_email
 from customers.services import create_customer
 from inventory.models import InventoryBatch
 from inventory.services import create_batch
-from orders.datatypes import OrderLineInput
 from orders.models import Allocation, Order, OrderLine
-from orders.services import cancel_order, create_order, deliver_order, pack_order
 from products.models import Product
 from products.services import create_product
 
@@ -27,7 +25,7 @@ DEMO_USER_EMAIL = "demo.ops@example.com"
 COMMAND_DIR = Path(__file__).resolve().parent
 PRODUCT_CATALOG_PATH = COMMAND_DIR / "seed_demo_products.json"
 CUSTOMER_CATALOG_PATH = COMMAND_DIR / "seed_demo_customers.json"
-ORDER_CATALOG_PATH = COMMAND_DIR / "seed_demo_orders.json"
+BATCH_CATALOG_PATH = COMMAND_DIR / "seed_demo_batches.json"
 
 
 class Command(BaseCommand):
@@ -47,8 +45,6 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        today = timezone.localdate()
-
         if options["reset"]:
             self._reset_demo_data()
         elif self._demo_data_exists():
@@ -56,22 +52,13 @@ class Command(BaseCommand):
                 "Demo data already exists. Run with --reset to recreate it."
             )
 
-        user = self._get_seed_user(
+        self._get_seed_user(
             create_demo_user=options["with_demo_user"],
         )
 
         products = self._create_products()
-        customers = self._create_customers()
-
-        self._create_inventory(
-            products=products,
-            today=today,
-        )
-        self._create_orders(
-            products=products,
-            customers=customers,
-            user=user,
-        )
+        self._create_customers()
+        self._create_inventory(products=products)
 
         self.stdout.write(
             self.style.SUCCESS("Demo data seeded successfully.")
@@ -137,6 +124,12 @@ class Command(BaseCommand):
 
         for item in _load_json_list(PRODUCT_CATALOG_PATH):
             product = self._create_product(item)
+
+            if product.internal_number is None:
+                raise CommandError(
+                    f"Product {product!s} is missing internal_number."
+                )
+
             products[product.internal_number] = product
 
         return products
@@ -187,147 +180,37 @@ class Command(BaseCommand):
         self,
         *,
         products: dict[int, Product],
-        today: date,
     ) -> None:
-        active_products = sorted(
-            (
-                product
-                for product in products.values()
-                if product.active
-            ),
-            key=lambda product: product.catalog_sort_key,
-        )
-
-        for index, product in enumerate(active_products):
-            self._create_active_demo_batch(
-                product=product,
-                index=index,
-                today=today,
-            )
-
-        self._create_closed_demo_batch(
-            products=products,
-            today=today,
-        )
-
-    def _create_active_demo_batch(
-        self,
-        *,
-        product: Product,
-        index: int,
-        today: date,
-    ) -> InventoryBatch:
-        internal_number = product.internal_number or index + 1
-
-        return create_batch(
-            product=product,
-            boxes=_demo_boxes(internal_number),
-            best_before=today + timedelta(
-                days=_demo_best_before_days(
-                    internal_number=internal_number,
-                    index=index,
-                )
-            ),
-            location=_demo_location(index),
-            today=today - timedelta(days=_demo_received_days(internal_number)),
-        )
-
-    def _create_closed_demo_batch(
-        self,
-        *,
-        products: dict[int, Product],
-        today: date,
-    ) -> InventoryBatch | None:
-        product = products.get(23)
-
-        if product is None:
-            return None
-
-        batch = create_batch(
-            product=product,
-            boxes=8,
-            best_before=today + timedelta(days=120),
-            location="Archive A1",
-            today=today - timedelta(days=30),
-        )
-        batch.close()
-
-        return batch
-
-    # ==========================================================================
-    # orders
-    # ==========================================================================
-
-    def _create_orders(
-        self,
-        *,
-        products: dict[int, Product],
-        customers: dict[str, Customer],
-        user,
-    ) -> None:
-        for item in _load_json_list(ORDER_CATALOG_PATH):
-            order = self._create_order_from_item(
+        for item in _load_json_list(BATCH_CATALOG_PATH):
+            self._create_batch_from_item(
                 item=item,
                 products=products,
-                customers=customers,
-                user=user,
             )
 
-            status = str(item["status"])
-
-            if status == "placed":
-                continue
-
-            if status in {"packed", "delivered"}:
-                order = pack_order(
-                    order=order,
-                    user=user,
-                )
-
-            if status == "delivered":
-                deliver_order(
-                    order=order,
-                    user=user,
-                )
-                continue
-
-            if status == "cancelled":
-                cancel_order(
-                    order=order,
-                    user=user,
-                    reason=_first_cancel_reason(),
-                    note=str(item.get("cancel_note", "Demo cancellation.")),
-                )
-                continue
-
-            if status != "packed":
-                raise CommandError(f"Unknown demo order status: {status!r}")
-
-    def _create_order_from_item(
+    def _create_batch_from_item(
         self,
         *,
         item: dict[str, Any],
         products: dict[int, Product],
-        customers: dict[str, Customer],
-        user,
-    ) -> Order:
-        customer_key = str(item["customer"])
+    ) -> InventoryBatch:
+        internal_number = int(item["internal_number"])
 
-        if customer_key not in customers:
-            raise CommandError(f"Unknown demo customer key: {customer_key!r}")
-
-        lines = [
-            _build_order_line_input(
-                item=line_item,
-                products=products,
+        if internal_number not in products:
+            source_name = str(item.get("invoice_name", "unknown source line"))
+            raise CommandError(
+                f"Batch references unknown product #{internal_number}: "
+                f"{source_name}"
             )
-            for line_item in item["lines"]
-        ]
 
-        return create_order(
-            customer=customers[customer_key],
-            lines=lines,
-            user=user,
+        product = products[internal_number]
+
+        return create_batch(
+            product=product,
+            boxes=int(item["boxes"]),
+            best_before=_parse_best_before(item),
+            location=str(item["location"]),
+            today=_parse_received_date(item),
+            allow_non_future_best_before=True,
         )
 
 
@@ -351,63 +234,57 @@ def _load_json_list(path: Path) -> list[dict[str, Any]]:
 # ==============================================================================
 
 
-def _build_order_line_input(
-    *,
-    item: dict[str, Any],
-    products: dict[int, Product],
-) -> OrderLineInput:
-    internal_number = int(item["internal_number"])
+def _parse_best_before(item: dict[str, Any]) -> date:
+    raw_best_before = item.get("best_before")
 
-    if internal_number not in products:
+    if not raw_best_before:
         raise CommandError(
-            f"Order line references unknown product #{internal_number}."
+            "Batch item is missing required field 'best_before': "
+            f"{item!r}"
         )
 
-    return OrderLineInput.boxes(
-        product=products[internal_number],
-        boxes=int(item["boxes"]),
-    )
+    try:
+        return date.fromisoformat(str(raw_best_before))
+    except ValueError as error:
+        raise CommandError(
+            "Batch item has invalid 'best_before'. "
+            "Expected YYYY-MM-DD: "
+            f"{item!r}"
+        ) from error
 
 
-def _demo_boxes(internal_number: int) -> int:
-    """Return deterministic demo stock between 10 and 40 boxes."""
+def _parse_received_date(item: dict[str, Any]) -> date:
+    raw_received_date = item.get("received_date")
 
-    return 10 + ((internal_number * 17) % 31)
+    if raw_received_date:
+        try:
+            return date.fromisoformat(str(raw_received_date))
+        except ValueError as error:
+            raise CommandError(
+                "Batch item has invalid 'received_date'. "
+                "Expected YYYY-MM-DD: "
+                f"{item!r}"
+            ) from error
 
+    raw_received_days_ago = item.get("received_days_ago", 1)
 
-def _demo_best_before_days(
-    *,
-    internal_number: int,
-    index: int,
-) -> int:
-    """Return controlled best-before spread for demo inventory."""
+    try:
+        received_days_ago = int(raw_received_days_ago)
+    except TypeError as error:
+        raise CommandError(
+            "Batch item has invalid 'received_days_ago': "
+            f"{item!r}"
+        ) from error
+    except ValueError as error:
+        raise CommandError(
+            "Batch item has invalid 'received_days_ago': "
+            f"{item!r}"
+        ) from error
 
-    if internal_number == 4:
-        return 10
+    if received_days_ago < 0:
+        raise CommandError(
+            "Batch item 'received_days_ago' must be non-negative: "
+            f"{item!r}"
+        )
 
-    if internal_number == 10:
-        return 40
-
-    return 70 + index
-
-
-def _demo_location(index: int) -> str:
-    """Generate A1..A9, B1..B9, C1.. etc."""
-
-    shelf_index = index // 9
-    shelf_number = (index % 9) + 1
-    shelf_letter = chr(ord("A") + shelf_index)
-
-    return f"{shelf_letter}{shelf_number}"
-
-
-def _demo_received_days(internal_number: int) -> int:
-    return 1 + (internal_number % 14)
-
-
-def _first_cancel_reason() -> str:
-    for value, _label in Order.CancelReason.choices:
-        if value:
-            return value
-
-    return ""
+    return timezone.localdate() - timedelta(days=received_days_ago)

@@ -14,6 +14,7 @@ public API:
         location: str,
         batch_id: str | None = None,
         today: date | None = None,
+        allow_non_future_best_before: bool = False,
     ) -> InventoryBatch
         -> Create a new physical inventory batch.
 
@@ -102,6 +103,7 @@ def create_batch(
     location: str,
     batch_id: str | None = None,
     today: date | None = None,
+    allow_non_future_best_before: bool = False,
 ) -> InventoryBatch:
     """Create a new physical inventory batch.
 
@@ -117,6 +119,9 @@ def create_batch(
 
     The prefix is based on product internal number, brand and name. The trailing
     number is a sequence per product prefix.
+
+    allow_non_future_best_before exists for trusted import/seed data only.
+    Normal app flows should leave it as False.
     """
 
     today = today or date.today()
@@ -124,7 +129,7 @@ def create_batch(
     if boxes <= 0:
         raise InvalidStockOperation("boxes must be positive")
 
-    if best_before <= today:
+    if best_before <= today and not allow_non_future_best_before:
         raise InvalidStockOperation("best_before date must be in the future")
 
     if batch_id:

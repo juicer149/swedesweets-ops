@@ -1,0 +1,506 @@
+[
+  {
+    "internal_number": 43,
+    "boxes": 10,
+    "invoice_code": "BUB5969055032",
+    "invoice_name": "TUTTI FRUTTI DIAMOND 2,6KG",
+    "location": "A1",
+    "best_before": "2027-05-07",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 3,
+    "boxes": 10,
+    "invoice_code": "BUB5969055034",
+    "invoice_name": "RASPBERRY SALTY LICORICE SKALLE 4KG",
+    "location": "A2",
+    "best_before": "2027-04-18",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 44,
+    "boxes": 10,
+    "invoice_code": "BUB5969055155",
+    "invoice_name": "BANANA TOFFEE OVALS 2,8 KG",
+    "location": "A3",
+    "best_before": "2026-07-21",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 44,
+    "boxes": 10,
+    "invoice_code": "BUB5969055155",
+    "invoice_name": "BANANA TOFFEE OVALS 2,8 KG",
+    "location": "A4",
+    "best_before": "2027-04-26",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 41,
+    "boxes": 10,
+    "invoice_code": "BUB5969055156",
+    "invoice_name": "LEMON RASPBERRY SKALLE 3,2KG",
+    "location": "A5",
+    "best_before": "2027-05-31",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 42,
+    "boxes": 10,
+    "invoice_code": "BUB5969055159",
+    "invoice_name": "FRUITY PEAR OVALS MEDIUM 2,6KG",
+    "location": "A6",
+    "best_before": "2027-05-02",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 42,
+    "boxes": 10,
+    "invoice_code": "BUB5969055159",
+    "invoice_name": "FRUITY PEAR OVALS MEDIUM 2,6KG",
+    "location": "A7",
+    "best_before": "2027-05-02",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 1,
+    "boxes": 25,
+    "invoice_code": "CAP5248",
+    "invoice_name": "RAMBO TWIST",
+    "location": "A8",
+    "best_before": "2027-10-28",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 59,
+    "boxes": 1,
+    "invoice_code": "CLO1003306",
+    "invoice_name": "STOR KEXCHOKLAD 60 G 1/4-PALL",
+    "location": "A9",
+    "best_before": "2026-07-06",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 18,
+    "boxes": 26,
+    "invoice_code": "CLO1004524",
+    "invoice_name": "STOR KARAMELGUF BURK LÖSVIKT",
+    "location": "B1",
+    "best_before": "2026-09-04",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 15,
+    "boxes": 60,
+    "invoice_code": "CLO1005342",
+    "invoice_name": "SOCKERBITAR JORDGUBB BURK LÖSVIKT",
+    "location": "B2",
+    "best_before": "2026-07-02",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 11,
+    "boxes": 16,
+    "invoice_code": "CLO1009322",
+    "invoice_name": "LONKA FUDGE CARAMEL SEA SALT",
+    "location": "B3",
+    "best_before": "2026-09-12",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 7,
+    "boxes": 15,
+    "invoice_code": "CLO1009554",
+    "invoice_name": "FUDGE LICORICE/RASPBERRY 3,25 KG LÖSVIKT",
+    "location": "B4",
+    "best_before": "2026-06-17",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 9,
+    "boxes": 15,
+    "invoice_code": "CLO1009622",
+    "invoice_name": "GELÉHALLON 3,25KG",
+    "location": "B5",
+    "best_before": "2026-07-02",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 13,
+    "boxes": 34,
+    "invoice_code": "CLO3476",
+    "invoice_name": "POLLY LÖSVIKT",
+    "location": "B6",
+    "best_before": "2026-10-06",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 40,
+    "boxes": 7,
+    "invoice_code": "ER30262",
+    "invoice_name": "PEPPARKAKSFUDGE",
+    "location": "B7",
+    "best_before": "2027-04-24",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 60,
+    "boxes": 5,
+    "invoice_code": "EST10646",
+    "invoice_name": "SOURCREAM ONION CHIPS 175 GR 21ST",
+    "location": "B8",
+    "best_before": "2026-03-31",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 61,
+    "boxes": 5,
+    "invoice_code": "EST10648",
+    "invoice_name": "DILLCHIPS 175 GR 21ST",
+    "location": "B9",
+    "best_before": "2026-03-04",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 62,
+    "boxes": 5,
+    "invoice_code": "EST10650",
+    "invoice_name": "GRILLCHIPS 175 GR 21ST",
+    "location": "C1",
+    "best_before": "2026-03-04",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 63,
+    "boxes": 5,
+    "invoice_code": "EST10834",
+    "invoice_name": "VÄSTKUSTCHIPS HAVSSALT RÄFFLADE 180G",
+    "location": "C2",
+    "best_before": "2026-03-22",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 23,
+    "boxes": 23,
+    "invoice_code": "FAZ402922",
+    "invoice_name": "TYRKISK PEBER LÖSVIKT",
+    "location": "C3",
+    "best_before": "2027-03-09",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 4,
+    "boxes": 25,
+    "invoice_code": "FAZ403124",
+    "invoice_name": "TUTTI FRUTTI SOUR LÖSVIKT",
+    "location": "C4",
+    "best_before": "2026-08-04",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 21,
+    "boxes": 23,
+    "invoice_code": "FAZ403243",
+    "invoice_name": "TUTTI FRUTTI SYRLIG MELON",
+    "location": "C5",
+    "best_before": "2026-06-26",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 10,
+    "boxes": 23,
+    "invoice_code": "FAZ403831",
+    "invoice_name": "TUTTI FRUTTI ORIGINAL LÖSVIKT",
+    "location": "C6",
+    "best_before": "2026-07-21",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 22,
+    "boxes": 29,
+    "invoice_code": "FAZ404934",
+    "invoice_name": "TUTTI FRUTTI SUMMER RINGS SOUR LÖSVIKT",
+    "location": "C7",
+    "best_before": "2026-03-19",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 54,
+    "boxes": 25,
+    "invoice_code": "FRA301",
+    "invoice_name": "CHOKLAD MINIGRISAR HALLON",
+    "location": "C8",
+    "best_before": "2026-09-10",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 33,
+    "boxes": 42,
+    "invoice_code": "FRA314",
+    "invoice_name": "CHOKLADSVAMP FRANSSON",
+    "location": "C9",
+    "best_before": "2026-11-30",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 31,
+    "boxes": 42,
+    "invoice_code": "FRA316",
+    "invoice_name": "CHOKLADBANAN STOR",
+    "location": "D1",
+    "best_before": "2026-10-20",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 34,
+    "boxes": 40,
+    "invoice_code": "FRA703",
+    "invoice_name": "SKUMBANANER FRANSSONS",
+    "location": "D2",
+    "best_before": "2026-10-29",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 37,
+    "boxes": 50,
+    "invoice_code": "FRA705",
+    "invoice_name": "VITA SKUMBITAR",
+    "location": "D3",
+    "best_before": "2026-11-13",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 65,
+    "boxes": 40,
+    "invoice_code": "FRA706",
+    "invoice_name": "SKUMSVAMP",
+    "location": "D4",
+    "best_before": "2026-10-16",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 2,
+    "boxes": 46,
+    "invoice_code": "FRA708",
+    "invoice_name": "JULTOMTE SKUM",
+    "location": "D5",
+    "best_before": "2026-09-26",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 32,
+    "boxes": 50,
+    "invoice_code": "FRA714",
+    "invoice_name": "FIZZY SVAMPAR",
+    "location": "D6",
+    "best_before": "2026-11-17",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 29,
+    "boxes": 50,
+    "invoice_code": "FRA719",
+    "invoice_name": "BANANKOLA SVAMP",
+    "location": "D7",
+    "best_before": "2026-10-09",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 36,
+    "boxes": 23,
+    "invoice_code": "FRA810",
+    "invoice_name": "SMÅ SMULTRON",
+    "location": "D8",
+    "best_before": "2027-09-11",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 47,
+    "boxes": 23,
+    "invoice_code": "FRA845",
+    "invoice_name": "SOMMAR BÄR",
+    "location": "D9",
+    "best_before": "2027-09-11",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 35,
+    "boxes": 50,
+    "invoice_code": "FRAP1844",
+    "invoice_name": "GAMMELDAGS POLKA",
+    "location": "E1",
+    "best_before": "2027-04-15",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 39,
+    "boxes": 25,
+    "invoice_code": "JL1222",
+    "invoice_name": "CITRON LAKRITS-SKRUV",
+    "location": "E2",
+    "best_before": "2027-10-20",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 19,
+    "boxes": 23,
+    "invoice_code": "MAL1001848",
+    "invoice_name": "ZOO 2,2 KG LÖSVIKT",
+    "location": "E3",
+    "best_before": "2026-10-04",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 64,
+    "boxes": 25,
+    "invoice_code": "MAL1002080",
+    "invoice_name": "GOTT & BLANDAT SALT BURK LÖSVIKT",
+    "location": "E4",
+    "best_before": "2026-09-20",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 14,
+    "boxes": 16,
+    "invoice_code": "MAL1015695",
+    "invoice_name": "MINI COLA-LAKRITSFLASKA LÖSVIKT 3 KG BIB",
+    "location": "E5",
+    "best_before": "2026-05-09",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 16,
+    "boxes": 15,
+    "invoice_code": "MAL1017093",
+    "invoice_name": "SISU SALTY SALMIAK 3,25 KG BIB",
+    "location": "E6",
+    "best_before": "2026-05-10",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 17,
+    "boxes": 22,
+    "invoice_code": "MAL10370",
+    "invoice_name": "SYRLIGA SNÄCKOR 2,28 KG",
+    "location": "E7",
+    "best_before": "2026-08-12",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 45,
+    "boxes": 52,
+    "invoice_code": "MAL63610",
+    "invoice_name": "SKUMKANTARELLER",
+    "location": "E8",
+    "best_before": "2026-07-24",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 20,
+    "boxes": 28,
+    "invoice_code": "MAL900211",
+    "invoice_name": "VATTENMELONER 1,8 KG",
+    "location": "E9",
+    "best_before": "2026-09-17",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 5,
+    "boxes": 25,
+    "invoice_code": "MAL907",
+    "invoice_name": "BRIO GRÄDD LÖSVIKT",
+    "location": "F1",
+    "best_before": "2027-09-21",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 6,
+    "boxes": 25,
+    "invoice_code": "MAL908",
+    "invoice_name": "BRIO FRUKT 2 KG",
+    "location": "F2",
+    "best_before": "2027-09-21",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 8,
+    "boxes": 25,
+    "invoice_code": "MAL910768",
+    "invoice_name": "DJUNGELVRÅL LÖSVIKT",
+    "location": "F3",
+    "best_before": "2026-09-19",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 38,
+    "boxes": 50,
+    "invoice_code": "MAL912334",
+    "invoice_name": "AHLGRENS LIMOUSINER BURK LÖSVIKT",
+    "location": "F4",
+    "best_before": "2026-02-16",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 27,
+    "boxes": 27,
+    "invoice_code": "MOR1101",
+    "invoice_name": "MORMOR LISAS PÄRLSOCKERBOLL 1,8KG",
+    "location": "F5",
+    "best_before": "2026-09-04",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 30,
+    "boxes": 25,
+    "invoice_code": "MOR1109",
+    "invoice_name": "MILKSHAKE BANANA & TOFFEE 2KG",
+    "location": "F6",
+    "best_before": "2026-09-14",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 28,
+    "boxes": 30,
+    "invoice_code": "MOR1119",
+    "invoice_name": "MORMOR LISAS COCOSBOLL 1,6KG",
+    "location": "F7",
+    "best_before": "2026-10-16",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 24,
+    "boxes": 12,
+    "invoice_code": "MOR1121",
+    "invoice_name": "MORMOR LISAS GAMMELDAGS GRÄDDKOLA",
+    "location": "F8",
+    "best_before": "2027-04-30",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 26,
+    "boxes": 12,
+    "invoice_code": "MOR1122",
+    "invoice_name": "MORMOR LISAS GAMMELDAGS GRÄDDKOLA JORDGUBB",
+    "location": "F9",
+    "best_before": "2027-04-30",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 25,
+    "boxes": 12,
+    "invoice_code": "MOR1123",
+    "invoice_name": "MORMOR LISAS GAMMELDAGS GRÄDDKOLA CHOKLAD",
+    "location": "G1",
+    "best_before": "2027-04-30",
+    "received_days_ago": 1
+  },
+  {
+    "internal_number": 48,
+    "boxes": 20,
+    "invoice_code": "SKÅ4233364",
+    "invoice_name": "BUBBLIZ ORIGINAL LUTTI BIB 2,5KG",
+    "location": "G2",
+    "best_before": "2027-02-28",
+    "received_days_ago": 1
+  }
+]

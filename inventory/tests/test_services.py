@@ -149,6 +149,22 @@ def test_create_batch_rejects_today_as_best_before_date(apple):
 
 
 @pytest.mark.django_db
+def test_create_batch_allows_non_future_best_before_for_imports(apple):
+    batch = create_batch(
+        product=apple,
+        boxes=10,
+        best_before=TODAY,
+        location="Shelf A1",
+        today=TODAY,
+        allow_non_future_best_before=True,
+    )
+
+    assert batch.best_before == TODAY
+    assert batch.boxes == 10
+    assert batch.status == InventoryBatch.Status.ACTIVE
+
+
+@pytest.mark.django_db
 def test_create_batch_rejects_duplicate_batch_id(apple, batch_factory):
     batch_factory(
         product=apple,
