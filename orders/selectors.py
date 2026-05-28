@@ -107,7 +107,7 @@ def get_packaging_list(*, order: Order) -> list[PickLine]:
     return [
         PickLine(
             sku=allocation.batch.product.sku,
-            product_name=allocation.batch.product.name,
+            product_name=allocation.batch.product.catalog_label,
             batch_id=allocation.batch.batch_id,
             location=allocation.batch.location,
             boxes=allocation.boxes,
@@ -127,7 +127,7 @@ def get_packed_lines(*, order: Order) -> list[PickLine]:
     return [
         PickLine(
             sku=allocation.batch.product.sku,
-            product_name=allocation.batch.product.name,
+            product_name=allocation.batch.product.catalog_label,
             batch_id=allocation.batch.batch_id,
             location=allocation.batch.location,
             boxes=allocation.boxes,
@@ -169,8 +169,10 @@ def list_packed_orders_for_dashboard(
 def count_placed_orders() -> int:
     return Order.objects.filter(status=Order.Status.PLACED).count()
 
+
 def count_packed_orders() -> int:
     return Order.objects.filter(status=Order.Status.PACKED).count()
+
 
 # ==============================================================================
 # private/helpers
