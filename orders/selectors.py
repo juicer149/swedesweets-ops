@@ -96,46 +96,6 @@ def list_orders(
     return orders.order_by(*ORDER_SORTS[normalized_sort])
 
 
-def get_packaging_list(*, order: Order) -> list[PickLine]:
-    allocations = (
-        order.allocations
-        .filter(status=Allocation.Status.RESERVED)
-        .select_related("batch", "batch__product")
-        .order_by("order_line_id", "batch__best_before", "batch__batch_id")
-    )
-
-    return [
-        PickLine(
-            sku=allocation.batch.product.sku,
-            product_name=allocation.batch.product.catalog_label,
-            batch_id=allocation.batch.batch_id,
-            location=allocation.batch.location,
-            boxes=allocation.boxes,
-        )
-        for allocation in allocations
-    ]
-
-
-def get_packed_lines(*, order: Order) -> list[PickLine]:
-    allocations = (
-        order.allocations
-        .filter(status=Allocation.Status.CONSUMED)
-        .select_related("batch", "batch__product")
-        .order_by("order_line_id", "batch__best_before", "batch__batch_id")
-    )
-
-    return [
-        PickLine(
-            sku=allocation.batch.product.sku,
-            product_name=allocation.batch.product.catalog_label,
-            batch_id=allocation.batch.batch_id,
-            location=allocation.batch.location,
-            boxes=allocation.boxes,
-        )
-        for allocation in allocations
-    ]
-
-
 def list_placed_orders_for_dashboard(
     *,
     limit: int = 3,
@@ -173,6 +133,49 @@ def count_placed_orders() -> int:
 def count_packed_orders() -> int:
     return Order.objects.filter(status=Order.Status.PACKED).count()
 
+def get_packaging_list(*, order: Order) -> list[PickLine]:
+    allocations = (
+        order.allocations
+        .filter(status=Allocation.Status.RESERVED)
+        .select_related("batch", "batch__product")
+        .order_by("order_line_id", "batch__best_before", "batch__batch_id")
+    )
+
+    return [
+        _build_pick_line(allocation)
+        for allocation in allocations
+    ]
+
+
+def get_packed_lines(*, order: Order) -> list[PickLine]:
+    allocations = (
+        order.allocations
+        .filter(status=Allocation.Status.CONSUMED)
+        .select_related("batch", "batch__product")
+        .order_by("order_line_id", "batch__best_before", "batch__batch_id")
+    )
+
+    return [
+        _build_pick_line(allocation)
+        for allocation in allocations
+    ]
+
+
+def _build_pick_line(allocation: Allocation) -> PickLine:
+    product = allocation.batch.product
+
+    return PickLine(
+        sku=product.sku,
+        product_name=product.catalog_label,
+        batch_id=allocation.batch.batch_id,
+        location=allocation.batch.location,
+        boxes=allocation.boxes,
+        quantity_label=_boxes_label(allocation.boxes),
+    )
+
+#TODO finns redan i presentation.py
+def _boxes_label(boxes: int) -> str:
+    return "1 box" if boxes == 1 else f"{boxes} boxes"
 
 # ==============================================================================
 # private/helpers

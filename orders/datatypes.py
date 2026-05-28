@@ -113,7 +113,7 @@ class OrderLineInput:
 
         raise InvalidOrderOperation("product_id or product is required")
 
-
+#TODO: ändra namn på alla ställen från boxes till quantity istället
 @dataclass(frozen=True)
 class PickLine:
     sku: str
@@ -121,3 +121,4 @@ class PickLine:
     batch_id: str
     location: str
     boxes: int
+    quantity_label: str #TODO man skulle inte ta en tuple eller något för plural/singular? och sedan väljer denna vilken som ska användas via dess egna data boxes? kanske även ändra namnet boxes till quantity istället?

@@ -28,17 +28,16 @@
                 class="pack-line__checkbox"
                 type="checkbox"
                 data-pack-line-checkbox
-                aria-label="Picked {{ line.boxes }} boxes of {{ line.product_name }} from batch {{ line.batch_id }}"
+                aria-label="Picked {{ line.quantity_label }} of {{ line.product_name }} from batch {{ line.batch_id }}"
               >
 
               <span class="pack-line__content">
-                <span class="pack-line__main">
-                  <strong>{{ line.boxes }}</strong>
-                  <span>
-                    box{{ line.boxes|pluralize:"es" }}
-                    —
-                    {{ line.product_name }}
-                  </span>
+                <span class="pack-line__quantity">
+                  {{ line.quantity_label }}
+                </span>
+
+                <span class="pack-line__product">
+                  {{ line.product_name }}
                 </span>
 
                 <span class="pack-line__meta">
