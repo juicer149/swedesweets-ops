@@ -1,0 +1,167 @@
+/* =============================================================================
+   Product tables
+   ============================================================================= */
+
+.products-table-card {
+  width: min(100%, 1040px);
+}
+
+.products-table thead th,
+.products-table thead th a,
+.products-table thead th button {
+  white-space: nowrap;
+}
+
+/* Number */
+.products-table th:nth-child(1),
+.products-table td:nth-child(1) {
+  width: 3.5rem;
+}
+
+/* Weight */
+.products-table th:nth-child(5),
+.products-table td:nth-child(5) {
+  width: 7rem;
+  white-space: nowrap;
+}
+
+/* Unit */
+.products-table th:nth-child(6),
+.products-table td:nth-child(6) {
+  width: 5rem;
+  white-space: nowrap;
+}
+
+/* Vegan */
+.products-table th:nth-child(7),
+.products-table td:nth-child(7) {
+  width: 5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Status */
+.products-table th:nth-child(8),
+.products-table td:nth-child(8) {
+  width: 6rem;
+  white-space: nowrap;
+}
+
+
+/* =============================================================================
+   Product mobile cards
+   ============================================================================= */
+
+.mobile-card--product {
+  gap: 0;
+  background: var(--color-primary-50);
+}
+
+.mobile-card--product.mobile-card--neutral,
+.mobile-card--product.mobile-card--muted,
+.mobile-card--product.mobile-card--warning,
+.mobile-card--product.mobile-card--info,
+.mobile-card--product.mobile-card--success,
+.mobile-card--product.mobile-card--danger {
+  background: var(--color-primary-50);
+}
+
+.mobile-card--product.mobile-card--success {
+  border-color: rgb(var(--color-status-success) / 0.45);
+}
+
+.mobile-card--product.mobile-card--muted {
+  border-color: var(--color-neutral-300);
+}
+
+.mobile-card--product .ui-card__row {
+  gap: var(--space-2);
+}
+
+/* =============================================================================
+   Product mobile cards
+   ============================================================================= */
+
+.mobile-card--product {
+  gap: 0;
+  background: var(--color-primary-50);
+}
+
+.mobile-card--product.mobile-card--neutral,
+.mobile-card--product.mobile-card--muted,
+.mobile-card--product.mobile-card--warning,
+.mobile-card--product.mobile-card--info,
+.mobile-card--product.mobile-card--success,
+.mobile-card--product.mobile-card--danger {
+  background: var(--color-primary-50);
+}
+
+.mobile-card--product.mobile-card--success {
+  border-color: rgb(var(--color-status-success) / 0.45);
+}
+
+.mobile-card--product.mobile-card--muted {
+  border-color: var(--color-neutral-300);
+}
+
+.mobile-card--product .ui-card__row {
+  gap: var(--space-2);
+}
+
+
+/* =============================================================================
+   Product mobile card identity
+   ============================================================================= */
+
+/* Product ID */
+.product-card__id {
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  font-weight: 850;
+  line-height: 1.05;
+  margin-bottom: var(--space-3);
+}
+
+/* Product brand */
+.product-card__brand {
+  color: var(--color-primary-950);
+  font-size: var(--font-size-20);
+  font-weight: 850;
+  line-height: 1.08;
+  margin-bottom: var(--space-1);
+}
+
+/* Product name */
+.product-card__name {
+  color: var(--color-primary-950);
+  font-size: var(--font-size-20);
+  font-weight: 750;
+  line-height: 1.08;
+  margin-bottom: var(--space-2);
+}
+
+/* Manufacturer */
+.product-card__manufacturer {
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: var(--space-2);
+}
+
+/* Weight/unit */
+.product-card__weight {
+  color: var(--color-primary-900);
+  font-size: var(--font-size-16);
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+
+/* =============================================================================
+   Product mobile card tags
+   ============================================================================= */
+
+.mobile-card--product .product-tag {
+  margin-top: var(--space-3);
+}

@@ -115,6 +115,7 @@
 
 .form-help {
   margin-bottom: 0;
+  min-height: calc(var(--font-size-12) * 1.45 * 2);
 
   font-size: var(--font-size-12);
   font-weight: 600;
@@ -172,6 +173,18 @@
 .form-actions .button {
   min-width: 160px;
   padding-inline: var(--space-6);
+}
+
+
+/* Radio chip controls should occupy the same vertical control area as inputs. */
+.form-field .radio-chip-group {
+  min-height: var(--size-control-lg);
+  align-items: center;
+}
+
+/* Keep help text rhythm stable when sibling controls have different heights. */
+.form-field .radio-chip-group + .form-help {
+  margin-top: 0;
 }
 
 /* =============================================================================

@@ -160,7 +160,7 @@
 }
 
 .quantity-text--safe {
-  color: var(--color-neutral-700);
+  color: var(--color-primary-900);
 }
 
 .quantity-text--low {
@@ -170,6 +170,25 @@
 .quantity-text--empty {
   color: var(--color-status-danger-text);
 }
+
+.data-table .numeric-cell .quantity-text--safe,
+.mobile-card .quantity-text--safe,
+.ui-card-strong.quantity-text--safe {
+  color: var(--color-primary-900);
+}
+
+.data-table .numeric-cell .quantity-text--low,
+.mobile-card .quantity-text--low,
+.ui-card-strong.quantity-text--low {
+  color: var(--color-status-warning-text);
+}
+
+.data-table .numeric-cell .quantity-text--empty,
+.mobile-card .quantity-text--empty,
+.ui-card-strong.quantity-text--empty {
+  color: var(--color-status-danger-text);
+}
+
 
 /* =============================================================================
    Status icon alignment
