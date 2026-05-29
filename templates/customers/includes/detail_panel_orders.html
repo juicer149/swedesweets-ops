@@ -1,41 +1,3 @@
-<dl class="detail-data-list">
-  <div>
-    <dt>Total orders</dt>
-    <dd>{{ order_summary.total_orders }}</dd>
-  </div>
-
-  <div>
-    <dt>Placed</dt>
-    <dd>{{ order_summary.placed_orders }}</dd>
-  </div>
-
-  <div>
-    <dt>Packed</dt>
-    <dd>{{ order_summary.packed_orders }}</dd>
-  </div>
-
-  <div>
-    <dt>Delivered</dt>
-    <dd>{{ order_summary.delivered_orders }}</dd>
-  </div>
-
-  <div>
-    <dt>Cancelled</dt>
-    <dd>{{ order_summary.cancelled_orders }}</dd>
-  </div>
-
-  <div>
-    <dt>Last order</dt>
-    <dd>
-      {% if order_summary.last_ordered_at %}
-        {{ order_summary.last_ordered_at|date:"Y-m-d H:i" }}
-      {% else %}
-        Never
-      {% endif %}
-    </dd>
-  </div>
-</dl>
-
 {% if order_rows %}
   <div class="table-card table-card--embedded">
     <table class="data-table">
@@ -44,7 +6,7 @@
           <th>Order</th>
           <th>Status</th>
           <th>Created</th>
-          <th class="numeric-cell">Boxes</th>
+          <th class="numeric-cell">Quantity</th>
         </tr>
       </thead>
 
@@ -69,7 +31,7 @@
             <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
 
             <td class="numeric-cell">
-              <strong>{{ row.boxes }}</strong>
+              <strong>{{ row.quantity_label }}</strong>
             </td>
           </tr>
         {% endfor %}
@@ -86,4 +48,8 @@
       {% include "includes/ui/card.html" with card=row.card only %}
     {% endfor %}
   </div>
+{% else %}
+  <p class="form-help">
+    This customer has no orders yet.
+  </p>
 {% endif %}

@@ -6,7 +6,8 @@ Product is the stable operational object used by orders and inventory.
 Stable identity:
     id
     sku
-    weight_per_box
+    weight_per_unit
+    stock_unit
 
 Editable catalog data:
     internal_number
@@ -16,8 +17,8 @@ Editable catalog data:
     active
     vegan
 
-ProductProfile stores optional future catalog data without touching the
-operational product identity.
+ProductProfile stores optional catalog data without touching the operational
+product identity.
 """
 
 from __future__ import annotations
@@ -31,20 +32,21 @@ from products.catalog import (
     MAX_IMAGE_URL_LENGTH,
     MAX_NAME_LENGTH,
     MAX_SKU_LENGTH,
-    MAX_WEIGHT_PER_BOX,
-    MIN_WEIGHT_PER_BOX,
+    MAX_WEIGHT_PER_UNIT,
+    MIN_WEIGHT_PER_UNIT,
     make_sku,
     normalize_optional_text,
     normalize_required_text,
     validate_internal_number,
-    validate_weight_per_box,
+    validate_weight_per_unit,
 )
 from products.errors import InvalidProductData
 
 
 IMMUTABLE_PRODUCT_IDENTITY_FIELDS = frozenset(
     {
-        "weight_per_box",
+        "weight_per_unit",
+        "stock_unit",
         "sku",
     }
 )
@@ -56,9 +58,22 @@ class Product(models.Model):
     SKU is generated when the product is created and then kept stable.
 
     internal_number, manufacturer, brand and name are editable catalog data.
-    weight_per_box is immutable because order conversions and inventory stock
-    depend on it historically.
+    weight_per_unit and stock_unit are immutable because order conversions,
+    inventory stock and historical labels depend on them.
     """
+
+    class StockUnit(models.TextChoices):
+        BOX = "box", "Box"
+        PIECE = "piece", "Piece"
+        BAG = "bag", "Bag"
+        CASE = "case", "Case"
+
+    STOCK_UNIT_PLURALS = {
+        StockUnit.BOX.value: "boxes",
+        StockUnit.PIECE.value: "pieces",
+        StockUnit.BAG.value: "bags",
+        StockUnit.CASE.value: "cases",
+    }
 
     internal_number = models.PositiveSmallIntegerField(
         null=True,
@@ -83,8 +98,15 @@ class Product(models.Model):
         help_text="Swedish/internal MVP product name.",
     )
 
-    weight_per_box = models.PositiveIntegerField(
-        help_text="Stored in grams.",
+    weight_per_unit = models.PositiveIntegerField(
+        help_text="Weight in grams for one physical stock unit.",
+    )
+
+    stock_unit = models.CharField(
+        max_length=20,
+        choices=StockUnit.choices,
+        default=StockUnit.BOX,
+        help_text="Physical inventory unit used for this product.",
     )
 
     sku = models.CharField(
@@ -101,7 +123,7 @@ class Product(models.Model):
             "internal_number",
             "brand",
             "name",
-            "weight_per_box",
+            "weight_per_unit",
         ]
         constraints = [
             models.CheckConstraint(
@@ -112,12 +134,12 @@ class Product(models.Model):
                 name="product_internal_number_positive_or_null",
             ),
             models.CheckConstraint(
-                condition=models.Q(weight_per_box__gte=MIN_WEIGHT_PER_BOX),
-                name="product_weight_per_box_at_least_min",
+                condition=models.Q(weight_per_unit__gte=MIN_WEIGHT_PER_UNIT),
+                name="product_weight_per_unit_at_least_min",
             ),
             models.CheckConstraint(
-                condition=models.Q(weight_per_box__lte=MAX_WEIGHT_PER_BOX),
-                name="product_weight_per_box_at_most_max",
+                condition=models.Q(weight_per_unit__lte=MAX_WEIGHT_PER_UNIT),
+                name="product_weight_per_unit_at_most_max",
             ),
         ]
 
@@ -172,15 +194,24 @@ class Product(models.Model):
         *,
         update_fields: set[str] | None,
     ) -> None:
-        if _should_handle(update_fields, "weight_per_box"):
-            validate_weight_per_box(self.weight_per_box)
+        if _should_handle(update_fields, "weight_per_unit"):
+            validate_weight_per_unit(self.weight_per_unit)
+
+        if _should_handle(update_fields, "stock_unit"):
+            self._validate_stock_unit()
+
+    def _validate_stock_unit(self) -> None:
+        valid_units = {choice.value for choice in self.StockUnit}
+
+        if self.stock_unit not in valid_units:
+            raise InvalidProductData(f"Unsupported stock unit: {self.stock_unit}")
 
     def _assign_initial_sku(self) -> None:
         self.sku = make_sku(
             internal_number=self.internal_number,
             brand=self.brand,
             name=self.name,
-            weight_per_box=self.weight_per_box,
+            weight_per_unit=self.weight_per_unit,
         )
 
     def _protect_immutable_identity(
@@ -196,13 +227,18 @@ class Product(models.Model):
     def _raise_if_immutable_identity_changed(self) -> None:
         persisted = (
             type(self).objects
-            .only("weight_per_box", "sku")
+            .only("weight_per_unit", "stock_unit", "sku")
             .get(pk=self.pk)
         )
 
-        if self.weight_per_box != persisted.weight_per_box:
+        if self.weight_per_unit != persisted.weight_per_unit:
             raise InvalidProductData(
-                "weight_per_box cannot be changed after product creation"
+                "weight_per_unit cannot be changed after product creation"
+            )
+
+        if self.stock_unit != persisted.stock_unit:
+            raise InvalidProductData(
+                "stock_unit cannot be changed after product creation"
             )
 
         if self.sku != persisted.sku:
@@ -224,36 +260,61 @@ class Product(models.Model):
         return self.sku
 
     @property
-    def catalog_label(self) -> str:
-        """Full operational label for searchable selects."""
-        return(
-            f"{self.code_label} · "
-            f"{self.display_name} · "
-            f"{self.weight_per_box} g"
-        )
-
+    def stock_unit_singular(self) -> str:
+        return self.stock_unit
 
     @property
-    def catalog_sort_key(self) -> tuple[int, str, str, int, str]: 
-        return(
+    def stock_unit_plural(self) -> str:
+        return self.STOCK_UNIT_PLURALS[self.stock_unit]
+
+    @property
+    def weight_label(self) -> str:
+        return f"{self.weight_per_unit} g"
+
+    @property
+    def unit_weight_label(self) -> str:
+        return f"{self.weight_per_unit} g / {self.stock_unit_singular}"
+
+    @property
+    def catalog_label(self) -> str:
+        """Full operational label for searchable selects."""
+        return (
+            f"{self.code_label} · "
+            f"{self.display_name} · "
+            f"{self.unit_weight_label}"
+        )
+
+    @property
+    def catalog_sort_key(self) -> tuple[int, str, str, int, str]:
+        return (
             self.internal_number or 999_999,
             self.brand.casefold(),
             self.name.casefold(),
-            self.weight_per_box,
+            self.weight_per_unit,
             self.sku,
         )
 
+    def stock_quantity_label(self, quantity: int) -> str:
+        if quantity < 0:
+            raise InvalidProductData("quantity must be non-negative")
 
-    def grams_to_boxes(self, *, grams: int) -> int:
-        """Convert grams into whole boxes for this product."""
+        unit = (
+            self.stock_unit_singular
+            if quantity == 1
+            else self.stock_unit_plural
+        )
+        return f"{quantity} {unit}"
+
+    def grams_to_units(self, *, grams: int) -> int:
+        """Convert grams into whole stock units for this product."""
 
         if grams <= 0:
             raise InvalidProductData("grams must be positive")
 
-        return (grams + self.weight_per_box - 1) // self.weight_per_box
+        return (grams + self.weight_per_unit - 1) // self.weight_per_unit
 
-    def kg_to_boxes(self, *, kg: Decimal) -> int:
-        """Convert kilograms into whole boxes for this product."""
+    def kg_to_units(self, *, kg: Decimal) -> int:
+        """Convert kilograms into whole stock units for this product."""
 
         if kg <= 0:
             raise InvalidProductData("kg must be positive")
@@ -262,20 +323,20 @@ class Product(models.Model):
             rounding=ROUND_CEILING
         )
 
-        return self.grams_to_boxes(grams=int(grams))
+        return self.grams_to_units(grams=int(grams))
 
-    def boxes_to_grams(self, *, boxes: int) -> int:
-        """Convert whole boxes into grams for this product."""
+    def units_to_grams(self, *, units: int) -> int:
+        """Convert whole stock units into grams for this product."""
 
-        if boxes <= 0:
-            raise InvalidProductData("boxes must be positive")
+        if units <= 0:
+            raise InvalidProductData("units must be positive")
 
-        return boxes * self.weight_per_box
+        return units * self.weight_per_unit
 
-    def boxes_to_kg(self, *, boxes: int) -> Decimal:
-        """Convert whole boxes into kilograms."""
+    def units_to_kg(self, *, units: int) -> Decimal:
+        """Convert whole stock units into kilograms."""
 
-        grams = self.boxes_to_grams(boxes=boxes)
+        grams = self.units_to_grams(units=units)
         return Decimal(grams) / Decimal("1000")
 
     def __str__(self) -> str:

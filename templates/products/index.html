@@ -15,8 +15,8 @@
   {% include "includes/table/filter_chips.html" %}
   {% include "includes/table/sort_select.html" %}
 
-  <div class="table-card">
-    <table class="data-table">
+  <div class="table-card product-table-card">
+    <table class="data-table product-table">
       <thead>
         <tr>
           {% include "includes/table/sort_headers.html" %}
@@ -58,7 +58,11 @@
             </td>
 
             <td class="numeric-cell">
-              <strong>{{ row.product.weight_per_box }}</strong> g
+              <strong>{{ row.weight_label }}</strong>
+            </td>
+
+            <td>
+              {{ row.unit_label }}
             </td>
 
             <td>
@@ -89,7 +93,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td class="empty-cell" colspan="7">
+            <td class="empty-cell" colspan="8">
               No products found.
             </td>
           </tr>

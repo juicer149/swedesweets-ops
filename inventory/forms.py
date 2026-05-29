@@ -18,7 +18,7 @@ class BatchForm(forms.Form):
             "internal_number",
             "brand",
             "name",
-            "weight_per_box",
+            "weight_per_unit",
         ),
         label="Product",
         empty_label="Choose product",
@@ -34,13 +34,14 @@ class BatchForm(forms.Form):
         ),
     )
 
-    boxes = forms.IntegerField(
+    quantity = forms.IntegerField(
         min_value=1,
-        label="Boxes",
+        label="Quantity",
+        help_text="Number of product stock units received for this batch.",
         error_messages={
-            "required": "Enter number of boxes.",
-            "invalid": "Enter a whole number of boxes.",
-            "min_value": "A new batch must contain at least 1 box.",
+            "required": "Enter quantity.",
+            "invalid": "Enter a whole number.",
+            "min_value": "A new batch must contain at least 1 unit.",
         },
         widget=forms.NumberInput(
             attrs={
@@ -83,19 +84,19 @@ class BatchForm(forms.Form):
         set_form_field_layout(
             self,
             full=("product",),
-            half=("boxes", "best_before", "location"),
+            half=("quantity", "best_before", "location"),
         )
 
 
 class BatchEditForm(forms.Form):
-    boxes = forms.IntegerField(
+    quantity = forms.IntegerField(
         min_value=0,
-        label="Boxes",
-        help_text="Set the physical box count after stock correction.",
+        label="Quantity",
+        help_text="Set the physical stock-unit count after stock correction.",
         error_messages={
-            "required": "Enter number of boxes.",
-            "invalid": "Enter a whole number of boxes.",
-            "min_value": "Boxes cannot be negative.",
+            "required": "Enter quantity.",
+            "invalid": "Enter a whole number.",
+            "min_value": "Quantity cannot be negative.",
         },
         widget=forms.NumberInput(
             attrs={
@@ -138,13 +139,13 @@ class BatchEditForm(forms.Form):
 
         set_form_field_layout(
             self,
-            half=("boxes", "best_before", "location"),
+            half=("quantity", "best_before", "location"),
         )
 
 
 def build_batch_edit_initial_data(batch: InventoryBatch) -> dict[str, object]:
     return {
-        "boxes": batch.boxes,
+        "quantity": batch.quantity,
         "best_before": batch.best_before,
         "location": batch.location,
     }

@@ -7,8 +7,8 @@ MAX_NAME_LENGTH = 160
 MAX_SKU_LENGTH = 180
 MAX_IMAGE_URL_LENGTH = 500
 
-MIN_WEIGHT_PER_BOX = 1
-MAX_WEIGHT_PER_BOX = 50_000
+MIN_WEIGHT_PER_UNIT = 1
+MAX_WEIGHT_PER_UNIT = 50_000
 
 SKU_PREFIX = "SS"
 SKU_INTERNAL_NUMBER_WIDTH = 3
@@ -66,15 +66,15 @@ def slugify_sku_part(value: str) -> str:
     return "".join(characters).strip("_")
 
 
-def validate_weight_per_box(weight_per_box: int) -> None:
-    if weight_per_box < MIN_WEIGHT_PER_BOX:
+def validate_weight_per_unit(weight_per_unit: int) -> None:
+    if weight_per_unit < MIN_WEIGHT_PER_UNIT:
         raise InvalidProductData(
-            f"weight_per_box must be at least {MIN_WEIGHT_PER_BOX}"
+            f"weight_per_unit must be at least {MIN_WEIGHT_PER_UNIT}"
         )
 
-    if weight_per_box > MAX_WEIGHT_PER_BOX:
+    if weight_per_unit > MAX_WEIGHT_PER_UNIT:
         raise InvalidProductData(
-            f"weight_per_box must be at most {MAX_WEIGHT_PER_BOX}"
+            f"weight_per_unit must be at most {MAX_WEIGHT_PER_UNIT}"
         )
 
 
@@ -90,10 +90,10 @@ def make_sku(
     *,
     brand: str,
     name: str,
-    weight_per_box: int,
+    weight_per_unit: int,
     internal_number: int | None = None,
 ) -> str:
-    validate_weight_per_box(weight_per_box)
+    validate_weight_per_unit(weight_per_unit)
     validate_internal_number(internal_number)
 
     if internal_number is not None:
@@ -102,5 +102,5 @@ def make_sku(
     return (
         f"{slugify_sku_part(brand)}-"
         f"{slugify_sku_part(name)}-"
-        f"{weight_per_box}"
+        f"{weight_per_unit}"
     )

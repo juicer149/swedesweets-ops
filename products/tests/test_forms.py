@@ -9,7 +9,7 @@ from products.forms import (
     ProductForm,
     build_product_edit_initial_data,
 )
-from products.models import ProductProfile
+from products.models import Product, ProductProfile
 from products.tests.factories import product_factory
 
 
@@ -19,7 +19,8 @@ def valid_product_form_data(**overrides):
         "manufacturer": "Fazer",
         "brand": "Fazer",
         "name": "Tyrkisk Peber",
-        "weight_per_box": "3000",
+        "stock_unit": Product.StockUnit.BOX,
+        "weight_per_unit": "3000",
         "vegan": "on",
     }
     data.update(overrides)
@@ -51,8 +52,18 @@ def test_product_form_accepts_valid_data():
     assert form.cleaned_data["manufacturer"] == "Fazer"
     assert form.cleaned_data["brand"] == "Fazer"
     assert form.cleaned_data["name"] == "Tyrkisk Peber"
-    assert form.cleaned_data["weight_per_box"] == 3000
+    assert form.cleaned_data["stock_unit"] == Product.StockUnit.BOX
+    assert form.cleaned_data["weight_per_unit"] == 3000
     assert form.cleaned_data["vegan"] is True
+
+
+def test_product_form_accepts_piece_stock_unit():
+    form = ProductForm(
+        data=valid_product_form_data(stock_unit=Product.StockUnit.PIECE)
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["stock_unit"] == Product.StockUnit.PIECE
 
 
 def test_product_form_rejects_missing_required_fields():
@@ -64,12 +75,20 @@ def test_product_form_rejects_missing_required_fields():
     assert "name" in form.errors
 
 
-def test_product_form_rejects_invalid_weight_per_box():
-    form = ProductForm(data=valid_product_form_data(weight_per_box="0"))
+def test_product_form_rejects_invalid_weight_per_unit():
+    form = ProductForm(data=valid_product_form_data(weight_per_unit="0"))
 
     assert not form.is_valid()
 
-    assert "weight_per_box" in form.errors
+    assert "weight_per_unit" in form.errors
+
+
+def test_product_form_rejects_invalid_stock_unit():
+    form = ProductForm(data=valid_product_form_data(stock_unit="pallet"))
+
+    assert not form.is_valid()
+
+    assert "stock_unit" in form.errors
 
 
 def test_product_form_configures_vegan_toggle_metadata():
@@ -115,7 +134,8 @@ def test_build_product_edit_initial_data_without_profile():
         manufacturer="Fazer",
         brand="Fazer",
         name="Tyrkisk Peber",
-        weight_per_box=3000,
+        weight_per_unit=3000,
+        stock_unit=Product.StockUnit.BOX,
         vegan=True,
     )
 
@@ -143,7 +163,8 @@ def test_build_product_edit_initial_data_with_profile():
         manufacturer="Fazer",
         brand="Fazer",
         name="Tyrkisk Peber",
-        weight_per_box=3000,
+        weight_per_unit=3000,
+        stock_unit=Product.StockUnit.BOX,
         vegan=True,
     )
 

@@ -4,42 +4,6 @@ Inventory application services.
 These functions coordinate inventory use-cases. They may call model methods,
 perform database queries, and define transaction boundaries. They should not
 contain presentation/UI logic.
-
-public API:
-    create_batch(
-        *,
-        product: Product,
-        boxes: int,
-        best_before: date,
-        location: str,
-        batch_id: str | None = None,
-        today: date | None = None,
-        allow_non_future_best_before: bool = False,
-    ) -> InventoryBatch
-        -> Create a new physical inventory batch.
-
-    update_batch(
-        *,
-        batch: InventoryBatch,
-        boxes: int,
-        best_before: date,
-        location: str,
-    ) -> InventoryBatch
-        -> Correct editable physical batch fields.
-
-    reserved_boxes_for_batch(
-        *,
-        batch: InventoryBatch,
-    ) -> int
-        -> Return boxes reserved from this batch by placed orders.
-
-    plan_batch_picks(
-        *,
-        product: Product,
-        boxes: int,
-        reserved_boxes_by_batch_id: dict[int, int],
-    ) -> list[BatchPick]
-        -> Plan FEFO picks for a product quantity.
 """
 
 from __future__ import annotations
@@ -66,14 +30,10 @@ BATCH_ID_TEXT_PART_LENGTH = 3
 
 @dataclass(frozen=True)
 class BatchPick:
-    """Planned pick from one physical batch.
-
-    This is not a database object. It is a planning result used by order services
-    to create Allocation rows.
-    """
+    """Planned pick from one physical batch."""
 
     batch: InventoryBatch
-    boxes: int
+    quantity: int
 
 
 @dataclass(frozen=True)
@@ -81,24 +41,19 @@ class BatchPickPlan:
     """Result of trying to build a complete FEFO pick plan."""
 
     picks: list[BatchPick]
-    available_boxes: int
-    missing_boxes: int
+    available_quantity: int
+    missing_quantity: int
 
     @property
     def is_complete(self) -> bool:
-        return self.missing_boxes == 0
-
-
-# ==============================================================================
-# public
-# ==============================================================================
+        return self.missing_quantity == 0
 
 
 @transaction.atomic
 def create_batch(
     *,
     product: Product,
-    boxes: int,
+    quantity: int,
     best_before: date,
     location: str,
     batch_id: str | None = None,
@@ -107,27 +62,14 @@ def create_batch(
 ) -> InventoryBatch:
     """Create a new physical inventory batch.
 
-    A new batch must start with positive physical stock. Later corrections may
-    use InventoryBatch.adjust_boxes(), but creating an empty batch is not a
-    meaningful stock-receiving event for this MVP.
-
-    If batch_id is provided, it is treated as a manual or external lot code.
-    If batch_id is omitted, a product-based id is generated.
-
-    Generated format:
-        P004-TUT-SOU-001
-
-    The prefix is based on product internal number, brand and name. The trailing
-    number is a sequence per product prefix.
-
-    allow_non_future_best_before exists for trusted import/seed data only.
-    Normal app flows should leave it as False.
+    A new batch must start with positive physical stock. If batch_id is omitted,
+    a product-based id is generated.
     """
 
     today = today or date.today()
 
-    if boxes <= 0:
-        raise InvalidStockOperation("boxes must be positive")
+    if quantity <= 0:
+        raise InvalidStockOperation("quantity must be positive")
 
     if best_before <= today and not allow_non_future_best_before:
         raise InvalidStockOperation("best_before date must be in the future")
@@ -139,7 +81,7 @@ def create_batch(
             return _create_batch_with_id(
                 batch_id=normalized_batch_id,
                 product=product,
-                boxes=boxes,
+                quantity=quantity,
                 best_before=best_before,
                 location=location,
             )
@@ -155,7 +97,7 @@ def create_batch(
             return _create_batch_with_id(
                 batch_id=generated_batch_id,
                 product=product,
-                boxes=boxes,
+                quantity=quantity,
                 best_before=best_before,
                 location=location,
             )
@@ -169,17 +111,14 @@ def create_batch(
 def update_batch(
     *,
     batch: InventoryBatch,
-    boxes: int,
+    quantity: int,
     best_before: date,
     location: str,
 ) -> InventoryBatch:
     """Correct editable fields for a physical inventory batch.
 
-    Product and batch_id are intentionally immutable in this MVP. They identify
-    what was received. Changing them later would weaken traceability.
-
-    Boxes may not be corrected below the number of boxes currently reserved from
-    this batch by placed orders.
+    Product and batch_id are intentionally immutable in this MVP. Quantity may
+    not be corrected below the number currently reserved from this batch.
     """
 
     batch = (
@@ -192,15 +131,15 @@ def update_batch(
     if batch.status == InventoryBatch.Status.CLOSED:
         raise InvalidStockOperation(f"Batch {batch.batch_id} is closed")
 
-    reserved_boxes = reserved_boxes_for_batch(batch=batch)
+    reserved_quantity = reserved_quantity_for_batch(batch=batch)
 
-    if boxes < reserved_boxes:
+    if quantity < reserved_quantity:
         raise InvalidStockOperation(
-            f"Cannot set batch {batch.batch_id} to {boxes} boxes; "
-            f"{reserved_boxes} boxes are reserved."
+            f"Cannot set batch {batch.batch_id} to {quantity} units; "
+            f"{reserved_quantity} units are reserved."
         )
 
-    batch.adjust_boxes(boxes=boxes)
+    batch.adjust_quantity(quantity=quantity)
 
     batch.best_before = best_before
     batch.location = location
@@ -211,11 +150,7 @@ def update_batch(
 
 @transaction.atomic
 def close_batch(*, batch: InventoryBatch) -> InventoryBatch:
-    """Close a batch so it is no longer orderable.
-
-    A batch with active reservations cannot be closed, because placed orders
-    still depend on it.
-    """
+    """Close a batch so it is no longer orderable."""
 
     batch = (
         InventoryBatch.objects
@@ -224,20 +159,20 @@ def close_batch(*, batch: InventoryBatch) -> InventoryBatch:
         .get(pk=batch.pk)
     )
 
-    reserved_boxes = reserved_boxes_for_batch(batch=batch)
+    reserved_quantity = reserved_quantity_for_batch(batch=batch)
 
-    if reserved_boxes > 0:
+    if reserved_quantity > 0:
         raise InvalidStockOperation(
             f"Cannot close batch {batch.batch_id}; "
-            f"{reserved_boxes} boxes are reserved."
+            f"{reserved_quantity} units are reserved."
         )
 
     batch.close()
     return batch
 
 
-def reserved_boxes_for_batch(*, batch: InventoryBatch) -> int:
-    """Return boxes reserved from this batch by placed orders."""
+def reserved_quantity_for_batch(*, batch: InventoryBatch) -> int:
+    """Return quantity reserved from this batch by placed orders."""
 
     result = (
         Allocation.objects
@@ -246,7 +181,7 @@ def reserved_boxes_for_batch(*, batch: InventoryBatch) -> int:
             status=Allocation.Status.RESERVED,
             order__status=Order.Status.PLACED,
         )
-        .aggregate(total=Sum("boxes"))
+        .aggregate(total=Sum("quantity"))
     )
 
     return result["total"] or 0
@@ -255,65 +190,49 @@ def reserved_boxes_for_batch(*, batch: InventoryBatch) -> int:
 def plan_batch_picks(
     *,
     product: Product,
-    boxes: int,
-    reserved_boxes_by_batch_id: dict[int, int],
+    quantity: int,
+    reserved_quantity_by_batch_id: dict[int, int] | None = None,
 ) -> list[BatchPick]:
     """Plan which batches should be used for a product quantity.
 
-    Uses FEFO:
-        first-expired, first-out
-
-    The caller provides reserved_boxes_by_batch_id because reservations are owned
-    by the order/allocation workflow. This keeps inventory independent from
-    orders while still allowing it to make correct batch-level plans.
-
-    This function mutates reserved_boxes_by_batch_id deliberately. When an order
-    has multiple lines, later lines must see reservations planned by earlier
-    lines.
-
-    Important:
-        Candidate batches are locked with select_for_update(). In the real order
-        workflow, call this inside transaction.atomic() together with Allocation
-        creation, otherwise the lock is not protecting the whole workflow.
+    Uses FEFO: first-expired, first-out.
     """
 
-    if boxes <= 0:
-        raise InvalidStockOperation("boxes must be positive")
+    if reserved_quantity_by_batch_id is None:
+        reserved_quantity_by_batch_id = {}
+
+    if quantity <= 0:
+        raise InvalidStockOperation("quantity must be positive")
 
     plan = _build_batch_pick_plan(
         batches=_list_candidate_batches_for_picking(product=product),
-        requested_boxes=boxes,
-        reserved_boxes_by_batch_id=reserved_boxes_by_batch_id,
+        requested_quantity=quantity,
+        reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
     )
 
     if not plan.is_complete:
         raise InsufficientStockError(
             product_name=product.display_name,
-            requested_boxes=boxes,
-            available_boxes=plan.available_boxes,
-            missing_boxes=plan.missing_boxes,
+            requested_quantity=quantity,
+            available_quantity=plan.available_quantity,
+            missing_quantity=plan.missing_quantity,
         )
 
     return plan.picks
-
-
-# ==============================================================================
-# private/helpers
-# ==============================================================================
 
 
 def _create_batch_with_id(
     *,
     batch_id: str,
     product: Product,
-    boxes: int,
+    quantity: int,
     best_before: date,
     location: str,
 ) -> InventoryBatch:
     return InventoryBatch.objects.create(
         batch_id=batch_id,
         product=product,
-        boxes=boxes,
+        quantity=quantity,
         best_before=best_before,
         location=location,
     )
@@ -324,9 +243,6 @@ def _generate_batch_id(*, product: Product) -> str:
 
     Format:
         P004-TUT-SOU-001
-
-    This is private because batch-id generation is an implementation detail of
-    create_batch(), not a separate application use-case.
     """
 
     prefix = _batch_id_prefix(product)
@@ -395,7 +311,7 @@ def _list_candidate_batches_for_picking(
         .filter(
             product=product,
             status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
+            quantity__gt=0,
         )
         .order_by("best_before", "batch_id")
     )
@@ -404,71 +320,71 @@ def _list_candidate_batches_for_picking(
 def _build_batch_pick_plan(
     *,
     batches: Iterable[InventoryBatch],
-    requested_boxes: int,
-    reserved_boxes_by_batch_id: dict[int, int],
+    requested_quantity: int,
+    reserved_quantity_by_batch_id: dict[int, int],
 ) -> BatchPickPlan:
     """Build a FEFO pick plan from candidate batches.
 
     This is pure planning except for one deliberate side effect:
-    reserved_boxes_by_batch_id is mutated so subsequent order lines see boxes
-    already planned by earlier lines.
+    reserved_quantity_by_batch_id is mutated so subsequent order lines see
+    quantity already planned by earlier lines.
     """
 
-    remaining_boxes = requested_boxes
-    available_boxes = 0
+    remaining_quantity = requested_quantity
+    available_quantity = 0
     picks: list[BatchPick] = []
 
     for batch in batches:
-        if remaining_boxes == 0:
+        if remaining_quantity == 0:
             break
 
-        allocatable_boxes = _allocatable_boxes(
+        allocatable_quantity = _allocatable_quantity(
             batch=batch,
-            reserved_boxes_by_batch_id=reserved_boxes_by_batch_id,
+            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
         )
 
-        if allocatable_boxes <= 0:
+        if allocatable_quantity <= 0:
             continue
 
-        available_boxes += allocatable_boxes
-        boxes_to_pick = min(allocatable_boxes, remaining_boxes)
+        available_quantity += allocatable_quantity
+        quantity_to_pick = min(allocatable_quantity, remaining_quantity)
 
         picks.append(
             BatchPick(
                 batch=batch,
-                boxes=boxes_to_pick,
+                quantity=quantity_to_pick,
             )
         )
 
-        _reserve_planned_boxes(
+        _reserve_planned_quantity(
             batch=batch,
-            boxes=boxes_to_pick,
-            reserved_boxes_by_batch_id=reserved_boxes_by_batch_id,
+            quantity=quantity_to_pick,
+            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
         )
 
-        remaining_boxes -= boxes_to_pick
+        remaining_quantity -= quantity_to_pick
 
     return BatchPickPlan(
         picks=picks,
-        available_boxes=available_boxes,
-        missing_boxes=remaining_boxes,
+        available_quantity=available_quantity,
+        missing_quantity=remaining_quantity,
     )
 
 
-def _allocatable_boxes(
+def _allocatable_quantity(
     *,
     batch: InventoryBatch,
-    reserved_boxes_by_batch_id: dict[int, int],
+    reserved_quantity_by_batch_id: dict[int, int],
 ) -> int:
-    already_reserved = reserved_boxes_by_batch_id.get(batch.id, 0)
-    return batch.boxes - already_reserved
+    already_reserved = reserved_quantity_by_batch_id.get(batch.id, 0)
+    return batch.quantity - already_reserved
 
 
-def _reserve_planned_boxes(
+def _reserve_planned_quantity(
     *,
     batch: InventoryBatch,
-    boxes: int,
-    reserved_boxes_by_batch_id: dict[int, int],
+    quantity: int,
+    reserved_quantity_by_batch_id: dict[int, int],
 ) -> None:
-    already_reserved = reserved_boxes_by_batch_id.get(batch.id, 0)
-    reserved_boxes_by_batch_id[batch.id] = already_reserved + boxes
+    already_reserved = reserved_quantity_by_batch_id.get(batch.id, 0)
+    reserved_quantity_by_batch_id[batch.id] = already_reserved + quantity

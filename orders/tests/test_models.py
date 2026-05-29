@@ -106,11 +106,11 @@ def test_order_line_string_uses_product_sku_quantity_and_unit(customer, apple):
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.BOXES,
-        quantity_in_boxes=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
     )
 
-    assert str(line) == "SS-001: 10 boxes"
+    assert str(line) == "SS-001: 10 stock_unit"
 
 
 @pytest.mark.django_db
@@ -118,7 +118,7 @@ def test_allocation_can_be_consumed(customer, apple):
     batch = create_batch(
         batch_id="A-001",
         product=apple,
-        boxes=10,
+        quantity=10,
         best_before=TODAY.replace(month=6, day=1),
         location="Shelf A1",
         today=TODAY,
@@ -128,14 +128,14 @@ def test_allocation_can_be_consumed(customer, apple):
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.BOXES,
-        quantity_in_boxes=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,
         order_line=line,
         batch=batch,
-        boxes=10,
+        quantity=10,
     )
 
     allocation.consume()
@@ -149,7 +149,7 @@ def test_allocation_can_be_cancelled(customer, apple):
     batch = create_batch(
         batch_id="A-001",
         product=apple,
-        boxes=10,
+        quantity=10,
         best_before=TODAY.replace(month=6, day=1),
         location="Shelf A1",
         today=TODAY,
@@ -159,14 +159,14 @@ def test_allocation_can_be_cancelled(customer, apple):
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.BOXES,
-        quantity_in_boxes=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,
         order_line=line,
         batch=batch,
-        boxes=10,
+        quantity=10,
     )
 
     allocation.cancel()
@@ -180,7 +180,7 @@ def test_consumed_allocation_cannot_be_cancelled(customer, apple):
     batch = create_batch(
         batch_id="A-001",
         product=apple,
-        boxes=10,
+        quantity=10,
         best_before=TODAY.replace(month=6, day=1),
         location="Shelf A1",
         today=TODAY,
@@ -190,14 +190,14 @@ def test_consumed_allocation_cannot_be_cancelled(customer, apple):
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.BOXES,
-        quantity_in_boxes=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,
         order_line=line,
         batch=batch,
-        boxes=10,
+        quantity=10,
     )
 
     allocation.consume()
@@ -207,11 +207,11 @@ def test_consumed_allocation_cannot_be_cancelled(customer, apple):
 
 
 @pytest.mark.django_db
-def test_allocation_string_contains_order_batch_and_boxes(customer, apple):
+def test_allocation_string_contains_order_batch_and_quantity(customer, apple):
     batch = create_batch(
         batch_id="A-001",
         product=apple,
-        boxes=10,
+        quantity=10,
         best_before=TODAY.replace(month=6, day=1),
         location="Shelf A1",
         today=TODAY,
@@ -221,14 +221,14 @@ def test_allocation_string_contains_order_batch_and_boxes(customer, apple):
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.BOXES,
-        quantity_in_boxes=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,
         order_line=line,
         batch=batch,
-        boxes=10,
+        quantity=10,
     )
 
     assert str(allocation) == f"{order.id} -> {batch.id}: 10"

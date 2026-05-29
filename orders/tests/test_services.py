@@ -29,7 +29,7 @@ def test_create_draft_order_creates_lines_but_does_not_reserve_stock(
     order = create_draft_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -43,7 +43,7 @@ def test_create_draft_order_merges_duplicate_product_lines(customer, apple):
     order = create_draft_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
             OrderLineInput.kg(product=apple, kg="25.0"),
         ],
     )
@@ -51,9 +51,9 @@ def test_create_draft_order_merges_duplicate_product_lines(customer, apple):
     line = order.lines.get()
 
     assert line.product == apple
-    assert line.quantity_in_boxes == 15
+    assert line.quantity_in_units == 15
     assert line.quantity == 15
-    assert line.unit == OrderLine.Unit.BOXES
+    assert line.unit == OrderLine.Unit.STOCK_UNIT
 
 
 @pytest.mark.django_db
@@ -70,7 +70,7 @@ def test_place_order_places_existing_draft_order(customer, apple, stocked_invent
     order = create_draft_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -86,7 +86,7 @@ def test_place_order_rejects_non_draft_order(customer, apple, stocked_inventory)
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -104,7 +104,7 @@ def test_create_order_places_order_and_creates_fefo_allocations(
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=120),
+            OrderLineInput.units(product=apple, quantity=120),
             OrderLineInput.kg(product=banana, kg="25.0"),
         ],
     )
@@ -121,7 +121,7 @@ def test_create_order_places_order_and_creates_fefo_allocations(
         (
             allocation.batch.batch_id,
             allocation.order_line.product.sku,
-            allocation.boxes,
+            allocation.quantity,
             allocation.status,
         )
         for allocation in allocations
@@ -137,7 +137,7 @@ def test_order_cannot_reserve_more_than_available_stock(customer, apple):
     create_batch(
         batch_id="A-001",
         product=apple,
-        boxes=100,
+        quantity=100,
         best_before=TODAY.replace(month=6, day=1),
         location="Shelf A1",
         today=TODAY,
@@ -147,13 +147,13 @@ def test_order_cannot_reserve_more_than_available_stock(customer, apple):
         create_order(
             customer=customer,
             lines=[
-                OrderLineInput.boxes(product=apple, boxes=120),
+                OrderLineInput.units(product=apple, quantity=120),
             ],
         )
 
-    assert error.value.requested_boxes == 120
-    assert error.value.available_boxes == 100
-    assert error.value.missing_boxes == 20
+    assert error.value.requested_quantity == 120
+    assert error.value.available_quantity == 100
+    assert error.value.missing_quantity == 20
 
     assert Order.objects.count() == 0
     assert OrderLine.objects.count() == 0
@@ -161,11 +161,11 @@ def test_order_cannot_reserve_more_than_available_stock(customer, apple):
 
 
 @pytest.mark.django_db
-def test_two_placed_orders_do_not_reserve_same_boxes(customer, other_customer, apple):
+def test_two_placed_orders_do_not_reserve_same_quantity(customer, other_customer, apple):
     create_batch(
         batch_id="A-001",
         product=apple,
-        boxes=100,
+        quantity=100,
         best_before=TODAY.replace(month=6, day=1),
         location="Shelf A1",
         today=TODAY,
@@ -174,26 +174,27 @@ def test_two_placed_orders_do_not_reserve_same_boxes(customer, other_customer, a
     first = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=70),
+            OrderLineInput.units(product=apple, quantity=70),
         ],
     )
     second = create_order(
         customer=other_customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=30),
+            OrderLineInput.units(product=apple, quantity=30),
         ],
     )
 
-    assert first.allocations.get().boxes == 70
-    assert second.allocations.get().boxes == 30
+    assert first.allocations.get().quantity == 70
+    assert second.allocations.get().quantity == 30
 
     with pytest.raises(InsufficientStockError):
         create_order(
             customer=customer,
             lines=[
-                OrderLineInput.boxes(product=apple, boxes=1),
+                OrderLineInput.units(product=apple, quantity=1),
             ],
         )
+
 
 @pytest.mark.django_db
 def test_pack_order_consumes_allocations_and_reduces_physical_stock(
@@ -205,7 +206,7 @@ def test_pack_order_consumes_allocations_and_reduces_physical_stock(
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=120),
+            OrderLineInput.units(product=apple, quantity=120),
             OrderLineInput.kg(product=banana, kg="25.0"),
         ],
     )
@@ -226,13 +227,13 @@ def test_pack_order_consumes_allocations_and_reduces_physical_stock(
         for batch in InventoryBatch.objects.order_by("batch_id")
     }
 
-    assert batches["A-001"].boxes == 0
+    assert batches["A-001"].quantity == 0
     assert batches["A-001"].status == InventoryBatch.Status.DEPLETED
 
-    assert batches["A-002"].boxes == 30
+    assert batches["A-002"].quantity == 30
     assert batches["A-002"].status == InventoryBatch.Status.ACTIVE
 
-    assert batches["B-001"].boxes == 75
+    assert batches["B-001"].quantity == 75
     assert batches["B-001"].status == InventoryBatch.Status.ACTIVE
 
 
@@ -241,7 +242,7 @@ def test_pack_order_rejects_non_placed_order(customer, apple, stocked_inventory)
     order = create_draft_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -254,7 +255,7 @@ def test_cancel_placed_order_releases_reserved_allocations(customer, apple, stoc
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -282,7 +283,7 @@ def test_cancel_order_rejects_packed_order(customer, apple, stocked_inventory):
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     order = pack_order(order=order)
@@ -296,7 +297,7 @@ def test_deliver_order_moves_packed_order_to_delivered(customer, apple, stocked_
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     order = pack_order(order=order)
@@ -313,7 +314,7 @@ def test_deliver_order_rejects_placed_order(customer, apple, stocked_inventory):
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -331,7 +332,7 @@ def test_update_placed_order_rebuilds_lines_and_reservations(
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -340,7 +341,7 @@ def test_update_placed_order_rebuilds_lines_and_reservations(
     order = update_placed_order(
         order=order,
         lines=[
-            OrderLineInput.boxes(product=banana, boxes=20),
+            OrderLineInput.units(product=banana, quantity=20),
         ],
     )
 
@@ -348,12 +349,12 @@ def test_update_placed_order_rebuilds_lines_and_reservations(
 
     assert order.status == Order.Status.PLACED
     assert order.edited_at is not None
-    assert list(order.lines.values_list("product_id", "quantity_in_boxes")) == [
+    assert list(order.lines.values_list("product_id", "quantity_in_units")) == [
         (banana.id, 20),
     ]
 
     assert not Allocation.objects.filter(id__in=old_allocation_ids).exists()
-    assert list(order.allocations.values_list("batch__batch_id", "boxes")) == [
+    assert list(order.allocations.values_list("batch__batch_id", "quantity")) == [
         ("B-001", 20),
     ]
 
@@ -363,7 +364,7 @@ def test_update_placed_order_rejects_packed_order(customer, apple, stocked_inven
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     order = pack_order(order=order)
@@ -372,6 +373,6 @@ def test_update_placed_order_rejects_packed_order(customer, apple, stocked_inven
         update_placed_order(
             order=order,
             lines=[
-                OrderLineInput.boxes(product=apple, boxes=5),
+                OrderLineInput.units(product=apple, quantity=5),
             ],
         )

@@ -27,12 +27,22 @@ DEFAULT_BATCH_SORT = "best_before"
 BATCH_SORTS: dict[str, tuple[str, ...]] = {
     "batch": ("batch_id",),
     "-batch": ("-batch_id",),
-    "product": ("product__internal_number", "product__brand", "product__name", "batch_id"),
-    "-product": ("-product__internal_number", "-product__brand", "-product__name", "batch_id"),
+    "product": (
+        "product__internal_number",
+        "product__brand",
+        "product__name",
+        "batch_id",
+    ),
+    "-product": (
+        "-product__internal_number",
+        "-product__brand",
+        "-product__name",
+        "batch_id",
+    ),
     "best_before": ("best_before", "batch_id"),
     "-best_before": ("-best_before", "batch_id"),
-    "boxes": ("boxes", "batch_id"),
-    "-boxes": ("-boxes", "batch_id"),
+    "quantity": ("quantity", "batch_id"),
+    "-quantity": ("-quantity", "batch_id"),
     "status": ("status_rank", "best_before", "batch_id"),
     "-status": ("-status_rank", "best_before", "batch_id"),
     "location": ("location", "batch_id"),
@@ -45,13 +55,15 @@ PRODUCT_STOCK_SORTS: dict[str, tuple[str, ...]] = {
     "product": ("internal_number_sort", "brand", "product_name"),
     "-product": ("-internal_number_sort", "-brand", "-product_name"),
     "batches": ("batch_count", "internal_number_sort", "product_name"),
+    "unit": ("stock_unit_sort", "internal_number_sort", "product_name"),
+    "-unit": ("-stock_unit_sort", "internal_number_sort", "product_name"),
     "-batches": ("-batch_count", "internal_number_sort", "product_name"),
-    "physical": ("physical_boxes", "internal_number_sort", "product_name"),
-    "-physical": ("-physical_boxes", "internal_number_sort", "product_name"),
-    "reserved": ("reserved_boxes", "internal_number_sort", "product_name"),
-    "-reserved": ("-reserved_boxes", "internal_number_sort", "product_name"),
-    "available": ("available_boxes", "internal_number_sort", "product_name"),
-    "-available": ("-available_boxes", "internal_number_sort", "product_name"),
+    "physical": ("physical_quantity", "internal_number_sort", "product_name"),
+    "-physical": ("-physical_quantity", "internal_number_sort", "product_name"),
+    "reserved": ("reserved_quantity", "internal_number_sort", "product_name"),
+    "-reserved": ("-reserved_quantity", "internal_number_sort", "product_name"),
+    "available": ("available_quantity", "internal_number_sort", "product_name"),
+    "-available": ("-available_quantity", "internal_number_sort", "product_name"),
 }
 
 
@@ -64,7 +76,7 @@ class BatchListRow:
 @dataclass(frozen=True)
 class PhysicalStockRow:
     product: Product
-    boxes: int
+    quantity: int
     batch_count: int
 
     @property
@@ -100,9 +112,9 @@ class PhysicalStockRow:
 class AvailableStockRow:
     product: Product
     batch_count: int
-    physical_boxes: int
-    reserved_boxes: int
-    available_boxes: int
+    physical_quantity: int
+    reserved_quantity: int
+    available_quantity: int
 
     @property
     def product_id(self) -> int:
@@ -132,10 +144,14 @@ class AvailableStockRow:
     def brand(self) -> str:
         return self.product.brand
 
+    @property
+    def stock_unit_sort(self) -> int:
+        return self.product.stock_unit
+
 
 @dataclass(frozen=True)
 class _PhysicalStockTotals:
-    physical_boxes: int
+    physical_quantity: int
     batch_count: int
 
 
@@ -179,14 +195,14 @@ def list_batches(
     return batches.order_by(*BATCH_SORTS[normalized_sort])
 
 
-def physical_boxes_by_product() -> list[PhysicalStockRow]:
+def physical_quantity_by_product() -> list[PhysicalStockRow]:
     stock_totals_by_product_id = _physical_stock_totals_by_product_id()
     products_by_id = _products_by_id(stock_totals_by_product_id.keys())
 
     rows = [
         PhysicalStockRow(
             product=product,
-            boxes=stock_totals_by_product_id[product_id].physical_boxes,
+            quantity=stock_totals_by_product_id[product_id].physical_quantity,
             batch_count=stock_totals_by_product_id[product_id].batch_count,
         )
         for product_id, product in products_by_id.items()
@@ -195,35 +211,35 @@ def physical_boxes_by_product() -> list[PhysicalStockRow]:
     return sorted(rows, key=lambda row: row.product.catalog_sort_key)
 
 
-def available_boxes_by_product() -> list[AvailableStockRow]:
+def available_quantity_by_product() -> list[AvailableStockRow]:
     stock_totals_by_product_id = _physical_stock_totals_by_product_id()
-    reserved_boxes_by_product_id = _reserved_boxes_by_product_id()
+    reserved_quantity_by_product_id = _reserved_quantity_by_product_id()
     products_by_id = _products_by_id(stock_totals_by_product_id.keys())
 
     rows: list[AvailableStockRow] = []
 
     for product_id, product in products_by_id.items():
         stock_totals = stock_totals_by_product_id[product_id]
-        reserved_boxes = reserved_boxes_by_product_id.get(product_id, 0)
-        available_boxes = stock_totals.physical_boxes - reserved_boxes
+        reserved_quantity = reserved_quantity_by_product_id.get(product_id, 0)
+        available_quantity = stock_totals.physical_quantity - reserved_quantity
 
         rows.append(
             AvailableStockRow(
                 product=product,
                 batch_count=stock_totals.batch_count,
-                physical_boxes=stock_totals.physical_boxes,
-                reserved_boxes=reserved_boxes,
-                available_boxes=max(available_boxes, 0),
+                physical_quantity=stock_totals.physical_quantity,
+                reserved_quantity=reserved_quantity,
+                available_quantity=max(available_quantity, 0),
             )
         )
 
     return sorted(rows, key=lambda row: row.product.catalog_sort_key)
 
 
-def available_boxes_by_product_id() -> dict[int, int]:
+def available_quantity_by_product_id() -> dict[int, int]:
     return {
-        row.product_id: row.available_boxes
-        for row in available_boxes_by_product()
+        row.product_id: row.available_quantity
+        for row in available_quantity_by_product()
     }
 
 
@@ -258,7 +274,7 @@ def list_available_batches_for_product(
         .filter(
             product=product,
             status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
+            quantity__gt=0,
         )
         .select_related("product")
         .order_by("best_before", "batch_id")
@@ -270,7 +286,7 @@ def list_available_batches() -> QuerySet[InventoryBatch]:
         InventoryBatch.objects
         .filter(
             status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
+            quantity__gt=0,
         )
         .select_related("product")
         .order_by(
@@ -321,7 +337,7 @@ def list_expiring_batch_rows(
         InventoryBatch.objects
         .filter(
             status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
+            quantity__gt=0,
             best_before__gte=today,
             best_before__lte=cutoff_date,
         )
@@ -347,7 +363,7 @@ def count_expiring_batches(
         InventoryBatch.objects
         .filter(
             status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
+            quantity__gt=0,
             best_before__gte=today,
             best_before__lte=cutoff_date,
         )
@@ -361,9 +377,9 @@ def list_low_stock_products(
 ) -> list[AvailableStockRow]:
     rows = [
         row
-        for row in available_boxes_by_product()
+        for row in available_quantity_by_product()
         if is_low_stock(
-            available_boxes=row.available_boxes,
+            available_quantity=row.available_quantity,
             threshold=threshold,
         )
     ]
@@ -371,7 +387,7 @@ def list_low_stock_products(
     return sorted(
         rows,
         key=lambda row: (
-            row.available_boxes,
+            row.available_quantity,
             row.product.catalog_sort_key,
         ),
     )
@@ -444,18 +460,18 @@ def _physical_stock_totals_by_product_id() -> dict[int, _PhysicalStockTotals]:
         InventoryBatch.objects
         .filter(
             status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
+            quantity__gt=0,
         )
         .values("product_id")
         .annotate(
-            total_boxes=Sum("boxes"),
+            total_quantity=Sum("quantity"),
             batch_count=Count("id"),
         )
     )
 
     return {
         row["product_id"]: _PhysicalStockTotals(
-            physical_boxes=row["total_boxes"] or 0,
+            physical_quantity=row["total_quantity"] or 0,
             batch_count=row["batch_count"] or 0,
         )
         for row in rows
@@ -471,7 +487,7 @@ def _products_by_id(product_ids) -> dict[int, Product]:
     }
 
 
-def _reserved_boxes_by_product_id() -> dict[int, int]:
+def _reserved_quantity_by_product_id() -> dict[int, int]:
     rows = (
         Allocation.objects
         .filter(
@@ -479,7 +495,7 @@ def _reserved_boxes_by_product_id() -> dict[int, int]:
             order__status=Order.Status.PLACED,
         )
         .values("batch__product_id")
-        .annotate(total_reserved=Sum("boxes"))
+        .annotate(total_reserved=Sum("quantity"))
     )
 
     return {
@@ -500,18 +516,23 @@ def _product_stock_sort_key_functions() -> dict[str, ProductStockSortKey]:
             row.internal_number_sort,
             row.product_name.casefold(),
         ),
+        "unit": lambda row: (
+            row.stock_unit_sort,
+            row.internal_number_sort,
+            row.product_name.casefold(),
+        ),
         "physical": lambda row: (
-            row.physical_boxes,
+            row.physical_quantity,
             row.internal_number_sort,
             row.product_name.casefold(),
         ),
         "reserved": lambda row: (
-            row.reserved_boxes,
+            row.reserved_quantity,
             row.internal_number_sort,
             row.product_name.casefold(),
         ),
         "available": lambda row: (
-            row.available_boxes,
+            row.available_quantity,
             row.internal_number_sort,
             row.product_name.casefold(),
         ),

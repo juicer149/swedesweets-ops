@@ -18,20 +18,22 @@ PRODUCT_FILTER_INACTIVE = "inactive"
 DEFAULT_PRODUCT_SORT = "number"
 
 PRODUCT_SORTS: dict[str, tuple[str, ...]] = {
-    "number": ("internal_number", "brand", "name", "weight_per_box", "sku"),
-    "-number": ("-internal_number", "brand", "name", "weight_per_box", "sku"),
-    "product": ("name", "brand", "weight_per_box", "sku"),
-    "-product": ("-name", "brand", "weight_per_box", "sku"),
-    "brand": ("brand", "name", "weight_per_box", "sku"),
-    "-brand": ("-brand", "name", "weight_per_box", "sku"),
+    "number": ("internal_number", "brand", "name", "weight_per_unit", "sku"),
+    "-number": ("-internal_number", "brand", "name", "weight_per_unit", "sku"),
+    "product": ("name", "brand", "weight_per_unit", "sku"),
+    "-product": ("-name", "brand", "weight_per_unit", "sku"),
+    "brand": ("brand", "name", "weight_per_unit", "sku"),
+    "-brand": ("-brand", "name", "weight_per_unit", "sku"),
     "manufacturer": ("manufacturer", "brand", "name", "sku"),
     "-manufacturer": ("-manufacturer", "brand", "name", "sku"),
     "sku": ("sku",),
     "-sku": ("-sku",),
-    "weight": ("weight_per_box", "brand", "name", "sku"),
-    "-weight": ("-weight_per_box", "brand", "name", "sku"),
-    "status": ("active", "brand", "name", "weight_per_box"),
-    "-status": ("-active", "brand", "name", "weight_per_box"),
+    "weight": ("weight_per_unit", "brand", "name", "sku"),
+    "-weight": ("-weight_per_unit", "brand", "name", "sku"),
+    "unit": ("stock_unit", "brand", "name", "sku"),
+    "-unit": ("-stock_unit", "brand", "name", "sku"),
+    "status": ("active", "brand", "name", "weight_per_unit"),
+    "-status": ("-active", "brand", "name", "weight_per_unit"),
     "vegan": ("-vegan", "brand", "name", "sku"),
     "-vegan": ("vegan", "brand", "name", "sku"),
 }
@@ -40,16 +42,16 @@ PRODUCT_SORTS: dict[str, tuple[str, ...]] = {
 @dataclass(frozen=True)
 class ProductDeliveredDemandSummary:
     delivered_order_count: int
-    delivered_boxes: int
-    average_boxes_per_delivered_order: Decimal
+    delivered_quantity: int
+    average_quantity_per_delivered_order: Decimal
     last_delivered_at: datetime | None
 
     @classmethod
     def empty(cls) -> ProductDeliveredDemandSummary:
         return cls(
             delivered_order_count=0,
-            delivered_boxes=0,
-            average_boxes_per_delivered_order=Decimal("0.0"),
+            delivered_quantity=0,
+            average_quantity_per_delivered_order=Decimal("0.0"),
             last_delivered_at=None,
         )
 
@@ -92,24 +94,26 @@ def get_product_delivered_demand_summary(
         )
         .aggregate(
             delivered_order_count=Count("order_id", distinct=True),
-            delivered_boxes=Sum("quantity_in_boxes"),
+            # Orders have not been refactored yet. Until then this is the
+            # product stock-unit quantity stored by the order layer.
+            delivered_quantity=Sum("quantity_in_units"),
             last_delivered_at=Max("order__delivered_at"),
         )
     )
 
     delivered_order_count = stats["delivered_order_count"] or 0
-    delivered_boxes = stats["delivered_boxes"] or 0
+    delivered_quantity = stats["delivered_quantity"] or 0
 
     if delivered_order_count == 0:
         average = Decimal("0.0")
     else:
         average = (
-            Decimal(delivered_boxes) / Decimal(delivered_order_count)
+            Decimal(delivered_quantity) / Decimal(delivered_order_count)
         ).quantize(Decimal("0.1"))
 
     return ProductDeliveredDemandSummary(
         delivered_order_count=delivered_order_count,
-        delivered_boxes=delivered_boxes,
-        average_boxes_per_delivered_order=average,
+        delivered_quantity=delivered_quantity,
+        average_quantity_per_delivered_order=average,
         last_delivered_at=stats["last_delivered_at"],
     )

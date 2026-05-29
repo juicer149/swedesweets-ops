@@ -11,13 +11,13 @@ from common.ui import (
 from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow, BatchListRow
 
-
+#TODO: ta bort dessa onödiga abstraktioner och använd direkt i template istället, eller flytta till viewmodels.py
 INVENTORY_CARD_CLASS = "mobile-card mobile-card--inventory"
 
 INVENTORY_BATCH_TITLE_CLASS = "ui-card-title"
 INVENTORY_PRODUCT_SKU_CLASS = "ui-card-strong"
 INVENTORY_LOCATION_CLASS = "ui-card-location"
-INVENTORY_BOXES_CLASS = "ui-card-strong"
+INVENTORY_QUANTITY_CLASS = "ui-card-strong"
 INVENTORY_META_CLASS = "ui-card-meta"
 INVENTORY_ACTION_CLASS = "text-link"
 
@@ -102,10 +102,10 @@ def batch_status_presentation(batch: InventoryBatch) -> StatusPresentation:
 def product_stock_status_presentation(
     row: AvailableStockRow,
 ) -> StatusPresentation:
-    if row.available_boxes > 0:
+    if row.available_quantity > 0:
         return PRODUCT_STOCK_STATUS_AVAILABLE
 
-    if row.reserved_boxes > 0:
+    if row.reserved_quantity > 0:
         return PRODUCT_STOCK_STATUS_RESERVED
 
     return PRODUCT_STOCK_STATUS_OUT
@@ -138,28 +138,28 @@ def batch_detail_card_class(batch: InventoryBatch) -> str:
     return ""
 
 
-def batch_boxes_label(batch: InventoryBatch) -> str:
-    return f"{batch.boxes} {_box_word(batch.boxes)} in batch"
+def batch_quantity_label(batch: InventoryBatch) -> str:
+    return f"{batch.product.stock_quantity_label(batch.quantity)}"
 
 
-def boxes_label(boxes: int) -> str:
-    return f"{boxes} {_box_word(boxes)}"
+def quantity_label(*, product, quantity: int) -> str:
+    return product.stock_quantity_label(quantity)
 
 
 def product_batch_count_label(row: AvailableStockRow) -> str:
     return f"{row.batch_count} {_batch_word(row.batch_count)}"
 
 
-def product_physical_boxes_label(row: AvailableStockRow) -> str:
-    return f"{row.physical_boxes} physical"
+def product_physical_quantity_label(row: AvailableStockRow) -> str:
+    return f"{row.product.stock_quantity_label(row.physical_quantity)}"
 
 
-def product_reserved_boxes_label(row: AvailableStockRow) -> str:
-    return f"{row.reserved_boxes} reserved"
+def product_reserved_quantity_label(row: AvailableStockRow) -> str:
+    return f"{row.product.stock_quantity_label(row.reserved_quantity)}"
 
 
-def product_available_boxes_label(row: AvailableStockRow) -> str:
-    return f"{row.available_boxes} available"
+def product_available_quantity_label(row: AvailableStockRow) -> str:
+    return f"{row.product.stock_quantity_label(row.available_quantity)}"
 
 
 def expiry_css_class(row: BatchListRow) -> str:
@@ -167,10 +167,6 @@ def expiry_css_class(row: BatchListRow) -> str:
         return "expiry-text expiry-text--muted"
 
     return f"expiry-text expiry-text--{row.expiry.state}"
-
-
-def _box_word(count: int) -> str:
-    return "box" if count == 1 else "boxes"
 
 
 def _batch_word(count: int) -> str:

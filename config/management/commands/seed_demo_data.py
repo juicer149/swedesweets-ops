@@ -140,7 +140,8 @@ class Command(BaseCommand):
             manufacturer=str(item["manufacturer"]),
             brand=str(item["brand"]),
             name=str(item["name"]),
-            weight_per_box=int(item["weight_per_box"]),
+            weight_per_unit=int(item["weight_per_unit"]),
+            stock_unit=str(item.get("stock_unit", Product.StockUnit.BOX)),
             vegan=bool(item["vegan"]),
         )
 
@@ -206,7 +207,7 @@ class Command(BaseCommand):
 
         return create_batch(
             product=product,
-            boxes=int(item["boxes"]),
+            quantity=int(item["quantity"]),
             best_before=_parse_best_before(item),
             location=str(item["location"]),
             today=_parse_received_date(item),

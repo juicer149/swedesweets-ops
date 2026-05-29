@@ -5,8 +5,8 @@ public API:
     to_decimal(value: Quantity) -> Decimal
         -> Convert external numeric input into Decimal.
 
-    OrderLineInput.boxes(...)
-        -> Build an order-line input in boxes.
+    OrderLineInput.units(...)
+        -> Build an order-line input in product stock units.
 
     OrderLineInput.kg(...)
         -> Build an order-line input in kilograms.
@@ -29,6 +29,7 @@ from typing import Self
 
 from orders.errors import InvalidOrderOperation
 from products.models import Product
+from products.units import ORDER_UNIT_GRAMS, ORDER_UNIT_KG, ORDER_UNIT_STOCK
 
 
 Quantity = Decimal | int | float | str
@@ -53,18 +54,32 @@ class OrderLineInput:
         object.__setattr__(self, "unit", self.unit.strip().lower())
 
     @classmethod
-    def boxes(
+    def units(
         cls,
         *,
-        boxes: int,
+        quantity: int,
         product: Product | None = None,
         product_id: int | None = None,
     ) -> Self:
         return cls(
             product=product,
             product_id=product_id,
-            quantity=Decimal(boxes),
-            unit="boxes",
+            quantity=Decimal(quantity),
+            unit=ORDER_UNIT_STOCK,
+        )
+
+    @classmethod
+    def stock_units(
+        cls,
+        *,
+        quantity: int,
+        product: Product | None = None,
+        product_id: int | None = None,
+    ) -> Self:
+        return cls.units(
+            product=product,
+            product_id=product_id,
+            quantity=quantity,
         )
 
     @classmethod
@@ -79,7 +94,7 @@ class OrderLineInput:
             product=product,
             product_id=product_id,
             quantity=Decimal(str(kg)),
-            unit="kg",
+            unit=ORDER_UNIT_KG,
         )
 
     @classmethod
@@ -94,7 +109,7 @@ class OrderLineInput:
             product=product,
             product_id=product_id,
             quantity=Decimal(grams),
-            unit="grams",
+            unit=ORDER_UNIT_GRAMS,
         )
 
     def resolve_product_id(self) -> int:
@@ -113,12 +128,12 @@ class OrderLineInput:
 
         raise InvalidOrderOperation("product_id or product is required")
 
-#TODO: ändra namn på alla ställen från boxes till quantity istället
+
 @dataclass(frozen=True)
 class PickLine:
     sku: str
     product_name: str
     batch_id: str
     location: str
-    boxes: int
-    quantity_label: str #TODO man skulle inte ta en tuple eller något för plural/singular? och sedan väljer denna vilken som ska användas via dess egna data boxes? kanske även ändra namnet boxes till quantity istället?
+    quantity: int
+    quantity_label: str

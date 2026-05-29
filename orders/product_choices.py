@@ -5,7 +5,7 @@ from typing import Any
 
 from django.db.models import Q
 
-from inventory.selectors import available_boxes_by_product_id
+from inventory.selectors import available_quantity_by_product_id
 from orders.models import Order
 from products.models import Product
 
@@ -13,23 +13,23 @@ from products.models import Product
 @dataclass(frozen=True)
 class ProductChoiceContext:
     queryset: Any
-    available_boxes_by_product_id: dict[int, int]
+    available_units_by_product_id: dict[int, int]
 
 
 def build_product_choice_context(*, order: Order | None = None) -> ProductChoiceContext:
-    available_boxes = available_boxes_by_product_id()
+    available_units = available_quantity_by_product_id()
 
     if order is not None:
         for line in order.lines.all():
-            available_boxes[line.product_id] = (
-                available_boxes.get(line.product_id, 0)
-                + line.quantity_in_boxes
+            available_units[line.product_id] = (
+                available_units.get(line.product_id, 0)
+                + line.quantity_in_units
             )
 
     orderable_product_ids = {
         product_id
-        for product_id, boxes in available_boxes.items()
-        if boxes > 0
+        for product_id, quantity in available_units.items()
+        if quantity > 0
     }
 
     existing_product_ids = set()
@@ -55,11 +55,11 @@ def build_product_choice_context(*, order: Order | None = None) -> ProductChoice
                 "internal_number",
                 "brand",
                 "name",
-                "weight_per_box",
+                "weight_per_unit",
             )
         )
 
     return ProductChoiceContext(
         queryset=queryset,
-        available_boxes_by_product_id=available_boxes,
+        available_units_by_product_id=available_units,
     )

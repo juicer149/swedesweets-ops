@@ -15,7 +15,8 @@ def test_create_product_creates_product_and_profile():
         manufacturer="  Fazer   Finland ",
         brand="  Fazer ",
         name="  Tyrkisk   Peber ",
-        weight_per_box=3000,
+        weight_per_unit=3000,
+        stock_unit=Product.StockUnit.BOX,
         vegan=True,
     )
 
@@ -28,7 +29,8 @@ def test_create_product_creates_product_and_profile():
     assert product.manufacturer == "Fazer Finland"
     assert product.brand == "Fazer"
     assert product.name == "Tyrkisk Peber"
-    assert product.weight_per_box == 3000
+    assert product.weight_per_unit == 3000
+    assert product.stock_unit == Product.StockUnit.BOX
     assert product.vegan is True
     assert product.sku == "SS-023"
 
@@ -36,17 +38,32 @@ def test_create_product_creates_product_and_profile():
 
 
 @pytest.mark.django_db
+def test_create_product_accepts_piece_stock_unit():
+    result = create_product(
+        internal_number=24,
+        brand="Cloetta",
+        name="Kexchoklad",
+        weight_per_unit=60,
+        stock_unit=Product.StockUnit.PIECE,
+    )
+
+    assert result.created is True
+    assert result.item.stock_unit == Product.StockUnit.PIECE
+    assert result.item.weight_per_unit == 60
+
+
+@pytest.mark.django_db
 def test_create_product_returns_existing_product_with_same_sku():
     first = create_product(
         brand="OLW",
         name="Grill Chips",
-        weight_per_box=275,
+        weight_per_unit=275,
     )
 
     second = create_product(
         brand="  olw ",
         name="  Grill   Chips ",
-        weight_per_box=275,
+        weight_per_unit=275,
     )
 
     assert second.created is False
@@ -61,14 +78,14 @@ def test_create_product_returns_existing_product_with_same_internal_number():
         internal_number=11,
         brand="OLW",
         name="Grill Chips",
-        weight_per_box=275,
+        weight_per_unit=275,
     )
 
     duplicate_number = create_product(
         internal_number=11,
         brand="Fazer",
         name="Tyrkisk Peber",
-        weight_per_box=3000,
+        weight_per_unit=3000,
     )
 
     assert duplicate_number.created is False
@@ -82,14 +99,22 @@ def test_create_product_rejects_invalid_data():
         create_product(
             brand="",
             name="Apple",
-            weight_per_box=5000,
+            weight_per_unit=5000,
         )
 
-    with pytest.raises(InvalidProductData, match="weight_per_box must be at least"):
+    with pytest.raises(InvalidProductData, match="weight_per_unit must be at least"):
         create_product(
             brand="Generic",
             name="Apple",
-            weight_per_box=0,
+            weight_per_unit=0,
+        )
+
+    with pytest.raises(InvalidProductData, match="Unsupported stock unit"):
+        create_product(
+            brand="Generic",
+            name="Apple",
+            weight_per_unit=5000,
+            stock_unit="pallet",
         )
 
 
@@ -99,7 +124,7 @@ def test_update_product_updates_editable_product_and_profile_fields():
         internal_number=1,
         brand="Old Brand",
         name="Old Name",
-        weight_per_box=1000,
+        weight_per_unit=1000,
     )
 
     updated = update_product(
@@ -136,7 +161,7 @@ def test_update_product_does_not_change_sku():
         internal_number=1,
         brand="Old Brand",
         name="Old Name",
-        weight_per_box=1000,
+        weight_per_unit=1000,
     )
     original_sku = product.sku
 
@@ -160,7 +185,7 @@ def test_update_product_rejects_duplicate_internal_number():
         internal_number=2,
         brand="Fazer",
         name="Tyrkisk Peber",
-        weight_per_box=3000,
+        weight_per_unit=3000,
     )
 
     with pytest.raises(InvalidProductData, match="Product number 1 already exists"):

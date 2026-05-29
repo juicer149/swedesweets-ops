@@ -32,7 +32,7 @@ from inventory.selectors import (
     DEFAULT_BATCH_SORT,
     DEFAULT_PRODUCT_STOCK_SORT,
     PRODUCT_STOCK_SORTS,
-    available_boxes_by_product,
+    available_quantity_by_product,
     list_batch_allocations,
     list_batch_rows,
     sort_available_stock_rows,
@@ -59,7 +59,7 @@ BATCH_TABLE_SORTS = [
     TableSortField("batch", "Batch"),
     TableSortField("product", "Product"),
     TableSortField("best_before", "Best before"),
-    TableSortField("boxes", "Boxes"),
+    TableSortField("quantity", "Quantity"),
     TableSortField("status", "Status"),
     TableSortField("location", "Location"),
 ]
@@ -67,7 +67,8 @@ BATCH_TABLE_SORTS = [
 PRODUCT_STOCK_TABLE_SORTS = [
     TableSortField("product", "Product"),
     TableSortField("batches", "Batches"),
-    TableSortField("physical", "Physical"),
+    TableSortField("unit", "Unit"),
+    TableSortField("physical", "In stock"),
     TableSortField("reserved", "Reserved"),
     TableSortField("available", "Available"),
 ]
@@ -132,7 +133,7 @@ def edit(request, batch_pk: int):
             try:
                 updated_batch = update_batch(
                     batch=batch,
-                    boxes=form.cleaned_data["boxes"],
+                    quantity=form.cleaned_data["quantity"],
                     best_before=form.cleaned_data["best_before"],
                     location=form.cleaned_data["location"],
                 )
@@ -187,7 +188,7 @@ def create(request):
     context = {
         "form": form,
         "title": "Add batch",
-        "description": "Receive physical stock for an active product.",
+        "description": "",
         "submit_label": "Add batch",
         "cancel_url": reverse("inventory:index"),
     }
@@ -221,10 +222,11 @@ def close(request, batch_pk: int):
 
     context = {
         "batch": batch,
+        "batch_quantity_label": batch.product.stock_quantity_label(batch.quantity),
         "title": f"Close batch {batch.batch_id}",
         "description": (
             "Closing a batch removes it from normal stock operations. "
-            "The physical box count is not changed."
+            "The physical quantity is not changed."
         ),
         "submit_label": "Close batch",
         "cancel_url": reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
@@ -264,10 +266,11 @@ def _build_batches_index_context(request) -> dict[str, object]:
         "mobile_sort_fields": controls.build_mobile_sort_fields(BATCH_TABLE_SORTS),
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": INVENTORY_TABLE_CONTROLS_TEMPLATE,
-        "numeric_table_fields": ["boxes"],
+        "numeric_table_fields": ["quantity"],
         "active_status": controls.active_filter,
         "active_sort": controls.active_sort,
     }
+
 
 def _build_products_index_context(request) -> dict[str, object]:
     controls = TableControls.from_request_values(
@@ -286,7 +289,7 @@ def _build_products_index_context(request) -> dict[str, object]:
 
     product_page_rows = build_product_stock_page_rows(
         sort_available_stock_rows(
-            rows=available_boxes_by_product(),
+            rows=available_quantity_by_product(),
             sort=controls.active_sort,
         )
     )
@@ -312,6 +315,7 @@ def _build_products_index_context(request) -> dict[str, object]:
         "active_status": "",
         "active_sort": controls.active_sort,
     }
+
 
 def _inventory_page_header() -> PageHeader:
     return PageHeader(

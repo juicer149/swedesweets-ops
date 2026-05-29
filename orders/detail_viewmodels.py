@@ -30,15 +30,28 @@ from orders.presentation import (
     order_detail_card_class,
     order_detail_status_class,
     order_status_icon,
+    quantity_label,
 )
+from products.models import Product
+
+
+@dataclass(frozen=True)
+class OrderContentLine:
+    product: Product
+    product_detail_href: str
+    quantity: int
+    quantity_label: str
+    unit: str
+    catalog_label: str
 
 
 @dataclass(frozen=True)
 class OrderDetailContext:
     order: Order
-    content_lines: list[OrderLine]
+    content_lines: list[OrderContentLine]
     product_count: int
-    total_boxes: int
+    total_quantity: int
+    total_quantity_label: str
     detail_card: DetailCard
     title: str
     description: str
@@ -52,7 +65,8 @@ class OrderDetailContext:
             "order": self.order,
             "content_lines": self.content_lines,
             "product_count": self.product_count,
-            "total_boxes": self.total_boxes,
+            "total_quantity": self.total_quantity,
+            "total_quantity_label": self.total_quantity_label,
             "detail_card": self.detail_card,
             "title": self.title,
             "description": self.description,
@@ -80,21 +94,23 @@ def build_order_detail_context(
     secondary_actions: tuple[DetailAction, ...] = (),
     pick_lines: list[PickLine] | None = None,
 ) -> OrderDetailContext:
-    lines = list(order.lines.all())
-    product_count = len(lines)
-    total_boxes = sum(line.quantity_in_boxes for line in lines)
+    order_lines = list(order.lines.select_related("product").all())
+    content_lines = _build_content_lines(order_lines)
+    product_count = len(content_lines)
+    total_quantity = sum(line.quantity for line in content_lines)
 
     return OrderDetailContext(
         order=order,
-        content_lines=lines,
+        content_lines=content_lines,
         product_count=product_count,
-        total_boxes=total_boxes,
+        total_quantity=total_quantity,
+        total_quantity_label=quantity_label(total_quantity),
         detail_card=DetailCard(
             header=_build_order_header(order),
             panels=_build_order_detail_panels(
                 order=order,
                 product_count=product_count,
-                total_boxes=total_boxes,
+                total_quantity=total_quantity,
                 active_panel=active_panel,
                 include_contents=include_contents,
             ),
@@ -185,7 +201,7 @@ def _build_order_detail_panels(
     *,
     order: Order,
     product_count: int,
-    total_boxes: int,
+    total_quantity: int,
     active_panel: str,
     include_contents: bool,
 ) -> tuple[DetailPanel, ...]:
@@ -207,7 +223,7 @@ def _build_order_detail_panels(
                 label="Contents",
                 summary=contents_summary(
                     product_count=product_count,
-                    total_boxes=total_boxes,
+                    total_quantity=total_quantity,
                 ),
                 body_template="orders/includes/detail_panel_contents.html",
                 icon="box",
@@ -235,3 +251,20 @@ def order_detail_href(order: Order) -> str:
 
 def customer_detail_href(order: Order) -> str:
     return reverse("customers:detail", kwargs={"customer_pk": order.customer_id})
+
+
+def _build_content_lines(lines: list[OrderLine]) -> list[OrderContentLine]:
+    return [
+        OrderContentLine(
+            product=line.product,
+            product_detail_href=reverse(
+                "products:detail",
+                kwargs={"product_pk": line.product_id},
+            ),
+            quantity=line.quantity_in_units,
+            quantity_label=line.product.stock_quantity_label(line.quantity_in_units),
+            unit=line.get_unit_display(),
+            catalog_label=line.product.catalog_label,
+        )
+        for line in lines
+    ]

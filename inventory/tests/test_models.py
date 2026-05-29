@@ -34,7 +34,7 @@ def test_batch_save_normalizes_batch_id_and_location(apple):
     batch = InventoryBatch.objects.create(
         batch_id="  a-001 ",
         product=apple,
-        boxes=10,
+        quantity=10,
         best_before=date(2026, 6, 1),
         location="  Shelf   A1 ",
     )
@@ -44,152 +44,155 @@ def test_batch_save_normalizes_batch_id_and_location(apple):
 
 
 @pytest.mark.django_db
-def test_new_batch_with_positive_boxes_is_active_and_available(apple, batch_factory):
-    batch = batch_factory(
-        product=apple,
-        batch_id="A-001",
-        boxes=3,
-    )
-
-    assert batch.status == InventoryBatch.Status.ACTIVE
-    assert batch.is_available is True
-
-
-@pytest.mark.django_db
-def test_pick_reduces_boxes_and_keeps_batch_active_when_boxes_remain(
+def test_new_batch_with_positive_quantity_is_active_and_available(
     apple,
     batch_factory,
 ):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=3,
+        quantity=3,
     )
 
-    batch.pick(boxes=1)
-    batch.refresh_from_db()
-
-    assert batch.boxes == 2
     assert batch.status == InventoryBatch.Status.ACTIVE
     assert batch.is_available is True
 
 
 @pytest.mark.django_db
-def test_pick_depletes_batch_when_last_box_is_removed(apple, batch_factory):
+def test_pick_reduces_quantity_and_keeps_batch_active_when_quantity_remains(
+    apple,
+    batch_factory,
+):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=3,
+        quantity=3,
     )
 
-    batch.pick(boxes=3)
+    batch.pick(quantity=1)
     batch.refresh_from_db()
 
-    assert batch.boxes == 0
-    assert batch.status == InventoryBatch.Status.DEPLETED
-    assert batch.is_available is False
-
-
-@pytest.mark.django_db
-def test_pick_rejects_non_positive_boxes(apple, batch_factory):
-    batch = batch_factory(
-        product=apple,
-        batch_id="A-001",
-        boxes=3,
-    )
-
-    with pytest.raises(InvalidStockOperation, match="boxes must be positive"):
-        batch.pick(boxes=0)
-
-
-@pytest.mark.django_db
-def test_pick_rejects_more_boxes_than_available(apple, batch_factory):
-    batch = batch_factory(
-        product=apple,
-        batch_id="A-001",
-        boxes=3,
-    )
-
-    with pytest.raises(InvalidStockOperation, match="Cannot remove 4 boxes"):
-        batch.pick(boxes=4)
-
-
-@pytest.mark.django_db
-def test_adjust_boxes_sets_absolute_physical_count(apple, batch_factory):
-    batch = batch_factory(
-        product=apple,
-        batch_id="A-001",
-        boxes=3,
-    )
-
-    batch.adjust_boxes(boxes=10)
-    batch.refresh_from_db()
-
-    assert batch.boxes == 10
-    assert batch.status == InventoryBatch.Status.ACTIVE
-
-
-@pytest.mark.django_db
-def test_adjust_boxes_can_deplete_batch(apple, batch_factory):
-    batch = batch_factory(
-        product=apple,
-        batch_id="A-001",
-        boxes=3,
-    )
-
-    batch.adjust_boxes(boxes=0)
-    batch.refresh_from_db()
-
-    assert batch.boxes == 0
-    assert batch.status == InventoryBatch.Status.DEPLETED
-    assert batch.is_available is False
-
-
-@pytest.mark.django_db
-def test_adjust_boxes_can_reactivate_depleted_batch(apple, batch_factory):
-    batch = batch_factory(
-        product=apple,
-        batch_id="A-001",
-        boxes=1,
-    )
-
-    batch.pick(boxes=1)
-    batch.refresh_from_db()
-
-    assert batch.status == InventoryBatch.Status.DEPLETED
-
-    batch.adjust_boxes(boxes=5)
-    batch.refresh_from_db()
-
-    assert batch.boxes == 5
+    assert batch.quantity == 2
     assert batch.status == InventoryBatch.Status.ACTIVE
     assert batch.is_available is True
 
 
 @pytest.mark.django_db
-def test_adjust_boxes_rejects_negative_count(apple, batch_factory):
+def test_pick_depletes_batch_when_last_unit_is_removed(apple, batch_factory):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=3,
+        quantity=3,
     )
 
-    with pytest.raises(InvalidStockOperation, match="boxes must be non-negative"):
-        batch.adjust_boxes(boxes=-1)
+    batch.pick(quantity=3)
+    batch.refresh_from_db()
+
+    assert batch.quantity == 0
+    assert batch.status == InventoryBatch.Status.DEPLETED
+    assert batch.is_available is False
 
 
 @pytest.mark.django_db
-def test_close_marks_batch_closed_without_changing_box_count(apple, batch_factory):
+def test_pick_rejects_non_positive_quantity(apple, batch_factory):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=10,
+        quantity=3,
+    )
+
+    with pytest.raises(InvalidStockOperation, match="quantity must be positive"):
+        batch.pick(quantity=0)
+
+
+@pytest.mark.django_db
+def test_pick_rejects_more_quantity_than_available(apple, batch_factory):
+    batch = batch_factory(
+        product=apple,
+        batch_id="A-001",
+        quantity=3,
+    )
+
+    with pytest.raises(InvalidStockOperation, match="Cannot remove 4 units"):
+        batch.pick(quantity=4)
+
+
+@pytest.mark.django_db
+def test_adjust_quantity_sets_absolute_physical_count(apple, batch_factory):
+    batch = batch_factory(
+        product=apple,
+        batch_id="A-001",
+        quantity=3,
+    )
+
+    batch.adjust_quantity(quantity=10)
+    batch.refresh_from_db()
+
+    assert batch.quantity == 10
+    assert batch.status == InventoryBatch.Status.ACTIVE
+
+
+@pytest.mark.django_db
+def test_adjust_quantity_can_deplete_batch(apple, batch_factory):
+    batch = batch_factory(
+        product=apple,
+        batch_id="A-001",
+        quantity=3,
+    )
+
+    batch.adjust_quantity(quantity=0)
+    batch.refresh_from_db()
+
+    assert batch.quantity == 0
+    assert batch.status == InventoryBatch.Status.DEPLETED
+    assert batch.is_available is False
+
+
+@pytest.mark.django_db
+def test_adjust_quantity_can_reactivate_depleted_batch(apple, batch_factory):
+    batch = batch_factory(
+        product=apple,
+        batch_id="A-001",
+        quantity=1,
+    )
+
+    batch.pick(quantity=1)
+    batch.refresh_from_db()
+
+    assert batch.status == InventoryBatch.Status.DEPLETED
+
+    batch.adjust_quantity(quantity=5)
+    batch.refresh_from_db()
+
+    assert batch.quantity == 5
+    assert batch.status == InventoryBatch.Status.ACTIVE
+    assert batch.is_available is True
+
+
+@pytest.mark.django_db
+def test_adjust_quantity_rejects_negative_count(apple, batch_factory):
+    batch = batch_factory(
+        product=apple,
+        batch_id="A-001",
+        quantity=3,
+    )
+
+    with pytest.raises(InvalidStockOperation, match="quantity must be non-negative"):
+        batch.adjust_quantity(quantity=-1)
+
+
+@pytest.mark.django_db
+def test_close_marks_batch_closed_without_changing_quantity(apple, batch_factory):
+    batch = batch_factory(
+        product=apple,
+        batch_id="A-001",
+        quantity=10,
     )
 
     batch.close()
     batch.refresh_from_db()
 
-    assert batch.boxes == 10
+    assert batch.quantity == 10
     assert batch.status == InventoryBatch.Status.CLOSED
     assert batch.is_available is False
 
@@ -199,36 +202,36 @@ def test_closed_batch_cannot_be_picked_or_adjusted(apple, batch_factory):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=10,
+        quantity=10,
     )
 
     batch.close()
     batch.refresh_from_db()
 
     with pytest.raises(InvalidStockOperation, match="not available"):
-        batch.pick(boxes=1)
+        batch.pick(quantity=1)
 
     with pytest.raises(InvalidStockOperation, match="is closed"):
-        batch.adjust_boxes(boxes=20)
+        batch.adjust_quantity(quantity=20)
 
 
 @pytest.mark.django_db
-def test_closed_batch_cannot_be_reopened_by_saving_positive_boxes(
+def test_closed_batch_cannot_be_reopened_by_saving_positive_quantity(
     apple,
     batch_factory,
 ):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=10,
+        quantity=10,
     )
 
     batch.close()
-    batch.boxes = 20
-    batch.save(update_fields=["boxes"])
+    batch.quantity = 20
+    batch.save(update_fields=["quantity"])
     batch.refresh_from_db()
 
-    assert batch.boxes == 20
+    assert batch.quantity == 20
     assert batch.status == InventoryBatch.Status.CLOSED
 
 
@@ -237,7 +240,7 @@ def test_closed_batch_cannot_transition_back_to_active(apple, batch_factory):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=10,
+        quantity=10,
     )
 
     batch.close()
@@ -248,11 +251,11 @@ def test_closed_batch_cannot_transition_back_to_active(apple, batch_factory):
 
 
 @pytest.mark.django_db
-def test_batch_string_contains_batch_product_and_boxes(apple, batch_factory):
+def test_batch_string_contains_batch_product_and_quantity(apple, batch_factory):
     batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=10,
+        quantity=10,
     )
 
     assert str(batch) == f"A-001 - {apple.display_name} (10 boxes)"

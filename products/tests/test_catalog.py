@@ -4,14 +4,14 @@ import pytest
 
 from products.catalog import (
     MAX_NAME_LENGTH,
-    MAX_WEIGHT_PER_BOX,
-    MIN_WEIGHT_PER_BOX,
+    MAX_WEIGHT_PER_UNIT,
+    MIN_WEIGHT_PER_UNIT,
     make_sku,
     normalize_optional_text,
     normalize_required_text,
     slugify_sku_part,
     validate_internal_number,
-    validate_weight_per_box,
+    validate_weight_per_unit,
 )
 from products.errors import InvalidProductData
 
@@ -53,7 +53,7 @@ def test_make_sku_uses_internal_number_when_present():
             internal_number=23,
             brand="OLW",
             name="Grill Chips",
-            weight_per_box=275,
+            weight_per_unit=275,
         )
         == "SS-023"
     )
@@ -64,21 +64,21 @@ def test_make_sku_uses_brand_name_and_weight_without_internal_number():
         make_sku(
             brand="OLW",
             name="Grill Chips",
-            weight_per_box=275,
+            weight_per_unit=275,
         )
         == "OLW-GRILL_CHIPS-275"
     )
 
 
-@pytest.mark.parametrize("weight", [MIN_WEIGHT_PER_BOX, MAX_WEIGHT_PER_BOX])
-def test_validate_weight_per_box_accepts_boundaries(weight):
-    validate_weight_per_box(weight)
+@pytest.mark.parametrize("weight", [MIN_WEIGHT_PER_UNIT, MAX_WEIGHT_PER_UNIT])
+def test_validate_weight_per_unit_accepts_boundaries(weight):
+    validate_weight_per_unit(weight)
 
 
-@pytest.mark.parametrize("weight", [MIN_WEIGHT_PER_BOX - 1, MAX_WEIGHT_PER_BOX + 1])
-def test_validate_weight_per_box_rejects_out_of_range_values(weight):
+@pytest.mark.parametrize("weight", [MIN_WEIGHT_PER_UNIT - 1, MAX_WEIGHT_PER_UNIT + 1])
+def test_validate_weight_per_unit_rejects_out_of_range_values(weight):
     with pytest.raises(InvalidProductData):
-        validate_weight_per_box(weight)
+        validate_weight_per_unit(weight)
 
 
 @pytest.mark.parametrize("internal_number", [None, 1, 23])

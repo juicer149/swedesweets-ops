@@ -22,7 +22,7 @@ from products.catalog import (
     normalize_optional_text,
     normalize_required_text,
     validate_internal_number,
-    validate_weight_per_box,
+    validate_weight_per_unit,
 )
 from products.errors import InvalidProductData
 from products.models import Product, ProductProfile
@@ -33,7 +33,8 @@ def create_product(
     *,
     brand: str,
     name: str,
-    weight_per_box: int,
+    weight_per_unit: int,
+    stock_unit: str = Product.StockUnit.BOX,
     internal_number: int | None = None,
     manufacturer: str = "",
     vegan: bool = False,
@@ -52,14 +53,15 @@ def create_product(
         field_name="manufacturer",
     )
 
-    validate_weight_per_box(weight_per_box)
+    validate_weight_per_unit(weight_per_unit)
     validate_internal_number(internal_number)
+    _validate_stock_unit(stock_unit)
 
     sku = make_sku(
         internal_number=internal_number,
         brand=normalized_brand,
         name=normalized_name,
-        weight_per_box=weight_per_box,
+        weight_per_unit=weight_per_unit,
     )
 
     existing = Product.objects.filter(sku=sku).first()
@@ -88,7 +90,8 @@ def create_product(
             manufacturer=normalized_manufacturer,
             brand=normalized_brand,
             name=normalized_name,
-            weight_per_box=weight_per_box,
+            weight_per_unit=weight_per_unit,
+            stock_unit=stock_unit,
             vegan=vegan,
         )
     except IntegrityError as exc:
@@ -127,7 +130,7 @@ def update_product(
 ) -> Product:
     """Update editable product catalog data.
 
-    SKU and weight_per_box are intentionally not editable here.
+    SKU, weight_per_unit and stock_unit are intentionally not editable here.
     """
 
     product = (
@@ -206,3 +209,10 @@ def update_product_active(
     product.save(update_fields=["active"])
 
     return product
+
+
+def _validate_stock_unit(stock_unit: str) -> None:
+    valid_units = {choice.value for choice in Product.StockUnit}
+
+    if stock_unit not in valid_units:
+        raise InvalidProductData(f"Unsupported stock unit: {stock_unit}")

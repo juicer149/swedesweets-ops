@@ -12,20 +12,12 @@ from common.ui import (
 )
 from products.models import Product
 from products.presentation import (
-    PRODUCT_ACTION_CLASS,
     PRODUCT_ACTION_LABEL,
-    PRODUCT_BRAND_CLASS,
-    PRODUCT_CARD_CLASS,
-    PRODUCT_CODE_CLASS,
-    PRODUCT_TITLE_CLASS,
-    PRODUCT_WEIGHT_CLASS,
     ProductTagPresentation,
     product_attribute_tags,
-    product_brand_label,
     product_code_label,
     product_manufacturer_label,
     product_status_presentation,
-    product_weight_label,
 )
 
 
@@ -34,6 +26,8 @@ class ProductPageRow:
     product: Product
     status: StatusPresentation
     detail_href: str
+    weight_label: str
+    unit_label: str
     card: UiCard
 
 
@@ -52,6 +46,8 @@ def build_product_page_row(product: Product) -> ProductPageRow:
         product=product,
         status=status,
         detail_href=detail_href,
+        weight_label=product.weight_label,
+        unit_label=product.stock_unit_singular,
         card=_product_card(
             product=product,
             status=status,
@@ -68,7 +64,7 @@ def _product_card(
 ) -> UiCard:
     return UiCard(
         tone=status.tone,
-        css_class=PRODUCT_CARD_CLASS,
+        css_class="mobile-card mobile-card--product",
         rows=_product_card_rows(
             product=product,
             status=status,
@@ -84,8 +80,9 @@ def _product_card_rows(
 ) -> tuple[UiCardRow, ...]:
     rows: list[UiCardRow] = [
         _product_header_row(product, status),
-        _product_title_row(product),
         _product_brand_row(product),
+        _product_name_row(product),
+        _product_manufacturer_row(product),
         _product_weight_row(product),
     ]
 
@@ -102,28 +99,44 @@ def _product_header_row(
     return UiCardRow(
         left=UiText(
             text=product_code_label(product),
-            css_class=PRODUCT_CODE_CLASS,
+            css_class="product-card__id",
         ),
         right=status.text,
-    )
-
-
-def _product_title_row(product: Product) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=product.display_name,
-            css_class=PRODUCT_TITLE_CLASS,
-        ),
     )
 
 
 def _product_brand_row(product: Product) -> UiCardRow:
     return UiCardRow(
         left=UiText(
-            text=(
-                f"{product_manufacturer_label(product)}"
-            ),
-            css_class=PRODUCT_BRAND_CLASS,
+            text=product.brand,
+            css_class="product-card__brand",
+        ),
+    )
+
+
+def _product_name_row(product: Product) -> UiCardRow:
+    return UiCardRow(
+        left=UiText(
+            text=product.name,
+            css_class="product-card__name",
+        ),
+    )
+
+
+def _product_manufacturer_row(product: Product) -> UiCardRow:
+    return UiCardRow(
+        left=UiText(
+            text=product_manufacturer_label(product),
+            css_class="product-card__manufacturer",
+        ),
+    )
+
+
+def _product_weight_row(product: Product) -> UiCardRow:
+    return UiCardRow(
+        left=UiText(
+            text=product.unit_weight_label,
+            css_class="product-card__weight",
         ),
     )
 
@@ -139,20 +152,11 @@ def _product_tag_row(tag: ProductTagPresentation) -> UiCardRow:
     )
 
 
-def _product_weight_row(product: Product) -> UiCardRow:
-    return UiCardRow(
-        left=UiText(
-            text=product_weight_label(product),
-            css_class=PRODUCT_WEIGHT_CLASS,
-        ),
-    )
-
-
 def _product_detail_action(detail_href: str) -> UiText:
     return UiText(
         text=PRODUCT_ACTION_LABEL,
         href=detail_href,
-        css_class=PRODUCT_ACTION_CLASS,
+        css_class="text-link",
     )
 
 

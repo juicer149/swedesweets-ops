@@ -5,24 +5,24 @@
   </div>
 
   <div>
-    <dt>Physical boxes</dt>
-    <dd>{{ stock.physical_boxes }}</dd>
+    <dt>Physical quantity</dt>
+    <dd>{{ stock.physical_quantity_label }}</dd>
   </div>
 
   <div>
-    <dt>Reserved boxes</dt>
-    <dd>{{ stock.reserved_boxes }}</dd>
+    <dt>Reserved quantity</dt>
+    <dd>{{ stock.reserved_quantity_label }}</dd>
   </div>
 
   <div>
-    <dt>Available boxes</dt>
-    <dd>{{ stock.available_boxes }}</dd>
+    <dt>Available quantity</dt>
+    <dd>{{ stock.available_quantity_label }}</dd>
   </div>
 
   <div>
     <dt>Orderable</dt>
     <dd>
-      {% if product.active and stock.available_boxes > 0 %}
+      {% if product.active and stock.available_quantity > 0 %}
         Yes
       {% else %}
         No
@@ -37,7 +37,7 @@
       <thead>
         <tr>
           <th>Batch</th>
-          <th class="numeric-cell">Boxes</th>
+          <th class="numeric-cell">Quantity</th>
           <th>Best before</th>
           <th>Location</th>
           <th>Status</th>
@@ -61,7 +61,7 @@
             </th>
 
             <td class="numeric-cell">
-              <strong>{{ row.boxes }}</strong>
+              <strong>{{ row.quantity_label }}</strong>
             </td>
 
             <td>{{ row.best_before|date:"Y-m-d" }}</td>

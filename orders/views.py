@@ -61,7 +61,7 @@ ORDER_TABLE_SORTS = [
     TableSortField("customer", "Customer"),
     TableSortField("created", "Created"),
     TableSortField("status", "Status"),
-    TableSortField("boxes", "Boxes"),
+    TableSortField("quantity", "Quantity"),
 ]
 
 ORDERS_LIST_ANCHOR = "orders-list"
@@ -118,7 +118,7 @@ def index(request):
         "mobile_sort_fields": controls.build_mobile_sort_fields(ORDER_TABLE_SORTS),
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": ORDER_TABLE_CONTROLS_TEMPLATE,
-        "numeric_table_fields": ["boxes"],
+        "numeric_table_fields": ["quantity"],
         "active_status": controls.active_filter,
         "active_sort": controls.active_sort,
     }

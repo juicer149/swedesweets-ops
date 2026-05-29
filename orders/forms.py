@@ -12,16 +12,47 @@ from customers.models import Customer
 from orders.datatypes import OrderLineInput
 from orders.models import Order, OrderLine
 from orders.order_limits import (
-    MAX_BOXES_PER_PRODUCT_PER_ORDER,
+    MAX_QUANTITY_PER_PRODUCT_PER_ORDER,
     is_unusually_large_order_line,
 )
 from orders.product_choices import build_product_choice_context
 from products.models import Product
-from products.units import quantity_to_boxes
+from products.units import quantity_to_units
 
 
 DEFAULT_ORDER_LINE_COUNT = 1
 MIN_ORDER_QUANTITY = Decimal("0.001")
+
+MAX_UNITS_PER_PRODUCT_PER_ORDER = MAX_QUANTITY_PER_PRODUCT_PER_ORDER
+
+
+def _order_line_stock_unit_value() -> str:
+    gram_based_values = {
+        OrderLine.Unit.KG,
+        OrderLine.Unit.GRAMS,
+    }
+
+    for value, _label in OrderLine.Unit.choices:
+        if value not in gram_based_values:
+            return value
+
+    return OrderLine.Unit.KG
+
+
+def _order_line_unit_choices() -> tuple[tuple[str, str], ...]:
+    stock_unit_value = _order_line_stock_unit_value()
+
+    return tuple(
+        (
+            value,
+            "Quantity" if value == stock_unit_value else label,
+        )
+        for value, label in OrderLine.Unit.choices
+    )
+
+
+ORDER_LINE_STOCK_UNIT_VALUE = _order_line_stock_unit_value()
+ORDER_LINE_UNIT_CHOICES = _order_line_unit_choices()
 
 
 class CustomerChoiceField(forms.ModelChoiceField):
@@ -38,23 +69,23 @@ class ProductChoiceField(forms.ModelChoiceField):
     def __init__(
         self,
         *args,
-        available_boxes_by_product_id: dict[int, int] | None = None,
+        available_units_by_product_id: dict[int, int] | None = None,
         **kwargs,
     ) -> None:
-        self.available_boxes_by_product_id = available_boxes_by_product_id or {}
+        self.available_units_by_product_id = available_units_by_product_id or {}
         super().__init__(*args, **kwargs)
 
     def label_from_instance(self, product: Product) -> str:
-        available_boxes = self.available_boxes_by_product_id.get(product.id)
+        available_units = self.available_units_by_product_id.get(product.id)
 
-        if available_boxes is None:
+        if available_units is None:
             return f"{product.code_label} · {product.display_name}"
 
         return (
             f"{product.code_label} · "
             f"{product.display_name} · "
-            f"{product.weight_per_box} g · "
-            f"{_boxes_label(available_boxes)}"
+            f"{product.unit_weight_label} · "
+            f"{product.stock_quantity_label(available_units)}"
         )
 
     def create_option(
@@ -81,15 +112,16 @@ class ProductChoiceField(forms.ModelChoiceField):
             return option
 
         product = value.instance
-        available_boxes = self.available_boxes_by_product_id.get(product.id, 0)
+        available_units = self.available_units_by_product_id.get(product.id, 0)
 
         option["attrs"].update(
             {
                 "data-code": product.code_label,
                 "data-brand": product.brand,
                 "data-name": product.display_name,
-                "data-weight": f"{product.weight_per_box} g / box",
-                "data-available-boxes": str(available_boxes),
+                "data-weight": product.unit_weight_label,
+                "data-available-units": str(available_units),
+                "data-available-quantity": str(available_units),
                 "search": (
                     f"{product.code_label} "
                     f"{product.internal_number or ''} "
@@ -128,7 +160,7 @@ class OrderLineForm(forms.Form):
             "internal_number",
             "brand",
             "name",
-            "weight_per_box",
+            "weight_per_unit",
         ),
         required=False,
         label="Product",
@@ -146,11 +178,11 @@ class OrderLineForm(forms.Form):
 
     unit = forms.ChoiceField(
         required=False,
-        choices=OrderLine.Unit.choices,
-        initial=OrderLine.Unit.KG,
+        choices=ORDER_LINE_UNIT_CHOICES,
+        initial=ORDER_LINE_STOCK_UNIT_VALUE,
         label="Unit",
         error_messages={
-            "invalid_choice": "Choose boxes, kg or grams.",
+            "invalid_choice": "Choose quantity, kg, or grams.",
         },
         widget=forms.RadioSelect(
             attrs={
@@ -184,10 +216,10 @@ class OrderLineForm(forms.Form):
         self,
         *args,
         product_queryset=None,
-        available_boxes_by_product_id: dict[int, int] | None = None,
+        available_units_by_product_id: dict[int, int] | None = None,
         **kwargs,
     ) -> None:
-        self.available_boxes_by_product_id = available_boxes_by_product_id or {}
+        self.available_units_by_product_id = available_units_by_product_id or {}
 
         super().__init__(*args, **kwargs)
 
@@ -195,8 +227,8 @@ class OrderLineForm(forms.Form):
         product_field.queryset = product_queryset or Product.objects.none()
 
         if isinstance(product_field, ProductChoiceField):
-            product_field.available_boxes_by_product_id = (
-                self.available_boxes_by_product_id
+            product_field.available_units_by_product_id = (
+                self.available_units_by_product_id
             )
 
         set_form_field_layout(
@@ -222,34 +254,34 @@ class OrderLineForm(forms.Form):
             self.add_error("quantity", "Enter a quantity for this line.")
 
         if not unit:
-            unit = OrderLine.Unit.KG
+            unit = ORDER_LINE_STOCK_UNIT_VALUE
             cleaned_data["unit"] = unit
 
         if product is None or quantity is None:
             return cleaned_data
 
-        boxes = _quantity_to_boxes_for_form(
+        quantity_in_units = _quantity_to_units_for_form(
             product=product,
             quantity=quantity,
             unit=unit,
         )
 
-        cleaned_data["quantity_in_boxes"] = boxes
+        cleaned_data["quantity_in_units"] = quantity_in_units
 
-        available_boxes = self.available_boxes_by_product_id.get(product.id)
+        available_units = self.available_units_by_product_id.get(product.id)
 
         if (
-            is_unusually_large_order_line(boxes=boxes)
+            is_unusually_large_order_line(quantity=quantity_in_units)
             and not _is_stock_shortage(
-                requested_boxes=boxes,
-                available_boxes=available_boxes,
+                requested_quantity=quantity_in_units,
+                available_quantity=available_units,
             )
         ):
             self.add_error(
                 "quantity",
                 (
                     "This line is unusually large. "
-                    f"Maximum is {_boxes_label(MAX_BOXES_PER_PRODUCT_PER_ORDER)} "
+                    f"Maximum is {product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
                     "per product."
                 ),
             )
@@ -291,8 +323,8 @@ class BaseOrderLineFormSet(BaseFormSet):
         kwargs.update(
             {
                 "product_queryset": self.product_choice_context.queryset,
-                "available_boxes_by_product_id": (
-                    self.product_choice_context.available_boxes_by_product_id
+                "available_units_by_product_id": (
+                    self.product_choice_context.available_units_by_product_id
                 ),
             }
         )
@@ -308,39 +340,45 @@ class BaseOrderLineFormSet(BaseFormSet):
         if not self.order_line_forms:
             raise forms.ValidationError("Add at least one order line.")
 
-        requested_boxes_by_product_id: dict[int, int] = defaultdict(int)
+        requested_quantity_by_product_id: dict[int, int] = defaultdict(int)
         product_names_by_id: dict[int, str] = {}
+        products_by_id: dict[int, Product] = {}
 
         for form in self.order_line_forms:
             product = form.cleaned_data["product"]
-            boxes = form.cleaned_data["quantity_in_boxes"]
+            quantity = form.cleaned_data["quantity_in_units"]
 
-            requested_boxes_by_product_id[product.id] += boxes
+            requested_quantity_by_product_id[product.id] += quantity
             product_names_by_id[product.id] = product.display_name
+            products_by_id[product.id] = product
 
-        for product_id, requested_boxes in requested_boxes_by_product_id.items():
-            available_boxes = self.product_choice_context.available_boxes_by_product_id.get(
-                product_id,
-                0,
+        for product_id, requested_quantity in requested_quantity_by_product_id.items():
+            available_quantity = (
+                self.product_choice_context.available_units_by_product_id.get(
+                    product_id,
+                    0,
+                )
             )
 
-            if requested_boxes > available_boxes:
+            product = products_by_id[product_id]
+
+            if requested_quantity > available_quantity:
                 product_name = product_names_by_id[product_id]
 
                 raise forms.ValidationError(
                     (
-                        f"Only {_boxes_label(available_boxes)} available "
-                        f"for {product_name}."
+                        f"Only {product.stock_quantity_label(available_quantity)} "
+                        f"available for {product_name}."
                     )
                 )
 
-            if is_unusually_large_order_line(boxes=requested_boxes):
+            if is_unusually_large_order_line(quantity=requested_quantity):
                 product_name = product_names_by_id[product_id]
 
                 raise forms.ValidationError(
                     (
                         f"{product_name} is unusually large. "
-                        f"Maximum is {_boxes_label(MAX_BOXES_PER_PRODUCT_PER_ORDER)} "
+                        f"Maximum is {product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
                         "per order."
                     )
                 )
@@ -385,7 +423,7 @@ class OrderCancelForm(forms.Form):
 
 
 def build_order_line_inputs(
-    formset: BaseOrderLineFormSet,
+    formset: BaseFormSet,
 ) -> list[OrderLineInput]:
     return [
         form.to_order_line_input()
@@ -404,14 +442,14 @@ def build_order_line_initial_data(order: Order) -> list[dict[str, object]]:
     ]
 
 
-def _quantity_to_boxes_for_form(
+def _quantity_to_units_for_form(
     *,
     product: Product,
     quantity: Decimal,
     unit: str,
 ) -> int:
     try:
-        return quantity_to_boxes(
+        return quantity_to_units(
             product=product,
             quantity=quantity,
             unit=unit,
@@ -422,14 +460,10 @@ def _quantity_to_boxes_for_form(
 
 def _is_stock_shortage(
     *,
-    requested_boxes: int,
-    available_boxes: int | None,
+    requested_quantity: int,
+    available_quantity: int | None,
 ) -> bool:
-    if available_boxes is None:
+    if available_quantity is None:
         return False
 
-    return requested_boxes > available_boxes
-
-
-def _boxes_label(boxes: int) -> str:
-    return "1 box" if boxes == 1 else f"{boxes} boxes"
+    return requested_quantity > available_quantity

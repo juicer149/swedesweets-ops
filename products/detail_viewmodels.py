@@ -16,7 +16,6 @@ from common.detail_cards import (
 )
 from common.ui import UiCard
 from inventory.mini_cards import build_batch_mini_card
-
 from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow
 from products.models import Product
@@ -26,44 +25,61 @@ from products.presentation import (
     PRODUCT_EDIT_LABEL,
     PRODUCT_INVENTORY_PANEL_ICON,
     ProductTagPresentation,
-    boxes_label,
     product_attribute_tags,
     product_detail_card_class,
     product_detail_status_class,
     product_status_icon,
+    stock_quantity_label,
 )
 from products.selectors import ProductDeliveredDemandSummary
 
 
 @dataclass(frozen=True)
 class ProductStockSummary:
+    product: Product
     batch_count: int
-    physical_boxes: int
-    reserved_boxes: int
-    available_boxes: int
+    physical_quantity: int
+    reserved_quantity: int
+    available_quantity: int
+
+    @property
+    def physical_quantity_label(self) -> str:
+        return self.product.stock_quantity_label(self.physical_quantity)
+
+    @property
+    def reserved_quantity_label(self) -> str:
+        return self.product.stock_quantity_label(self.reserved_quantity)
+
+    @property
+    def available_quantity_label(self) -> str:
+        return self.product.stock_quantity_label(self.available_quantity)
 
     @classmethod
-    def empty(cls) -> ProductStockSummary:
+    def empty(cls, *, product: Product) -> ProductStockSummary:
         return cls(
+            product=product,
             batch_count=0,
-            physical_boxes=0,
-            reserved_boxes=0,
-            available_boxes=0,
+            physical_quantity=0,
+            reserved_quantity=0,
+            available_quantity=0,
         )
 
     @classmethod
     def from_available_stock_row(
         cls,
+        *,
+        product: Product,
         row: AvailableStockRow | None,
     ) -> ProductStockSummary:
         if row is None:
-            return cls.empty()
+            return cls.empty(product=product)
 
         return cls(
+            product=product,
             batch_count=row.batch_count,
-            physical_boxes=row.physical_boxes,
-            reserved_boxes=row.reserved_boxes,
-            available_boxes=row.available_boxes,
+            physical_quantity=row.physical_quantity,
+            reserved_quantity=row.reserved_quantity,
+            available_quantity=row.available_quantity,
         )
 
 
@@ -99,7 +115,8 @@ class ProductProfileSummary:
 class ProductBatchRow:
     batch_id: str
     batch_href: str
-    boxes: int
+    quantity: int
+    quantity_label: str
     best_before: object
     location: str
     status: str
@@ -108,21 +125,46 @@ class ProductBatchRow:
 
 @dataclass(frozen=True)
 class ProductDemandSummary:
+    product: Product
     delivered_order_count: int
-    delivered_boxes: int
-    average_boxes_per_delivered_order: Decimal
+    delivered_quantity: int
+    average_quantity_per_delivered_order: Decimal
     last_delivered_at: datetime | None
+
+    @property
+    def delivered_quantity_label(self) -> str:
+        return self.product.stock_quantity_label(self.delivered_quantity)
+
+    @property
+    def average_quantity_per_delivered_order_label(self) -> str:
+        value = self.average_quantity_per_delivered_order.normalize()
+
+        if value == value.to_integral_value():
+            display_value = str(int(value))
+        else:
+            display_value = format(value, "f").rstrip("0").rstrip(".")
+
+        unit = (
+            self.product.stock_unit_singular
+            if self.average_quantity_per_delivered_order == 1
+            else self.product.stock_unit_plural
+        )
+
+        return f"{display_value} {unit}"
 
     @classmethod
     def from_delivered_demand_summary(
         cls,
+        *,
+        product: Product,
         summary: ProductDeliveredDemandSummary,
     ) -> ProductDemandSummary:
         return cls(
+            product=product,
             delivered_order_count=summary.delivered_order_count,
-            delivered_boxes=summary.delivered_boxes,
-            average_boxes_per_delivered_order=(
-                summary.average_boxes_per_delivered_order
+            delivered_quantity=summary.delivered_quantity,
+            average_quantity_per_delivered_order=(
+                summary.average_quantity_per_delivered_order
             ),
             last_delivered_at=summary.last_delivered_at,
         )
@@ -165,8 +207,14 @@ def build_product_detail_context(
     edit_url: str,
     cancel_url: str,
 ) -> ProductDetailContext:
-    stock = ProductStockSummary.from_available_stock_row(stock_row)
-    demand = ProductDemandSummary.from_delivered_demand_summary(demand_summary)
+    stock = ProductStockSummary.from_available_stock_row(
+        product=product,
+        row=stock_row,
+    )
+    demand = ProductDemandSummary.from_delivered_demand_summary(
+        product=product,
+        summary=demand_summary,
+    )
 
     return ProductDetailContext(
         product=product,
@@ -230,14 +278,20 @@ def _build_product_detail_panels(
         DetailPanel(
             key="inventory",
             label="Inventory",
-            summary=boxes_label(stock.available_boxes),
+            summary=stock_quantity_label(
+                product=product,
+                quantity=stock.available_quantity,
+            ),
             body_template="products/includes/detail_panel_inventory.html",
             icon=PRODUCT_INVENTORY_PANEL_ICON,
         ),
         DetailPanel(
             key="demand",
             label="Demand",
-            summary=boxes_label(demand.delivered_boxes),
+            summary=stock_quantity_label(
+                product=product,
+                quantity=demand.delivered_quantity,
+            ),
             body_template="products/includes/detail_panel_demand.html",
             icon=PRODUCT_DEMAND_PANEL_ICON,
         ),
@@ -256,7 +310,8 @@ def _build_batch_rows(
             ProductBatchRow(
                 batch_id=batch.batch_id,
                 batch_href=batch_href,
-                boxes=batch.boxes,
+                quantity=batch.quantity,
+                quantity_label=batch.product.stock_quantity_label(batch.quantity),
                 best_before=batch.best_before,
                 location=batch.location,
                 status=batch.get_status_display(),

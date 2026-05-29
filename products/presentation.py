@@ -10,6 +10,8 @@ from common.ui import (
 )
 from products.models import Product
 
+# TODO: Remove one-use mobile card CSS constants after product cards have
+# stabilized. Product list card classes now live directly in list_viewmodels.py.
 
 PRODUCT_CARD_CLASS = "mobile-card mobile-card--product"
 
@@ -114,7 +116,7 @@ def product_brand_label(product: Product) -> str:
 
 
 def product_weight_label(product: Product) -> str:
-    return f"{product.weight_per_box} g / box"
+    return product.unit_weight_label
 
 
 def product_vegan_label(product: Product) -> str:
@@ -130,5 +132,5 @@ def product_attribute_tags(product: Product) -> tuple[ProductTagPresentation, ..
     return tuple(tags)
 
 
-def boxes_label(boxes: int) -> str:
-    return "1 box" if boxes == 1 else f"{boxes} boxes"
+def stock_quantity_label(*, product: Product, quantity: int) -> str:
+    return product.stock_quantity_label(quantity)

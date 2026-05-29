@@ -3,24 +3,25 @@ Inventory domain model.
 
 class InventoryBatch
 fields:
-    batch_id, product(FK), boxes, best_before, location, status
+    batch_id, product(FK), quantity, best_before, location, status
 
 public API:
     .is_available
-        -> True when batch is ACTIVE and has boxes > 0.
+        -> True when batch is ACTIVE and has quantity > 0.
 
     .save(*args, **kwargs)
         -> Normalize fields and protect local invariants before saving.
 
-    .adjust_boxes(boxes: int)
-        -> Absolute inventory correction: current boxes = boxes.
+    .adjust_quantity(quantity: int)
+        -> Absolute inventory correction: current quantity = quantity.
 
-    .pick(boxes: int)
-        -> Order fulfillment: current boxes -= boxes.
+    .pick(quantity: int)
+        -> Order fulfillment: current quantity -= quantity.
 
     .close()
         -> Move batch lifecycle status to CLOSED.
 """
+
 from __future__ import annotations
 
 from django.db import models
@@ -52,7 +53,7 @@ def normalize_location(value: str) -> str:
 class InventoryBatch(models.Model):
     """Physical stock.
 
-    InventoryBatch owns physical boxes and physical lifecycle.
+    InventoryBatch owns physical stock quantity and physical lifecycle.
 
     Reservation ownership belongs to orders.Allocation. This model should know
     how physical stock changes, but it should not know how orders reserve stock
@@ -76,7 +77,7 @@ class InventoryBatch(models.Model):
         on_delete=models.PROTECT,
         related_name="batches",
     )
-    boxes = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField()
     best_before = models.DateField()
     location = models.CharField(max_length=120)
     status = models.CharField(
@@ -89,33 +90,26 @@ class InventoryBatch(models.Model):
         ordering = ["best_before", "batch_id"]
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(boxes__gte=0),
-                name="inventorybatch_boxes_gte_0",
+                condition=models.Q(quantity__gte=0),
+                name="inventorybatch_quantity_gte_0",
             ),
         ]
 
     @property
     def is_available(self) -> bool:
-        return self.status == self.Status.ACTIVE and self.boxes > 0
+        return self.status == self.Status.ACTIVE and self.quantity > 0
 
     @staticmethod
-    def _validate_positive_boxes(boxes: int) -> None:
-        if boxes <= 0:
-            raise InvalidStockOperation("boxes must be positive")
+    def _validate_positive_quantity(quantity: int) -> None:
+        if quantity <= 0:
+            raise InvalidStockOperation("quantity must be positive")
 
     @staticmethod
-    def _validate_non_negative_boxes(boxes: int) -> None:
-        if boxes < 0:
-            raise InvalidStockOperation("boxes must be non-negative")
+    def _validate_non_negative_quantity(quantity: int) -> None:
+        if quantity < 0:
+            raise InvalidStockOperation("quantity must be non-negative")
 
     def _transition_to(self, new_status: str) -> None:
-        """Move batch to a new lifecycle status if the transition is allowed.
-
-        This method is private on purpose. Public methods should describe the
-        business event that caused the transition: pick(), adjust_boxes(),
-        close(), return_boxes() later, etc.
-        """
-
         old_status = self.status
 
         if old_status == new_status:
@@ -131,17 +125,15 @@ class InventoryBatch(models.Model):
 
         self.status = new_status
 
-    def _sync_status_from_boxes(self) -> None:
-        """Synchronize lifecycle status from physical box count.
+    def _sync_status_from_quantity(self) -> None:
+        """Synchronize lifecycle status from physical stock quantity.
 
         For normal stock states:
 
-            boxes > 0   -> ACTIVE
-            boxes == 0  -> DEPLETED
+            quantity > 0   -> ACTIVE
+            quantity == 0  -> DEPLETED
 
-        CLOSED is terminal in this MVP and is not reopened implicitly. If a closed
-        batch should ever be reused, that should become an explicit business
-        operation, not a side effect of changing boxes.
+        CLOSED is terminal in this MVP and is not reopened implicitly.
         """
 
         if self.status == self.Status.CLOSED:
@@ -149,7 +141,7 @@ class InventoryBatch(models.Model):
 
         next_status = (
             self.Status.ACTIVE
-            if self.boxes > 0
+            if self.quantity > 0
             else self.Status.DEPLETED
         )
 
@@ -178,15 +170,7 @@ class InventoryBatch(models.Model):
             )
 
     def save(self, *args, **kwargs) -> None:
-        """Normalize fields and protect local invariants before saving.
-
-        This method respects update_fields. If a caller saves only boxes/status,
-        it does not accidentally add unrelated fields like batch_id or location
-        to the database UPDATE.
-
-        boxes and status are coupled, so when stock state is saved, status may be
-        added to update_fields after synchronization.
-        """
+        """Normalize fields and protect local invariants before saving."""
 
         update_fields = kwargs.get("update_fields")
 
@@ -198,7 +182,7 @@ class InventoryBatch(models.Model):
         should_handle_location = should_save_all_fields or "location" in update_fields
         should_handle_stock_state = (
             should_save_all_fields
-            or "boxes" in update_fields
+            or "quantity" in update_fields
             or "status" in update_fields
         )
 
@@ -209,8 +193,8 @@ class InventoryBatch(models.Model):
             self.location = normalize_location(self.location)
 
         if should_handle_stock_state:
-            self._validate_non_negative_boxes(self.boxes)
-            self._sync_status_from_boxes()
+            self._validate_non_negative_quantity(self.quantity)
+            self._sync_status_from_quantity()
             self._protect_status_transition()
 
             if update_fields is not None:
@@ -221,83 +205,58 @@ class InventoryBatch(models.Model):
 
         super().save(*args, **kwargs)
 
-    def adjust_boxes(self, *, boxes: int) -> None:
-        """Set physical box count after inventory correction.
-
-        This is an absolute edit:
-
-            current boxes = boxes
-
-        Use this when the system's recorded number should be corrected to match
-        reality, for example after manual inventory counting.
-
-        This method may reactivate a DEPLETED batch if the corrected physical
-        count is greater than zero. It may not reopen CLOSED batches.
-        """
+    def adjust_quantity(self, *, quantity: int) -> None:
+        """Set physical stock count after inventory correction."""
 
         if self.status == self.Status.CLOSED:
             raise InvalidStockOperation(f"Batch {self.batch_id} is closed")
 
-        self._validate_non_negative_boxes(boxes)
+        self._validate_non_negative_quantity(quantity)
 
-        self.boxes = boxes
-        self._sync_status_from_boxes()
+        self.quantity = quantity
+        self._sync_status_from_quantity()
 
-        self.save(update_fields=["boxes", "status"])
+        self.save(update_fields=["quantity", "status"])
 
-    def _remove_boxes(self, *, boxes: int) -> None:
-        """Decrease physical boxes in memory.
+    def _remove_quantity(self, *, quantity: int) -> None:
+        """Decrease physical stock quantity in memory.
 
-        This method contains the shared mechanics for reducing stock:
-
-            validate input
-            ensure enough boxes exist
-            subtract boxes
-            synchronize status
-
-        It deliberately does not save. Public domain methods such as pick() should
-        call this method and then decide what should be persisted.
-
-        The method is private because "remove boxes" is not a complete business
-        reason by itself. A caller should usually say why stock is being removed:
-        picked for an order, damaged, expired, wasted, or corrected.
+        This method deliberately does not save. Public domain methods such as
+        pick() should call this method and then decide what should be persisted.
         """
 
-        self._validate_positive_boxes(boxes)
+        self._validate_positive_quantity(quantity)
 
-        if boxes > self.boxes:
+        if quantity > self.quantity:
             raise InvalidStockOperation(
-                f"Cannot remove {boxes} boxes from batch {self.batch_id}; "
-                f"only {self.boxes} available"
+                f"Cannot remove {quantity} units from batch {self.batch_id}; "
+                f"only {self.quantity} available"
             )
 
-        self.boxes -= boxes
-        self._sync_status_from_boxes()
+        self.quantity -= quantity
+        self._sync_status_from_quantity()
 
-    def pick(self, *, boxes: int) -> None:
-        """Remove boxes because they were picked for order fulfillment.
-
-        This updates physical stock only.
-
-        Reservation logic belongs to orders.Allocation. The order layer should
-        ensure that a pick corresponds to valid reserved allocations.
-        """
+    def pick(self, *, quantity: int) -> None:
+        """Remove stock because it was picked for order fulfillment."""
 
         if not self.is_available:
             raise InvalidStockOperation(f"Batch {self.batch_id} is not available")
 
-        self._remove_boxes(boxes=boxes)
-        self.save(update_fields=["boxes", "status"])
+        self._remove_quantity(quantity=quantity)
+        self.save(update_fields=["quantity", "status"])
 
     def close(self) -> None:
         """Close this batch.
 
         Closing removes the batch from normal stock operations. It does not change
-        the physical box count. CLOSED is terminal for this MVP.
+        the physical quantity. CLOSED is terminal for this MVP.
         """
 
         self._transition_to(self.Status.CLOSED)
         self.save(update_fields=["status"])
 
     def __str__(self) -> str:
-        return f"{self.batch_id} - {self.product} ({self.boxes} boxes)"
+        return (
+            f"{self.batch_id} - {self.product} "
+            f"({self.product.stock_quantity_label(self.quantity)})"
+        )

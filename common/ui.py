@@ -10,7 +10,7 @@ It should not know about HTTP requests.
 
 Good use:
     Order status "placed" -> warning tone
-    8 boxes -> "8 boxes left", low/safe/empty quantity class
+    8 units -> "8 units left", low/safe/empty quantity class
     Customer email -> mailto link
 
 Bad use:
@@ -72,9 +72,9 @@ class UiText:
     rel: str = ""
     aria_label: str = ""
     label: str = ""
-    label_class: str = "ui-card-label" # kanske byta namn till "ui-text-label"
+    label_class: str = "ui-card-label"
     subtext: str = ""
-    subtext_class: str = "ui-card-muted" # "ui-text-subtext"?
+    subtext_class: str = "ui-card-muted"
     icon: str = ""
     icon_class: str = "ui-text__icon"
 
@@ -171,31 +171,31 @@ TONE_DANGER = UiTone(
 
 def build_quantity_info(
     *,
-    boxes: int,
+    quantity: int,
     low_threshold: int = 10,
 ) -> QuantityInfo:
     """Return presentation info for a stock quantity."""
 
-    if boxes <= 0:
+    if quantity <= 0:
         return QuantityInfo(
-            value=boxes,
+            value=quantity,
             level="empty",
-            label="0 boxes left",
+            label="0 units left",
             css_class="quantity-text quantity-text--empty",
         )
 
-    if boxes <= low_threshold:
+    if quantity <= low_threshold:
         return QuantityInfo(
-            value=boxes,
+            value=quantity,
             level="low",
-            label=f"{boxes} boxes left",
+            label=f"{quantity} units left",
             css_class="quantity-text quantity-text--low",
         )
 
     return QuantityInfo(
-        value=boxes,
+        value=quantity,
         level="safe",
-        label=f"{boxes} boxes left",
+        label=f"{quantity} units left",
         css_class="quantity-text quantity-text--safe",
     )
 

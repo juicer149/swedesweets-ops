@@ -13,6 +13,7 @@ def set_form_field_layout(
     *,
     full: tuple[str, ...] = (),
     half: tuple[str, ...] = (),
+    #TODO: might add a flexible/fit option in the future?
     third: tuple[str, ...] = (),
 ) -> None:
     """Attach layout metadata to Django form fields.

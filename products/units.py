@@ -5,13 +5,13 @@ public API:
     normalize_order_unit(unit: str) -> str
         -> Normalize and validate external order unit.
 
-    quantity_to_boxes(
+    quantity_to_units(
         *,
         product: Product,
         quantity: Decimal,
         unit: str,
     ) -> int
-        -> Convert external order quantity to whole boxes.
+        -> Convert external order quantity to whole product stock units.
 """
 
 from __future__ import annotations
@@ -22,7 +22,16 @@ from products.errors import InvalidProductData, UnsupportedOrderUnit
 from products.models import Product
 
 
-SUPPORTED_ORDER_UNITS = {"boxes", "kg", "grams"}
+#TODO: consider have a strenum to keep all of these in one place
+ORDER_UNIT_STOCK = "stock_unit"
+ORDER_UNIT_KG = "kg"
+ORDER_UNIT_GRAMS = "grams"
+
+SUPPORTED_ORDER_UNITS = {
+    ORDER_UNIT_STOCK,
+    ORDER_UNIT_KG,
+    ORDER_UNIT_GRAMS,
+}
 
 
 def normalize_order_unit(unit: str) -> str:
@@ -34,16 +43,16 @@ def normalize_order_unit(unit: str) -> str:
     return normalized_unit
 
 
-def quantity_to_boxes(
+def quantity_to_units(
     *,
     product: Product,
     quantity: Decimal,
     unit: str,
 ) -> int:
-    """Convert external order quantity into whole boxes.
+    """Convert external order quantity into whole product stock units.
 
-    External order input may use boxes, kg, or grams.
-    Internal warehouse quantity is always boxes.
+    External order input may use stock_unit, kg, or grams. Internal fulfillment
+    quantity is always whole stock units for the selected product.
     """
 
     unit = normalize_order_unit(unit)
@@ -51,19 +60,21 @@ def quantity_to_boxes(
     if quantity <= 0:
         raise InvalidProductData("quantity must be positive")
 
-    if unit == "boxes":
+    if unit == ORDER_UNIT_STOCK:
         if quantity != quantity.to_integral_value():
-            raise InvalidProductData("box orders must use a whole number")
+            raise InvalidProductData(
+                "stock unit orders must use a whole number"
+            )
 
         return int(quantity)
 
-    if unit == "grams":
+    if unit == ORDER_UNIT_GRAMS:
         if quantity != quantity.to_integral_value():
             raise InvalidProductData("gram orders must use a whole number")
 
-        return product.grams_to_boxes(grams=int(quantity))
+        return product.grams_to_units(grams=int(quantity))
 
-    if unit == "kg":
-        return product.kg_to_boxes(kg=quantity)
+    if unit == ORDER_UNIT_KG:
+        return product.kg_to_units(kg=quantity)
 
     raise UnsupportedOrderUnit(f"Unsupported order unit: {unit}")

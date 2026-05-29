@@ -6,8 +6,8 @@ from common.form_layout import set_form_field_layout
 from products.catalog import (
     MAX_IMAGE_URL_LENGTH,
     MAX_NAME_LENGTH,
-    MAX_WEIGHT_PER_BOX,
-    MIN_WEIGHT_PER_BOX,
+    MAX_WEIGHT_PER_UNIT,
+    MIN_WEIGHT_PER_UNIT,
 )
 from products.models import Product
 
@@ -35,7 +35,6 @@ class ProductForm(forms.Form):
             "min_value": "Internal number must be positive.",
         },
         widget=forms.NumberInput(
-            #TODO Consider making thise a dataclass in common that standardizes the attributes for includes fields across the app.
             attrs={
                 "placeholder": "e.g. 23",
                 "inputmode": "numeric",
@@ -98,22 +97,38 @@ class ProductForm(forms.Form):
         ),
     )
 
-    weight_per_box = forms.IntegerField(
-        min_value=MIN_WEIGHT_PER_BOX,
-        max_value=MAX_WEIGHT_PER_BOX,
-        label="Weight per box",
+    stock_unit = forms.ChoiceField(
+        choices=Product.StockUnit.choices,
+        initial=Product.StockUnit.BOX,
+        label="Stock unit",
+        help_text="How this product is counted in inventory and orders.",
+        error_messages={
+            "required": "Choose a stock unit.",
+            "invalid_choice": "Choose a valid stock unit.",
+        },
+        widget=forms.RadioSelect(
+            attrs={
+                "class": "radio-chip-group",
+            }
+        ),
+    )
+
+    weight_per_unit = forms.IntegerField(
+        min_value=MIN_WEIGHT_PER_UNIT,
+        max_value=MAX_WEIGHT_PER_UNIT,
+        label="Weight per unit",
         help_text="Stored in grams. Cannot be changed after creation.",
         error_messages={
-            "required": "Please enter the weight per box in grams.",
+            "required": "Please enter the weight per unit in grams.",
             "min_value": (
-                f"Weight per box must be at least "
-                f"{MIN_WEIGHT_PER_BOX} grams."
+                f"Weight per unit must be at least "
+                f"{MIN_WEIGHT_PER_UNIT} grams."
             ),
             "max_value": (
-                f"Weight per box must be at most "
-                f"{MAX_WEIGHT_PER_BOX} grams."
+                f"Weight per unit must be at most "
+                f"{MAX_WEIGHT_PER_UNIT} grams."
             ),
-            "invalid": "Please enter a valid number for weight per box.",
+            "invalid": "Please enter a valid number for weight per unit.",
         },
         widget=forms.NumberInput(
             attrs={
@@ -147,11 +162,14 @@ class ProductForm(forms.Form):
                 "internal_number",
                 "manufacturer",
                 "brand",
-                "weight_per_box",
+                "stock_unit",
+                "weight_per_unit",
             ),
         )
 
 
+# TODO: Model pack sizes/product variants before allowing stock_unit or
+# weight_per_unit edits. Existing batches and orders depend on these values.
 class ProductEditForm(forms.Form):
     internal_number = forms.IntegerField(
         required=False,

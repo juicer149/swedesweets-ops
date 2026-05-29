@@ -3,10 +3,9 @@ from __future__ import annotations
 from common.ui import UiCard, UiCardRow, UiText
 from inventory.models import InventoryBatch
 from inventory.presentation import (
-    INVENTORY_CARD_CLASS,
     INVENTORY_BATCH_ACTION_LABEL,
+    INVENTORY_CARD_CLASS,
     batch_status_presentation,
-    boxes_label,
 )
 
 
@@ -30,7 +29,7 @@ def build_batch_mini_card(
             ),
             UiCardRow(
                 left=UiText(
-                    text=boxes_label(batch.boxes),
+                    text=batch.product.stock_quantity_label(batch.quantity),
                     css_class="ui-card-title",
                 ),
             ),

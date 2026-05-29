@@ -20,7 +20,7 @@ def test_get_product_by_sku_strips_and_uppercases_input():
         internal_number=23,
         brand="Fazer",
         name="Tyrkisk Peber",
-        weight_per_box=3000,
+        weight_per_unit=3000,
     )
 
     assert get_product_by_sku(sku=" ss-023 ") == product
@@ -101,12 +101,47 @@ def test_list_products_accepts_known_sort_key():
 
 
 @pytest.mark.django_db
+def test_list_products_can_sort_by_weight_per_unit():
+    light = product_factory(
+        internal_number=1,
+        brand="Light",
+        name="Product",
+        weight_per_unit=100,
+    )
+    heavy = product_factory(
+        internal_number=2,
+        brand="Heavy",
+        name="Product",
+        weight_per_unit=500,
+    )
+
+    assert list(list_products(sort="weight")) == [light, heavy]
+
+
+@pytest.mark.django_db
+def test_list_products_can_sort_by_stock_unit():
+    box_product = product_factory(
+        internal_number=1,
+        brand="Box",
+        name="Product",
+    )
+    piece_product = product_factory(
+        internal_number=2,
+        brand="Piece",
+        name="Product",
+        stock_unit="piece",
+    )
+
+    assert list(list_products(sort="unit")) == [box_product, piece_product]
+
+
+@pytest.mark.django_db
 def test_get_product_delivered_demand_summary_is_empty_without_delivered_orders():
     product = product_factory()
 
     summary = get_product_delivered_demand_summary(product=product)
 
     assert summary.delivered_order_count == 0
-    assert summary.delivered_boxes == 0
-    assert summary.average_boxes_per_delivered_order == Decimal("0.0")
+    assert summary.delivered_quantity == 0
+    assert summary.average_quantity_per_delivered_order == Decimal("0.0")
     assert summary.last_delivered_at is None

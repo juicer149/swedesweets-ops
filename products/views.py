@@ -7,15 +7,15 @@ from django.urls import reverse
 
 from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import (
+    QuickJumpOption,
+    QuickJumpSearch,
     TableControls,
     TableControlsTemplate,
     TableFilter,
     TableSortField,
-    QuickJumpOption,
-    QuickJumpSearch,
 )
 from inventory.selectors import (
-    available_boxes_by_product,
+    available_quantity_by_product,
     list_available_batches_for_product,
 )
 from products.detail_viewmodels import build_product_detail_context
@@ -50,7 +50,8 @@ PRODUCT_TABLE_SORTS = [
     TableSortField("product", "Product"),
     TableSortField("brand", "Brand"),
     TableSortField("manufacturer", "Manufacturer"),
-    TableSortField("weight", "Weight/box"),
+    TableSortField("weight", "Weight"),
+    TableSortField("unit", "Unit"),
     TableSortField("vegan", "Vegan"),
     TableSortField("status", "Status"),
 ]
@@ -103,11 +104,11 @@ def index(request):
             ),
         ),
         "product_rows": product_rows,
-        "quick_jump_search": quick_jump_search, 
+        "quick_jump_search": quick_jump_search,
         "filters": filters,
         "table_sorts": sort_links,
         "mobile_sort_fields": mobile_sort_fields,
-        "mobile_sort_direction": controls.build_mobile_sort_direction(), 
+        "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": PRODUCT_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": ["number", "weight"],
         "active_filter": controls.active_filter,
@@ -224,7 +225,7 @@ def _get_product_for_detail(product_pk: int) -> Product:
 
 
 def _get_stock_row_for_product(product: Product):
-    for row in available_boxes_by_product():
+    for row in available_quantity_by_product():
         if row.product_id == product.pk:
             return row
 

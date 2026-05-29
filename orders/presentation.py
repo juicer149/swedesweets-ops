@@ -192,17 +192,17 @@ def relative_time_label(*, prefix: str, value: datetime) -> str:
     return f"{prefix} {elapsed} ago"
 
 
-def boxes_label(boxes: int) -> str:
-    return "1 box" if boxes == 1 else f"{boxes} boxes"
+def quantity_label(quantity: int) -> str:
+    return "1 unit" if quantity == 1 else f"{quantity} units"
 
 
-def order_boxes_label(order: Order) -> str:
-    return boxes_label(getattr(order, "total_boxes", 0))
+def order_quantity_label(order: Order) -> str:
+    return quantity_label(getattr(order, "total_quantity", 0))
 
 
-def contents_summary(*, product_count: int, total_boxes: int) -> str:
+def contents_summary(*, product_count: int, total_quantity: int) -> str:
     product_label = "product" if product_count == 1 else "products"
-    return f"{product_count} {product_label} · {boxes_label(total_boxes)}"
+    return f"{product_count} {product_label} · {quantity_label(total_quantity)}"
 
 
 def maps_directions_href(address: str) -> str:

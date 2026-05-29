@@ -5,8 +5,8 @@ from orders.models import Order
 from orders.presentation import (
     ORDER_CARD_BASE_CLASS,
     ORDER_DETAILS_LABEL,
-    boxes_label,
     build_order_status_presentation,
+    quantity_label,
 )
 
 
@@ -16,8 +16,10 @@ def build_order_usage_mini_card(
     order_href: str,
     customer_name: str,
     allocation_status: str,
-    boxes_label: str,
+    quantity_label_text: str,
 ) -> UiCard:
+    """Build a compact order card for inventory usage views."""
+
     status = build_order_status_presentation(order.status)
 
     return UiCard(
@@ -39,7 +41,7 @@ def build_order_usage_mini_card(
             ),
             UiCardRow(
                 left=UiText(
-                    text=f"{boxes_label} · {allocation_status}",
+                    text=f"{quantity_label_text} · {allocation_status}",
                     css_class="ui-card-strong ui-card-strong--compact",
                 ),
             ),
@@ -56,7 +58,7 @@ def build_customer_order_mini_card(
     *,
     order: Order,
     order_href: str,
-    boxes: int,
+    quantity: int,
 ) -> UiCard:
     status = build_order_status_presentation(order.status)
 
@@ -73,7 +75,7 @@ def build_customer_order_mini_card(
             ),
             UiCardRow(
                 left=UiText(
-                    text=boxes_label(boxes),
+                    text=quantity_label(quantity),
                     css_class="ui-card-title",
                 ),
             ),

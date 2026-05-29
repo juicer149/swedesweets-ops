@@ -26,7 +26,7 @@ def test_packaging_list_comes_from_reserved_allocations(
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=120),
+            OrderLineInput.units(product=apple, quantity=120),
             OrderLineInput.kg(product=banana, kg="25.0"),
         ],
     )
@@ -34,7 +34,7 @@ def test_packaging_list_comes_from_reserved_allocations(
     pick_lines = get_packaging_list(order=order)
 
     assert [
-        (line.sku, line.batch_id, line.location, line.boxes)
+        (line.sku, line.batch_id, line.location, line.quantity)
         for line in pick_lines
     ] == [
         ("SS-001", "A-001", "Shelf A1", 100),
@@ -53,7 +53,7 @@ def test_packed_lines_come_from_consumed_allocations(
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=120),
+            OrderLineInput.units(product=apple, quantity=120),
             OrderLineInput.kg(product=banana, kg="25.0"),
         ],
     )
@@ -62,7 +62,7 @@ def test_packed_lines_come_from_consumed_allocations(
     pick_lines = get_packed_lines(order=order)
 
     assert [
-        (line.sku, line.batch_id, line.location, line.boxes)
+        (line.sku, line.batch_id, line.location, line.quantity)
         for line in pick_lines
     ] == [
         ("SS-001", "A-001", "Shelf A1", 100),
@@ -76,13 +76,13 @@ def test_list_orders_filters_by_status(customer, other_customer, apple, stocked_
     placed = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     draft = create_draft_order(
         customer=other_customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
@@ -93,17 +93,17 @@ def test_list_orders_filters_by_status(customer, other_customer, apple, stocked_
 
 
 @pytest.mark.django_db
-def test_list_orders_annotates_total_boxes(customer, apple, stocked_inventory):
+def test_list_orders_annotates_total_quantity(customer, apple, stocked_inventory):
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
 
     listed = list_orders().get(pk=order.pk)
 
-    assert listed.total_boxes == 10
+    assert listed.total_quantity == 10
 
 
 @pytest.mark.django_db
@@ -116,13 +116,13 @@ def test_list_placed_orders_for_dashboard_returns_only_placed_orders(
     placed = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     packed = create_order(
         customer=other_customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     pack_order(order=packed)
@@ -143,13 +143,13 @@ def test_list_packed_orders_for_dashboard_returns_only_packed_orders(
     placed = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     packed = create_order(
         customer=other_customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     packed = pack_order(order=packed)
@@ -165,13 +165,13 @@ def test_count_placed_and_packed_orders(customer, other_customer, apple, stocked
     create_order(
         customer=customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     packed = create_order(
         customer=other_customer,
         lines=[
-            OrderLineInput.boxes(product=apple, boxes=10),
+            OrderLineInput.units(product=apple, quantity=10),
         ],
     )
     pack_order(order=packed)

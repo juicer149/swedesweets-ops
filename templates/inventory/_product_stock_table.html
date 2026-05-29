@@ -1,5 +1,5 @@
-<div class="table-card">
-  <table class="data-table">
+<div class="table-card inventory-table-card inventory-product-stock-table-card">
+  <table class="data-table inventory-product-stock-table">
     <thead>
       <tr>
         {% include "includes/table/sort_headers.html" %}
@@ -18,7 +18,7 @@
         >
           <th scope="row">
             <span class="row-link">
-              {{ row.catalog_label }}
+              {{ row.product_label }}
             </span>
           </th>
 
@@ -26,21 +26,27 @@
             {{ row.batch_count }}
           </td>
 
-          <td class="numeric-cell">
-            <strong>{{ row.physical_boxes }}</strong>
+          <td class="unit-cell">
+            {{ row.stock_unit_label }}
           </td>
 
           <td class="numeric-cell">
-            {{ row.reserved_boxes }}
+            <strong>{{ row.physical_quantity }}</strong>
           </td>
 
           <td class="numeric-cell">
-            <strong>{{ row.available_boxes }}</strong>
+            {{ row.reserved_quantity }}
+          </td>
+
+          <td class="numeric-cell">
+            <strong class="{{ row.available_quantity_info.css_class }}">
+              {{ row.available_quantity }}
+            </strong>
           </td>
         </tr>
       {% empty %}
         <tr>
-          <td class="empty-cell" colspan="5">
+          <td class="empty-cell" colspan="6">
             No product stock found.
           </td>
         </tr>

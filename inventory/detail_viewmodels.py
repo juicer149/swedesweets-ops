@@ -22,7 +22,6 @@ from inventory.presentation import (
     batch_detail_card_class,
     batch_detail_status_class,
     batch_status_icon,
-    boxes_label,
 )
 from inventory.selectors import build_expiry_info
 from orders.models import Allocation
@@ -30,9 +29,12 @@ from orders.models import Allocation
 
 @dataclass(frozen=True)
 class BatchStockSummary:
-    physical_boxes: int
-    reserved_boxes: int
-    available_boxes: int
+    physical_quantity: int
+    physical_quantity_label: str
+    reserved_quantity: int
+    reserved_quantity_label: str
+    available_quantity: int
+    available_quantity_label: str
     is_orderable: bool
 
     @classmethod
@@ -42,21 +44,28 @@ class BatchStockSummary:
         batch: InventoryBatch,
         allocations: list[Allocation],
     ) -> BatchStockSummary:
-        reserved_boxes = sum(
-            allocation.boxes
+        reserved_quantity = sum(
+            allocation.quantity
             for allocation in allocations
             if allocation.status == Allocation.Status.RESERVED
         )
-        available_boxes = max(batch.boxes - reserved_boxes, 0)
+        available_quantity = max(batch.quantity - reserved_quantity, 0)
 
         return cls(
-            physical_boxes=batch.boxes,
-            reserved_boxes=reserved_boxes,
-            available_boxes=available_boxes,
+            physical_quantity=batch.quantity,
+            physical_quantity_label=batch.product.stock_quantity_label(batch.quantity),
+            reserved_quantity=reserved_quantity,
+            reserved_quantity_label=batch.product.stock_quantity_label(
+                reserved_quantity
+            ),
+            available_quantity=available_quantity,
+            available_quantity_label=batch.product.stock_quantity_label(
+                available_quantity
+            ),
             is_orderable=(
                 batch.status == InventoryBatch.Status.ACTIVE
                 and batch.product.active
-                and available_boxes > 0
+                and available_quantity > 0
             ),
         )
 
@@ -67,8 +76,8 @@ class BatchUsageRow:
     order_href: str
     customer_name: str
     customer_href: str
-    boxes: int
-    boxes_label: str
+    quantity: int
+    quantity_label: str
     allocation_status: str
     order_status: str
     card: UiCard
@@ -196,7 +205,7 @@ def _build_batch_detail_panels(
         DetailPanel(
             key="batch",
             label="Batch",
-            summary=boxes_label(stock.available_boxes),
+            summary=stock.available_quantity_label,
             body_template="inventory/includes/detail_panel_batch.html",
             icon="tag",
             is_active=True,
@@ -221,8 +230,8 @@ def _build_usage_rows(allocations: list[Allocation]) -> list[BatchUsageRow]:
         )
         customer_name = allocation.order.customer.name
         allocation_status = allocation.get_status_display()
-        boxes = allocation.boxes
-        boxes_text = boxes_label(boxes)
+        quantity = allocation.quantity
+        quantity_text = allocation.batch.product.stock_quantity_label(quantity)
 
         rows.append(
             BatchUsageRow(
@@ -233,8 +242,8 @@ def _build_usage_rows(allocations: list[Allocation]) -> list[BatchUsageRow]:
                     "customers:detail",
                     kwargs={"customer_pk": allocation.order.customer_id},
                 ),
-                boxes=boxes,
-                boxes_label=boxes_text,
+                quantity=quantity,
+                quantity_label=quantity_text,
                 allocation_status=allocation_status,
                 order_status=allocation.order.get_status_display(),
                 card=build_order_usage_mini_card(
@@ -242,7 +251,7 @@ def _build_usage_rows(allocations: list[Allocation]) -> list[BatchUsageRow]:
                     order_href=order_href,
                     customer_name=customer_name,
                     allocation_status=allocation_status,
-                    boxes_label=boxes_text,
+                    quantity_label_text=quantity_text,
                 ),
             )
         )

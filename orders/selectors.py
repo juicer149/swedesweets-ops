@@ -46,14 +46,9 @@ ORDER_SORTS: dict[str, tuple[str, ...]] = {
     "-created": ("-created_at", "-id"),
     "status": ("status_rank", "created_at", "id"),
     "-status": ("-status_rank", "created_at", "id"),
-    "boxes": ("total_boxes", "id"),
-    "-boxes": ("-total_boxes", "id"),
+    "quantity": ("total_quantity", "id"),
+    "-quantity": ("-total_quantity", "id"),
 }
-
-
-# ==============================================================================
-# public
-# ==============================================================================
 
 
 def list_orders(
@@ -81,8 +76,8 @@ def list_orders(
         Order.objects
         .select_related("customer")
         .annotate(
-            total_boxes=Coalesce(
-                Sum("lines__quantity_in_boxes"),
+            total_quantity=Coalesce(
+                Sum("lines__quantity_in_units"),
                 Value(0),
                 output_field=IntegerField(),
             ),
@@ -133,6 +128,7 @@ def count_placed_orders() -> int:
 def count_packed_orders() -> int:
     return Order.objects.filter(status=Order.Status.PACKED).count()
 
+
 def get_packaging_list(*, order: Order) -> list[PickLine]:
     allocations = (
         order.allocations
@@ -169,17 +165,9 @@ def _build_pick_line(allocation: Allocation) -> PickLine:
         product_name=product.catalog_label,
         batch_id=allocation.batch.batch_id,
         location=allocation.batch.location,
-        boxes=allocation.boxes,
-        quantity_label=_boxes_label(allocation.boxes),
+        quantity=allocation.quantity,
+        quantity_label=product.stock_quantity_label(allocation.quantity),
     )
-
-#TODO finns redan i presentation.py
-def _boxes_label(boxes: int) -> str:
-    return "1 box" if boxes == 1 else f"{boxes} boxes"
-
-# ==============================================================================
-# private/helpers
-# ==============================================================================
 
 
 def _status_rank_expression() -> Case:
@@ -204,8 +192,8 @@ def _list_orders_for_dashboard(
         .filter(status=status)
         .select_related("customer")
         .annotate(
-            total_boxes=Coalesce(
-                Sum("lines__quantity_in_boxes"),
+            total_quantity=Coalesce(
+                Sum("lines__quantity_in_units"),
                 Value(0),
                 output_field=IntegerField(),
             )

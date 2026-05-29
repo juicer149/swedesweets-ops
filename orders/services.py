@@ -33,25 +33,19 @@ from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
 from orders.models import Allocation, Order, OrderLine
 from products.models import Product
-from products.units import normalize_order_unit, quantity_to_boxes
+from products.units import normalize_order_unit, quantity_to_units
 
 
 @dataclass(frozen=True)
 class NormalizedOrderLine:
     """Order line normalized to the operational fulfillment unit.
 
-    External input may use boxes, kg or grams. The order workflow reserves and
-    picks stock in boxes, so services normalize all order lines to boxes before
-    writing OrderLine rows.
+    External input may use stock units, kg, or grams. The order workflow reserves
+    and picks stock in whole product stock units.
     """
 
     product: Product
-    boxes: int
-
-
-# ==============================================================================
-# public
-# ==============================================================================
+    quantity: int
 
 
 @transaction.atomic
@@ -62,8 +56,8 @@ def create_draft_order(
 ) -> Order:
     """Create an order in DRAFT status.
 
-    Multiple input lines for the same product are normalized to boxes and merged
-    into one OrderLine.
+    Multiple input lines for the same product are normalized to stock units and
+    merged into one OrderLine.
     """
 
     return _create_draft_order(
@@ -160,24 +154,24 @@ def pack_order(*, order: Order, user=None) -> Order:
     if not allocations:
         raise InvalidOrderOperation(f"Order {order.pk} has no reserved allocations")
 
-    boxes_by_batch_id: dict[int, int] = defaultdict(int)
+    quantity_by_batch_id: dict[int, int] = defaultdict(int)
 
     for allocation in allocations:
-        boxes_by_batch_id[allocation.batch_id] += allocation.boxes
+        quantity_by_batch_id[allocation.batch_id] += allocation.quantity
 
     locked_batches = {
         batch.id: batch
         for batch in (
             InventoryBatch.objects
             .select_for_update()
-            .filter(id__in=boxes_by_batch_id.keys())
+            .filter(id__in=quantity_by_batch_id.keys())
             .order_by("id")
         )
     }
 
-    for batch_id, boxes_to_pick in boxes_by_batch_id.items():
+    for batch_id, quantity_to_pick in quantity_by_batch_id.items():
         batch = locked_batches[batch_id]
-        batch.pick(boxes=boxes_to_pick)
+        batch.pick(quantity=quantity_to_pick)
 
     for allocation in allocations:
         allocation.consume()
@@ -224,11 +218,6 @@ def deliver_order(*, order: Order, user=None) -> Order:
     return order
 
 
-# ==============================================================================
-# private/helpers - order creation/editing
-# ==============================================================================
-
-
 def _create_draft_order(
     *,
     customer: Customer,
@@ -259,9 +248,9 @@ def _create_order_lines(
             OrderLine(
                 order=order,
                 product=line.product,
-                quantity=line.boxes,
-                unit=OrderLine.Unit.BOXES,
-                quantity_in_boxes=line.boxes,
+                quantity=line.quantity,
+                unit=OrderLine.Unit.STOCK_UNIT,
+                quantity_in_units=line.quantity,
             )
             for line in normalized_lines
         ]
@@ -272,7 +261,7 @@ def _normalize_order_lines(
     *,
     lines: Iterable[OrderLineInput],
 ) -> list[NormalizedOrderLine]:
-    """Normalize input lines to boxes and merge duplicate products.
+    """Normalize input lines to stock units and merge duplicate products.
 
     The database should contain one OrderLine per product per order. This function
     enforces that rule in the service layer before the unique database constraint
@@ -284,37 +273,32 @@ def _normalize_order_lines(
     if not line_inputs:
         return []
 
-    boxes_by_product_id: dict[int, int] = defaultdict(int)
+    quantity_by_product_id: dict[int, int] = defaultdict(int)
     products_by_id: dict[int, Product] = {}
 
     for line_input in line_inputs:
         product = Product.objects.get(pk=line_input.resolve_product_id())
         unit = normalize_order_unit(str(line_input.unit))
 
-        boxes = quantity_to_boxes(
+        quantity = quantity_to_units(
             product=product,
             quantity=line_input.quantity,
             unit=unit,
         )
 
-        if boxes <= 0:
+        if quantity <= 0:
             raise InvalidOrderOperation("order line quantity must be positive")
 
-        boxes_by_product_id[product.id] += boxes
+        quantity_by_product_id[product.id] += quantity
         products_by_id[product.id] = product
 
     return [
         NormalizedOrderLine(
             product=products_by_id[product_id],
-            boxes=boxes,
+            quantity=quantity,
         )
-        for product_id, boxes in boxes_by_product_id.items()
+        for product_id, quantity in quantity_by_product_id.items()
     ]
-
-
-# ==============================================================================
-# private/helpers - reservation workflow
-# ==============================================================================
 
 
 def _place_order(*, order: Order, user=None) -> Order:
@@ -341,19 +325,19 @@ def _reserve_order(*, order: Order) -> None:
     if not lines:
         raise InvalidOrderOperation("order must contain at least one line")
 
-    reserved_boxes_by_batch_id: dict[int, int] = {}
+    reserved_quantity_by_batch_id: dict[int, int] = {}
     new_allocations: list[Allocation] = []
 
     for line in lines:
         _load_existing_reservations_for_line(
             line=line,
-            reserved_boxes_by_batch_id=reserved_boxes_by_batch_id,
+            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
         )
 
         picks = plan_batch_picks(
             product=line.product,
-            boxes=line.quantity_in_boxes,
-            reserved_boxes_by_batch_id=reserved_boxes_by_batch_id,
+            quantity=line.quantity_in_units,
+            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
         )
 
         for pick in picks:
@@ -362,7 +346,7 @@ def _reserve_order(*, order: Order) -> None:
                     order=order,
                     order_line=line,
                     batch=pick.batch,
-                    boxes=pick.boxes,
+                    quantity=pick.quantity,
                 )
             )
 
@@ -372,9 +356,9 @@ def _reserve_order(*, order: Order) -> None:
 def _load_existing_reservations_for_line(
     *,
     line: OrderLine,
-    reserved_boxes_by_batch_id: dict[int, int],
+    reserved_quantity_by_batch_id: dict[int, int],
 ) -> None:
-    """Load existing reserved boxes for candidate batches.
+    """Load existing reserved quantity for candidate batches.
 
     Candidate batches are locked before reading existing reservations. This makes
     reservation planning safer under concurrent order placement.
@@ -386,7 +370,7 @@ def _load_existing_reservations_for_line(
         .filter(
             product=line.product,
             status=InventoryBatch.Status.ACTIVE,
-            boxes__gt=0,
+            quantity__gt=0,
         )
         .values_list("id", flat=True)
     )
@@ -394,18 +378,18 @@ def _load_existing_reservations_for_line(
     missing_batch_ids = [
         batch_id
         for batch_id in candidate_batch_ids
-        if batch_id not in reserved_boxes_by_batch_id
+        if batch_id not in reserved_quantity_by_batch_id
     ]
 
     if not missing_batch_ids:
         return
 
-    reserved_boxes_by_batch_id.update(
-        _reserved_boxes_by_batch_id(batch_ids=missing_batch_ids)
+    reserved_quantity_by_batch_id.update(
+        _reserved_quantity_by_batch_id(batch_ids=missing_batch_ids)
     )
 
 
-def _reserved_boxes_by_batch_id(
+def _reserved_quantity_by_batch_id(
     *,
     batch_ids: Iterable[int] | None = None,
 ) -> dict[int, int]:
@@ -425,18 +409,13 @@ def _reserved_boxes_by_batch_id(
     rows = (
         query
         .values("batch_id")
-        .annotate(total=Sum("boxes"))
+        .annotate(total=Sum("quantity"))
     )
 
     return {
         row["batch_id"]: row["total"] or 0
         for row in rows
     }
-
-
-# ==============================================================================
-# private/helpers - allocation cleanup
-# ==============================================================================
 
 
 def _cancel_reserved_allocations(*, order: Order) -> None:

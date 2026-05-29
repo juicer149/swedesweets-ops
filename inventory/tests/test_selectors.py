@@ -12,8 +12,8 @@ from inventory.expiry import (
 )
 from inventory.models import InventoryBatch
 from inventory.selectors import (
-    available_boxes_by_product,
-    available_boxes_by_product_id,
+    available_quantity_by_product,
+    available_quantity_by_product_id,
     count_expiring_batches,
     count_low_stock_products,
     list_available_batches,
@@ -23,7 +23,7 @@ from inventory.selectors import (
     list_depleted_batches,
     list_expiring_batch_rows_for_dashboard,
     list_low_stock_products_for_dashboard,
-    physical_boxes_by_product,
+    physical_quantity_by_product,
 )
 from inventory.tests.conftest import TODAY
 
@@ -75,14 +75,14 @@ def test_list_batches_defaults_to_best_before_order(apple, batch_factory):
     batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=50,
+        quantity=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
     )
@@ -97,16 +97,16 @@ def test_list_batches_filters_by_valid_status(apple, batch_factory):
     active_batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
     )
     depleted_batch = batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=1,
+        quantity=1,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
     )
-    depleted_batch.pick(boxes=1)
+    depleted_batch.pick(quantity=1)
 
     batches = list(list_batches(status=InventoryBatch.Status.DEPLETED))
 
@@ -119,7 +119,7 @@ def test_list_batch_rows_adds_expiry_info(apple, batch_factory):
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
         best_before=TODAY + timedelta(days=EXPIRY_CRITICAL_DAYS),
     )
 
@@ -131,7 +131,7 @@ def test_list_batch_rows_adds_expiry_info(apple, batch_factory):
 
 
 @pytest.mark.django_db
-def test_physical_boxes_by_product_sums_only_active_available_batches(
+def test_physical_quantity_by_product_sums_only_active_available_batches(
     apple,
     banana,
     batch_factory,
@@ -139,39 +139,39 @@ def test_physical_boxes_by_product_sums_only_active_available_batches(
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
     )
     depleted = batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=1,
+        quantity=1,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
     )
-    depleted.pick(boxes=1)
+    depleted.pick(quantity=1)
     batch_factory(
         product=banana,
         batch_id="B-001",
-        boxes=80,
+        quantity=80,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
     )
 
-    rows = physical_boxes_by_product()
-    boxes_by_sku = {row.sku: row.boxes for row in rows}
+    rows = physical_quantity_by_product()
+    quantity_by_sku = {row.sku: row.quantity for row in rows}
 
-    assert boxes_by_sku == {
+    assert quantity_by_sku == {
         "GENERIC-APPLE-5000": 100,
         "GENERIC-BANANA-6000": 80,
     }
 
 
 @pytest.mark.django_db
-def test_available_boxes_by_product_matches_physical_stock_without_reservations(
+def test_available_quantity_by_product_matches_physical_stock_without_reservations(
     stocked_inventory,
 ):
-    rows = available_boxes_by_product()
-    available_by_sku = {row.sku: row.available_boxes for row in rows}
+    rows = available_quantity_by_product()
+    available_by_sku = {row.sku: row.available_quantity for row in rows}
 
     assert available_by_sku == {
         "GENERIC-APPLE-5000": 150,
@@ -180,8 +180,8 @@ def test_available_boxes_by_product_matches_physical_stock_without_reservations(
 
 
 @pytest.mark.django_db
-def test_available_boxes_by_product_id_returns_mapping(stocked_inventory, apple, banana):
-    available = available_boxes_by_product_id()
+def test_available_quantity_by_product_id_returns_mapping(stocked_inventory, apple, banana):
+    available = available_quantity_by_product_id()
 
     assert available == {
         apple.id: 150,
@@ -198,21 +198,21 @@ def test_list_available_batches_for_product_returns_active_batches_in_fefo_order
     batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=50,
+        quantity=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
     )
     batch_factory(
         product=banana,
         batch_id="B-001",
-        boxes=80,
+        quantity=80,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
     )
@@ -231,21 +231,21 @@ def test_list_available_batches_returns_active_batches_ordered_by_product_and_fe
     batch_factory(
         product=banana,
         batch_id="B-001",
-        boxes=80,
+        quantity=80,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
     )
     batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=50,
+        quantity=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
     )
@@ -264,17 +264,17 @@ def test_list_depleted_batches_returns_only_depleted_batches(apple, batch_factor
     active_batch = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
     )
     depleted_batch = batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=1,
+        quantity=1,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
     )
 
-    depleted_batch.pick(boxes=1)
+    depleted_batch.pick(quantity=1)
 
     batches = list_depleted_batches()
 
@@ -292,21 +292,21 @@ def test_list_expiring_batch_rows_for_dashboard_limits_rows(apple, batch_factory
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=10,
+        quantity=10,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
     )
     batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=10,
+        quantity=10,
         best_before=date(2026, 6, 2),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-003",
-        boxes=10,
+        quantity=10,
         best_before=date(2026, 6, 3),
         location="Shelf A3",
     )
@@ -321,21 +321,21 @@ def test_count_expiring_batches_counts_active_available_batches(apple, batch_fac
     active = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=10,
+        quantity=10,
         best_before=TODAY + timedelta(days=EXPIRY_SOON_DAYS),
     )
     depleted = batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=1,
+        quantity=1,
         best_before=TODAY + timedelta(days=EXPIRY_SOON_DAYS),
         location="Shelf A2",
     )
-    depleted.pick(boxes=1)
+    depleted.pick(quantity=1)
     closed = batch_factory(
         product=apple,
         batch_id="A-003",
-        boxes=10,
+        quantity=10,
         best_before=TODAY + timedelta(days=EXPIRY_SOON_DAYS),
         location="Shelf A3",
     )
@@ -356,12 +356,12 @@ def test_list_low_stock_products_for_dashboard_returns_low_stock_rows(
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=5,
+        quantity=5,
     )
     batch_factory(
         product=banana,
         batch_id="B-001",
-        boxes=20,
+        quantity=20,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
     )
@@ -380,12 +380,12 @@ def test_count_low_stock_products_counts_low_stock_rows(
     batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=5,
+        quantity=5,
     )
     batch_factory(
         product=banana,
         batch_id="B-001",
-        boxes=20,
+        quantity=20,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
     )

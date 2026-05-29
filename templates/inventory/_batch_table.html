@@ -1,5 +1,5 @@
-<div class="table-card">
-  <table class="data-table">
+<div class="table-card inventory-table-card">
+  <table class="data-table inventory-batch-table">
     <thead>
       <tr>
         {% include "includes/table/sort_headers.html" %}
@@ -22,7 +22,17 @@
             </span>
           </th>
 
-          <td>{{ row.batch.product.display_name }}</td>
+          <td>
+            <span class="inventory-product-cell">
+              <span class="inventory-product-cell__name">
+                {{ row.batch.product.display_name }}
+              </span>
+
+              <span class="inventory-product-cell__meta">
+                {{ row.batch.product.weight_label }}
+              </span>
+            </span>
+          </td>
 
           <td>
             <span class="expiry-text expiry-text--{{ row.expiry.state }}">
@@ -31,7 +41,9 @@
           </td>
 
           <td class="numeric-cell">
-            <strong>{{ row.batch.boxes }}</strong>
+            <strong class="{{ row.quantity.css_class }}">
+              {{ row.quantity_label }}
+            </strong>
           </td>
 
           <td>

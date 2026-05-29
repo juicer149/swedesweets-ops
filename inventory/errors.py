@@ -20,17 +20,17 @@ class InsufficientStockError(InvalidStockOperation):
         self,
         *,
         product_name: str,
-        requested_boxes: int,
-        available_boxes: int,
-        missing_boxes: int,
+        requested_quantity: int,
+        available_quantity: int,
+        missing_quantity: int,
     ) -> None:
         self.product_name = product_name
-        self.requested_boxes = requested_boxes
-        self.available_boxes = available_boxes
-        self.missing_boxes = missing_boxes
+        self.requested_quantity = requested_quantity
+        self.available_quantity = available_quantity
+        self.missing_quantity = missing_quantity
 
-        box_label = "box" if available_boxes == 1 else "boxes"
+        unit_label = "unit" if available_quantity == 1 else "units"
 
         super().__init__(
-            f"Only {available_boxes} {box_label} available for {product_name}."
+            f"Only {available_quantity} {unit_label} available for {product_name}."
         )

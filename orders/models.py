@@ -4,8 +4,8 @@ Order domain model.
 Order owns the order lifecycle.
 
 OrderLine owns the product quantity requested by the order. For operational
-simplicity, services normalize input quantities to boxes and store one order line
-per product per order.
+simplicity, services normalize input quantities to whole product stock units and
+store one order line per product per order.
 
 Allocation owns batch-level reservations for placed orders.
 """
@@ -225,7 +225,7 @@ class Order(models.Model):
 
 class OrderLine(models.Model):
     class Unit(models.TextChoices):
-        BOXES = "boxes", "Boxes"
+        STOCK_UNIT = "stock_unit", "Stock unit"
         KG = "kg", "Kg"
         GRAMS = "grams", "Grams"
 
@@ -241,7 +241,7 @@ class OrderLine(models.Model):
     )
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
     unit = models.CharField(max_length=20, choices=Unit.choices)
-    quantity_in_boxes = models.PositiveIntegerField()
+    quantity_in_units = models.PositiveIntegerField()
 
     class Meta:
         indexes = [
@@ -258,8 +258,8 @@ class OrderLine(models.Model):
                 name="orderline_quantity_gt_0",
             ),
             models.CheckConstraint(
-                condition=models.Q(quantity_in_boxes__gt=0),
-                name="orderline_quantity_in_boxes_gt_0",
+                condition=models.Q(quantity_in_units__gt=0),
+                name="orderline_quantity_in_units_gt_0",
             ),
         ]
 
@@ -309,7 +309,7 @@ class Allocation(models.Model):
         on_delete=models.PROTECT,
         related_name="allocations",
     )
-    boxes = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField()
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -324,8 +324,8 @@ class Allocation(models.Model):
         ]
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(boxes__gt=0),
-                name="allocation_boxes_gt_0",
+                condition=models.Q(quantity__gt=0),
+                name="allocation_quantity_gt_0",
             ),
         ]
 
@@ -351,4 +351,4 @@ class Allocation(models.Model):
         self._transition_to(self.Status.CANCELLED)
 
     def __str__(self) -> str:
-        return f"{self.order_id} -> {self.batch_id}: {self.boxes}"
+        return f"{self.order_id} -> {self.batch_id}: {self.quantity}"

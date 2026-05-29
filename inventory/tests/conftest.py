@@ -21,7 +21,7 @@ def apple() -> Product:
     return product_factory(
         brand="Generic",
         name="Apple",
-        weight_per_box=5000,
+        weight_per_unit=5000,
     )
 
 
@@ -30,7 +30,7 @@ def banana() -> Product:
     return product_factory(
         brand="Generic",
         name="Banana",
-        weight_per_box=6000,
+        weight_per_unit=6000,
     )
 
 
@@ -39,7 +39,7 @@ def inactive_product() -> Product:
     product = product_factory(
         brand="Generic",
         name="Inactive Product",
-        weight_per_box=7000,
+        weight_per_unit=7000,
     )
     product.active = False
     product.save(update_fields=["active"])
@@ -52,14 +52,14 @@ def batch_factory() -> BatchFactory:
         *,
         product: Product,
         batch_id: str = "A-001",
-        boxes: int = 10,
+        quantity: int = 10,
         best_before: date | None = None,
         location: str = "Shelf A1",
     ) -> InventoryBatch:
         return make_batch(
             product=product,
             batch_id=batch_id,
-            boxes=boxes,
+            quantity=quantity,
             best_before=best_before,
             location=location,
             today=TODAY,
@@ -77,21 +77,21 @@ def stocked_inventory(
     apple_early = batch_factory(
         product=apple,
         batch_id="A-001",
-        boxes=100,
+        quantity=100,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
     )
     apple_late = batch_factory(
         product=apple,
         batch_id="A-002",
-        boxes=50,
+        quantity=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
     )
     banana_batch = batch_factory(
         product=banana,
         batch_id="B-001",
-        boxes=80,
+        quantity=80,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
     )

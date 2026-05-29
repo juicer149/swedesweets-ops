@@ -26,9 +26,9 @@ from orders.presentation import (
     build_order_status_presentation,
     maps_directions_href,
     order_action_link_class,
-    order_boxes_label,
     order_card_class,
     order_lifecycle_label,
+    order_quantity_label,
 )
 
 
@@ -37,6 +37,7 @@ class OrderPageRow:
     order: Order
     status: StatusPresentation
     detail_href: str
+    total_quantity: int
     card: UiCard
 
 
@@ -47,11 +48,13 @@ def build_order_page_rows(orders: list[Order]) -> list[OrderPageRow]:
 def build_order_page_row(order: Order) -> OrderPageRow:
     status = _order_status(order)
     detail_href = _order_detail_href(order)
+    total_quantity = getattr(order, "total_quantity", 0)
 
     return OrderPageRow(
         order=order,
         status=status,
         detail_href=detail_href,
+        total_quantity=total_quantity,
         card=_build_order_card(
             order=order,
             status=status,
@@ -101,7 +104,7 @@ def _build_customer_row(order: Order) -> UiCardRow:
 def _build_meta_row(order: Order) -> UiCardRow:
     return UiCardRow(
         center=UiText(
-            text=f"{order_lifecycle_label(order)} · {order_boxes_label(order)}",
+            text=f"{order_lifecycle_label(order)} · {order_quantity_label(order)}",
             css_class=ORDER_META_CLASS,
         ),
     )

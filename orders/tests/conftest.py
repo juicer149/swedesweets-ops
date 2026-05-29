@@ -18,7 +18,7 @@ def apple() -> Product:
     result = create_product(
         brand="Generic",
         name="Apple",
-        weight_per_box=5000,
+        weight_per_unit=5000,
         internal_number=1,
     )
     return result.item
@@ -29,7 +29,7 @@ def banana() -> Product:
     result = create_product(
         brand="Generic",
         name="Banana",
-        weight_per_box=6000,
+        weight_per_unit=6000,
         internal_number=2,
     )
     return result.item
@@ -40,7 +40,7 @@ def inactive_product() -> Product:
     result = create_product(
         brand="Generic",
         name="Inactive",
-        weight_per_box=7000,
+        weight_per_unit=7000,
         internal_number=3,
     )
     product = result.item
@@ -78,7 +78,7 @@ def stocked_inventory(apple: Product, banana: Product):
     apple_early = create_batch(
         batch_id="A-001",
         product=apple,
-        boxes=100,
+        quantity=100,
         best_before=date(2026, 6, 1),
         location="Shelf A1",
         today=TODAY,
@@ -86,7 +86,7 @@ def stocked_inventory(apple: Product, banana: Product):
     apple_late = create_batch(
         batch_id="A-002",
         product=apple,
-        boxes=50,
+        quantity=50,
         best_before=date(2026, 7, 1),
         location="Shelf A2",
         today=TODAY,
@@ -94,7 +94,7 @@ def stocked_inventory(apple: Product, banana: Product):
     banana_batch = create_batch(
         batch_id="B-001",
         product=banana,
-        boxes=80,
+        quantity=80,
         best_before=date(2026, 6, 15),
         location="Shelf B1",
         today=TODAY,

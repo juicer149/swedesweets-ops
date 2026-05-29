@@ -17,6 +17,7 @@ from customers.models import Customer
 from customers.selectors import CustomerOrderSummary
 from orders.mini_cards import build_customer_order_mini_card
 from orders.models import Order
+from orders.presentation import quantity_label
 
 
 CUSTOMER_EDIT_LABEL = "Edit customer"
@@ -28,7 +29,8 @@ class CustomerOrderRow:
     order_href: str
     status: str
     created_at: object
-    boxes: int
+    quantity: int
+    quantity_label: str
     card: UiCard
 
 
@@ -132,7 +134,7 @@ def _build_order_rows(orders: list[Order]) -> list[CustomerOrderRow]:
 
     for order in orders:
         order_href = reverse("orders:detail", kwargs={"order_id": order.id})
-        boxes = sum(line.quantity_in_boxes for line in order.lines.all())
+        quantity = sum(line.quantity_in_units for line in order.lines.all())
 
         rows.append(
             CustomerOrderRow(
@@ -140,11 +142,12 @@ def _build_order_rows(orders: list[Order]) -> list[CustomerOrderRow]:
                 order_href=order_href,
                 status=order.get_status_display(),
                 created_at=order.created_at,
-                boxes=boxes,
+                quantity=quantity,
+                quantity_label=quantity_label(quantity),
                 card=build_customer_order_mini_card(
                     order=order,
                     order_href=order_href,
-                    boxes=boxes,
+                    quantity=quantity,
                 ),
             )
         )
