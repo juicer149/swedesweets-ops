@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2025-12-01_super_u_argentiere_2025-0003",
+      "invoice_number": "2025-0003",
+      "order_date": "2025-12-01",
+      "customer_key": "super_u_argentiere",
+      "customer_name": "Super U Argentiere",
+      "currency": "EUR",
+      "total_amount": "734.00",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Historical invoice imported from manually pasted invoice text."
+      },
+      "items": [
+        {
+          "internal_number": 10,
+          "invoice_name": "TUTTI FRUTTI",
+          "sold_quantity": 6.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "79.20"
+        },
+        {
+          "internal_number": 8,
+          "invoice_name": "DJUNGELVRÅL",
+          "sold_quantity": 4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "48.00"
+        },
+        {
+          "internal_number": 42,
+          "invoice_name": "FRUTTY PEAR OVALS",
+          "sold_quantity": 5.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "67.20"
+        },
+        {
+          "internal_number": 44,
+          "invoice_name": "BANANA TOFFEE OVALS",
+          "sold_quantity": 5.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "69.60"
+        },
+        {
+          "internal_number": 14,
+          "invoice_name": "MINI COLA LAKRITS FLASKA",
+          "sold_quantity": 9,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "108.00"
+        },
+        {
+          "internal_number": 31,
+          "invoice_name": "CHOKLADBANANER",
+          "sold_quantity": 3.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "43.20"
+        },
+        {
+          "internal_number": 27,
+          "invoice_name": "PÄRLSOCKERBOLLAR",
+          "sold_quantity": 5.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "64.80"
+        },
+        {
+          "internal_number": 13,
+          "invoice_name": "POLLY",
+          "sold_quantity": 4.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "54.00"
+        }
+      ],
+      "non_inventory_items": [
+        {
+          "name": "SACHETS",
+          "quantity": 1250,
+          "unit": "piece",
+          "unit_price": "0.08",
+          "line_total": "100.00"
+        },
+        {
+          "name": "Frai de livraison",
+          "quantity": 1,
+          "unit": "piece",
+          "unit_price": "100.00",
+          "line_total": "100.00"
+        }
+      ],
+      "unmapped_items": []
+    }
+  ]
+}

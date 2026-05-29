@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2026-04-17_super_u_les_houches_2025-0006",
+      "invoice_number": "2025-0006",
+      "order_date": "2026-04-17",
+      "customer_key": "super_u_les_houches",
+      "customer_name": "Super U Les Houches",
+      "currency": "EUR",
+      "total_amount": "453.00",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Historical invoice imported from manually pasted invoice text."
+      },
+      "items": [
+        {
+          "internal_number": 48,
+          "invoice_name": "BUBBLIZ",
+          "sold_quantity": 7.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "90.00"
+        },
+        {
+          "internal_number": 56,
+          "invoice_name": "SURA KÖRSBÄR",
+          "sold_quantity": 6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "72.00"
+        },
+        {
+          "internal_number": 17,
+          "invoice_name": "SYRLIGA SNÄCKOR",
+          "sold_quantity": 6.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "81.60"
+        },
+        {
+          "internal_number": 44,
+          "invoice_name": "BANANA TOFFEE OVALS",
+          "sold_quantity": 8.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "100.80"
+        },
+        {
+          "internal_number": 1,
+          "invoice_name": "RAMBO TWIST",
+          "sold_quantity": 6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "72.00"
+        },
+        {
+          "internal_number": 70,
+          "invoice_name": "DIPP RANCH",
+          "sold_quantity": 16,
+          "sold_unit": "piece",
+          "unit_price": "1.35",
+          "line_total": "21.60"
+        }
+      ],
+      "non_inventory_items": [
+        {
+          "name": "Frai de livraison",
+          "quantity": 1,
+          "unit": "piece",
+          "unit_price": "15.00",
+          "line_total": "15.00"
+        }
+      ],
+      "unmapped_items": []
+    }
+  ]
+}

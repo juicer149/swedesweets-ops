@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "receipts": [
+    {
+      "source": {
+        "type": "invoice",
+        "invoice_number": "419631",
+        "supplier_order_number": "577264",
+        "invoice_date": "2026-03-24",
+        "delivery_date": "2026-03-24",
+        "received_date": "2026-03-24",
+        "source_file": "invoice_419631_order_577264_2026-03-24.pdf",
+        "notes": "Invoice text also contains supplier order 577277 for part of the delivery."
+      },
+      "supplier": {
+        "name": "Er-T Godis AB",
+        "organization_number": "556296-6118"
+      },
+      "items": [
+        {
+          "internal_number": 46,
+          "quantity": 10,
+          "invoice_code": "BUB5450217145",
+          "invoice_name": "COOL COLA SKALLE 3,0KG",
+          "location": "G3",
+          "best_before": "2027-08-31"
+        },
+        {
+          "internal_number": 49,
+          "quantity": 10,
+          "invoice_code": "BUB5969055031",
+          "invoice_name": "RASPBERRY SALTY LICORICE SKALLE FOAM 2,8KG",
+          "location": "G4",
+          "best_before": "2027-04-18"
+        },
+        {
+          "internal_number": 43,
+          "quantity": 10,
+          "invoice_code": "BUB5969055032",
+          "invoice_name": "TUTTI FRUTTI DIAMOND 2,6KG",
+          "location": "G5",
+          "best_before": "2027-05-07"
+        },
+        {
+          "internal_number": 3,
+          "quantity": 10,
+          "invoice_code": "BUB5969055034",
+          "invoice_name": "RASPBERRY SALTY LICORICE SKALLE 4KG",
+          "location": "G6",
+          "best_before": "2027-04-18"
+        },
+        {
+          "internal_number": 44,
+          "quantity": 10,
+          "invoice_code": "BUB5969055155",
+          "invoice_name": "BANANA TOFFEE OVALS 2,8 KG",
+          "location": "G7",
+          "best_before": "2027-04-26"
+        },
+        {
+          "internal_number": 41,
+          "quantity": 10,
+          "invoice_code": "BUB5969055156",
+          "invoice_name": "LEMON RASPBERRY SKALLE 3,2KG",
+          "location": "G8",
+          "best_before": "2027-05-31"
+        },
+        {
+          "internal_number": 50,
+          "quantity": 10,
+          "invoice_code": "BUB5969055157",
+          "invoice_name": "WILD BERRY POMEGRANATE OVALS 2,8 KG",
+          "location": "G9",
+          "best_before": "2027-09-10"
+        },
+        {
+          "internal_number": 42,
+          "quantity": 10,
+          "invoice_code": "BUB5969055159",
+          "invoice_name": "FRUITY PEAR OVALS MEDIUM 2,6KG",
+          "location": "H1",
+          "best_before": "2027-05-02"
+        },
+        {
+          "internal_number": 51,
+          "quantity": 10,
+          "invoice_code": "BUB5969055160",
+          "invoice_name": "BUBBLEGUM SKALLE 2,6 KG",
+          "location": "H2",
+          "best_before": "2027-08-31"
+        },
+        {
+          "internal_number": 52,
+          "quantity": 20,
+          "invoice_code": "ARO7303",
+          "invoice_name": "AROMA HALLONBÅTAR BIB",
+          "location": "H3",
+          "best_before": "2027-07-22"
+        },
+        {
+          "internal_number": 1,
+          "quantity": 20,
+          "invoice_code": "CAP5248",
+          "invoice_name": "RAMBO TWIST",
+          "location": "H4",
+          "best_before": "2027-11-27"
+        },
+        {
+          "internal_number": 53,
+          "quantity": 15,
+          "invoice_code": "CARL35235",
+          "invoice_name": "PASTELL MINT 5KG BIB LÖSVIKT",
+          "location": "H5",
+          "best_before": "2027-08-14"
+        },
+        {
+          "internal_number": 11,
+          "quantity": 20,
+          "invoice_code": "CLO1009322",
+          "invoice_name": "LONKA FUDGE CARAMEL SEA SALT",
+          "location": "H6",
+          "best_before": "2027-01-03"
+        },
+        {
+          "internal_number": 60,
+          "quantity": 210,
+          "invoice_code": "EST10646",
+          "invoice_name": "SOURCREAM ONION CHIPS 175 GR 21ST",
+          "location": "H7",
+          "best_before": "2026-08-03"
+        },
+        {
+          "internal_number": 61,
+          "quantity": 210,
+          "invoice_code": "EST10648",
+          "invoice_name": "DILLCHIPS 175 GR 21ST",
+          "location": "H8",
+          "best_before": "2026-06-09"
+        },
+        {
+          "internal_number": 62,
+          "quantity": 210,
+          "invoice_code": "EST10650",
+          "invoice_name": "GRILLCHIPS 175 GR 21ST",
+          "location": "H9",
+          "best_before": "2026-07-27"
+        },
+        {
+          "internal_number": 63,
+          "quantity": 100,
+          "invoice_code": "EST10834",
+          "invoice_name": "VÄSTKUSTCHIPS HAVSSALT RÄFFLADE 180G",
+          "location": "I1",
+          "best_before": "2026-08-13"
+        },
+        {
+          "internal_number": 66,
+          "quantity": 180,
+          "invoice_code": "EST13048",
+          "invoice_name": "DIPMIX HOLIDAY 24G",
+          "location": "I2",
+          "best_before": "2027-07-19"
+        },
+        {
+          "internal_number": 67,
+          "quantity": 180,
+          "invoice_code": "EST13051",
+          "invoice_name": "DIPMIX SOURCREAM 24G",
+          "location": "I3",
+          "best_before": "2027-05-20"
+        },
+        {
+          "internal_number": 4,
+          "quantity": 20,
+          "invoice_code": "FAZ403124",
+          "invoice_name": "TUTTI FRUTTI SOUR LÖSVIKT",
+          "location": "I4",
+          "best_before": "2026-12-07"
+        },
+        {
+          "internal_number": 10,
+          "quantity": 20,
+          "invoice_code": "FAZ403831",
+          "invoice_name": "TUTTI FRUTTI ORIGINAL LÖSVIKT",
+          "location": "I5",
+          "best_before": "2026-12-09"
+        },
+        {
+          "internal_number": 54,
+          "quantity": 20,
+          "invoice_code": "FRA301",
+          "invoice_name": "CHOKLAD MINIGRISAR HALLON",
+          "location": "I6",
+          "best_before": "2027-01-19"
+        },
+        {
+          "internal_number": 33,
+          "quantity": 20,
+          "invoice_code": "FRA314",
+          "invoice_name": "CHOKLADSVAMP FRANSSON",
+          "location": "I7",
+          "best_before": "2027-02-26"
+        },
+        {
+          "internal_number": 31,
+          "quantity": 20,
+          "invoice_code": "FRA316",
+          "invoice_name": "CHOKLADBANAN STOR",
+          "location": "I8",
+          "best_before": "2027-02-09"
+        },
+        {
+          "internal_number": 55,
+          "quantity": 15,
+          "invoice_code": "GRA5610005",
+          "invoice_name": "PUNCHPRALINER 3,5 KG KRT",
+          "location": "I9",
+          "best_before": "2027-02-25"
+        },
+        {
+          "internal_number": 56,
+          "quantity": 20,
+          "invoice_code": "GSD38114",
+          "invoice_name": "SURA KÖRSBÄR 3KG",
+          "location": "J1",
+          "best_before": "2027-06-30"
+        },
+        {
+          "internal_number": 57,
+          "quantity": 20,
+          "invoice_code": "MAL1009811",
+          "invoice_name": "SUGAR STRAWBERRYS 3 KG LÖSVIKT",
+          "location": "J2",
+          "best_before": "2027-01-14"
+        },
+        {
+          "internal_number": 27,
+          "quantity": 20,
+          "invoice_code": "MOR1101",
+          "invoice_name": "MORMOR LISAS PÄRLSOCKERBOLL 1,8KG",
+          "location": "J3",
+          "best_before": "2026-09-04"
+        },
+        {
+          "internal_number": 28,
+          "quantity": 20,
+          "invoice_code": "MOR1119",
+          "invoice_name": "MORMOR LISAS COCOSBOLL 1,6KG",
+          "location": "J4",
+          "best_before": "2027-02-19"
+        },
+        {
+          "internal_number": 68,
+          "quantity": 160,
+          "invoice_code": "OLW100440",
+          "invoice_name": "DIPMIX DILL & GRÄSLÖK 24G",
+          "location": "J5",
+          "best_before": "2027-04-23"
+        },
+        {
+          "internal_number": 69,
+          "quantity": 160,
+          "invoice_code": "OLW100443",
+          "invoice_name": "DIPMIX VITLÖK 21G",
+          "location": "J6",
+          "best_before": "2027-05-12"
+        },
+        {
+          "internal_number": 70,
+          "quantity": 160,
+          "invoice_code": "OLW100444",
+          "invoice_name": "DIPMIX RANCH 24G",
+          "location": "J7",
+          "best_before": "2027-05-08"
+        },
+        {
+          "internal_number": 71,
+          "quantity": 20,
+          "invoice_code": "SKÅ16101",
+          "invoice_name": "MINIDYNAMIT SUR JORDGUBB 1KG",
+          "location": "J8",
+          "best_before": "2027-01-31"
+        },
+        {
+          "internal_number": 58,
+          "quantity": 20,
+          "invoice_code": "SKÅ5115",
+          "invoice_name": "SURA COLANAPPAR SKÅNE 1,8KG",
+          "location": "J9",
+          "best_before": "2027-05-31"
+        }
+      ]
+    }
+  ]
+}

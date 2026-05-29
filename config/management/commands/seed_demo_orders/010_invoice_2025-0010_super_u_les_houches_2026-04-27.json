@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2026-04-27_super_u_les_houches_2025-0010",
+      "invoice_number": "2025-0010",
+      "order_date": "2026-04-27",
+      "customer_key": "super_u_les_houches",
+      "customer_name": "Super U Les Houches",
+      "currency": "EUR",
+      "total_amount": "1703.80",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Invoice text includes a stray 'Total 22' before final amount; preserved final total only."
+      },
+      "items": [
+        {
+          "internal_number": 1,
+          "invoice_name": "RAMBO TWIST",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 2,
+          "invoice_name": "JULTOMTESKUM",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 34,
+          "invoice_name": "SKUMBANANER",
+          "sold_quantity": 6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "72.00"
+        },
+        {
+          "internal_number": 42,
+          "invoice_name": "FRUITYPEAR OVALS",
+          "sold_quantity": 7.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "93.60"
+        },
+        {
+          "internal_number": 21,
+          "invoice_name": "TUTTIFRUTTI SYRLIG MELON",
+          "sold_quantity": 8.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "100.80"
+        },
+        {
+          "internal_number": 4,
+          "invoice_name": "TUTTIFRUTTI SOUR",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 37,
+          "invoice_name": "SOCKERBITAR",
+          "sold_quantity": 3.28,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "39.36"
+        },
+        {
+          "internal_number": 15,
+          "invoice_name": "SOCKERBITAR JORDGUBB",
+          "sold_quantity": 3.28,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "39.36"
+        },
+        {
+          "internal_number": 46,
+          "invoice_name": "COOL COLA SKALLE",
+          "sold_quantity": 9,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "108.00"
+        },
+        {
+          "internal_number": 39,
+          "invoice_name": "CITRON LAKRITS SKRUV",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 11,
+          "invoice_name": "LONKA FUDGE CAR SEASALT",
+          "sold_quantity": 9.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "117.00"
+        },
+        {
+          "internal_number": 44,
+          "invoice_name": "BANANA TOFFEE OVALS",
+          "sold_quantity": 8.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "100.80"
+        },
+        {
+          "internal_number": 9,
+          "invoice_name": "GELEHALLON",
+          "sold_quantity": 12,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "144.00"
+        },
+        {
+          "internal_number": 17,
+          "invoice_name": "SYRLIGA SNÄCKOR",
+          "sold_quantity": 6.84,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "82.08"
+        },
+        {
+          "internal_number": 41,
+          "invoice_name": "LEMON RASBERRY SKALLE",
+          "sold_quantity": 9.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "115.20"
+        },
+        {
+          "internal_number": 10,
+          "invoice_name": "TUTTI FRUTTI",
+          "sold_quantity": 8.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "105.60"
+        },
+        {
+          "internal_number": 31,
+          "invoice_name": "CHOKLAD BANAN STOR",
+          "sold_quantity": 6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "72.00"
+        },
+        {
+          "internal_number": 48,
+          "invoice_name": "BUBBLIZ",
+          "sold_quantity": 7.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "90.00"
+        }
+      ],
+      "non_inventory_items": [
+        {
+          "name": "LIVRAISON",
+          "quantity": 1,
+          "unit": "piece",
+          "unit_price": "40.00",
+          "line_total": "40.00"
+        }
+      ],
+      "unmapped_items": []
+    }
+  ]
+}

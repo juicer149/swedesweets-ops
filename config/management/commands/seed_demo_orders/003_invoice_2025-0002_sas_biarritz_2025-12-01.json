@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2025-12-01_sas_biarritz_2025-0002",
+      "invoice_number": "2025-0002",
+      "order_date": "2025-12-01",
+      "customer_key": "creative_studio_66",
+      "customer_name": "SAS merci bcp / Creative Studio 66",
+      "currency": "EUR",
+      "total_amount": "182.50",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Historical invoice imported from manually pasted invoice text."
+      },
+      "items": [
+        {
+          "internal_number": 63,
+          "invoice_name": "VÄSTKUST CHIPS",
+          "sold_quantity": 10,
+          "sold_unit": "piece",
+          "unit_price": "2.50",
+          "line_total": "25.00"
+        },
+        {
+          "internal_number": 62,
+          "invoice_name": "GRILLCHIPS",
+          "sold_quantity": 21,
+          "sold_unit": "piece",
+          "unit_price": "2.50",
+          "line_total": "52.50"
+        },
+        {
+          "internal_number": 61,
+          "invoice_name": "DILLCHIPS",
+          "sold_quantity": 21,
+          "sold_unit": "piece",
+          "unit_price": "2.50",
+          "line_total": "52.50"
+        },
+        {
+          "internal_number": 60,
+          "invoice_name": "SOURCREAM/ONION CHIPS",
+          "sold_quantity": 21,
+          "sold_unit": "piece",
+          "unit_price": "2.50",
+          "line_total": "52.50"
+        }
+      ],
+      "non_inventory_items": [],
+      "unmapped_items": []
+    }
+  ]
+}

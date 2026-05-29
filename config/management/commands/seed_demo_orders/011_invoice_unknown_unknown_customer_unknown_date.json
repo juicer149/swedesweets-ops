@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "unknown_date_unknown_customer_unknown_invoice",
+      "invoice_number": "UNKNOWN",
+      "order_date": null,
+      "customer_key": "unknown_customer",
+      "customer_name": "Unknown customer",
+      "currency": "EUR",
+      "total_amount": "1603.32",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Header was missing from pasted text. Fill invoice_number, order_date, and customer_key before seeding."
+      },
+      "items": [
+        {
+          "internal_number": 1,
+          "invoice_name": "RAMBO TWIST",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 45,
+          "invoice_name": "SKUMKANTARELLER",
+          "sold_quantity": 3.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "45.00"
+        },
+        {
+          "internal_number": 32,
+          "invoice_name": "FIZZY SVAMPAR",
+          "sold_quantity": 4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "48.00"
+        },
+        {
+          "internal_number": 34,
+          "invoice_name": "SKUMBANANER",
+          "sold_quantity": 4.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "57.60"
+        },
+        {
+          "internal_number": 56,
+          "invoice_name": "SURA KÖRSBÄR",
+          "sold_quantity": 9,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "108.00"
+        },
+        {
+          "internal_number": 37,
+          "invoice_name": "SOCKERBITAR",
+          "sold_quantity": 3.28,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "39.36"
+        },
+        {
+          "internal_number": 15,
+          "invoice_name": "SOCKERBITAR JORDGUBB",
+          "sold_quantity": 3.28,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "39.36"
+        },
+        {
+          "internal_number": 48,
+          "invoice_name": "BUBBLIZ",
+          "sold_quantity": 7.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "90.00"
+        },
+        {
+          "internal_number": 13,
+          "invoice_name": "POLLY",
+          "sold_quantity": 6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "72.00"
+        },
+        {
+          "internal_number": 33,
+          "invoice_name": "CHOKLADSVAMPAR",
+          "sold_quantity": 4.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "57.60"
+        },
+        {
+          "internal_number": 31,
+          "invoice_name": "CHOKLAD BANANER",
+          "sold_quantity": 4.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "57.60"
+        },
+        {
+          "internal_number": 28,
+          "invoice_name": "COCOSBOLLAR",
+          "sold_quantity": 6.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "76.80"
+        },
+        {
+          "internal_number": 55,
+          "invoice_name": "PUNCHPRALINER",
+          "sold_quantity": 14,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "168.00"
+        },
+        {
+          "internal_number": 63,
+          "invoice_name": "VÄSTKUST CHIPS",
+          "sold_quantity": 40,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "112.00"
+        },
+        {
+          "internal_number": 62,
+          "invoice_name": "GRILLCHIPS",
+          "sold_quantity": 42,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "117.60"
+        },
+        {
+          "internal_number": 61,
+          "invoice_name": "DILLCHIPS",
+          "sold_quantity": 42,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "117.60"
+        },
+        {
+          "internal_number": 60,
+          "invoice_name": "SOURCREAM/ONION CHIPS",
+          "sold_quantity": 42,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "117.60"
+        },
+        {
+          "internal_number": 70,
+          "invoice_name": "DIPP RANCH",
+          "sold_quantity": 32,
+          "sold_unit": "piece",
+          "unit_price": "1.35",
+          "line_total": "43.20"
+        }
+      ],
+      "non_inventory_items": [
+        {
+          "name": "SACHETS",
+          "quantity": 1250,
+          "unit": "piece",
+          "unit_price": "0.08",
+          "line_total": "100.00"
+        },
+        {
+          "name": "LIVRAISON",
+          "quantity": 1,
+          "unit": "piece",
+          "unit_price": "40.00",
+          "line_total": "40.00"
+        }
+      ],
+      "unmapped_items": []
+    }
+  ]
+}

@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2026-04-11_super_u_les_houches_2025-0005",
+      "invoice_number": "2025-0005",
+      "order_date": "2026-04-11",
+      "customer_key": "super_u_les_houches",
+      "customer_name": "Super U Les Houches",
+      "currency": "EUR",
+      "total_amount": "1715.50",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Historical invoice imported from manually pasted invoice text."
+      },
+      "items": [
+        {
+          "internal_number": 10,
+          "invoice_name": "TUTTI FRUTTI",
+          "sold_quantity": 8.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "105.60"
+        },
+        {
+          "internal_number": 8,
+          "invoice_name": "DJUNGELVRÅL",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 42,
+          "invoice_name": "FRUTTY PEAR OVALS",
+          "sold_quantity": 5.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "67.20"
+        },
+        {
+          "internal_number": 4,
+          "invoice_name": "TUTTIFRUTTI SOUR",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 9,
+          "invoice_name": "GELEHALLON",
+          "sold_quantity": 9.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "117.00"
+        },
+        {
+          "internal_number": 11,
+          "invoice_name": "LONKA FUDGE CAR SEASALT",
+          "sold_quantity": 9.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "117.00"
+        },
+        {
+          "internal_number": 27,
+          "invoice_name": "PÄRLSOCKERBOLLAR",
+          "sold_quantity": 6.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "76.80"
+        },
+        {
+          "internal_number": 13,
+          "invoice_name": "POLLY",
+          "sold_quantity": 6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "72.00"
+        },
+        {
+          "internal_number": 33,
+          "invoice_name": "CHOKLADSVAMPAR",
+          "sold_quantity": 4.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "57.60"
+        },
+        {
+          "internal_number": 31,
+          "invoice_name": "CHOKLADBANANER",
+          "sold_quantity": 4.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "57.60"
+        },
+        {
+          "internal_number": 45,
+          "invoice_name": "SKUMKANTARELLER",
+          "sold_quantity": 3.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "45.00"
+        },
+        {
+          "internal_number": 3,
+          "invoice_name": "HALLON LACRICE SKALLE",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 30,
+          "invoice_name": "BANANA TOFFEE MILKSHAKE",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 47,
+          "invoice_name": "SOMMARBÄR",
+          "sold_quantity": 8.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "105.60"
+        },
+        {
+          "internal_number": 67,
+          "invoice_name": "SOURCREAM ONION DIPP",
+          "sold_quantity": 54,
+          "sold_unit": "piece",
+          "unit_price": "1.35",
+          "line_total": "72.90"
+        },
+        {
+          "internal_number": 68,
+          "invoice_name": "DILL OCH GRÄSLÖK DIPP",
+          "sold_quantity": 32,
+          "sold_unit": "piece",
+          "unit_price": "1.35",
+          "line_total": "43.20"
+        },
+        {
+          "internal_number": 69,
+          "invoice_name": "VITLÖK DIPP",
+          "sold_quantity": 16,
+          "sold_unit": "piece",
+          "unit_price": "1.35",
+          "line_total": "21.60"
+        },
+        {
+          "internal_number": 60,
+          "invoice_name": "SOURCREAM ONION CHIPS",
+          "sold_quantity": 21,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "58.80"
+        },
+        {
+          "internal_number": 63,
+          "invoice_name": "VÄSTKUST CHIPS",
+          "sold_quantity": 20,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "56.00"
+        },
+        {
+          "internal_number": 62,
+          "invoice_name": "GRILLCHIPS",
+          "sold_quantity": 21,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "58.80"
+        },
+        {
+          "internal_number": 61,
+          "invoice_name": "DILLCHIPS",
+          "sold_quantity": 21,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "58.80"
+        }
+      ],
+      "non_inventory_items": [
+        {
+          "name": "SACHETS",
+          "quantity": 1250,
+          "unit": "piece",
+          "unit_price": "0.08",
+          "line_total": "100.00"
+        },
+        {
+          "name": "Frai de livraison",
+          "quantity": 1,
+          "unit": "piece",
+          "unit_price": "40.00",
+          "line_total": "40.00"
+        }
+      ],
+      "unmapped_items": []
+    }
+  ]
+}

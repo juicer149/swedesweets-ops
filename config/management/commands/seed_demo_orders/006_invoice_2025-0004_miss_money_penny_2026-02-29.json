@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2026-02-29_miss_money_penny_2025-0004",
+      "invoice_number": "2025-0004",
+      "order_date": "2026-02-29",
+      "customer_key": "miss_money_penny",
+      "customer_name": "Nicole McCormack / Miss Money Penny",
+      "currency": "EUR",
+      "total_amount": "160.00",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Historical invoice imported from manually pasted invoice text."
+      },
+      "items": [],
+      "non_inventory_items": [],
+      "unmapped_items": [
+        {
+          "invoice_name": "Lösgodis",
+          "sold_quantity": 10,
+          "sold_unit": "kg",
+          "unit_price": "16.00",
+          "note": "Original invoice only says 'Lösgodis'; cannot allocate inventory without manual product split.",
+          "line_total": "160.00"
+        }
+      ]
+    }
+  ]
+}

@@ -572,7 +572,7 @@
   {
     "internal_number": 58,
     "manufacturer": "Astra Sweets",
-    "brand": "Astra Sweets",
+    "brand": "Skåne Konfektyr",
     "name": "Sura Colanappar",
     "weight_per_unit": 3000,
     "stock_unit": "box",
@@ -594,7 +594,7 @@
     "manufacturer": "Estrella",
     "brand": "Estrella",
     "name": "Sourcream Onion Chips",
-    "weight_per_unit": 3675,
+    "weight_per_unit": 175,
     "stock_unit": "bag",
     "vegan": false,
     "active": false
@@ -604,7 +604,7 @@
     "manufacturer": "Estrella",
     "brand": "Estrella",
     "name": "Dillchips",
-    "weight_per_unit": 3675,
+    "weight_per_unit": 175,
     "stock_unit": "bag",
     "vegan": false,
     "active": false
@@ -614,7 +614,7 @@
     "manufacturer": "Estrella",
     "brand": "Estrella",
     "name": "Grillchips",
-    "weight_per_unit": 3675,
+    "weight_per_unit": 175,
     "stock_unit": "bag",
     "vegan": false,
     "active": false
@@ -624,7 +624,7 @@
     "manufacturer": "Estrella",
     "brand": "Estrella",
     "name": "Västkustchips Havssalt Räfflade",
-    "weight_per_unit": 1800,
+    "weight_per_unit": 180,
     "stock_unit": "bag",
     "vegan": false,
     "active": false
@@ -648,5 +648,65 @@
     "stock_unit": "box",
     "vegan": false,
     "active": false
+  },
+  {
+    "internal_number": 66,
+    "manufacturer": "Estrella",
+    "brand": "Estrella",
+    "name": "Dipmix Holiday",
+    "weight_per_unit": 24,
+    "stock_unit": "piece",
+    "vegan": false,
+    "active": false
+  },
+  {
+    "internal_number": 67,
+    "manufacturer": "Estrella",
+    "brand": "Estrella",
+    "name": "Dipmix Sourcream",
+    "weight_per_unit": 24,
+    "stock_unit": "piece",
+    "vegan": false,
+    "active": false
+  },
+  {
+    "internal_number": 68,
+    "manufacturer": "OLW",
+    "brand": "OLW",
+    "name": "Dipmix Dill & Gräslök",
+    "weight_per_unit": 24,
+    "stock_unit": "piece",
+    "vegan": false,
+    "active": false
+  },
+  {
+    "internal_number": 69,
+    "manufacturer": "OLW",
+    "brand": "OLW",
+    "name": "Dipmix Vitlök",
+    "weight_per_unit": 21,
+    "stock_unit": "piece",
+    "vegan": false,
+    "active": false
+  },
+  {
+    "internal_number": 70,
+    "manufacturer": "OLW",
+    "brand": "OLW",
+    "name": "Dipmix Ranch",
+    "weight_per_unit": 24,
+    "stock_unit": "piece",
+    "vegan": false,
+    "active": false
+  },
+  {
+    "internal_number": 71,
+    "manufacturer": "Skåne Konfektyr",
+    "brand": "Skåne Konfektyr",
+    "name": "Minidynamit Sur Jordgubb",
+    "weight_per_unit": 1000,
+    "stock_unit": "box",
+    "vegan": false,
+    "active": true
   }
 ]

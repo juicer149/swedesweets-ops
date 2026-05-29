@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2026-04-27_super_u_passy_2025-0007",
+      "invoice_number": "2025-0007",
+      "order_date": "2026-04-27",
+      "customer_key": "super_u_passy",
+      "customer_name": "Super U - Passy",
+      "currency": "EUR",
+      "total_amount": "2535.60",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Historical invoice imported from manually pasted invoice text."
+      },
+      "items": [
+        {
+          "internal_number": 44,
+          "invoice_name": "BANANA TOFFEE OVALS",
+          "sold_quantity": 11.2,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "134.40"
+        },
+        {
+          "internal_number": 42,
+          "invoice_name": "FRUITY PEAR OVALS",
+          "sold_quantity": 11.2,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "134.40"
+        },
+        {
+          "internal_number": 1,
+          "invoice_name": "RAMBO TWIST",
+          "sold_quantity": 10,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "120.00"
+        },
+        {
+          "internal_number": 52,
+          "invoice_name": "HALLONBÅTAR",
+          "sold_quantity": 12,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "144.00"
+        },
+        {
+          "internal_number": 18,
+          "invoice_name": "STOR KARAMELGUF",
+          "sold_quantity": 9.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "114.00"
+        },
+        {
+          "internal_number": 4,
+          "invoice_name": "TUTTI FRUTTI SOUR",
+          "sold_quantity": 10,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "120.00"
+        },
+        {
+          "internal_number": 15,
+          "invoice_name": "SOCKERBITAR JORDGUBB",
+          "sold_quantity": 4.1,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "49.20"
+        },
+        {
+          "internal_number": 9,
+          "invoice_name": "GELEHALLON",
+          "sold_quantity": 9.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "117.00"
+        },
+        {
+          "internal_number": 10,
+          "invoice_name": "TUTTI FRUTTI ORIGINAL",
+          "sold_quantity": 11,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "132.00"
+        },
+        {
+          "internal_number": 45,
+          "invoice_name": "SKUMKANTARELLER",
+          "sold_quantity": 6.25,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "75.00"
+        },
+        {
+          "internal_number": 17,
+          "invoice_name": "SYRLIGA SNÄCKOR",
+          "sold_quantity": 11.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "136.80"
+        },
+        {
+          "internal_number": 8,
+          "invoice_name": "DJUNGELVRÅL",
+          "sold_quantity": 10,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "120.00"
+        },
+        {
+          "internal_number": 20,
+          "invoice_name": "VATTENMELONER",
+          "sold_quantity": 12.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "151.20"
+        },
+        {
+          "internal_number": 28,
+          "invoice_name": "MORMOR LISAS COCOSBOLLAR",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 41,
+          "invoice_name": "LEMON RASBERRY SKALLE",
+          "sold_quantity": 12.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "153.60"
+        },
+        {
+          "internal_number": 3,
+          "invoice_name": "HALLON LAKRITS SKALLE",
+          "sold_quantity": 12,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "144.00"
+        },
+        {
+          "internal_number": 57,
+          "invoice_name": "SUGAR STRAWBERRYS",
+          "sold_quantity": 15,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "180.00"
+        },
+        {
+          "internal_number": 48,
+          "invoice_name": "BUBBLIZ",
+          "sold_quantity": 10,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "120.00"
+        },
+        {
+          "internal_number": 25,
+          "invoice_name": "MORMOR LISAS GAMMELDAGS GRÄDDKOLA CHOKLAD",
+          "sold_quantity": 12,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "144.00"
+        }
+      ],
+      "non_inventory_items": [
+        {
+          "name": "SACHETS",
+          "quantity": 1250,
+          "unit": "piece",
+          "unit_price": "0.08",
+          "line_total": "100.00"
+        },
+        {
+          "name": "LIVRAISON",
+          "quantity": 1,
+          "unit": "piece",
+          "unit_price": "50.00",
+          "line_total": "50.00"
+        }
+      ],
+      "unmapped_items": []
+    }
+  ]
+}

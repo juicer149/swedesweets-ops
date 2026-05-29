@@ -1,29 +1,56 @@
 [
   {
     "key": "super_u_les_houches",
-    "name": "Super U",
+    "name": "Super U Les Houches",
     "email": "superu.les.houches@example.fr",
-    "phone_number": "+33 4 50 55 51 70",
+    "phone_number": "+33450555170",
     "country": "FR",
     "city": "Les Houches",
-    "address_line": "Av. des Alpages"
+    "address_line": "965 avenue des alpages"
   },
   {
-    "key": "super_u_chamonix",
-    "name": "Super U",
-    "email": "superu.chamonix@example.fr",
-    "phone_number": "+33 4 50 54 05 97",
+    "key": "super_u_argentiere",
+    "name": "Super U Argentiere",
+    "email": "superu.argentiere@example.fr",
+    "phone_number": "+33450555170",
     "country": "FR",
-    "city": "Chamonix-Mont-Blanc",
+    "city": "Chamonix",
     "address_line": "Rue Charlet Straton"
   },
   {
     "key": "creative_studio_66",
     "name": "Creative Studio 66",
     "email": "creative.studio.66@example.fr",
-    "phone_number": "+33 5 59 22 80 25",
+    "phone_number": "+33559228025",
     "country": "FR",
     "city": "Biarritz",
     "address_line": "11 Rue du Helder"
+  },
+  {
+    "key": "eva_le_salon",
+    "name": "Eva Sandelgård / Le Salon",
+    "email": "eva.le.salon@example.fr",
+    "phone_number": "+33000000001",
+    "country": "FR",
+    "city": "Chamonix",
+    "address_line": "13 Rue du Lyret"
+  },
+  {
+    "key": "miss_money_penny",
+    "name": "Miss Money Penny",
+    "email": "miss.money.penny@example.fr",
+    "phone_number": "+33000000002",
+    "country": "FR",
+    "city": "Chamonix",
+    "address_line": "157 route des Pecle"
+  },
+  {
+    "key": "super_u_passy",
+    "name": "Super U Passy",
+    "email": "superu.passy@example.fr",
+    "phone_number": "+33000000003",
+    "country": "FR",
+    "city": "Passy",
+    "address_line": "91 Avenue de Marlioz"
   }
 ]

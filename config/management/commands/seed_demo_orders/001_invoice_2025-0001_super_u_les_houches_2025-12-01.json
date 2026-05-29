@@ -1,0 +1,341 @@
+{
+  "schema_version": 1,
+  "orders": [
+    {
+      "seed_key": "2025-12-01_super_u_les_houches_2025-0001",
+      "invoice_number": "2025-0001",
+      "order_date": "2025-12-01",
+      "customer_key": "super_u_les_houches",
+      "customer_name": "Super U Les Houches",
+      "currency": "EUR",
+      "total_amount": "6385.77",
+      "source": {
+        "type": "manual_invoice_text",
+        "notes": "Historical invoice imported from manually pasted invoice text."
+      },
+      "items": [
+        {
+          "internal_number": 38,
+          "invoice_name": "AHLGRENS LIMOUSINER",
+          "sold_quantity": 8.16,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "97.92"
+        },
+        {
+          "internal_number": 22,
+          "invoice_name": "TUTTI FRUTTI SUMMER RINGS SOUR",
+          "sold_quantity": 15.3,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "183.60"
+        },
+        {
+          "internal_number": 14,
+          "invoice_name": "MINI COLA-LAKRITSFLASKA",
+          "sold_quantity": 18,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "216.00"
+        },
+        {
+          "internal_number": 16,
+          "invoice_name": "SISU SALTY SALMIAK",
+          "sold_quantity": 9.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "117.00"
+        },
+        {
+          "internal_number": 7,
+          "invoice_name": "FUDGE LICORICE/RASPBERRY",
+          "sold_quantity": 9.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "117.00"
+        },
+        {
+          "internal_number": 21,
+          "invoice_name": "TUTTI FRUTTI SYRLIG MELON",
+          "sold_quantity": 16.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "201.60"
+        },
+        {
+          "internal_number": 15,
+          "invoice_name": "SOCKERBITAR JORDGUBB",
+          "sold_quantity": 7.38,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "88.56"
+        },
+        {
+          "internal_number": 43,
+          "invoice_name": "TUTTI FRUTTI DIAMOND",
+          "sold_quantity": 15.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "187.20"
+        },
+        {
+          "internal_number": 3,
+          "invoice_name": "RASPBERRY SALTY LICORICE SKALLE",
+          "sold_quantity": 12,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "144.00"
+        },
+        {
+          "internal_number": 9,
+          "invoice_name": "GELÉHALLON",
+          "sold_quantity": 9.75,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "117.00"
+        },
+        {
+          "internal_number": 44,
+          "invoice_name": "BANANA TOFFEE OVALS",
+          "sold_quantity": 11.2,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "134.40"
+        },
+        {
+          "internal_number": 10,
+          "invoice_name": "TUTTI FRUTTI ORIGINAL",
+          "sold_quantity": 17.6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "211.20"
+        },
+        {
+          "internal_number": 45,
+          "invoice_name": "SKUMKANTARELLER",
+          "sold_quantity": 7.504,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "90.05"
+        },
+        {
+          "internal_number": 4,
+          "invoice_name": "TUTTI FRUTTI SOUR",
+          "sold_quantity": 16,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "192.00"
+        },
+        {
+          "internal_number": 17,
+          "invoice_name": "SYRLIGA SNÄCKOR",
+          "sold_quantity": 9.12,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "109.44"
+        },
+        {
+          "internal_number": 41,
+          "invoice_name": "LEMON RASPBERRY SKALLE",
+          "sold_quantity": 28.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "345.60"
+        },
+        {
+          "internal_number": 42,
+          "invoice_name": "FRUITY PEAR OVALS MEDIUM",
+          "sold_quantity": 10.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "124.80"
+        },
+        {
+          "internal_number": 1,
+          "invoice_name": "RAMBO TWIST",
+          "sold_quantity": 24,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "288.00"
+        },
+        {
+          "internal_number": 18,
+          "invoice_name": "STOR KARAMELGUF",
+          "sold_quantity": 9.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "114.00"
+        },
+        {
+          "internal_number": 11,
+          "invoice_name": "LONKA FUDGE CARAMEL SEA SALT",
+          "sold_quantity": 32.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "390.00"
+        },
+        {
+          "internal_number": 13,
+          "invoice_name": "POLLY LÖSVIKT",
+          "sold_quantity": 13.5,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "162.00"
+        },
+        {
+          "internal_number": 40,
+          "invoice_name": "PEPPARKAKSFUDGE",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 23,
+          "invoice_name": "TYRKISK PEBER",
+          "sold_quantity": 8.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "105.60"
+        },
+        {
+          "internal_number": 19,
+          "invoice_name": "ZOO",
+          "sold_quantity": 8.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "105.60"
+        },
+        {
+          "internal_number": 33,
+          "invoice_name": "CHOKLADSVAMP FRANSSON",
+          "sold_quantity": 13.2,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "158.40"
+        },
+        {
+          "internal_number": 31,
+          "invoice_name": "CHOKLADBANAN STOR",
+          "sold_quantity": 14.4,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "172.80"
+        },
+        {
+          "internal_number": 34,
+          "invoice_name": "SKUMBANANER FRANSSONS",
+          "sold_quantity": 13.2,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "158.40"
+        },
+        {
+          "internal_number": 37,
+          "invoice_name": "VITA SKUMBITAR",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 28,
+          "invoice_name": "MORMOR LISAS COCOSBOLL",
+          "sold_quantity": 16,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "192.00"
+        },
+        {
+          "internal_number": 2,
+          "invoice_name": "JULTOMTE SKUM",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 5,
+          "invoice_name": "BRIO GRÄDD",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 6,
+          "invoice_name": "BRIO FRUKT",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 8,
+          "invoice_name": "DJUNGELVRÅL",
+          "sold_quantity": 8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "96.00"
+        },
+        {
+          "internal_number": 63,
+          "invoice_name": "VÄSTKUST CHIPS",
+          "sold_quantity": 40,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "112.00"
+        },
+        {
+          "internal_number": 62,
+          "invoice_name": "GRILLCHIPS",
+          "sold_quantity": 84,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "235.20"
+        },
+        {
+          "internal_number": 61,
+          "invoice_name": "DILLCHIPS",
+          "sold_quantity": 84,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "235.20"
+        },
+        {
+          "internal_number": 60,
+          "invoice_name": "SOURCREAM/ONION CHIPS",
+          "sold_quantity": 84,
+          "sold_unit": "piece",
+          "unit_price": "2.80",
+          "line_total": "235.20"
+        },
+        {
+          "internal_number": 35,
+          "invoice_name": "GAMMELDAGS POLKA",
+          "sold_quantity": 6,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "72.00"
+        }
+      ],
+      "non_inventory_items": [
+        {
+          "name": "SACHETS",
+          "quantity": 1200,
+          "unit": "piece",
+          "unit_price": "0.08",
+          "line_total": "96.00"
+        },
+        {
+          "name": "Frai de livraison",
+          "quantity": 1,
+          "unit": "piece",
+          "unit_price": "300.00",
+          "line_total": "300.00"
+        }
+      ],
+      "unmapped_items": []
+    }
+  ]
+}
