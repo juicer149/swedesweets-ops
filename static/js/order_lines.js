@@ -21,6 +21,87 @@ document.addEventListener("DOMContentLoaded", () => {
     return Array.from(orderLinesList.querySelectorAll("[data-order-line]"));
   }
 
+  function fieldKey(element) {
+    const match = element.name.match(/^lines-(?:\d+|__prefix__)-(.+)$/);
+    return match ? match[1] : element.name;
+  }
+
+  function readFieldValue(element) {
+    if (element.type === "radio") {
+      return element.checked ? element.value : null;
+    }
+
+    if (element.type === "checkbox") {
+      return element.checked;
+    }
+
+    if (element.tomselect) {
+      return element.tomselect.getValue();
+    }
+
+    return element.value;
+  }
+
+  function writeFieldValue(element, value) {
+    if (value === undefined || value === null) {
+      return;
+    }
+
+    if (element.type === "radio") {
+      element.checked = element.value === value;
+      return;
+    }
+
+    if (element.type === "checkbox") {
+      element.checked = Boolean(value);
+      return;
+    }
+
+    if (element.tomselect) {
+      element.tomselect.setValue(value, true);
+      return;
+    }
+
+    element.value = value;
+
+    if (element.tagName === "SELECT") {
+      Array.from(element.options).forEach((option) => {
+        option.selected = option.value === value;
+      });
+    }
+  }
+
+  function readOrderLineState(orderLine) {
+    const state = {};
+
+    orderLine
+      .querySelectorAll("select[name], textarea[name], input[name]")
+      .forEach((element) => {
+        const key = fieldKey(element);
+        const value = readFieldValue(element);
+
+        if (element.type === "radio") {
+          if (value !== null) {
+            state[key] = value;
+          }
+
+          return;
+        }
+
+        state[key] = value;
+      });
+
+    return state;
+  }
+
+  function writeOrderLineState(orderLine, state) {
+    orderLine
+      .querySelectorAll("select[name], textarea[name], input[name]")
+      .forEach((element) => {
+        writeFieldValue(element, state[fieldKey(element)]);
+      });
+  }
+
   function destroyEnhancedSelects(root) {
     root.querySelectorAll("select[data-enhanced-select]").forEach((select) => {
       if (select.tomselect) {
@@ -61,16 +142,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function syncFormsetIndexes() {
     const orderLines = getOrderLines();
+    const states = orderLines.map(readOrderLineState);
 
     orderLines.forEach(destroyEnhancedSelects);
 
     orderLines.forEach((orderLine, index) => {
       reindexOrderLine(orderLine, index);
+      writeOrderLineState(orderLine, states[index]);
     });
 
     totalFormsInput.value = String(orderLines.length);
 
-    orderLines.forEach(enhanceOrderLine);
+    orderLines.forEach((orderLine, index) => {
+      enhanceOrderLine(orderLine);
+      writeOrderLineState(orderLine, states[index]);
+    });
+
     updateRemoveButtons();
   }
 
