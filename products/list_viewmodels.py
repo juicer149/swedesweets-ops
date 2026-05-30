@@ -103,7 +103,7 @@ def _product_header_row(
     return UiCardRow(
         left=UiText(
             text=product_code_label(product),
-            css_class="product-card__id",
+            css_class="ui-card-id",
         ),
         right=status.text,
     )
@@ -113,7 +113,7 @@ def _product_brand_row(product: Product) -> UiCardRow:
     return UiCardRow(
         left=UiText(
             text=product.brand,
-            css_class="product-card__brand",
+            css_class="ui-card-title",
         ),
     )
 
@@ -122,7 +122,7 @@ def _product_name_row(product: Product) -> UiCardRow:
     return UiCardRow(
         left=UiText(
             text=product.name,
-            css_class="product-card__name",
+            css_class="ui-card-title",
         ),
     )
 
@@ -131,7 +131,7 @@ def _product_manufacturer_row(product: Product) -> UiCardRow:
     return UiCardRow(
         left=UiText(
             text=product_manufacturer_label(product),
-            css_class="product-card__manufacturer",
+            css_class="ui-card-meta",
         ),
     )
 
@@ -140,7 +140,7 @@ def _product_weight_row(product: Product) -> UiCardRow:
     return UiCardRow(
         left=UiText(
             text=product.unit_weight_label,
-            css_class="product-card__weight",
+            css_class="ui-card-strong",
         ),
     )
 

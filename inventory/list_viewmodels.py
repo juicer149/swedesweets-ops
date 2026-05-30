@@ -252,50 +252,44 @@ def _batch_card(
             UiCardRow(
                 left=UiText(
                     text=row.batch.batch_id,
-                    css_class="inventory-card__id",
+                    css_class="ui-card-id",
                 ),
                 right=status.text,
             ),
             UiCardRow(
                 left=UiText(
                     text=row.batch.product.brand,
-                    css_class="inventory-card__brand",
+                    css_class="ui-card-title",
                 ),
             ),
             UiCardRow(
                 left=UiText(
                     text=row.batch.product.name,
-                    css_class="inventory-card__name",
+                    css_class="ui-card-title",
                 ),
             ),
             UiCardRow(
                 left=UiText(
                     text=row.batch.product.weight_label,
-                    css_class="inventory-card__weight",
+                    css_class="ui-card-muted",
                 ),
                 right=UiText(
                     text=batch_quantity_label(row.batch),
-                    css_class=(
-                        "inventory-card__value "
-                        f"{quantity.css_class}"
-                    ),
+                    css_class=f"ui-card-strong {quantity.css_class}",
                 ),
             ),
             UiCardRow(
                 left=UiText(
                     text=row.batch.location,
-                    css_class="inventory-card__value",
+                    css_class="ui-card-location",
                     label="Location",
-                    label_class="inventory-card__label",
+                    label_class="ui-card-label",
                 ),
                 right=UiText(
                     text=row.batch.best_before.strftime("%d-%m-%y"),
-                    css_class="inventory-card__value",
+                    css_class="ui-card-location",
                     label=row.expiry.label,
-                    label_class=(
-                        "inventory-card__label "
-                        f"{expiry_css_class(row)}"
-                    ),
+                    label_class=f"ui-card-label {expiry_css_class(row)}",
                 ),
             ),
         ),
@@ -329,30 +323,30 @@ def _product_stock_card(
             UiCardRow(
                 left=UiText(
                     text=row.product.code_label,
-                    css_class="inventory-card__id",
+                    css_class="ui-card-id",
                 ),
                 right=status.text,
             ),
             UiCardRow(
                 left=UiText(
                     text=row.product.brand,
-                    css_class="inventory-card__brand",
+                    css_class="ui-card-title",
                 ),
             ),
             UiCardRow(
                 left=UiText(
                     text=row.product.name,
-                    css_class="inventory-card__name",
+                    css_class="ui-card-title",
                 ),
             ),
             UiCardRow(
                 left=UiText(
                     text=row.product.weight_label,
-                    css_class="inventory-card__weight",
+                    css_class="ui-card-muted",
                 ),
                 right=UiText(
                     text=product_batch_count_label(row),
-                    css_class="inventory-card__value",
+                    css_class="ui-card-strong",
                 ),
             ),
             UiCardRow(

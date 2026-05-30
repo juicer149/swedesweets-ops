@@ -116,6 +116,9 @@
 
 /* =============================================================================
    Inventory mobile cards
+
+   Typography is shared through ui-card-* classes in ui-cards.css.
+   Inventory-specific CSS keeps only spacing and stock-metric layout.
    ============================================================================= */
 
 .mobile-card--inventory {
@@ -126,8 +129,8 @@
   gap: var(--space-2);
 }
 
-.mobile-card--inventory .ui-card__cell--right .inventory-card__label,
-.mobile-card--inventory .ui-card__cell--right .inventory-card__value,
+.mobile-card--inventory .ui-card__cell--right .ui-card-label,
+.mobile-card--inventory .ui-card__cell--right .ui-card-location,
 .mobile-card--inventory .ui-card__cell--right .inventory-card__metric-label,
 .mobile-card--inventory .ui-card__cell--right .inventory-card__metric-value {
   text-align: right;
@@ -140,43 +143,23 @@
 
 
 /* =============================================================================
-   Inventory mobile card identity
+   Inventory mobile card identity spacing
    ============================================================================= */
 
-/* Product/batch ID */
-.inventory-card__id {
-  color: var(--color-neutral-700);
-  font-size: var(--font-size-16);
-  font-weight: 850;
-  line-height: 1.05;
+.mobile-card--inventory .ui-card-id {
   margin-bottom: var(--space-4);
 }
 
-/* Product brand */
-.inventory-card__brand {
-  color: var(--color-primary-950);
-  font-size: var(--font-size-20);
-  font-weight: 850;
-  line-height: 1.08;
-  margin-bottom: var(--space-1);
+.mobile-card--inventory .ui-card-title + .ui-card-title {
+  margin-top: calc(-1 * var(--space-1));
 }
 
-/* Product name */
-.inventory-card__name {
-  color: var(--color-primary-950);
-  font-size: var(--font-size-20);
-  font-weight: 750;
-  line-height: 1.08;
-  margin-bottom: var(--space-3);
-}
-
-/* Product weight */
-.inventory-card__weight {
-  color: var(--color-neutral-600);
-  font-size: var(--font-size-16);
-  font-weight: 750;
-  line-height: 1.05;
+.mobile-card--inventory .ui-card-muted {
   margin-bottom: var(--space-4);
+}
+
+.mobile-card--inventory .ui-card-strong {
+  white-space: nowrap;
 }
 
 
@@ -184,8 +167,37 @@
    Inventory mobile card labels and values
    ============================================================================= */
 
-/* Location, best before, in stock, reserved, available */
-.inventory-card__label,
+/* Location and best-before label */
+.mobile-card--inventory .ui-card-label {
+  white-space: nowrap;
+}
+
+/* Location, dates, quantity values, batch count */
+.mobile-card--inventory .ui-card-location,
+.mobile-card--inventory .ui-card-strong {
+  white-space: nowrap;
+}
+
+/* Expiry labels */
+.mobile-card--inventory .ui-card-label.expiry-text--safe {
+  color: var(--color-expiry-safe-text);
+}
+
+.mobile-card--inventory .ui-card-label.expiry-text--soon {
+  color: var(--color-expiry-soon-text);
+}
+
+.mobile-card--inventory .ui-card-label.expiry-text--critical,
+.mobile-card--inventory .ui-card-label.expiry-text--expired {
+  color: var(--color-expiry-critical-text);
+}
+
+
+/* =============================================================================
+   Inventory stock metrics
+   ============================================================================= */
+
+/* In stock, reserved, available */
 .inventory-card__metric-label {
   color: var(--color-neutral-600);
   font-size: var(--font-size-12);
@@ -196,33 +208,13 @@
   white-space: nowrap;
 }
 
-/* F4, dates, quantity values, batch count */
-.inventory-card__value,
+/* Stock metric values */
 .inventory-card__metric-value {
   color: var(--color-primary-900);
   font-size: var(--font-size-16);
   font-weight: 800;
   line-height: 1.2;
   white-space: nowrap;
-}
-
-.inventory-card__value {
-  display: inline-grid;
-  gap: 2px;
-}
-
-/* Expiry labels */
-.inventory-card__label.expiry-text--safe {
-  color: var(--color-expiry-safe-text);
-}
-
-.inventory-card__label.expiry-text--soon {
-  color: var(--color-expiry-soon-text);
-}
-
-.inventory-card__label.expiry-text--critical,
-.inventory-card__label.expiry-text--expired {
-  color: var(--color-expiry-critical-text);
 }
 
 /* Reserved value */
@@ -252,6 +244,6 @@
 }
 
 /* Location / best-before block */
-.mobile-card--inventory .ui-card__row:has(.inventory-card__label) {
+.mobile-card--inventory .ui-card__row:has(.ui-card-label) {
   margin-top: var(--space-2);
 }

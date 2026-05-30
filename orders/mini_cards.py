@@ -6,6 +6,7 @@ from orders.presentation import (
     ORDER_CARD_BASE_CLASS,
     build_order_status_presentation,
     contents_summary,
+    order_card_class,
     order_lifecycle_label,
 )
 
@@ -27,7 +28,7 @@ def build_order_usage_mini_card(
 
     return UiCard(
         tone=status.tone,
-        css_class=ORDER_CARD_BASE_CLASS,
+        css_class=_order_card_class(order),
         href=order_href,
         aria_label=f"View order #{order.pk}",
         footer_hint=CARD_DETAILS_HINT,
@@ -42,7 +43,7 @@ def build_order_usage_mini_card(
             UiCardRow(
                 left=UiText(
                     text=f"{quantity_label_text} · {allocation_status}",
-                    css_class="ui-card-strong ui-card-strong--compact",
+                    css_class="ui-card-strong",
                 ),
             ),
             UiCardRow(
@@ -67,7 +68,7 @@ def build_customer_order_mini_card(
 
     return UiCard(
         tone=status.tone,
-        css_class=ORDER_CARD_BASE_CLASS,
+        css_class=_order_card_class(order),
         href=order_href,
         aria_label=f"View order #{order.pk}",
         footer_hint=CARD_DETAILS_HINT,
@@ -103,10 +104,14 @@ def _order_header_row(
     return UiCardRow(
         left=UiText(
             text=f"Order #{order.pk}",
-            css_class="ui-card-id ui-card-id--prominent",
+            css_class="ui-card-id",
         ),
         right=status.text,
     )
+
+
+def _order_card_class(order: Order) -> str:
+    return f"{ORDER_CARD_BASE_CLASS} {order_card_class(order.status)}"
 
 
 def _order_product_count(order: Order) -> int:

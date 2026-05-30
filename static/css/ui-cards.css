@@ -87,23 +87,36 @@
   font-size: var(--font-size-12);
   font-weight: 700;
   line-height: 1.35;
-  color: var(--color-neutral-00);
+  color: var(--color-neutral-700);
 }
+
 
 /* =============================================================================
    Text atoms
+
+   These are the shared typography roles for mobile cards. Order cards were the
+   visual reference for this scale, so older order-specific classes are included
+   here during the migration.
    ============================================================================= */
 
 .ui-text,
-.ui-card-title,
 .ui-card-id,
+.ui-card-title,
+.ui-card-meta,
 .ui-card-muted,
 .ui-card-strong,
+.ui-card-link,
 .ui-card-contact,
 .ui-card-location,
 .ui-card-label,
 .expiry-text,
-.status-text {
+.status-text,
+.ui-card-order-id,
+.ui-card-order-status,
+.ui-card-order-customer,
+.ui-card-order-meta,
+.ui-card-order-address,
+.ui-card-order-link {
   overflow-wrap: anywhere;
 }
 
@@ -114,33 +127,36 @@
   color: var(--color-neutral-700);
 }
 
-.ui-card-title {
-  font-size: var(--font-size-20);
+.ui-card-id,
+.ui-card-order-id {
+  font-size: var(--font-size-16);
   font-weight: 800;
   line-height: 1.2;
-  color: var(--color-primary-900);
+  color: var(--color-neutral-900);
 }
 
-.ui-card-id {
-  font-size: var(--font-size-14);
+.ui-card-title,
+.ui-card-order-customer {
+  font-size: var(--font-size-24);
   font-weight: 800;
-  line-height: 1.35;
-  letter-spacing: var(--letter-spacing-subtle);
-  color: var(--color-neutral-800);
-  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--color-primary-950);
 }
 
-/* kanske kan ta bort denna och använda id bara istället? */
-.ui-card-id--prominent {
-  font-size: var(--font-size-14);
-  color: var(--color-neutral-800);
+.ui-card-meta,
+.ui-card-order-meta {
+  font-size: var(--font-size-16);
+  font-weight: 550;
+  line-height: 1.35;
+  color: var(--color-neutral-700);
 }
 
-.ui-card-muted {
-  font-size: var(--font-size-14);
-  font-weight: 600;
+.ui-card-muted,
+.ui-card-order-address {
+  font-size: var(--font-size-16);
+  font-weight: 500;
   line-height: 1.35;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
 }
 
 .ui-card-strong {
@@ -148,6 +164,24 @@
   font-weight: 800;
   line-height: 1.35;
   color: var(--color-primary-900);
+}
+
+.ui-card-link,
+.ui-card-order-link {
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--color-primary-800);
+  text-decoration: none;
+}
+
+.ui-card-link:hover,
+.ui-card-link:focus-visible,
+.ui-card-order-link:hover,
+.ui-card-order-link:focus-visible {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 
@@ -327,6 +361,7 @@
   background: var(--color-primary-50);
   border-color: var(--color-neutral-300);
 }
+
 
 /* =============================================================================
    Detail panel mobile cards

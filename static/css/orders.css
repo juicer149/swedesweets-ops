@@ -26,7 +26,7 @@
 .order-lines__header p {
   margin-bottom: 0;
   font-size: var(--font-size-16);
-  font-weight: 400; 
+  font-weight: 400;
   color: var(--color-neutral-600);
 }
 
@@ -76,6 +76,7 @@
 .order-lines__add-button {
   width: fit-content;
 }
+
 
 /* =============================================================================
    Pack checklist
@@ -198,6 +199,7 @@
   border-color: rgb(var(--color-status-success) / 0.18);
 }
 
+
 /* =============================================================================
    Delivery confirmation
 
@@ -209,10 +211,12 @@
   gap: var(--space-4);
 }
 
+
 /* =============================================================================
    Order mobile cards
 
-   Order-specific presentation for workflow cards on mobile.
+   Order-specific layout and workflow status styling for order cards on mobile.
+   Shared typography lives in ui-cards.css.
    ============================================================================= */
 
 .mobile-card--order {
@@ -229,50 +233,13 @@
   padding-top: 0;
 }
 
-/* Order-specific text */
-
-.ui-card-order-id {
-  overflow-wrap: anywhere;
-
-  font-size: var(--font-size-16);
-  font-weight: 800;
-  line-height: 1.2;
-  color: var(--color-neutral-900);
-}
-
 .ui-card-order-status {
-  overflow-wrap: anywhere;
-
-  font-size: var(--font-size-16);
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-.ui-card-order-customer {
-  overflow-wrap: anywhere;
-
-  font-size: var(--font-size-24);
-  font-weight: 800;
-  line-height: 1.2;
-  color: var(--color-primary-950);
-}
-
-.ui-card-order-meta {
-  overflow-wrap: anywhere;
-
-  font-size: var(--font-size-16);
-  font-weight: 550;
-  line-height: 1.35;
-  color: var(--color-neutral-700);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .ui-card-order-address {
-  overflow-wrap: anywhere;
-
-  font-size: var(--font-size-16);
-  font-weight: 500;
-  line-height: 1.35;
-  color: var(--color-neutral-700);
   text-decoration: none;
 }
 
@@ -291,24 +258,10 @@
   text-decoration: underline;
 }
 
-.ui-card-order-link {
-  overflow-wrap: anywhere;
 
-  font-size: var(--font-size-14);
-  font-weight: 800;
-  line-height: 1.35;
-  color: var(--color-primary-800);
-  text-decoration: none;
-}
-
-.ui-card-order-link:hover,
-.ui-card-order-link:focus-visible {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-}
-
-/* Order card state styling */
+/* =============================================================================
+   Order card state styling
+   ============================================================================= */
 
 .mobile-card--order-draft {
   background: var(--color-neutral-50);
@@ -335,7 +288,10 @@
   border: 1px solid var(--color-action-danger);
 }
 
-/* Status-specific order text accents */
+
+/* =============================================================================
+   Status-specific order text accents
+   ============================================================================= */
 
 .mobile-card--order-placed .ui-card-order-id,
 .mobile-card--order-placed .ui-card-order-customer {
@@ -355,6 +311,7 @@
 .mobile-card--order-cancelled .ui-card-order-link {
   color: var(--color-status-cancelled-text);
 }
+
 
 /* =============================================================================
    Mobile / touch

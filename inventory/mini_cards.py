@@ -41,7 +41,7 @@ def build_batch_mini_card(
             UiCardRow(
                 left=UiText(
                     text=f"Best before {batch.best_before:%Y-%m-%d}",
-                    css_class="ui-card-strong ui-card-strong--compact",
+                    css_class="ui-card-meta",
                 ),
             ),
             UiCardRow(

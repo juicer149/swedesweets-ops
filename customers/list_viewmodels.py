@@ -20,7 +20,6 @@ from customers.presentation import (
     EXTERNAL_LINK_REL,
     EXTERNAL_LINK_TARGET,
     customer_card_tone,
-    customer_name_text,
 )
 
 
@@ -75,7 +74,10 @@ def _customer_card_rows(customer: Customer) -> tuple[UiCardRow, ...]:
 
 def _customer_name_row(customer: Customer) -> UiCardRow:
     return UiCardRow(
-        left=customer_name_text(customer),
+        left=UiText(
+            text=customer.name,
+            css_class="ui-card-title",
+        ),
     )
 
 
@@ -121,7 +123,7 @@ def _customer_detail_action(detail_href: str) -> UiText:
     return UiText(
         text=CUSTOMER_ACTION_LABEL,
         href=detail_href,
-        css_class="text-link",
+        css_class="ui-card-link",
     )
 
 
