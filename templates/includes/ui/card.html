@@ -1,29 +1,69 @@
-<article class="{{ card.css_class }} {{ card.tone.card_class }}">
-  {% for row in card.rows %}
-    <div class="ui-card__row">
-      <div class="ui-card__cell ui-card__cell--left">
-        {% if row.left %}
-          {% include "includes/ui/text.html" with item=row.left only %}
-        {% endif %}
-      </div>
+{% if card.href and not card.action %}
+  <a
+    class="{{ card.css_class }} {{ card.tone.card_class }} mobile-card--clickable"
+    href="{{ card.href }}"
+    {% if card.aria_label %}aria-label="{{ card.aria_label }}"{% endif %}
+  >
+    {% for row in card.rows %}
+      <div class="ui-card__row">
+        <div class="ui-card__cell ui-card__cell--left">
+          {% if row.left %}
+            {% include "includes/ui/text.html" with item=row.left only %}
+          {% endif %}
+        </div>
 
-      <div class="ui-card__cell ui-card__cell--center">
-        {% if row.center %}
-          {% include "includes/ui/text.html" with item=row.center only %}
-        {% endif %}
-      </div>
+        <div class="ui-card__cell ui-card__cell--center">
+          {% if row.center %}
+            {% include "includes/ui/text.html" with item=row.center only %}
+          {% endif %}
+        </div>
 
-      <div class="ui-card__cell ui-card__cell--right">
-        {% if row.right %}
-          {% include "includes/ui/text.html" with item=row.right only %}
-        {% endif %}
+        <div class="ui-card__cell ui-card__cell--right">
+          {% if row.right %}
+            {% include "includes/ui/text.html" with item=row.right only %}
+          {% endif %}
+        </div>
       </div>
-    </div>
-  {% endfor %}
+    {% endfor %}
 
-  {% if card.action %}
-    <footer class="ui-card__footer">
-      {% include "includes/ui/text.html" with item=card.action only %}
-    </footer>
-  {% endif %}
-</article>
+    {% if card.footer_hint %}
+      <footer class="ui-card__footer ui-card__footer--hint">
+        <span class="ui-card__hint">{{ card.footer_hint }}</span>
+      </footer>
+    {% endif %}
+  </a>
+{% else %}
+  <article class="{{ card.css_class }} {{ card.tone.card_class }}">
+    {% for row in card.rows %}
+      <div class="ui-card__row">
+        <div class="ui-card__cell ui-card__cell--left">
+          {% if row.left %}
+            {% include "includes/ui/text.html" with item=row.left only %}
+          {% endif %}
+        </div>
+
+        <div class="ui-card__cell ui-card__cell--center">
+          {% if row.center %}
+            {% include "includes/ui/text.html" with item=row.center only %}
+          {% endif %}
+        </div>
+
+        <div class="ui-card__cell ui-card__cell--right">
+          {% if row.right %}
+            {% include "includes/ui/text.html" with item=row.right only %}
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+
+    {% if card.action %}
+      <footer class="ui-card__footer">
+        {% include "includes/ui/text.html" with item=card.action only %}
+      </footer>
+    {% elif card.footer_hint %}
+      <footer class="ui-card__footer ui-card__footer--hint">
+        <span class="ui-card__hint">{{ card.footer_hint }}</span>
+      </footer>
+    {% endif %}
+  </article>
+{% endif %}

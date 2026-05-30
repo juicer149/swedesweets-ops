@@ -12,13 +12,15 @@ from common.ui import (
 )
 from products.models import Product
 from products.presentation import (
-    PRODUCT_ACTION_LABEL,
     ProductTagPresentation,
     product_attribute_tags,
     product_code_label,
     product_manufacturer_label,
     product_status_presentation,
 )
+
+
+CARD_DETAILS_HINT = "Open details →"
 
 
 @dataclass(frozen=True)
@@ -65,11 +67,13 @@ def _product_card(
     return UiCard(
         tone=status.tone,
         css_class="mobile-card mobile-card--product",
+        href=detail_href,
+        aria_label=f"View product {product.display_name}",
+        footer_hint=CARD_DETAILS_HINT,
         rows=_product_card_rows(
             product=product,
             status=status,
         ),
-        action=_product_detail_action(detail_href),
     )
 
 
@@ -149,14 +153,6 @@ def _product_tag_row(tag: ProductTagPresentation) -> UiCardRow:
             icon=tag.icon,
             icon_class=tag.icon_class,
         ),
-    )
-
-
-def _product_detail_action(detail_href: str) -> UiText:
-    return UiText(
-        text=PRODUCT_ACTION_LABEL,
-        href=detail_href,
-        css_class="text-link",
     )
 
 

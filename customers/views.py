@@ -23,9 +23,9 @@ from customers.selectors import (
     CUSTOMER_SORTS,
     DEFAULT_CUSTOMER_SORT,
     get_customer_order_summary,
-    list_customer_orders,
     list_customers,
 )
+from orders.selectors import list_customer_orders as list_orders_for_customer
 from customers.services import create_customer, update_customer
 
 
@@ -90,7 +90,9 @@ def index(request):
 @login_required
 def detail(request, customer_pk: int):
     customer = _get_customer_for_detail(customer_pk)
-    orders = list_customer_orders(customer=customer)
+    orders = list(
+            list_orders_for_customer(customer=customer)
+    )
 
     context = build_customer_detail_context(
         customer=customer,

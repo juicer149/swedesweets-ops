@@ -9,6 +9,12 @@ public API:
     ) -> QuerySet[Order]
         -> Return orders for the orders list page.
 
+    list_customer_orders(
+        *,
+        customer,
+    ) -> QuerySet[Order]
+        -> Return orders for a customer detail page.
+
     get_packaging_list(*, order: Order) -> list[PickLine]
         -> Return reserved allocation lines for packing.
 
@@ -27,7 +33,15 @@ public API:
 
 from __future__ import annotations
 
-from django.db.models import Case, IntegerField, QuerySet, Sum, Value, When
+from django.db.models import (
+    Case,
+    Count,
+    IntegerField,
+    QuerySet,
+    Sum,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce
 
 from common.table_tools import normalize_sort
@@ -76,11 +90,7 @@ def list_orders(
         Order.objects
         .select_related("customer")
         .annotate(
-            total_quantity=Coalesce(
-                Sum("lines__quantity_in_units"),
-                Value(0),
-                output_field=IntegerField(),
-            ),
+            **_order_summary_annotations(),
             status_rank=_status_rank_expression(),
         )
     )
@@ -89,6 +99,26 @@ def list_orders(
         orders = orders.filter(status=status)
 
     return orders.order_by(*ORDER_SORTS[normalized_sort])
+
+
+def list_customer_orders(
+    *,
+    customer,
+) -> QuerySet[Order]:
+    """Return orders for a customer detail page.
+
+    Newest first because the customer detail page is usually used to inspect the
+    latest relationship/history for that customer.
+    """
+
+    return (
+        customer.orders
+        .annotate(
+            **_order_summary_annotations(),
+            status_rank=_status_rank_expression(),
+        )
+        .order_by("-created_at", "-id")
+    )
 
 
 def list_placed_orders_for_dashboard(
@@ -170,6 +200,21 @@ def _build_pick_line(allocation: Allocation) -> PickLine:
     )
 
 
+def _order_summary_annotations() -> dict[str, object]:
+    return {
+        "product_count": Coalesce(
+            Count("lines", distinct=True),
+            Value(0),
+            output_field=IntegerField(),
+        ),
+        "total_quantity": Coalesce(
+            Sum("lines__quantity_in_units"),
+            Value(0),
+            output_field=IntegerField(),
+        ),
+    }
+
+
 def _status_rank_expression() -> Case:
     return Case(
         When(status=Order.Status.PLACED, then=Value(1)),
@@ -191,12 +236,6 @@ def _list_orders_for_dashboard(
         Order.objects
         .filter(status=status)
         .select_related("customer")
-        .annotate(
-            total_quantity=Coalesce(
-                Sum("lines__quantity_in_units"),
-                Value(0),
-                output_field=IntegerField(),
-            )
-        )
+        .annotate(**_order_summary_annotations())
         .order_by("created_at", "id")[:limit]
     )

@@ -52,15 +52,6 @@ def list_customers(
     return Customer.objects.order_by(*CUSTOMER_SORTS[normalized_sort])
 
 
-def list_customer_orders(*, customer: Customer) -> list[Order]:
-    return list(
-        Order.objects
-        .filter(customer=customer)
-        .select_related("customer")
-        .order_by("-created_at", "-id")
-    )
-
-
 def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:
     stats = (
         Order.objects

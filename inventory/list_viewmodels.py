@@ -16,13 +16,7 @@ from common.ui import (
 from inventory.low_stock import LOW_STOCK_THRESHOLD
 from inventory.models import InventoryBatch
 from inventory.presentation import (
-    INVENTORY_ACTION_CLASS,
-    INVENTORY_BATCH_ACTION_LABEL,
-    INVENTORY_BATCH_TITLE_CLASS,
     INVENTORY_CARD_CLASS,
-    INVENTORY_LOCATION_CLASS,
-    INVENTORY_LOCATION_LABEL,
-    INVENTORY_QUANTITY_CLASS,
     INVENTORY_VIEW_BATCHES_LABEL,
     INVENTORY_VIEW_PRODUCTS_LABEL,
     batch_quantity_label,
@@ -39,6 +33,9 @@ from inventory.selectors import (
     BatchListRow,
     ExpiryInfo,
 )
+
+
+CARD_DETAILS_HINT = "Open details →"
 
 
 @dataclass(frozen=True)
@@ -248,6 +245,9 @@ def _batch_card(
     return UiCard(
         tone=status.tone,
         css_class=INVENTORY_CARD_CLASS,
+        href=detail_href,
+        aria_label=f"View batch {row.batch.batch_id}",
+        footer_hint=CARD_DETAILS_HINT,
         rows=(
             UiCardRow(
                 left=UiText(
@@ -285,7 +285,7 @@ def _batch_card(
                 left=UiText(
                     text=row.batch.location,
                     css_class="inventory-card__value",
-                    label=INVENTORY_LOCATION_LABEL,
+                    label="Location",
                     label_class="inventory-card__label",
                 ),
                 right=UiText(
@@ -299,14 +299,6 @@ def _batch_card(
                 ),
             ),
         ),
-        action=_batch_detail_action(detail_href),
-    )
-
-def _batch_detail_action(detail_href: str) -> UiText:
-    return UiText(
-        text=INVENTORY_BATCH_ACTION_LABEL,
-        href=detail_href,
-        css_class=INVENTORY_ACTION_CLASS,
     )
 
 
@@ -330,6 +322,9 @@ def _product_stock_card(
     return UiCard(
         tone=status.tone,
         css_class=INVENTORY_CARD_CLASS,
+        href=product_href,
+        aria_label=f"View product {row.product.display_name}",
+        footer_hint=CARD_DETAILS_HINT,
         rows=(
             UiCardRow(
                 left=UiText(
@@ -381,7 +376,10 @@ def _product_stock_card(
                 ),
                 center=UiText(
                     text=reserved_quantity_label,
-                    css_class="inventory-card__metric-value inventory-card__metric-value--reserved",
+                    css_class=(
+                        "inventory-card__metric-value "
+                        "inventory-card__metric-value--reserved"
+                    ),
                 ),
                 right=UiText(
                     text=available_quantity_label,
@@ -392,11 +390,6 @@ def _product_stock_card(
                     ),
                 ),
             ),
-        ),
-        action=UiText(
-            text="View product →",
-            href=product_href,
-            css_class=INVENTORY_ACTION_CLASS,
         ),
     )
 

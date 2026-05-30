@@ -9,8 +9,8 @@ CUSTOMER_CARD_CLASS = "mobile-card mobile-card--customer"
 
 CUSTOMER_TITLE_CLASS = "ui-card-title"
 CUSTOMER_CONTACT_CLASS = "ui-card-contact"
-CUSTOMER_ACTION_CLASS = "text-link"
 
+#TODO: hardcode this instead
 CUSTOMER_ACTION_LABEL = "View customer →"
 
 EXTERNAL_LINK_TARGET = "_blank"

@@ -11,18 +11,7 @@ from common.ui import (
 from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow, BatchListRow
 
-#TODO: ta bort dessa onödiga abstraktioner och använd direkt i template istället, eller flytta till viewmodels.py
 INVENTORY_CARD_CLASS = "mobile-card mobile-card--inventory"
-
-INVENTORY_BATCH_TITLE_CLASS = "ui-card-title"
-INVENTORY_PRODUCT_SKU_CLASS = "ui-card-strong"
-INVENTORY_LOCATION_CLASS = "ui-card-location"
-INVENTORY_QUANTITY_CLASS = "ui-card-strong"
-INVENTORY_META_CLASS = "ui-card-meta"
-INVENTORY_ACTION_CLASS = "text-link"
-
-INVENTORY_LOCATION_LABEL = "Location"
-INVENTORY_BATCH_ACTION_LABEL = "View batch →"
 
 INVENTORY_VIEW_BATCHES_LABEL = "Batches"
 INVENTORY_VIEW_PRODUCTS_LABEL = "Product stock"

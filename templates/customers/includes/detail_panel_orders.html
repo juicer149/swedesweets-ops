@@ -5,8 +5,8 @@
         <tr>
           <th>Order</th>
           <th>Status</th>
-          <th>Created</th>
-          <th class="numeric-cell">Quantity</th>
+          <th>Timeline</th>
+          <th class="numeric-cell">Contents</th>
         </tr>
       </thead>
 
@@ -14,7 +14,7 @@
         {% for row in order_rows %}
           <tr
             class="clickable-row"
-            data-tone="neutral"
+            data-tone="{{ row.status.tone.key }}"
             data-href="{{ row.order_href }}"
             tabindex="0"
             role="link"
@@ -26,12 +26,16 @@
               </span>
             </th>
 
-            <td>{{ row.status }}</td>
+            <td>
+              {% include "includes/ui/text.html" with item=row.status.text only %}
+            </td>
 
-            <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
+            <td>
+              {{ row.lifecycle_label }}
+            </td>
 
             <td class="numeric-cell">
-              <strong>{{ row.quantity_label }}</strong>
+              <strong>{{ row.contents_label }}</strong>
             </td>
           </tr>
         {% endfor %}

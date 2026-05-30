@@ -12,12 +12,17 @@ from common.detail_cards import (
     DetailHeader,
     DetailPanel,
 )
-from common.ui import UiCard
+from common.ui import StatusPresentation, UiCard
 from customers.models import Customer
 from customers.selectors import CustomerOrderSummary
 from orders.mini_cards import build_customer_order_mini_card
 from orders.models import Order
-from orders.presentation import quantity_label
+from orders.presentation import (
+    build_order_status_presentation,
+    contents_summary,
+    order_lifecycle_label,
+    quantity_label,
+)
 
 
 CUSTOMER_EDIT_LABEL = "Edit customer"
@@ -27,10 +32,13 @@ CUSTOMER_EDIT_LABEL = "Edit customer"
 class CustomerOrderRow:
     order_id: int
     order_href: str
-    status: str
+    status: StatusPresentation
     created_at: object
+    lifecycle_label: str
+    product_count: int
     quantity: int
     quantity_label: str
+    contents_label: str
     card: UiCard
 
 
@@ -134,16 +142,25 @@ def _build_order_rows(orders: list[Order]) -> list[CustomerOrderRow]:
 
     for order in orders:
         order_href = reverse("orders:detail", kwargs={"order_id": order.id})
-        quantity = sum(line.quantity_in_units for line in order.lines.all())
+        status = build_order_status_presentation(order.status)
+        product_count = _order_product_count(order)
+        quantity = _order_total_quantity(order)
+        contents_label = contents_summary(
+            product_count=product_count,
+            total_quantity=quantity,
+        )
 
         rows.append(
             CustomerOrderRow(
                 order_id=order.id,
                 order_href=order_href,
-                status=order.get_status_display(),
+                status=status,
                 created_at=order.created_at,
+                lifecycle_label=order_lifecycle_label(order),
+                product_count=product_count,
                 quantity=quantity,
                 quantity_label=quantity_label(quantity),
+                contents_label=contents_label,
                 card=build_customer_order_mini_card(
                     order=order,
                     order_href=order_href,
@@ -153,6 +170,34 @@ def _build_order_rows(orders: list[Order]) -> list[CustomerOrderRow]:
         )
 
     return rows
+
+
+def _order_product_count(order: Order) -> int:
+    annotated_count = getattr(order, "product_count", None)
+
+    if annotated_count is not None:
+        return int(annotated_count)
+
+    prefetched_lines = getattr(order, "_prefetched_objects_cache", {}).get("lines")
+
+    if prefetched_lines is not None:
+        return len(prefetched_lines)
+
+    return order.lines.count()
+
+
+def _order_total_quantity(order: Order) -> int:
+    annotated_quantity = getattr(order, "total_quantity", None)
+
+    if annotated_quantity is not None:
+        return int(annotated_quantity)
+
+    prefetched_lines = getattr(order, "_prefetched_objects_cache", {}).get("lines")
+
+    if prefetched_lines is not None:
+        return sum(line.quantity_in_units for line in prefetched_lines)
+
+    return sum(line.quantity_in_units for line in order.lines.all())
 
 
 def _order_summary_label(total_orders: int) -> str:

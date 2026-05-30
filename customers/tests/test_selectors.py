@@ -4,9 +4,9 @@ import pytest
 
 from customers.selectors import (
     get_customer_order_summary,
-    list_customer_orders,
     list_customers,
 )
+from orders.selectors import list_customer_orders
 from orders.models import Order
 
 

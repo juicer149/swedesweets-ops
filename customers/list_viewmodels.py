@@ -14,7 +14,6 @@ from common.ui import (
 )
 from customers.models import Customer
 from customers.presentation import (
-    CUSTOMER_ACTION_CLASS,
     CUSTOMER_ACTION_LABEL,
     CUSTOMER_CARD_CLASS,
     CUSTOMER_CONTACT_CLASS,
@@ -122,7 +121,7 @@ def _customer_detail_action(detail_href: str) -> UiText:
     return UiText(
         text=CUSTOMER_ACTION_LABEL,
         href=detail_href,
-        css_class=CUSTOMER_ACTION_CLASS,
+        css_class="text-link",
     )
 
 

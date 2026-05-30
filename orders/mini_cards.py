@@ -4,10 +4,13 @@ from common.ui import UiCard, UiCardRow, UiText
 from orders.models import Order
 from orders.presentation import (
     ORDER_CARD_BASE_CLASS,
-    ORDER_DETAILS_LABEL,
     build_order_status_presentation,
-    quantity_label,
+    contents_summary,
+    order_lifecycle_label,
 )
+
+
+CARD_DETAILS_HINT = "Open order →"
 
 
 def build_order_usage_mini_card(
@@ -25,14 +28,11 @@ def build_order_usage_mini_card(
     return UiCard(
         tone=status.tone,
         css_class=ORDER_CARD_BASE_CLASS,
+        href=order_href,
+        aria_label=f"View order #{order.pk}",
+        footer_hint=CARD_DETAILS_HINT,
         rows=(
-            UiCardRow(
-                left=UiText(
-                    text=f"#{order.pk}",
-                    css_class="ui-card-id",
-                ),
-                right=status.text,
-            ),
+            _order_header_row(order=order, status=status),
             UiCardRow(
                 left=UiText(
                     text=customer_name,
@@ -45,11 +45,12 @@ def build_order_usage_mini_card(
                     css_class="ui-card-strong ui-card-strong--compact",
                 ),
             ),
-        ),
-        action=UiText(
-            text=ORDER_DETAILS_LABEL,
-            href=order_href,
-            css_class="text-link",
+            UiCardRow(
+                left=UiText(
+                    text=order_lifecycle_label(order),
+                    css_class="ui-card-muted",
+                ),
+            ),
         ),
     )
 
@@ -60,35 +61,76 @@ def build_customer_order_mini_card(
     order_href: str,
     quantity: int,
 ) -> UiCard:
+    """Build a compact order card for customer detail views."""
+
     status = build_order_status_presentation(order.status)
 
     return UiCard(
         tone=status.tone,
         css_class=ORDER_CARD_BASE_CLASS,
+        href=order_href,
+        aria_label=f"View order #{order.pk}",
+        footer_hint=CARD_DETAILS_HINT,
         rows=(
+            _order_header_row(order=order, status=status),
             UiCardRow(
                 left=UiText(
-                    text=f"#{order.pk}",
-                    css_class="ui-card-id",
-                ),
-                right=status.text,
-            ),
-            UiCardRow(
-                left=UiText(
-                    text=quantity_label(quantity),
+                    text=contents_summary(
+                        product_count=_order_product_count(order),
+                        total_quantity=_order_total_quantity(
+                            order=order,
+                            fallback_quantity=quantity,
+                        ),
+                    ),
                     css_class="ui-card-title",
                 ),
             ),
             UiCardRow(
                 left=UiText(
-                    text=f"Created {order.created_at:%Y-%m-%d %H:%M}",
+                    text=order_lifecycle_label(order),
                     css_class="ui-card-muted",
                 ),
             ),
         ),
-        action=UiText(
-            text=ORDER_DETAILS_LABEL,
-            href=order_href,
-            css_class="text-link",
-        ),
     )
+
+
+def _order_header_row(
+    *,
+    order: Order,
+    status,
+) -> UiCardRow:
+    return UiCardRow(
+        left=UiText(
+            text=f"Order #{order.pk}",
+            css_class="ui-card-id ui-card-id--prominent",
+        ),
+        right=status.text,
+    )
+
+
+def _order_product_count(order: Order) -> int:
+    annotated_count = getattr(order, "product_count", None)
+
+    if annotated_count is not None:
+        return int(annotated_count)
+
+    prefetched_lines = getattr(order, "_prefetched_objects_cache", {}).get("lines")
+
+    if prefetched_lines is not None:
+        return len(prefetched_lines)
+
+    return order.lines.count()
+
+
+def _order_total_quantity(
+    *,
+    order: Order,
+    fallback_quantity: int,
+) -> int:
+    annotated_quantity = getattr(order, "total_quantity", None)
+
+    if annotated_quantity is not None:
+        return int(annotated_quantity)
+
+    return fallback_quantity

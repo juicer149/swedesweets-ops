@@ -98,13 +98,20 @@ class UiCard:
         "mobile-card mobile-card--inventory"
         "dashboard-card"
 
-    The same structure can therefore be reused later for other card types.
+    If href is set and action is empty, templates may render the whole card
+    as one clickable link.
+
+    If action is set, templates should render the card as an article with an
+    explicit action to avoid nested links.
     """
 
     tone: UiTone
     rows: tuple[UiCardRow, ...]
     action: UiText | None = None
     css_class: str = "mobile-card"
+    href: str = ""
+    aria_label: str = ""
+    footer_hint: str = ""
 
 
 @dataclass(frozen=True)

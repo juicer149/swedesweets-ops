@@ -3,10 +3,12 @@ from __future__ import annotations
 from common.ui import UiCard, UiCardRow, UiText
 from inventory.models import InventoryBatch
 from inventory.presentation import (
-    INVENTORY_BATCH_ACTION_LABEL,
     INVENTORY_CARD_CLASS,
     batch_status_presentation,
 )
+
+
+CARD_DETAILS_HINT = "Open details →"
 
 
 def build_batch_mini_card(
@@ -19,6 +21,9 @@ def build_batch_mini_card(
     return UiCard(
         tone=status.tone,
         css_class=INVENTORY_CARD_CLASS,
+        href=batch_href,
+        aria_label=f"View batch {batch.batch_id}",
+        footer_hint=CARD_DETAILS_HINT,
         rows=(
             UiCardRow(
                 left=UiText(
@@ -35,7 +40,7 @@ def build_batch_mini_card(
             ),
             UiCardRow(
                 left=UiText(
-                    text=(f"Best before {batch.best_before:%Y-%m-%d}"),
+                    text=f"Best before {batch.best_before:%Y-%m-%d}",
                     css_class="ui-card-strong ui-card-strong--compact",
                 ),
             ),
@@ -45,10 +50,5 @@ def build_batch_mini_card(
                     css_class="ui-card-muted",
                 ),
             ),
-        ),
-        action=UiText(
-            text=INVENTORY_BATCH_ACTION_LABEL,
-            href=batch_href,
-            css_class="text-link",
         ),
     )
