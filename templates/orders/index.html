@@ -39,7 +39,7 @@
             </th>
 
             <td>{{ row.order.customer.name }}</td>
-            <td>{{ row.order.created_at|date:"d-m-y" }}</td>
+            <td>{{ row.order.created_at|date:"Y-m-d" }}</td>
 
             <td>
               <span class="{{ row.status.text.css_class }}">

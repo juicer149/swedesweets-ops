@@ -179,12 +179,12 @@ def order_lifecycle_label(order: Order) -> str:
         )
 
     if order.status == Order.Status.DELIVERED and order.delivered_at:
-        return order.delivered_at.strftime("Delivered %d-%m-%y")
+        return order.delivered_at.strftime("Delivered %Y-%m-%d")
 
     if order.status == Order.Status.CANCELLED and order.cancelled_at:
-        return order.cancelled_at.strftime("Cancelled %d-%m-%y")
+        return order.cancelled_at.strftime("Cancelled %Y-%m-%d")
 
-    return order.created_at.strftime("Created %d-%m-%y")
+    return order.created_at.strftime("Created %Y-%m-%d")
 
 
 def relative_time_label(*, prefix: str, value: datetime) -> str:

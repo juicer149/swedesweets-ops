@@ -286,7 +286,7 @@ def _batch_card(
                     label_class="ui-card-label",
                 ),
                 right=UiText(
-                    text=row.batch.best_before.strftime("%d-%m-%y"),
+                    text=row.batch.best_before.strftime("%Y-%m-%d"),
                     css_class="ui-card-location",
                     label=row.expiry.label,
                     label_class=f"ui-card-label {expiry_css_class(row)}",
