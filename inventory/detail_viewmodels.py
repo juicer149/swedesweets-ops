@@ -15,8 +15,6 @@ from common.detail_cards import (
     DetailPanel,
 )
 from common.ui import UiCard
-from orders.mini_cards import build_order_usage_mini_card
-
 from inventory.models import InventoryBatch
 from inventory.presentation import (
     batch_detail_card_class,
@@ -24,7 +22,9 @@ from inventory.presentation import (
     batch_status_icon,
 )
 from inventory.selectors import build_expiry_info
+from orders.mini_cards import build_order_usage_mini_card
 from orders.models import Allocation
+from products.mini_cards import build_product_mini_card
 
 
 @dataclass(frozen=True)
@@ -88,6 +88,7 @@ class BatchDetailContext:
     batch: InventoryBatch
     stock: BatchStockSummary
     product_href: str
+    product_card: UiCard
     usage_rows: list[BatchUsageRow]
     usage_count: int
     detail_card: DetailCard
@@ -100,6 +101,7 @@ class BatchDetailContext:
             "batch": self.batch,
             "stock": self.stock,
             "product_href": self.product_href,
+            "product_card": self.product_card,
             "usage_rows": self.usage_rows,
             "usage_count": self.usage_count,
             "detail_card": self.detail_card,
@@ -122,11 +124,19 @@ def build_batch_detail_context(
         batch=batch,
         allocations=allocations,
     )
+    product_href = reverse(
+        "products:detail",
+        kwargs={"product_pk": batch.product_id},
+    )
 
     return BatchDetailContext(
         batch=batch,
         stock=stock,
-        product_href=reverse("products:detail", kwargs={"product_pk": batch.product_id}),
+        product_href=product_href,
+        product_card=build_product_mini_card(
+            product=batch.product,
+            product_href=product_href,
+        ),
         usage_rows=usage_rows,
         usage_count=len(usage_rows),
         detail_card=DetailCard(

@@ -1,32 +1,52 @@
 {% if content_lines %}
-  <div class="detail-line-list">
-    {% for line in content_lines %}
-      <article
-        class="detail-line clickable-row"
-        data-tone="neutral"
-        data-href="{{ line.product_detail_href }}"
-        tabindex="0"
-        role="link"
-        aria-label="View product {{ line.product.display_name }}"
-      >
-        <strong>
-          {{ line.quantity_label }}
-          —
-          {{ line.product.display_name }}
-        </strong>
+  <div class="table-card table-card--embedded">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th class="numeric-cell">Quantity</th>
+          <th>Weight</th>
+        </tr>
+      </thead>
 
-        <span>
-          {{ line.catalog_label }}
-          ·
-          Unit: {{ line.unit }}
-        </span>
-      </article>
-    {% endfor %}
+      <tbody>
+        {% for line in content_lines %}
+          <tr
+            class="clickable-row"
+            data-tone="neutral"
+            data-href="{{ line.product_detail_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="View product {{ line.product.display_name }}"
+          >
+            <th scope="row">
+              <span class="row-link">
+                {{ line.product.code_label }} · {{ line.product.display_name }}
+              </span>
+            </th>
+
+            <td class="numeric-cell">
+              <strong>{{ line.quantity_label }}</strong>
+            </td>
+
+            <td>
+              {{ line.product.weight_label }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p class="table-hint">
+      Select a product to view its product detail.
+    </p>
   </div>
 
-  <p class="table-hint">
-    Select a product to view its product detail.
-  </p>
+  <div class="mobile-card-list">
+    {% for line in content_lines %}
+      {% include "includes/ui/card.html" with card=line.card only %}
+    {% endfor %}
+  </div>
 {% else %}
   <p class="form-help">No order contents found.</p>
 {% endif %}

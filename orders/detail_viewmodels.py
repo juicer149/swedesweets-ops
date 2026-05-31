@@ -16,6 +16,7 @@ from common.detail_cards import (
     DetailHeader,
     DetailPanel,
 )
+from common.ui import UiCard
 from orders.datatypes import PickLine
 from orders.models import Order, OrderLine
 from orders.presentation import (
@@ -32,6 +33,7 @@ from orders.presentation import (
     order_status_icon,
     quantity_label,
 )
+from products.mini_cards import build_product_quantity_mini_card
 from products.models import Product
 
 
@@ -43,6 +45,7 @@ class OrderContentLine:
     quantity_label: str
     unit: str
     catalog_label: str
+    card: UiCard
 
 
 @dataclass(frozen=True)
@@ -254,17 +257,29 @@ def customer_detail_href(order: Order) -> str:
 
 
 def _build_content_lines(lines: list[OrderLine]) -> list[OrderContentLine]:
-    return [
-        OrderContentLine(
-            product=line.product,
-            product_detail_href=reverse(
-                "products:detail",
-                kwargs={"product_pk": line.product_id},
-            ),
-            quantity=line.quantity_in_units,
-            quantity_label=line.product.stock_quantity_label(line.quantity_in_units),
-            unit=line.get_unit_display(),
-            catalog_label=line.product.catalog_label,
+    content_lines: list[OrderContentLine] = []
+
+    for line in lines:
+        product_detail_href = reverse(
+            "products:detail",
+            kwargs={"product_pk": line.product_id},
         )
-        for line in lines
-    ]
+        quantity_text = line.product.stock_quantity_label(line.quantity_in_units)
+
+        content_lines.append(
+            OrderContentLine(
+                product=line.product,
+                product_detail_href=product_detail_href,
+                quantity=line.quantity_in_units,
+                quantity_label=quantity_text,
+                unit=line.get_unit_display(),
+                catalog_label=line.product.catalog_label,
+                card=build_product_quantity_mini_card(
+                    product=line.product,
+                    product_href=product_detail_href,
+                    quantity_label=quantity_text,
+                ),
+            )
+        )
+
+    return content_lines

@@ -1,23 +1,8 @@
+<div class="detail-relation-card">
+  {% include "includes/ui/card.html" with card=product_card only %}
+</div>
+
 <dl class="detail-data-list">
-  <div
-    class="detail-data-list__product-row clickable-row"
-    data-href="{{ product_href }}"
-    tabindex="0"
-    role="link"
-    aria-label="View product {{ batch.product.display_name }}"
-  >
-    <dt>Product</dt>
-    <dd>
-      <span class="detail-data-list__product-label">
-        {{ batch.product.catalog_label }}
-      </span>
-
-      <span class="detail-data-list__product-arrow" aria-hidden="true">
-        →
-      </span>
-    </dd>
-  </div>
-
   <div>
     <dt>Batch</dt>
     <dd>{{ batch.batch_id }}</dd>
