@@ -54,6 +54,33 @@
   gap: var(--space-3);
 }
 
+/* Rows with only one visible cell should use the full card width. */
+.ui-card__row:not(:has(.ui-card__cell--center)):not(:has(.ui-card__cell--right)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ui-card__row:not(:has(.ui-card__cell--center)):not(:has(.ui-card__cell--right))
+  .ui-card__cell--left {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+}
+
+/* Common two-column card row: primary value left, secondary value right. */
+.ui-card__row:has(.ui-card__cell--left):has(.ui-card__cell--right):not(:has(.ui-card__cell--center)) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.ui-card__row:has(.ui-card__cell--left):has(.ui-card__cell--right):not(:has(.ui-card__cell--center))
+  .ui-card__cell--left {
+  grid-column: 1;
+}
+
+.ui-card__row:has(.ui-card__cell--left):has(.ui-card__cell--right):not(:has(.ui-card__cell--center))
+  .ui-card__cell--right {
+  grid-column: 2;
+}
+
+
 .ui-card__cell {
   min-width: 0;
 }
