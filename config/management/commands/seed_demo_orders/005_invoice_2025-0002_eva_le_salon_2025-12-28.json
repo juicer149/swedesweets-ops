@@ -3,7 +3,6 @@
   "orders": [
     {
       "seed_key": "2025-12-28_eva_le_salon_2025-0002",
-      "skip": true,
       "invoice_number": "2025-0002",
       "order_date": "2025-12-28",
       "customer_key": "eva_le_salon",

@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "receipts": [
+    {
+      "source": {
+        "type": "invoice",
+        "invoice_number": "unknown",
+        "supplier_order_number": "567405",
+        "invoice_date": "2026-01-15",
+        "delivery_date": "2026-01-15",
+        "received_date": "2026-01-15",
+        "source_file": "order_567405_2026-01-15.pdf",
+        "notes": "Supplier order text provided without invoice number. Best-before dates and locations are seed assignments; replace with exact source values if available."
+      },
+      "supplier": {
+        "name": "Er-T Godis AB",
+        "organization_number": "556296-6118"
+      },
+      "items": [
+        {
+          "internal_number": 67,
+          "quantity": 90,
+          "invoice_code": "EST13051",
+          "invoice_name": "DIPMIX SOURCREAM 24G",
+          "location": "K1",
+          "best_before": "2027-05-20"
+        },
+        {
+          "internal_number": 61,
+          "quantity": 210,
+          "invoice_code": "EST10648",
+          "invoice_name": "DILLCHIPS 175 GR 21ST",
+          "location": "K2",
+          "best_before": "2026-06-09"
+        },
+        {
+          "internal_number": 62,
+          "quantity": 210,
+          "invoice_code": "EST10650",
+          "invoice_name": "GRILLCHIPS 175 GR 21ST",
+          "location": "K3",
+          "best_before": "2026-07-27"
+        },
+        {
+          "internal_number": 60,
+          "quantity": 210,
+          "invoice_code": "EST10646",
+          "invoice_name": "SOURCREAM ONION CHIPS 175 GR 21ST",
+          "location": "K4",
+          "best_before": "2026-08-03"
+        },
+        {
+          "internal_number": 63,
+          "quantity": 150,
+          "invoice_code": "EST10834",
+          "invoice_name": "VÄSTKUSTCHIPS HAVSSALT RÄFFLADE 180G",
+          "location": "K5",
+          "best_before": "2026-08-13"
+        },
+        {
+          "internal_number": 66,
+          "quantity": 90,
+          "invoice_code": "EST13048",
+          "invoice_name": "DIPMIX HOLIDAY 24G",
+          "location": "K6",
+          "best_before": "2027-07-19"
+        },
+        {
+          "internal_number": 68,
+          "quantity": 80,
+          "invoice_code": "OLW100440",
+          "invoice_name": "DIPMIX DILL & GRÄSLÖK 24G",
+          "location": "K7",
+          "best_before": "2027-04-23"
+        },
+        {
+          "internal_number": 69,
+          "quantity": 80,
+          "invoice_code": "OLW100443",
+          "invoice_name": "DIPMIX VITLÖK 21G",
+          "location": "K8",
+          "best_before": "2027-05-12"
+        },
+        {
+          "internal_number": 70,
+          "quantity": 80,
+          "invoice_code": "OLW100444",
+          "invoice_name": "DIPMIX RANCH 24G",
+          "location": "K9",
+          "best_before": "2027-05-08"
+        }
+      ]
+    }
+  ]
+}

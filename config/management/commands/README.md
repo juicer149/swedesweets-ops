@@ -35,7 +35,7 @@ Re-enable after verifying additional inbound stock or correcting product mapping
 ### 2026-02-29_miss_money_penny_2025-0004
 
 Skipped because the invoice only says "Lösgodis 10" and does not provide a
-product-level split.
+product-level split. skippa
 
 ### unknown_date_unknown_customer_unknown_invoice
 

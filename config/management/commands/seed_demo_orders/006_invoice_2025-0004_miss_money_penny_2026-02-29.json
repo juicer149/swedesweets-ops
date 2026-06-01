@@ -21,7 +21,7 @@
           "sold_quantity": 10,
           "sold_unit": "kg",
           "unit_price": "16.00",
-          "note": "Original invoice only says 'Lösgodis'; cannot allocate inventory without manual product split.",
+          "note": "Original invoice only says 'Lösgodis'; unknown products, familey of company had taken a few boxes for there salon but didnt know exactly what was in them. Assuming 10kg of mixed candy at 16 EUR/kg.",
           "line_total": "160.00"
         }
       ]

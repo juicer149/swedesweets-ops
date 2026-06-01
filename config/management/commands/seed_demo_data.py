@@ -272,12 +272,9 @@ class Command(BaseCommand):
             unmapped_items = order_data.get("unmapped_items", [])
 
             if unmapped_items:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"Order {_order_seed_label(order_data)} has "
-                        f"{len(unmapped_items)} unmapped item(s). "
-                        "They will not consume inventory."
-                    )
+                self._write_unmapped_items_warning(
+                    order_data=order_data,
+                    unmapped_items=unmapped_items,
                 )
 
             inventory_items = order_data.get("items", [])
@@ -330,6 +327,37 @@ class Command(BaseCommand):
                 f"Historical orders seeded: {created_count}; skipped: {skipped_count}."
             )
         )
+
+    def _write_unmapped_items_warning(
+        self,
+        *,
+        order_data: dict[str, Any],
+        unmapped_items: Any,
+    ) -> None:
+        order_label = _order_seed_label(order_data)
+
+        if not isinstance(unmapped_items, list):
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Order {order_label} has invalid unmapped_items data. "
+                    "Expected a list."
+                )
+            )
+            return
+
+        self.stdout.write(
+            self.style.WARNING(
+                f"Order {order_label} has {len(unmapped_items)} unmapped item(s). "
+                "They will not consume inventory:"
+            )
+        )
+
+        for index, item in enumerate(unmapped_items, start=1):
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  - #{index}: {_format_unmapped_item(item)}"
+                )
+            )
 
 
 # ==============================================================================
@@ -710,7 +738,19 @@ def _build_order_line_input(
             grams=int(quantity),
         )
 
-    if unit in {"stock_unit", "unit", "units", "piece", "pieces", "bag", "bags", "box", "boxes", "case", "cases"}:
+    if unit in {
+        "stock_unit",
+        "unit",
+        "units",
+        "piece",
+        "pieces",
+        "bag",
+        "bags",
+        "box",
+        "boxes",
+        "case",
+        "cases",
+    }:
         if quantity != quantity.to_integral_value():
             raise CommandError(
                 f"Order {_order_seed_label(order_data)} item #{item_index} "
@@ -806,6 +846,45 @@ def _apply_historical_order_timestamp(
         packed_at=historical_datetime,
         delivered_at=historical_datetime,
     )
+
+
+def _format_unmapped_item(item: Any) -> str:
+    if not isinstance(item, dict):
+        return str(item)
+
+    parts = []
+
+    invoice_code = item.get("invoice_code") or item.get("code")
+    invoice_name = item.get("invoice_name") or item.get("name") or item.get("text")
+    quantity = item.get("quantity") or item.get("sold_quantity")
+    unit = item.get("unit") or item.get("sold_unit")
+    reason = item.get("reason")
+    raw_text = item.get("raw_text") or item.get("raw")
+
+    if invoice_code:
+        parts.append(str(invoice_code))
+
+    if invoice_name:
+        parts.append(str(invoice_name))
+
+    if quantity:
+        quantity_label = str(quantity)
+
+        if unit:
+            quantity_label = f"{quantity_label} {unit}"
+
+        parts.append(f"quantity={quantity_label}")
+
+    if reason:
+        parts.append(f"reason={reason}")
+
+    if raw_text and not parts:
+        parts.append(str(raw_text))
+
+    if parts:
+        return " · ".join(parts)
+
+    return json.dumps(item, ensure_ascii=False, sort_keys=True)
 
 
 def _order_seed_label(order_data: dict[str, Any]) -> str:

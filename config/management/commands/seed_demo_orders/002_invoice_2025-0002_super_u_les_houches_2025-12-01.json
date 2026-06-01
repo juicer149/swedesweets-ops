@@ -3,7 +3,6 @@
   "orders": [
     {
       "seed_key": "2025-12-01_super_u_les_houches_2025-0002",
-      "skip": true,
       "invoice_number": "2025-0002",
       "order_date": "2025-12-01",
       "customer_key": "super_u_les_houches",
@@ -126,6 +125,14 @@
           "sold_unit": "kg",
           "unit_price": "12.00",
           "line_total": "93.60"
+        },
+        {
+          "internal_number": 31,
+          "invoice_name": "JÄTTEBANAN CHOKLAD",
+          "sold_quantity": 4.8,
+          "sold_unit": "kg",
+          "unit_price": "12.00",
+          "line_total": "57.60"
         },
         {
           "internal_number": 16,
@@ -358,24 +365,6 @@
           "unit": "piece",
           "unit_price": "500.00",
           "line_total": "500.00"
-        }
-      ],
-      "unmapped_items": [
-        {
-          "invoice_name": "JÄTTEBANAN CHOKLAD",
-          "sold_quantity": 4.8,
-          "sold_unit": "kg",
-          "unit_price": "12.00",
-          "note": "Needs manual product mapping before inventory allocation.",
-          "line_total": "57.60"
-        },
-        {
-          "invoice_name": "BRIO CARAMEL",
-          "sold_quantity": 8,
-          "sold_unit": "kg",
-          "unit_price": "12.00",
-          "note": "Needs manual product mapping before inventory allocation.",
-          "line_total": "96.00"
         }
       ]
     }

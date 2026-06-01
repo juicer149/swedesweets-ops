@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "receipts": [
+    {
+      "source": {
+        "type": "invoice",
+        "invoice_number": "unknown",
+        "supplier_order_number": "567814",
+        "invoice_date": "2026-01-19",
+        "delivery_date": "2026-01-19",
+        "received_date": "2026-01-19",
+        "source_file": "order_567814_2026-01-19.pdf",
+        "notes": "Supplier order text provided without invoice number. Best-before date and location are seed assignments; replace with exact source values if available."
+      },
+      "supplier": {
+        "name": "Er-T Godis AB",
+        "organization_number": "556296-6118"
+      },
+      "items": [
+        {
+          "internal_number": 59,
+          "quantity": 624,
+          "invoice_code": "CLO1003306",
+          "invoice_name": "STOR KEXCHOKLAD 60 G 1/4-PALL",
+          "location": "L1",
+          "best_before": "2026-08-31"
+        }
+      ]
+    }
+  ]
+}
