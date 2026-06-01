@@ -82,40 +82,6 @@
   padding-inline: var(--space-7);
 }
 
-.detail-data-list__product-row {
-  cursor: pointer;
-  border-radius: var(--radius-md);
-}
-
-.detail-data-list__product-row dd {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  max-width: 100%;
-}
-
-.detail-data-list__product-label {
-  text-decoration: none;
-}
-
-.detail-data-list__product-arrow {
-  color: var(--color-link);
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.detail-data-list__product-row:hover .detail-data-list__product-label,
-.detail-data-list__product-row:focus-visible .detail-data-list__product-label {
-  color: var(--color-link);
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.18em;
-}
-
-.detail-data-list__product-row:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
-}
 
 @media (max-width: 700px) {
   .form-actions.detail-actions {
@@ -131,27 +97,5 @@
     width: 100%;
     min-width: 0;
     padding-inline: var(--space-5);
-  }
-}
-
-
-/* Touch devices should not keep detail-line hover state stuck. */
-@media (hover: none), (pointer: coarse) {
-  .detail-line.clickable-row:hover {
-    background: var(--color-primary-50);
-    border-color: var(--color-neutral-200);
-    box-shadow: none;
-  }
-
-  .detail-line--linked:hover {
-    background: var(--color-primary-50);
-    border-color: var(--color-border);
-    box-shadow: none;
-    transform: none;
-  }
-
-  .detail-data-list__product-row:hover .detail-data-list__product-label {
-    color: var(--color-primary-900);
-    text-decoration: none;
   }
 }

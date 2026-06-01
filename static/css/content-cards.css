@@ -235,9 +235,6 @@
   min-width: 0;
 }
 
-.detail-data-list__wide {
-  grid-column: 1 / -1;
-}
 
 .detail-data-list dt {
   font-size: var(--font-size-12);
@@ -275,88 +272,6 @@
   box-shadow: var(--shadow-focus-info);
 }
 
-
-/* =============================================================================
-   Detail panel line lists
-
-   Used for order contents, batch lines, allocation rows, etc.
-   ============================================================================= */
-
-.detail-line-list {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.detail-line {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3);
-
-  background: var(--color-primary-50);
-  border: var(--border-subtle);
-  border-radius: var(--radius-control);
-}
-
-.detail-line strong {
-  color: var(--color-primary-900);
-  font-size: var(--font-size-16);
-  line-height: 1.35;
-}
-
-.detail-line span {
-  color: var(--color-neutral-700);
-  font-size: var(--font-size-12);
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.detail-line.clickable-row {
-  cursor: pointer;
-
-  border: 1px solid var(--color-neutral-200);
-  transition:
-    background var(--motion-fast),
-    border-color var(--motion-fast),
-    box-shadow var(--motion-fast),
-    transform var(--motion-fast);
-}
-
-.detail-line.clickable-row:hover {
-  background: var(--color-surface);
-  border-color: var(--color-accent-500);
-  box-shadow: var(--shadow-accent-glow);
-}
-
-.detail-line.clickable-row:focus-visible {
-  outline: none;
-  border-color: var(--color-accent-600);
-  box-shadow: 0 0 0 3px rgb(var(--color-status-info) / 0.16);
-}
-
-.detail-line.clickable-row:active {
-  transform: translateY(1px);
-}
-
-.detail-line-list--leading {
-  margin-bottom: var(--space-4);
-}
-
-.detail-line--linked {
-  border: 1px solid var(--color-border);
-  transition:
-    background var(--motion-fast),
-    border-color var(--motion-fast),
-    box-shadow var(--motion-fast),
-    transform var(--motion-fast);
-}
-
-.detail-line--linked:hover,
-.detail-line--linked:focus-visible {
-  background: rgb(var(--color-status-info) / 0.08);
-  border-color: var(--color-accent-600);
-  box-shadow: var(--shadow-accent-glow);
-  transform: translateY(-1px);
-}
 
 /* =============================================================================
    Responsive

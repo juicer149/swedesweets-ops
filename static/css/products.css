@@ -173,7 +173,3 @@
 .detail-relation-card {
   margin-bottom: var(--space-4);
 }
-
-.detail-line-list--product-cards {
-  gap: var(--space-3);
-}
