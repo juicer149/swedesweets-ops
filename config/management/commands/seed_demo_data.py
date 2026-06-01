@@ -8,7 +8,7 @@ from typing import Any, Iterator
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils import timezone
 
 from customers.models import Customer, normalize_customer_email
@@ -100,6 +100,15 @@ class Command(BaseCommand):
         InventoryBatch.objects.all().delete()
         Customer.objects.all().delete()
         Product.objects.all().delete()
+
+        _reset_database_sequences(
+            Allocation,
+            OrderLine,
+            Order,
+            InventoryBatch,
+            Customer,
+            Product,
+        )
 
     # ==========================================================================
     # users
@@ -358,6 +367,87 @@ class Command(BaseCommand):
                     f"  - #{index}: {_format_unmapped_item(item)}"
                 )
             )
+
+
+# ==============================================================================
+# reset helpers
+# ==============================================================================
+
+
+def _reset_database_sequences(*models) -> None:
+    model_list = list(models)
+
+    if connection.vendor == "sqlite":
+        _reset_sqlite_sequences(model_list)
+        return
+
+    if connection.vendor == "postgresql":
+        _reset_postgresql_sequences(model_list)
+        return
+
+    if connection.vendor == "mysql":
+        _reset_mysql_sequences(model_list)
+        return
+
+
+def _reset_sqlite_sequences(models: list[type]) -> None:
+    table_names = [
+        model._meta.db_table
+        for model in models
+    ]
+
+    if not table_names:
+        return
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name = 'sqlite_sequence'
+            """
+        )
+
+        if cursor.fetchone() is None:
+            return
+
+        placeholders = ", ".join(["%s"] * len(table_names))
+
+        cursor.execute(
+            f"DELETE FROM sqlite_sequence WHERE name IN ({placeholders})",
+            table_names,
+        )
+
+
+def _reset_postgresql_sequences(models: list[type]) -> None:
+    with connection.cursor() as cursor:
+        for model in models:
+            table_name = model._meta.db_table
+            pk_column = model._meta.pk.column
+
+            cursor.execute(
+                "SELECT pg_get_serial_sequence(%s, %s)",
+                [table_name, pk_column],
+            )
+            row = cursor.fetchone()
+
+            if not row or not row[0]:
+                continue
+
+            sequence_name = row[0]
+
+            cursor.execute(
+                "SELECT setval(%s, 1, false)",
+                [sequence_name],
+            )
+
+
+def _reset_mysql_sequences(models: list[type]) -> None:
+    with connection.cursor() as cursor:
+        for model in models:
+            table_name = connection.ops.quote_name(model._meta.db_table)
+            cursor.execute(f"ALTER TABLE {table_name} AUTO_INCREMENT = 1")
 
 
 # ==============================================================================
