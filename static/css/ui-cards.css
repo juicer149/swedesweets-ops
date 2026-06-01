@@ -73,13 +73,13 @@
 .ui-card__row:has(.ui-card__cell--left):has(.ui-card__cell--right):not(:has(.ui-card__cell--center))
   .ui-card__cell--left {
   grid-column: 1;
+  justify-self: stretch;
 }
 
 .ui-card__row:has(.ui-card__cell--left):has(.ui-card__cell--right):not(:has(.ui-card__cell--center))
   .ui-card__cell--right {
   grid-column: 2;
 }
-
 
 .ui-card__cell {
   min-width: 0;
@@ -413,44 +413,4 @@
 
 .ui-card-strong--compact {
   font-size: var(--font-size-14);
-}
-
-
-/* =============================================================================
-   Product mini cards
-
-   Compact relation cards used inside detail panels and order contents.
-   ============================================================================= */
-
-.mobile-card--relation {
-  gap: var(--space-2);
-  padding: var(--space-3);
-
-  background: var(--color-primary-50);
-  border: var(--border-subtle);
-  border-radius: var(--radius-card-inner);
-}
-
-.mobile-card--product-mini .ui-card__row {
-  gap: var(--space-2);
-}
-
-.mobile-card--product-mini .ui-card-title {
-  font-size: var(--font-size-18, var(--font-size-20));
-  line-height: 1.2;
-}
-
-.mobile-card--product-mini .ui-card-id,
-.mobile-card--product-mini .ui-card-meta {
-  font-size: var(--font-size-14);
-}
-
-.mobile-card--product-mini .ui-card__footer {
-  justify-content: flex-end;
-  padding-top: var(--space-1);
-}
-
-.mobile-card--product-mini .ui-card__hint {
-  font-size: var(--font-size-12);
-  font-weight: 800;
 }

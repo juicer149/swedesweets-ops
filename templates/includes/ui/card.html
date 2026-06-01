@@ -6,23 +6,23 @@
   >
     {% for row in card.rows %}
       <div class="ui-card__row">
-        <div class="ui-card__cell ui-card__cell--left">
-          {% if row.left %}
+        {% if row.left %}
+          <div class="ui-card__cell ui-card__cell--left">
             {% include "includes/ui/text.html" with item=row.left only %}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
 
-        <div class="ui-card__cell ui-card__cell--center">
-          {% if row.center %}
+        {% if row.center %}
+          <div class="ui-card__cell ui-card__cell--center">
             {% include "includes/ui/text.html" with item=row.center only %}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
 
-        <div class="ui-card__cell ui-card__cell--right">
-          {% if row.right %}
+        {% if row.right %}
+          <div class="ui-card__cell ui-card__cell--right">
             {% include "includes/ui/text.html" with item=row.right only %}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
       </div>
     {% endfor %}
 
@@ -36,23 +36,23 @@
   <article class="{{ card.css_class }} {{ card.tone.card_class }}">
     {% for row in card.rows %}
       <div class="ui-card__row">
-        <div class="ui-card__cell ui-card__cell--left">
-          {% if row.left %}
+        {% if row.left %}
+          <div class="ui-card__cell ui-card__cell--left">
             {% include "includes/ui/text.html" with item=row.left only %}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
 
-        <div class="ui-card__cell ui-card__cell--center">
-          {% if row.center %}
+        {% if row.center %}
+          <div class="ui-card__cell ui-card__cell--center">
             {% include "includes/ui/text.html" with item=row.center only %}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
 
-        <div class="ui-card__cell ui-card__cell--right">
-          {% if row.right %}
+        {% if row.right %}
+          <div class="ui-card__cell ui-card__cell--right">
             {% include "includes/ui/text.html" with item=row.right only %}
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
       </div>
     {% endfor %}
 
