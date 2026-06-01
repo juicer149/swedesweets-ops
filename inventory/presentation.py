@@ -122,7 +122,7 @@ def batch_detail_card_class(batch: InventoryBatch) -> str:
         return "content-card--pack"
 
     if batch.status == InventoryBatch.Status.CLOSED:
-        return "content-card--danger"
+        return "content-card--muted"
 
     return ""
 

@@ -58,12 +58,11 @@ ORDER_SORTS: dict[str, tuple[str, ...]] = {
     "-customer": ("-customer__name", "id"),
     "created": ("created_at", "id"),
     "-created": ("-created_at", "-id"),
-    "status": ("status_rank", "created_at", "id"),
-    "-status": ("-status_rank", "created_at", "id"),
+    "status": ("status_rank", "-id"),
+    "-status": ("-status_rank", "-id"),
     "quantity": ("total_quantity", "id"),
     "-quantity": ("-total_quantity", "id"),
 }
-
 
 def list_orders(
     *,

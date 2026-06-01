@@ -22,7 +22,7 @@ from orders.models import Allocation, Order
 from products.models import Product
 
 
-DEFAULT_BATCH_SORT = "best_before"
+DEFAULT_BATCH_SORT = "status"
 
 BATCH_SORTS: dict[str, tuple[str, ...]] = {
     "batch": ("batch_id",),
@@ -40,13 +40,13 @@ BATCH_SORTS: dict[str, tuple[str, ...]] = {
         "batch_id",
     ),
     "best_before": ("best_before", "batch_id"),
-    "-best_before": ("-best_before", "batch_id"),
+    "-best_before": ("-best_before", "-batch_id"),
     "quantity": ("quantity", "batch_id"),
-    "-quantity": ("-quantity", "batch_id"),
+    "-quantity": ("-quantity", "-batch_id"),
     "status": ("status_rank", "best_before", "batch_id"),
-    "-status": ("-status_rank", "best_before", "batch_id"),
+    "-status": ("-status_rank", "-best_before", "-batch_id"),
     "location": ("location", "batch_id"),
-    "-location": ("-location", "batch_id"),
+    "-location": ("-location", "-batch_id"),
 }
 
 DEFAULT_PRODUCT_STOCK_SORT = "product"

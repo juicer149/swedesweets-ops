@@ -192,6 +192,20 @@
   color: var(--color-expiry-critical-text);
 }
 
+/* Closed batches are archived inventory, so their operational signals are muted. */
+.inventory-batch-table .clickable-row[data-tone="muted"] .row-link,
+.inventory-batch-table .clickable-row[data-tone="muted"] .inventory-product-cell__name,
+.inventory-batch-table .clickable-row[data-tone="muted"] .inventory-product-cell__meta,
+.inventory-batch-table .clickable-row[data-tone="muted"] .expiry-text,
+.inventory-batch-table .clickable-row[data-tone="muted"] .numeric-cell strong,
+.inventory-batch-table .clickable-row[data-tone="muted"] .status-text,
+.inventory-batch-table .clickable-row[data-tone="muted"] td {
+  color: var(--color-neutral-600);
+}
+
+.inventory-batch-table .clickable-row[data-tone="muted"] .status-text {
+  color: var(--color-neutral-700);
+}
 
 /* =============================================================================
    Inventory stock metrics
