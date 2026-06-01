@@ -7,24 +7,7 @@
 
 <section class="form-section" aria-labelledby="batch-form-title">
   {% if batch %}
-    <aside class="form-summary-card" aria-label="Batch summary">
-      <dl class="detail-data-list form-summary-card__list">
-        <div>
-          <dt>Batch</dt>
-          <dd>{{ batch.batch_id }}</dd>
-        </div>
-
-        <div>
-          <dt>Product</dt>
-          <dd>{{ batch.product.catalog_label }}</dd>
-        </div>
-
-        <div>
-          <dt>Status</dt>
-          <dd>{{ batch.get_status_display }}</dd>
-        </div>
-      </dl>
-    </aside>
+    {% include "includes/ui/form_context_card.html" with aria_label="Batch summary" eyebrow="Locked batch context" heading=batch.batch_id items=batch_context_items only %}
   {% endif %}
 
   {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}

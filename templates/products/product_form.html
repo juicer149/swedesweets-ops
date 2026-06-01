@@ -7,41 +7,7 @@
 
 <section class="form-section" aria-labelledby="product-form-title">
   {% if product %}
-    <div class="form-card form-card--summary">
-      <dl class="detail-data-list">
-        <div>
-          <dt>SKU</dt>
-          <dd>{{ product.sku }}</dd>
-        </div>
-
-        <div>
-          <dt>Unit weight</dt>
-          <dd>{{ product.unit_weight_label }}</dd>
-        </div>
-
-        <div>
-          <dt>Internal number</dt>
-          <dd>
-            {% if product.internal_number %}
-              {{ product.internal_number }}
-            {% else %}
-              —
-            {% endif %}
-          </dd>
-        </div>
-
-        <div>
-          <dt>Current status</dt>
-          <dd>
-            {% if product.active %}
-              Active
-            {% else %}
-              Inactive
-            {% endif %}
-          </dd>
-        </div>
-      </dl>
-    </div>
+    {% include "includes/ui/form_context_card.html" with aria_label="Product summary" eyebrow="Product identity" heading=product.display_name items=product_context_items only %}
   {% endif %}
 
   {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}

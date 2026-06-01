@@ -18,6 +18,7 @@ from customers.forms import (
     build_customer_edit_initial_data,
 )
 from customers.list_viewmodels import build_customer_page_rows
+from customers.form_viewmodels import build_customer_context_items
 from customers.models import Customer
 from customers.selectors import (
     CUSTOMER_SORTS,
@@ -138,6 +139,7 @@ def edit(request, customer_pk: int):
     context = {
         "form": form,
         "customer": customer,
+        "customer_context_items": build_customer_context_items(customer),
         "title": f"Edit - {customer.name}",
         "description": "",
         "submit_label": "Update customer",

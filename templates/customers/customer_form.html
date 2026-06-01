@@ -7,24 +7,7 @@
 
 <section class="form-section" aria-labelledby="customer-form-title">
   {% if customer %}
-    <div class="form-card form-card--summary">
-      <dl class="detail-data-list">
-        <div>
-          <dt>Customer</dt>
-          <dd>{{ customer.name }}</dd>
-        </div>
-
-        <div>
-          <dt>Email</dt>
-          <dd>{{ customer.email }}</dd>
-        </div>
-
-        <div>
-          <dt>Address</dt>
-          <dd>{{ customer.address }}</dd>
-        </div>
-      </dl>
-    </div>
+    {% include "includes/ui/form_context_card.html" with aria_label="Customer summary" eyebrow="Editing customer" heading=customer.name items=customer_context_items only %}
   {% endif %}
 
   {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}

@@ -1,0 +1,24 @@
+{% if items %}
+  <aside class="form-context-card" aria-label="{{ aria_label|default:'Current record summary' }}">
+    {% if eyebrow or heading %}
+      <header class="form-context-card__header">
+        {% if eyebrow %}
+          <p class="form-context-card__eyebrow">{{ eyebrow }}</p>
+        {% endif %}
+
+        {% if heading %}
+          <p class="form-context-card__heading">{{ heading }}</p>
+        {% endif %}
+      </header>
+    {% endif %}
+
+    <dl class="form-context-card__list">
+      {% for item in items %}
+        <div class="form-context-card__item">
+          <dt>{{ item.label }}</dt>
+          <dd>{{ item.value|default:"—" }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </aside>
+{% endif %}

@@ -81,31 +81,99 @@
 }
 
 
-/* Neutral summary card shown above edit forms.
-   It gives immutable context without competing with the editable form card. */
+/* =============================================================================
+   Form context card
 
-.form-summary-card {
+   Low-hierarchy context shown above edit forms. It describes the locked/current
+   record without competing visually with the editable form card.
+   ============================================================================= */
+
+.form-context-card {
   width: min(100%, var(--form-card-max-width));
   margin: 0 auto var(--space-5);
-  padding: var(--space-5);
+  padding: var(--space-4) var(--space-5);
 
-  background: rgb(255 255 255 / 0.72);
-  border: 1px solid var(--color-primary-300);
-  border-radius: 10px;
-  box-shadow: 0 14px 32px rgb(var(--color-row-shadow) / 0.07);
+  background: rgb(255 255 255 / 0.52);
+  border: 1px solid rgb(var(--color-row-shadow) / 0.10);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 18px rgb(var(--color-row-shadow) / 0.045);
 }
 
-.form-summary-card__list {
+.form-context-card__header {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgb(var(--color-row-shadow) / 0.10);
+}
+
+.form-context-card__eyebrow {
+  margin: 0;
+
+  font-size: var(--font-size-12);
+  font-weight: 850;
+  line-height: 1.25;
+  letter-spacing: var(--letter-spacing-subtle);
+  color: var(--color-table-heading);
+  text-transform: uppercase;
+}
+
+.form-context-card__heading {
+  margin: 0;
+
+  font-size: var(--font-size-18);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--color-primary-900);
+}
+
+.form-context-card__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
   margin: 0;
 }
 
-.form-summary-card__list > div {
-  padding-block: 0;
+.form-context-card__item {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.form-context-card__item dt {
+  font-size: var(--font-size-12);
+  font-weight: 850;
+  line-height: 1.25;
+  letter-spacing: var(--letter-spacing-subtle);
+  color: var(--color-neutral-600);
+  text-transform: uppercase;
+}
+
+.form-context-card__item dd {
+  margin: 0;
+
+  overflow-wrap: anywhere;
+
+  font-size: var(--font-size-15);
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--color-primary-900);
+}
+
+@media (max-width: 900px) {
+  .form-context-card__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 700px) {
-  .form-summary-card {
+  .form-context-card {
     padding: var(--space-4);
+  }
+
+  .form-context-card__list {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
   }
 }
 

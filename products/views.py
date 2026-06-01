@@ -26,6 +26,7 @@ from products.forms import (
     build_product_edit_initial_data,
 )
 from products.list_viewmodels import build_product_page_rows
+from products.form_viewmodels import build_product_context_items
 from products.models import Product
 from products.selectors import (
     DEFAULT_PRODUCT_SORT,
@@ -177,6 +178,7 @@ def edit(request, product_pk: int):
     context = {
         "form": form,
         "product": product,
+        "product_context_items": build_product_context_items(product),
         "title": f"Edit - {product.display_name}",
         "description": "",
         "submit_label": "Update product",

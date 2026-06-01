@@ -26,6 +26,10 @@ from inventory.list_viewmodels import (
     build_product_stock_page_rows,
     build_product_stock_quick_jump_search,
 )
+from inventory.form_viewmodels import (
+    build_batch_context_items,
+    build_close_batch_context_items,
+)
 from inventory.models import InventoryBatch
 from inventory.selectors import (
     BATCH_SORTS,
@@ -154,6 +158,7 @@ def edit(request, batch_pk: int):
     context = {
         "form": form,
         "batch": batch,
+        "batch_context_items": build_batch_context_items(batch),
         "title": f"Edit batch {batch.batch_id}",
         "description": (
             "Correct physical stock, location or best-before date. "
@@ -222,12 +227,9 @@ def close(request, batch_pk: int):
 
     context = {
         "batch": batch,
-        "batch_quantity_label": batch.product.stock_quantity_label(batch.quantity),
+        "batch_context_items": build_close_batch_context_items(batch),
         "title": f"Close batch {batch.batch_id}",
-        "description": (
-            "Closing a batch removes it from normal stock operations. "
-            "The physical quantity is not changed."
-        ),
+        "description": "",
         "submit_label": "Close batch",
         "cancel_url": reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
     }
