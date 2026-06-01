@@ -54,7 +54,7 @@
   gap: var(--space-3);
 }
 
-/* Rows with only one visible cell should use the full card width. */
+/* Rows with only left content should use the full card width. */
 .ui-card__row:not(:has(.ui-card__cell--center)):not(:has(.ui-card__cell--right)) {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -63,6 +63,18 @@
   .ui-card__cell--left {
   grid-column: 1 / -1;
   justify-self: stretch;
+}
+
+/* Rows with only center content should use the full card width and stay centered. */
+.ui-card__row:has(.ui-card__cell--center):not(:has(.ui-card__cell--left)):not(:has(.ui-card__cell--right)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ui-card__row:has(.ui-card__cell--center):not(:has(.ui-card__cell--left)):not(:has(.ui-card__cell--right))
+  .ui-card__cell--center {
+  grid-column: 1 / -1;
+  justify-self: center;
+  text-align: center;
 }
 
 /* Common two-column card row: primary value left, secondary value right. */
