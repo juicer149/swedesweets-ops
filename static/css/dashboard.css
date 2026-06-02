@@ -338,7 +338,8 @@
 
   .ops-hero__nav .button--hero-action {
     min-width: 0;
-    min-height: clamp(2.85rem, 11vw, 3.35rem);
+    height: clamp(2.6rem, 10vw, 3.25rem);
+    min-height: 0;
     padding-inline: clamp(0.35rem, 2vw, var(--space-3));
 
     justify-content: center;
