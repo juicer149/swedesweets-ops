@@ -355,50 +355,14 @@
 
 
 /* =============================================================================
-   Domain card hooks
+   Temporary domain card hooks
 
-   These are light layout hooks for non-order cards. More complex domain cards
-   should move to their own domain CSS file when they grow.
+   Customer cards do not have a dedicated customers.css file yet. Product and
+   inventory card styling lives in products.css and inventory.css.
    ============================================================================= */
 
 .mobile-card--customer {
   gap: var(--space-2);
-}
-
-/*
-  Product cards use status tone as a border signal only.
-  The product page is a catalog view, not an operational risk queue.
-*/
-
-.mobile-card--product {
-  gap: var(--space-3);
-  background: var(--color-primary-50);
-}
-
-.mobile-card--product.mobile-card--neutral,
-.mobile-card--product.mobile-card--muted,
-.mobile-card--product.mobile-card--warning,
-.mobile-card--product.mobile-card--info,
-.mobile-card--product.mobile-card--success,
-.mobile-card--product.mobile-card--danger {
-  background: var(--color-primary-50);
-}
-
-.mobile-card--product.mobile-card--success {
-  border-color: rgb(var(--color-status-success) / 0.45);
-}
-
-.mobile-card--product.mobile-card--muted {
-  border-color: var(--color-neutral-300);
-}
-
-.mobile-card--inventory {
-  gap: var(--space-3);
-}
-
-.mobile-card--inventory.mobile-card--muted {
-  background: var(--color-primary-50);
-  border-color: var(--color-neutral-300);
 }
 
 
