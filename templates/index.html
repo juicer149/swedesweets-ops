@@ -8,68 +8,92 @@
 
   <h1 id="ops-dashboard-title">Dashboard</h1>
 
-  <p class="ops-hero__description">
-    Manage orders, deliveries and inventory risks from one place.
-  </p>
-
   <nav class="ops-hero__nav" aria-label="Quick actions">
     {% for action in dashboard_actions %}
       {% include "includes/ui/action_button.html" with action=action %}
     {% endfor %}
   </nav>
-
-  <div class="ops-hero__metrics" aria-label="Operational status">
-    {% for metric in dashboard_metrics %}
-      <span class="ops-hero__metric{% if metric.tone %} ops-hero__metric--{{ metric.tone }}{% endif %}">
-        <strong>{{ metric.value }}</strong>
-        <span>{{ metric.label }}</span>
-      </span>
-    {% endfor %}
-  </div>
 </section>
 
-<section class="dashboard-section" aria-labelledby="overview-title">
-  <div class="section-header">
-    <h2 id="overview-title">Overview</h2>
-    <p>Current workload and inventory signals.</p>
-  </div>
-
-  <div class="dashboard-summary-grid">
-    {% for card in summary_cards %}
-      <article class="dashboard-summary-card dashboard-summary-card--{{ card.tone.key }}">
-        <div class="dashboard-summary-card__header">
-          {% if card.icon %}
-            <span class="dashboard-summary-card__icon" aria-hidden="true">
-              {% include "includes/ui/icon.html" with name=card.icon %}
-            </span>
-          {% endif %}
-
-          <p class="dashboard-summary-card__label">
-            {{ card.title }}
-          </p>
-        </div>
-
-        <div class="dashboard-summary-card__content">
-          <p class="dashboard-summary-card__count">
-            {{ card.count }}
-          </p>
-
-          <p class="dashboard-summary-card__description">
-            {% if card.count %}
-              {{ card.description }}
-            {% else %}
-              {{ card.empty_text }}
+<section
+  id="dashboard-queue"
+  class="dashboard-section dashboard-section--queue"
+  aria-label="Dashboard attention queue"
+>
+  {% if dashboard_queue_tabs %}
+    <nav class="section-nav dashboard-queue-nav" aria-label="Dashboard attention queue">
+      {% for tab in dashboard_queue_tabs %}
+        <a
+          href="{{ tab.href }}"
+          class="section-nav__link dashboard-queue-nav__link{% if tab.is_active %} section-nav__link--active{% endif %}"
+          {% if tab.is_active %}aria-current="page"{% endif %}
+        >
+          <span class="dashboard-queue-nav__label">
+            {% if tab.icon %}
+              {% include "includes/ui/icon_block.html" with name=tab.icon size="md" class_name="dashboard-queue-nav__icon" only %}
             {% endif %}
-          </p>
-        </div>
 
-        <a class="text-link" href="{{ card.href }}">
-          {{ card.action_label }}
+            <span>{{ tab.label }}</span>
+          </span>
+
+          <span class="dashboard-queue-nav__count dashboard-queue-nav__count--{{ tab.tone }}">
+            {{ tab.count }}
+          </span>
         </a>
+      {% endfor %}
+    </nav>
+
+    {% if dashboard_queue_panel %}
+      <article class="content-card content-card--wide dashboard-focus-card dashboard-focus-card--{{ dashboard_queue_panel.key }}">
+        <header class="content-card__header dashboard-focus-card__header">
+          <div>
+            <h2>{{ dashboard_queue_panel.title }}</h2>
+            <p class="dashboard-focus-card__description">
+              {{ dashboard_queue_panel.description }}
+            </p>
+          </div>
+
+          <a class="text-link" href="{{ dashboard_queue_panel.view_all_href }}">
+            {{ dashboard_queue_panel.view_all_label }}
+          </a>
+        </header>
+
+        <div class="dashboard-focus-list">
+          {% for item in dashboard_queue_panel.items %}
+            <a
+              class="mobile-card mobile-card--clickable mobile-card--{{ item.tone }} dashboard-focus-item"
+              href="{{ item.href }}"
+            >
+              {% if item.icon %}
+                <span class="dashboard-focus-item__icon-shell" aria-hidden="true">
+                  {% include "includes/ui/icon_block.html" with name=item.icon size="md" class_name="dashboard-focus-item__icon" only %}
+                </span>
+              {% endif %}
+
+              <span class="dashboard-focus-item__content">
+                <strong class="ui-card-title">{{ item.title }}</strong>
+                <span class="ui-card-meta">{{ item.meta }}</span>
+              </span>
+
+              <span class="ui-card-link dashboard-focus-item__action">
+                {{ item.action_label }}
+              </span>
+            </a>
+          {% empty %}
+            <p class="dashboard-focus-empty">
+              Nothing to show in this queue.
+            </p>
+          {% endfor %}
+        </div>
       </article>
-    {% empty %}
-      <p>No dashboard data available.</p>
-    {% endfor %}
-  </div>
+    {% endif %}
+  {% else %}
+    <article class="content-card content-card--wide dashboard-all-clear">
+      <h2>All clear</h2>
+      <p>
+        No orders waiting, no packed deliveries, and no urgent inventory signals.
+      </p>
+    </article>
+  {% endif %}
 </section>
 {% endblock %}
