@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 
+from inventory.services import create_batch
 from orders.datatypes import OrderLineInput
 from orders.forms import (
     MAX_UNITS_PER_PRODUCT_PER_ORDER,
@@ -18,6 +20,7 @@ from orders.forms import (
 from orders.models import Order, OrderLine
 from orders.product_choices import build_product_choice_context
 from orders.services import create_order
+from orders.tests.conftest import TODAY
 from products.units import ORDER_UNIT_KG, ORDER_UNIT_STOCK, ORDER_UNIT_GRAMS
 
 
@@ -239,6 +242,26 @@ def test_build_product_choice_context_includes_only_orderable_products(
 
     assert context.available_units_by_product_id[apple.id] == 150
     assert context.available_units_by_product_id[banana.id] == 80
+
+
+@pytest.mark.django_db
+def test_build_product_choice_context_excludes_product_with_only_expired_stock(
+    apple,
+):
+    create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=100,
+        best_before=TODAY,
+        location="Shelf A1",
+        today=TODAY,
+        allow_non_future_best_before=True,
+    )
+
+    context = build_product_choice_context()
+
+    assert list(context.queryset) == []
+    assert apple.id not in context.available_units_by_product_id
 
 
 @pytest.mark.django_db

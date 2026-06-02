@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from inventory.models import InventoryBatch
 from inventory.services import create_batch
@@ -20,7 +20,7 @@ def batch_factory(
         batch_id=batch_id,
         product=product,
         quantity=quantity,
-        best_before=best_before or date(2026, 6, 1),
+        best_before=best_before or today + timedelta(days=60),
         location=location,
         today=today,
     )

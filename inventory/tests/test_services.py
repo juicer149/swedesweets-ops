@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import timedelta
 
 import pytest
 
@@ -22,7 +22,7 @@ def test_create_batch_with_manual_batch_id_normalizes_fields(apple):
         batch_id=" a-001 ",
         product=apple,
         quantity=10,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="   Shelf   A1   ",
         today=TODAY,
     )
@@ -39,14 +39,14 @@ def test_create_batch_generates_product_based_batch_id_when_missing(apple):
     first = create_batch(
         product=apple,
         quantity=10,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
         today=TODAY,
     )
     second = create_batch(
         product=apple,
         quantity=20,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
         today=TODAY,
     )
@@ -63,7 +63,7 @@ def test_create_batch_generates_internal_number_based_batch_id(apple):
     batch = create_batch(
         product=apple,
         quantity=10,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
         today=TODAY,
     )
@@ -82,21 +82,21 @@ def test_create_batch_generates_separate_sequences_per_product(apple, banana):
     first_apple_batch = create_batch(
         product=apple,
         quantity=10,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
         today=TODAY,
     )
     first_banana_batch = create_batch(
         product=banana,
         quantity=20,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf B1",
         today=TODAY,
     )
     second_apple_batch = create_batch(
         product=apple,
         quantity=30,
-        best_before=date(2026, 8, 1),
+        best_before=TODAY + timedelta(days=120),
         location="Shelf A2",
         today=TODAY,
     )
@@ -112,7 +112,7 @@ def test_create_batch_rejects_empty_initial_stock(apple):
         create_batch(
             product=apple,
             quantity=0,
-            best_before=date(2026, 6, 1),
+            best_before=TODAY + timedelta(days=60),
             location="Shelf A1",
             today=TODAY,
         )
@@ -127,7 +127,7 @@ def test_create_batch_rejects_past_best_before_date(apple):
         create_batch(
             product=apple,
             quantity=10,
-            best_before=date(2026, 5, 13),
+            best_before=TODAY - timedelta(days=1),
             location="Shelf A1",
             today=TODAY,
         )
@@ -177,7 +177,7 @@ def test_create_batch_rejects_duplicate_batch_id(apple, batch_factory):
             batch_id=" a-001 ",
             product=apple,
             quantity=5,
-            best_before=date(2026, 7, 1),
+            best_before=TODAY + timedelta(days=90),
             location="Shelf A2",
             today=TODAY,
         )
@@ -194,14 +194,14 @@ def test_update_batch_updates_quantity_best_before_and_location(apple, batch_fac
     updated = update_batch(
         batch=batch,
         quantity=20,
-        best_before=date(2026, 8, 1),
+        best_before=TODAY + timedelta(days=120),
         location="  Shelf   B2  ",
     )
 
     updated.refresh_from_db()
 
     assert updated.quantity == 20
-    assert updated.best_before == date(2026, 8, 1)
+    assert updated.best_before == TODAY + timedelta(days=120)
     assert updated.location == "Shelf B2"
     assert updated.status == InventoryBatch.Status.ACTIVE
 
@@ -217,7 +217,7 @@ def test_update_batch_can_deplete_batch_when_quantity_is_zero(apple, batch_facto
     updated = update_batch(
         batch=batch,
         quantity=0,
-        best_before=date(2026, 8, 1),
+        best_before=TODAY + timedelta(days=120),
         location="Shelf B2",
     )
 
@@ -240,7 +240,7 @@ def test_update_batch_rejects_closed_batch(apple, batch_factory):
         update_batch(
             batch=batch,
             quantity=20,
-            best_before=date(2026, 8, 1),
+            best_before=TODAY + timedelta(days=120),
             location="Shelf B2",
         )
 
@@ -277,14 +277,14 @@ def test_plan_batch_picks_uses_fefo_order(apple, batch_factory):
         product=apple,
         batch_id="A-002",
         quantity=50,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
     early = batch_factory(
         product=apple,
         batch_id="A-001",
         quantity=100,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
     )
 
@@ -306,12 +306,13 @@ def test_plan_batch_picks_respects_existing_reserved_quantity(apple, batch_facto
         product=apple,
         batch_id="A-001",
         quantity=100,
+        best_before=TODAY + timedelta(days=60),
     )
     late = batch_factory(
         product=apple,
         batch_id="A-002",
         quantity=50,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
 
@@ -338,6 +339,7 @@ def test_plan_batch_picks_mutates_reserved_quantity_mapping_for_later_lines(
         product=apple,
         batch_id="A-001",
         quantity=100,
+        best_before=TODAY + timedelta(days=60),
     )
 
     reserved_quantity_by_batch_id: dict[int, int] = {}
@@ -351,6 +353,39 @@ def test_plan_batch_picks_mutates_reserved_quantity_mapping_for_later_lines(
     assert reserved_quantity_by_batch_id == {
         early.id: 40,
     }
+
+
+@pytest.mark.django_db
+def test_plan_batch_picks_ignores_expired_batches(apple, batch_factory):
+    expired = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=100,
+        best_before=TODAY,
+        location="Shelf A1",
+        today=TODAY,
+        allow_non_future_best_before=True,
+    )
+    fresh = batch_factory(
+        product=apple,
+        batch_id="A-002",
+        quantity=50,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A2",
+    )
+
+    picks = plan_batch_picks(
+        product=apple,
+        quantity=40,
+        reserved_quantity_by_batch_id={},
+    )
+
+    assert [(pick.batch, pick.quantity) for pick in picks] == [
+        (fresh, 40),
+    ]
+
+    expired.refresh_from_db()
+    assert expired.status == InventoryBatch.Status.ACTIVE
 
 
 @pytest.mark.django_db
@@ -369,6 +404,7 @@ def test_plan_batch_picks_raises_when_stock_is_insufficient(apple, batch_factory
         product=apple,
         batch_id="A-001",
         quantity=10,
+        best_before=TODAY + timedelta(days=60),
     )
 
     with pytest.raises(InsufficientStockError):
@@ -377,3 +413,26 @@ def test_plan_batch_picks_raises_when_stock_is_insufficient(apple, batch_factory
             quantity=11,
             reserved_quantity_by_batch_id={},
         )
+
+
+@pytest.mark.django_db
+def test_plan_batch_picks_raises_when_only_expired_stock_exists(apple):
+    create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=100,
+        best_before=TODAY,
+        location="Shelf A1",
+        today=TODAY,
+        allow_non_future_best_before=True,
+    )
+
+    with pytest.raises(InsufficientStockError) as error:
+        plan_batch_picks(
+            product=apple,
+            quantity=1,
+            reserved_quantity_by_batch_id={},
+        )
+
+    assert error.value.available_quantity == 0
+    assert error.value.missing_quantity == 1

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import timedelta
 
 import pytest
 
@@ -10,6 +10,11 @@ from inventory.forms import (
     ProductChoiceField,
     build_batch_edit_initial_data,
 )
+from inventory.tests.conftest import TODAY
+
+
+FUTURE_BEST_BEFORE = TODAY + timedelta(days=60)
+FUTURE_BEST_BEFORE_INPUT = f"{FUTURE_BEST_BEFORE:%Y-%m-%d}"
 
 
 @pytest.mark.django_db
@@ -27,7 +32,7 @@ def test_batch_form_accepts_valid_data(apple):
         data={
             "product": str(apple.pk),
             "quantity": "10",
-            "best_before": "2026-06-01",
+            "best_before": FUTURE_BEST_BEFORE_INPUT,
             "location": "Shelf A1",
         }
     )
@@ -38,7 +43,7 @@ def test_batch_form_accepts_valid_data(apple):
     assert "batch_id" not in form.cleaned_data
     assert form.cleaned_data["product"] == apple
     assert form.cleaned_data["quantity"] == 10
-    assert form.cleaned_data["best_before"] == date(2026, 6, 1)
+    assert form.cleaned_data["best_before"] == FUTURE_BEST_BEFORE
     assert form.cleaned_data["location"] == "Shelf A1"
 
 
@@ -48,7 +53,7 @@ def test_batch_form_rejects_inactive_product(inactive_product):
         data={
             "product": str(inactive_product.pk),
             "quantity": "10",
-            "best_before": "2026-06-01",
+            "best_before": FUTURE_BEST_BEFORE_INPUT,
             "location": "Shelf A1",
         }
     )
@@ -63,7 +68,7 @@ def test_batch_form_rejects_zero_quantity(apple):
         data={
             "product": str(apple.pk),
             "quantity": "0",
-            "best_before": "2026-06-01",
+            "best_before": FUTURE_BEST_BEFORE_INPUT,
             "location": "Shelf A1",
         }
     )
@@ -99,7 +104,7 @@ def test_batch_edit_form_accepts_valid_data():
     form = BatchEditForm(
         data={
             "quantity": "0",
-            "best_before": "2026-06-01",
+            "best_before": FUTURE_BEST_BEFORE_INPUT,
             "location": "Shelf A1",
         }
     )
@@ -107,7 +112,7 @@ def test_batch_edit_form_accepts_valid_data():
     assert form.is_valid(), form.errors
 
     assert form.cleaned_data["quantity"] == 0
-    assert form.cleaned_data["best_before"] == date(2026, 6, 1)
+    assert form.cleaned_data["best_before"] == FUTURE_BEST_BEFORE
     assert form.cleaned_data["location"] == "Shelf A1"
 
 
@@ -115,7 +120,7 @@ def test_batch_edit_form_rejects_negative_quantity():
     form = BatchEditForm(
         data={
             "quantity": "-1",
-            "best_before": "2026-06-01",
+            "best_before": FUTURE_BEST_BEFORE_INPUT,
             "location": "Shelf A1",
         }
     )
@@ -130,12 +135,12 @@ def test_build_batch_edit_initial_data(apple, batch_factory):
         product=apple,
         batch_id="A-001",
         quantity=10,
-        best_before=date(2026, 6, 1),
+        best_before=FUTURE_BEST_BEFORE,
         location="Shelf A1",
     )
 
     assert build_batch_edit_initial_data(batch) == {
         "quantity": 10,
-        "best_before": date(2026, 6, 1),
+        "best_before": FUTURE_BEST_BEFORE,
         "location": "Shelf A1",
     }

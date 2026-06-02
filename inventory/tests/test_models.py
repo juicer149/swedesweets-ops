@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import timedelta
 
 import pytest
 
@@ -9,6 +9,7 @@ from inventory.errors import (
     InvalidStockOperation,
 )
 from inventory.models import InventoryBatch, normalize_batch_id, normalize_location
+from inventory.tests.conftest import TODAY
 
 
 def test_normalize_batch_id_strips_and_uppercases():
@@ -35,7 +36,7 @@ def test_batch_save_normalizes_batch_id_and_location(apple):
         batch_id="  a-001 ",
         product=apple,
         quantity=10,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="  Shelf   A1 ",
     )
 

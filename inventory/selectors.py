@@ -15,7 +15,13 @@ from django.db.models import Case, Count, IntegerField, QuerySet, Sum, Value, Wh
 from django.utils import timezone
 
 from common.table_tools import normalize_sort
-from inventory.expiry import EXPIRY_SOON_DAYS, ExpiryInfo, build_expiry_info
+from inventory.expiry import (
+    EXPIRY_SOON_DAYS, 
+    ExpiryInfo, 
+    build_expiry_info,
+    orderable_best_before_cutoff,
+)
+
 from inventory.low_stock import LOW_STOCK_THRESHOLD, is_low_stock
 from inventory.models import InventoryBatch
 from orders.models import Allocation, Order
@@ -427,6 +433,72 @@ def list_batch_allocations(*, batch: InventoryBatch) -> list[Allocation]:
         .order_by("-order__created_at", "-id")
     )
 
+
+def orderable_quantity_by_product_id(
+    *,
+    today: date | None = None,
+) -> dict[int, int]:
+    today = today or timezone.localdate()
+    cutoff_date = orderable_best_before_cutoff(today=today)
+
+    physical_quantity_by_product_id = _orderable_physical_quantity_by_product_id(
+        cutoff_date=cutoff_date,
+    )
+    reserved_quantity_by_product_id = _orderable_reserved_quantity_by_product_id(
+        cutoff_date=cutoff_date,
+    )
+
+    return {
+        product_id: max(
+            physical_quantity - reserved_quantity_by_product_id.get(product_id, 0),
+            0,
+        )
+        for product_id, physical_quantity in physical_quantity_by_product_id.items()
+    }
+
+
+def _orderable_physical_quantity_by_product_id(
+    *,
+    cutoff_date: date,
+) -> dict[int, int]:
+    rows = (
+        InventoryBatch.objects
+        .filter(
+            status=InventoryBatch.Status.ACTIVE,
+            quantity__gt=0,
+            best_before__gt=cutoff_date,
+        )
+        .values("product_id")
+        .annotate(total_quantity=Sum("quantity"))
+    )
+
+    return {
+        row["product_id"]: row["total_quantity"] or 0
+        for row in rows
+    }
+
+
+def _orderable_reserved_quantity_by_product_id(
+    *,
+    cutoff_date: date,
+) -> dict[int, int]:
+    rows = (
+        Allocation.objects
+        .filter(
+            status=Allocation.Status.RESERVED,
+            order__status=Order.Status.PLACED,
+            batch__status=InventoryBatch.Status.ACTIVE,
+            batch__quantity__gt=0,
+            batch__best_before__gt=cutoff_date,
+        )
+        .values("batch__product_id")
+        .annotate(total_reserved=Sum("quantity"))
+    )
+
+    return {
+        row["batch__product_id"]: row["total_reserved"] or 0
+        for row in rows
+    }
 
 def _build_batch_rows(
     *,

@@ -5,7 +5,7 @@ from typing import Any
 
 from django.db.models import Q
 
-from inventory.selectors import available_quantity_by_product_id
+from inventory.selectors import orderable_quantity_by_product_id
 from orders.models import Order
 from products.models import Product
 
@@ -17,7 +17,7 @@ class ProductChoiceContext:
 
 
 def build_product_choice_context(*, order: Order | None = None) -> ProductChoiceContext:
-    available_units = available_quantity_by_product_id()
+    available_units = orderable_quantity_by_product_id()
 
     if order is not None:
         for line in order.lines.all():

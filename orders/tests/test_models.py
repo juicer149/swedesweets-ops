@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 
 from inventory.services import create_batch
@@ -9,6 +11,9 @@ from orders.errors import (
 )
 from orders.models import Allocation, Order, OrderLine
 from orders.tests.conftest import TODAY
+
+
+FUTURE_BEST_BEFORE = TODAY + timedelta(days=60)
 
 
 @pytest.mark.django_db
@@ -119,7 +124,7 @@ def test_allocation_can_be_consumed(customer, apple):
         batch_id="A-001",
         product=apple,
         quantity=10,
-        best_before=TODAY.replace(month=6, day=1),
+        best_before=FUTURE_BEST_BEFORE,
         location="Shelf A1",
         today=TODAY,
     )
@@ -150,7 +155,7 @@ def test_allocation_can_be_cancelled(customer, apple):
         batch_id="A-001",
         product=apple,
         quantity=10,
-        best_before=TODAY.replace(month=6, day=1),
+        best_before=FUTURE_BEST_BEFORE,
         location="Shelf A1",
         today=TODAY,
     )
@@ -181,7 +186,7 @@ def test_consumed_allocation_cannot_be_cancelled(customer, apple):
         batch_id="A-001",
         product=apple,
         quantity=10,
-        best_before=TODAY.replace(month=6, day=1),
+        best_before=FUTURE_BEST_BEFORE,
         location="Shelf A1",
         today=TODAY,
     )
@@ -212,7 +217,7 @@ def test_allocation_string_contains_order_batch_and_quantity(customer, apple):
         batch_id="A-001",
         product=apple,
         quantity=10,
-        best_before=TODAY.replace(month=6, day=1),
+        best_before=FUTURE_BEST_BEFORE,
         location="Shelf A1",
         today=TODAY,
     )

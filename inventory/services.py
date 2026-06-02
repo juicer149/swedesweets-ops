@@ -13,9 +13,11 @@ from datetime import date
 from typing import Iterable
 import unicodedata
 
+from django.utils import timezone
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
 
+from inventory.expiry import orderable_best_before_cutoff
 from inventory.errors import InsufficientStockError, InvalidStockOperation
 from inventory.models import InventoryBatch, normalize_batch_id
 from orders.models import Allocation, Order
@@ -303,7 +305,9 @@ def _list_candidate_batches_for_picking(
     *,
     product: Product,
 ) -> list[InventoryBatch]:
-    """Return locked active batches for product in FEFO order."""
+    """Return locked orderable active batches for product in FEFO order."""
+
+    cutoff_date = orderable_best_before_cutoff(today=timezone.localdate())
 
     return list(
         InventoryBatch.objects
@@ -312,6 +316,7 @@ def _list_candidate_batches_for_picking(
             product=product,
             status=InventoryBatch.Status.ACTIVE,
             quantity__gt=0,
+            best_before__gt=cutoff_date,
         )
         .order_by("best_before", "batch_id")
     )

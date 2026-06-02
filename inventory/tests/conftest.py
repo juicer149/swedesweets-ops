@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
+from django.utils import timezone
 
 from inventory.models import InventoryBatch
 from inventory.tests.factories import batch_factory as make_batch
@@ -11,7 +12,11 @@ from products.models import Product
 from products.tests.factories import product_factory
 
 
-TODAY = date(2026, 5, 14)
+TODAY = timezone.localdate()
+
+STOCK_EARLY_BEST_BEFORE = TODAY + timedelta(days=60)
+STOCK_LATE_BEST_BEFORE = TODAY + timedelta(days=90)
+STOCK_BANANA_BEST_BEFORE = TODAY + timedelta(days=75)
 
 BatchFactory = Callable[..., InventoryBatch]
 
@@ -78,21 +83,21 @@ def stocked_inventory(
         product=apple,
         batch_id="A-001",
         quantity=100,
-        best_before=date(2026, 6, 1),
+        best_before=STOCK_EARLY_BEST_BEFORE,
         location="Shelf A1",
     )
     apple_late = batch_factory(
         product=apple,
         batch_id="A-002",
         quantity=50,
-        best_before=date(2026, 7, 1),
+        best_before=STOCK_LATE_BEST_BEFORE,
         location="Shelf A2",
     )
     banana_batch = batch_factory(
         product=banana,
         batch_id="B-001",
         quantity=80,
-        best_before=date(2026, 6, 15),
+        best_before=STOCK_BANANA_BEST_BEFORE,
         location="Shelf B1",
     )
 

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import timedelta
 
 import pytest
+from django.utils import timezone
 
 from customers.services import create_customer
 from inventory.services import create_batch
@@ -10,7 +11,11 @@ from products.models import Product
 from products.services import create_product
 
 
-TODAY = date(2026, 5, 14)
+TODAY = timezone.localdate()
+
+STOCK_EARLY_BEST_BEFORE = TODAY + timedelta(days=60)
+STOCK_LATE_BEST_BEFORE = TODAY + timedelta(days=90)
+STOCK_BANANA_BEST_BEFORE = TODAY + timedelta(days=75)
 
 
 @pytest.fixture
@@ -79,7 +84,7 @@ def stocked_inventory(apple: Product, banana: Product):
         batch_id="A-001",
         product=apple,
         quantity=100,
-        best_before=date(2026, 6, 1),
+        best_before=STOCK_EARLY_BEST_BEFORE,
         location="Shelf A1",
         today=TODAY,
     )
@@ -87,7 +92,7 @@ def stocked_inventory(apple: Product, banana: Product):
         batch_id="A-002",
         product=apple,
         quantity=50,
-        best_before=date(2026, 7, 1),
+        best_before=STOCK_LATE_BEST_BEFORE,
         location="Shelf A2",
         today=TODAY,
     )
@@ -95,7 +100,7 @@ def stocked_inventory(apple: Product, banana: Product):
         batch_id="B-001",
         product=banana,
         quantity=80,
-        best_before=date(2026, 6, 15),
+        best_before=STOCK_BANANA_BEST_BEFORE,
         location="Shelf B1",
         today=TODAY,
     )

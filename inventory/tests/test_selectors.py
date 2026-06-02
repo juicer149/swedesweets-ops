@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 
@@ -23,8 +23,10 @@ from inventory.selectors import (
     list_depleted_batches,
     list_expiring_batch_rows_for_dashboard,
     list_low_stock_products_for_dashboard,
+    orderable_quantity_by_product_id,
     physical_quantity_by_product,
 )
+from inventory.services import create_batch
 from inventory.tests.conftest import TODAY
 
 
@@ -76,14 +78,14 @@ def test_list_batches_defaults_to_best_before_order(apple, batch_factory):
         product=apple,
         batch_id="A-002",
         quantity=50,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-001",
         quantity=100,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
     )
 
@@ -103,7 +105,7 @@ def test_list_batches_filters_by_valid_status(apple, batch_factory):
         product=apple,
         batch_id="A-002",
         quantity=1,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
     depleted_batch.pick(quantity=1)
@@ -145,7 +147,7 @@ def test_physical_quantity_by_product_sums_only_active_available_batches(
         product=apple,
         batch_id="A-002",
         quantity=1,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
     depleted.pick(quantity=1)
@@ -153,7 +155,7 @@ def test_physical_quantity_by_product_sums_only_active_available_batches(
         product=banana,
         batch_id="B-001",
         quantity=80,
-        best_before=date(2026, 6, 15),
+        best_before=TODAY + timedelta(days=75),
         location="Shelf B1",
     )
 
@@ -190,6 +192,31 @@ def test_available_quantity_by_product_id_returns_mapping(stocked_inventory, app
 
 
 @pytest.mark.django_db
+def test_orderable_quantity_by_product_id_excludes_expired_batches(apple):
+    create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=100,
+        best_before=TODAY,
+        location="Shelf A1",
+        today=TODAY,
+        allow_non_future_best_before=True,
+    )
+    create_batch(
+        batch_id="A-002",
+        product=apple,
+        quantity=50,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    assert orderable_quantity_by_product_id(today=TODAY) == {
+        apple.id: 50,
+    }
+
+
+@pytest.mark.django_db
 def test_list_available_batches_for_product_returns_active_batches_in_fefo_order(
     apple,
     banana,
@@ -199,21 +226,21 @@ def test_list_available_batches_for_product_returns_active_batches_in_fefo_order
         product=apple,
         batch_id="A-002",
         quantity=50,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-001",
         quantity=100,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
     )
     batch_factory(
         product=banana,
         batch_id="B-001",
         quantity=80,
-        best_before=date(2026, 6, 15),
+        best_before=TODAY + timedelta(days=75),
         location="Shelf B1",
     )
 
@@ -232,21 +259,21 @@ def test_list_available_batches_returns_active_batches_ordered_by_product_and_fe
         product=banana,
         batch_id="B-001",
         quantity=80,
-        best_before=date(2026, 6, 15),
+        best_before=TODAY + timedelta(days=75),
         location="Shelf B1",
     )
     batch_factory(
         product=apple,
         batch_id="A-002",
         quantity=50,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-001",
         quantity=100,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
     )
 
@@ -270,7 +297,7 @@ def test_list_depleted_batches_returns_only_depleted_batches(apple, batch_factor
         product=apple,
         batch_id="A-002",
         quantity=1,
-        best_before=date(2026, 7, 1),
+        best_before=TODAY + timedelta(days=90),
         location="Shelf A2",
     )
 
@@ -293,21 +320,21 @@ def test_list_expiring_batch_rows_for_dashboard_limits_rows(apple, batch_factory
         product=apple,
         batch_id="A-001",
         quantity=10,
-        best_before=date(2026, 6, 1),
+        best_before=TODAY + timedelta(days=1),
         location="Shelf A1",
     )
     batch_factory(
         product=apple,
         batch_id="A-002",
         quantity=10,
-        best_before=date(2026, 6, 2),
+        best_before=TODAY + timedelta(days=2),
         location="Shelf A2",
     )
     batch_factory(
         product=apple,
         batch_id="A-003",
         quantity=10,
-        best_before=date(2026, 6, 3),
+        best_before=TODAY + timedelta(days=3),
         location="Shelf A3",
     )
 
@@ -362,7 +389,7 @@ def test_list_low_stock_products_for_dashboard_returns_low_stock_rows(
         product=banana,
         batch_id="B-001",
         quantity=20,
-        best_before=date(2026, 6, 15),
+        best_before=TODAY + timedelta(days=75),
         location="Shelf B1",
     )
 
@@ -386,7 +413,7 @@ def test_count_low_stock_products_counts_low_stock_rows(
         product=banana,
         batch_id="B-001",
         quantity=20,
-        best_before=date(2026, 6, 15),
+        best_before=TODAY + timedelta(days=75),
         location="Shelf B1",
     )
 

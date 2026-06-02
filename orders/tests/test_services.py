@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 
 from inventory.errors import InsufficientStockError
@@ -138,7 +140,7 @@ def test_order_cannot_reserve_more_than_available_stock(customer, apple):
         batch_id="A-001",
         product=apple,
         quantity=100,
-        best_before=TODAY.replace(month=6, day=1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
         today=TODAY,
     )
@@ -161,12 +163,41 @@ def test_order_cannot_reserve_more_than_available_stock(customer, apple):
 
 
 @pytest.mark.django_db
+def test_order_cannot_reserve_expired_stock(customer, apple):
+    create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=100,
+        best_before=TODAY,
+        location="Shelf A1",
+        today=TODAY,
+        allow_non_future_best_before=True,
+    )
+
+    with pytest.raises(InsufficientStockError) as error:
+        create_order(
+            customer=customer,
+            lines=[
+                OrderLineInput.units(product=apple, quantity=1),
+            ],
+        )
+
+    assert error.value.requested_quantity == 1
+    assert error.value.available_quantity == 0
+    assert error.value.missing_quantity == 1
+
+    assert Order.objects.count() == 0
+    assert OrderLine.objects.count() == 0
+    assert Allocation.objects.count() == 0
+
+
+@pytest.mark.django_db
 def test_two_placed_orders_do_not_reserve_same_quantity(customer, other_customer, apple):
     create_batch(
         batch_id="A-001",
         product=apple,
         quantity=100,
-        best_before=TODAY.replace(month=6, day=1),
+        best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
         today=TODAY,
     )
