@@ -2,47 +2,47 @@
    Product tables
    ============================================================================= */
 
-.products-table-card {
+.product-table-card {
   width: min(100%, 1040px);
 }
 
-.products-table thead th,
-.products-table thead th a,
-.products-table thead th button {
+.product-table thead th,
+.product-table thead th a,
+.product-table thead th button {
   white-space: nowrap;
 }
 
 /* Number */
-.products-table th:nth-child(1),
-.products-table td:nth-child(1) {
+.product-table th:nth-child(1),
+.product-table td:nth-child(1) {
   width: 3.5rem;
 }
 
 /* Weight */
-.products-table th:nth-child(5),
-.products-table td:nth-child(5) {
+.product-table th:nth-child(5),
+.product-table td:nth-child(5) {
   width: 7rem;
   white-space: nowrap;
 }
 
 /* Unit */
-.products-table th:nth-child(6),
-.products-table td:nth-child(6) {
+.product-table th:nth-child(6),
+.product-table td:nth-child(6) {
   width: 5rem;
   white-space: nowrap;
 }
 
 /* Vegan */
-.products-table th:nth-child(7),
-.products-table td:nth-child(7) {
+.product-table th:nth-child(7),
+.product-table td:nth-child(7) {
   width: 5rem;
   text-align: center;
   white-space: nowrap;
 }
 
 /* Status */
-.products-table th:nth-child(8),
-.products-table td:nth-child(8) {
+.product-table th:nth-child(8),
+.product-table td:nth-child(8) {
   width: 6rem;
   white-space: nowrap;
 }
