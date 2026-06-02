@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Something went wrong{% endblock %}
+
+{% block content %}
+  <main class="container error-page" aria-labelledby="error-title">
+    <section class="error-card">
+      <p class="error-card__code">500</p>
+
+      <h1 id="error-title" class="error-card__title">
+        Something went wrong
+      </h1>
+
+      <p class="error-card__body">
+        The system hit an unexpected error. Try again, or contact the system
+        owner if it keeps happening.
+      </p>
+
+      <div class="error-card__actions">
+        <a class="button button--primary" href="/">
+          Back to dashboard
+        </a>
+      </div>
+    </section>
+  </main>
+{% endblock %}

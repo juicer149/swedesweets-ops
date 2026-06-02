@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Access denied{% endblock %}
+
+{% block content %}
+  <main class="container error-page" aria-labelledby="error-title">
+    <section class="error-card">
+      <p class="error-card__code">403</p>
+
+      <h1 id="error-title" class="error-card__title">
+        Access denied
+      </h1>
+
+      <p class="error-card__body">
+        Your account does not have access to this area. If this seems wrong,
+        contact the system owner.
+      </p>
+
+      <div class="error-card__actions">
+        <a class="button button--primary" href="/">
+          Back to dashboard
+        </a>
+      </div>
+    </section>
+  </main>
+{% endblock %}
