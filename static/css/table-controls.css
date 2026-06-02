@@ -159,3 +159,83 @@ select.sort-select.ts-hidden-accessible {
   min-height: 48px;
   padding: 0 1rem;
 }
+
+
+/* =============================================================================
+   Mobile density
+   ============================================================================= */
+
+@media (max-width: 760px) {
+  .filter-group {
+    overflow-x: visible;
+    justify-items: start;
+  }
+
+  .filter-chips {
+    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-top: var(--space-2);
+    padding-left: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+
+  .filter-chip {
+    flex: 0 0 auto;
+  }
+
+  .sort-control {
+    display: grid;
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .filter-group,
+  .sort-control {
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .filter-chips {
+    gap: var(--space-2);
+  }
+
+  .filter-chip {
+    min-height: 40px;
+    padding-inline: var(--space-3);
+    font-size: var(--font-size-14);
+  }
+
+  .sort-control {
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .sort-control__field {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: var(--space-2);
+  }
+
+  select.sort-select,
+  .sort-control .ts-control {
+    min-height: 44px;
+    font-size: var(--font-size-14);
+  }
+
+  .sort-control .ts-control {
+    padding: 0 2rem 0 0.9rem;
+  }
+
+  .sort-direction-button {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: var(--font-size-16);
+  }
+
+  .sort-control .ts-dropdown .option {
+    min-height: 42px;
+  }
+}

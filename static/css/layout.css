@@ -150,14 +150,39 @@
   }
 
   .page-header {
-    align-items: stretch;
-    flex-direction: column;
-    gap: var(--space-6);
-    padding-block: var(--space-8);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-5);
+  }
+
+  .page-header__content {
+    min-width: 0;
+  }
+
+  .page-header h1 {
+    margin-bottom: 0;
+    font-size: var(--font-size-28);
+    line-height: 1.05;
+  }
+
+  .page-header p {
+    grid-column: 1 / -1;
+    font-size: var(--font-size-14);
+    line-height: 1.4;
   }
 
   .page-header .button {
-    width: 100%;
+    min-height: 40px;
+    padding-inline: var(--space-4);
+    font-size: var(--font-size-14);
+    white-space: nowrap;
+  }
+
+  .page-header .button__icon {
+    width: 1.1em;
+    height: 1.1em;
   }
 
   .auth-page {
