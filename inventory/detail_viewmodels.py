@@ -6,13 +6,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from common.detail_cards import (
-    ACTION_METHOD_GET,
-    ACTION_TONE_DANGER,
-    ACTION_TONE_SECONDARY,
     DetailAction,
     DetailCard,
     DetailHeader,
     DetailPanel,
+    build_secondary_get_action,
+    build_danger_get_action,
 )
 from common.ui import UiCard
 from inventory.models import InventoryBatch
@@ -160,20 +159,16 @@ def build_batch_detail_context(
 
 
 def build_edit_batch_action(*, href: str) -> DetailAction:
-    return DetailAction(
+    return build_secondary_get_action(
         label="Edit batch",
         href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
     )
 
 
 def build_close_batch_action(*, href: str) -> DetailAction:
-    return DetailAction(
+    return build_danger_get_action( 
         label="Close batch",
         href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_DANGER,
     )
 
 

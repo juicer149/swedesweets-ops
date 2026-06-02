@@ -5,12 +5,11 @@ from dataclasses import dataclass
 from django.urls import reverse
 
 from common.detail_cards import (
-    ACTION_METHOD_GET,
-    ACTION_TONE_SECONDARY,
     DetailAction,
     DetailCard,
     DetailHeader,
     DetailPanel,
+    build_secondary_get_action,
 )
 from common.ui import StatusPresentation, UiCard
 from customers.models import Customer
@@ -95,11 +94,9 @@ def build_customer_detail_context(
 
 
 def build_edit_customer_action(*, href: str) -> DetailAction:
-    return DetailAction(
+    return build_secondary_get_action(
         label=CUSTOMER_EDIT_LABEL,
         href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
     )
 
 

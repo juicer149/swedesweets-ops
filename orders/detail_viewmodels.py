@@ -7,14 +7,14 @@ from django.urls import reverse
 from common.detail_cards import (
     ACTION_METHOD_GET,
     ACTION_METHOD_POST,
-    ACTION_TONE_DANGER,
     ACTION_TONE_DELIVER,
     ACTION_TONE_PACK,
-    ACTION_TONE_SECONDARY,
     DetailAction,
     DetailCard,
     DetailHeader,
     DetailPanel,
+    build_secondary_get_action,
+    build_danger_get_action,
 )
 from common.ui import UiCard
 from orders.datatypes import PickLine
@@ -172,21 +172,17 @@ def build_deliver_action() -> DetailAction:
 
 
 def build_edit_order_action(*, href: str) -> DetailAction:
-    return DetailAction(
+    return build_secondary_get_action(
         label=ORDER_EDIT_LABEL,
         href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
     )
 
 
 def build_cancel_order_action(*, href: str) -> DetailAction:
-    return DetailAction(
+    return build_danger_get_action(
         label=ORDER_CANCEL_LABEL,
         href=href,
         icon="x",
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_DANGER,
     )
 
 

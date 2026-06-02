@@ -7,12 +7,11 @@ from decimal import Decimal
 from django.urls import reverse
 
 from common.detail_cards import (
-    ACTION_METHOD_GET,
-    ACTION_TONE_SECONDARY,
     DetailAction,
     DetailCard,
     DetailHeader,
     DetailPanel,
+    build_secondary_get_action,
 )
 from common.ui import UiCard
 from inventory.mini_cards import build_batch_mini_card
@@ -242,11 +241,9 @@ def build_product_detail_context(
 
 
 def build_edit_product_action(*, href: str) -> DetailAction:
-    return DetailAction(
+    return build_secondary_get_action(
         label=PRODUCT_EDIT_LABEL,
         href=href,
-        method=ACTION_METHOD_GET,
-        tone=ACTION_TONE_SECONDARY,
     )
 
 

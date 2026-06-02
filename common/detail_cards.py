@@ -50,3 +50,32 @@ class DetailCard:
     primary_action: DetailAction | None = None
     secondary_action: DetailAction | None = None
     secondary_actions: tuple[DetailAction, ...] = ()
+
+
+def build_secondary_get_action(
+    *,
+    label: str,
+    href: str,
+    icon: str = "",
+) -> DetailAction:
+    return DetailAction(
+        label=label,
+        href=href,
+        icon=icon,
+        method=ACTION_METHOD_GET,
+        tone=ACTION_TONE_SECONDARY,
+    )
+
+def build_danger_get_action(
+    *,
+    label: str,
+    href: str,
+    icon: str = "",
+) -> DetailAction:
+    return DetailAction(
+        label=label,
+        href=href,
+        icon=icon,
+        method=ACTION_METHOD_GET,
+        tone=ACTION_TONE_DANGER,
+    )
