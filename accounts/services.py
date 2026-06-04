@@ -5,17 +5,13 @@ from dataclasses import dataclass
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
-from accounts.errors import InvalidAccountIdentity
+from accounts.errors import InvalidAccountIdentity, AccountCreationError
 from accounts.models import CustomerMembership, StaffAccount
 from accounts.roles import StaffAccessLevel
 from customers.models import Customer
 
 
 User = get_user_model()
-
-
-class AccountCreationError(ValueError):
-    """Raised when an account cannot be created."""
 
 
 @dataclass(frozen=True, slots=True)
