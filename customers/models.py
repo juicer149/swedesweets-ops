@@ -136,6 +136,9 @@ class Customer(models.Model):
     city = models.CharField(max_length=MAX_CUSTOMER_CITY_LENGTH)
     address_line = models.CharField(max_length=MAX_CUSTOMER_ADDRESS_LINE_LENGTH)
 
+    # Additional field to support soft deletion of customers.
+    is_active = models.BooleanField(default=True)
+
     class Meta:
         ordering = ["name", "email"]
 

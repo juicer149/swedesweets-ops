@@ -5,7 +5,7 @@
     <div>
       <p class="detail-list__label">Customer</p>
       <a class="detail-list__value detail-list__link" href="{{ customer_detail_href }}">
-        {{ order.customer.name }}
+        {{ order.customer_name }}
       </a>
     </div>
   </div>
@@ -15,8 +15,8 @@
 
     <div>
       <p class="detail-list__label">Email</p>
-      <a class="detail-list__value detail-list__link" href="mailto:{{ order.customer.email }}">
-        {{ order.customer.email }}
+      <a class="detail-list__value detail-list__link" href="mailto:{{ order.customer_email }}">
+        {{ order.customer_email }}
       </a>
     </div>
   </div>
@@ -26,8 +26,8 @@
 
     <div>
       <p class="detail-list__label">Phone</p>
-      <a class="detail-list__value detail-list__link" href="tel:{{ order.customer.phone_number }}">
-        {{ order.customer.phone_number }}
+      <a class="detail-list__value detail-list__link" href="tel:{{ order.customer_phone_number }}">
+        {{ order.customer_phone_number }}
       </a>
     </div>
   </div>
@@ -45,11 +45,11 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          {{ order.customer.address }}
+          {{ order.customer_address }}
         </a>
       {% else %}
         <p class="detail-list__value">
-          {{ order.customer.address }}
+          {{ order.customer_address }}
         </p>
       {% endif %}
     </div>

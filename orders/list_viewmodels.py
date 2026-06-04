@@ -95,7 +95,7 @@ def _build_header_row(order: Order, status: StatusPresentation) -> UiCardRow:
 def _build_customer_row(order: Order) -> UiCardRow:
     return UiCardRow(
         center=UiText(
-            text=order.customer.name,
+            text=order.customer_name,
             css_class=ORDER_TITLE_CLASS,
         ),
     )
@@ -114,18 +114,18 @@ def _build_address_row(order: Order) -> UiCardRow:
     if order.status == Order.Status.PACKED:
         return UiCardRow(
             center=UiText(
-                text=order.customer.address,
-                href=maps_directions_href(order.customer.address),
+                text=order.customer_address,
+                href=maps_directions_href(order.customer_address),
                 css_class=ORDER_ADDRESS_LINK_CLASS,
                 target="_blank",
                 rel="noopener noreferrer",
-                aria_label=f"Open directions to {order.customer.address}",
+                aria_label=f"Open directions to {order.customer_address}",
             ),
         )
 
     return UiCardRow(
         center=UiText(
-            text=order.customer.address,
+            text=order.customer_address,
             css_class=ORDER_ADDRESS_CLASS,
         ),
     )

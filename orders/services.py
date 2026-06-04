@@ -228,7 +228,9 @@ def _create_draft_order(
     if not normalized_lines:
         raise InvalidOrderOperation("order must contain at least one line")
 
-    order = Order.objects.create(customer=customer)
+    order = Order(customer=customer)
+    order.snapshot_customer()
+    order.save()
 
     _create_order_lines(
         order=order,

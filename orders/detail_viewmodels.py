@@ -125,7 +125,7 @@ def build_order_detail_context(
         title=title,
         description=description,
         cancel_url=cancel_url,
-        customer_maps_href=maps_directions_href(order.customer.address),
+        customer_maps_href=maps_directions_href(order.customer_address),
         customer_detail_href=customer_detail_href(order),
         pick_lines=pick_lines,
     )
@@ -189,7 +189,7 @@ def build_cancel_order_action(*, href: str) -> DetailAction:
 def _build_order_header(order: Order) -> DetailHeader:
     return DetailHeader(
         eyebrow="Customer",
-        title=order.customer.name,
+        title=order.customer_name,
         status_label=order.get_status_display(),
         status_class=order_detail_status_class(order.status),
         status_icon=order_status_icon(order.status),
@@ -234,7 +234,7 @@ def _build_order_detail_panels(
         DetailPanel(
             key="customer",
             label="Customer",
-            summary=order.customer.name,
+            summary=order.customer_name,
             body_template="orders/includes/detail_panel_customer.html",
             icon="users",
             is_active=active_panel == "customer",

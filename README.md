@@ -116,4 +116,13 @@ Planned deployment work:
 
 ## Status
 
+
+## Notes
+
+Customers and users are deactivated, not hard-deleted.
+Historical orders keep protected foreign keys.
+Order snapshots should be added before customer-facing order history becomes production-critical.
+Anonymization belongs in customers/accounts services, not common.
+
+
 MVP demo version.

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pytest
+from django.db.models import ProtectedError
 
 from inventory.errors import InsufficientStockError
 from inventory.models import InventoryBatch
@@ -38,6 +39,112 @@ def test_create_draft_order_creates_lines_but_does_not_reserve_stock(
     assert order.status == Order.Status.DRAFT
     assert order.lines.count() == 1
     assert Allocation.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_draft_order_snapshots_customer_details(customer, apple):
+    order = create_draft_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(product=apple, quantity=1),
+        ],
+    )
+
+    assert order.customer_name_snapshot == customer.name
+    assert order.customer_email_snapshot == customer.email
+    assert order.customer_phone_snapshot == customer.phone_number
+    assert order.customer_country_snapshot == customer.country
+    assert order.customer_city_snapshot == customer.city
+    assert order.customer_address_line_snapshot == customer.address_line
+
+    assert order.customer_name == customer.name
+    assert order.customer_email == customer.email
+    assert order.customer_phone_number == customer.phone_number
+    assert order.customer_country == customer.country
+    assert order.customer_city == customer.city
+    assert order.customer_address_line == customer.address_line
+
+    assert customer.address_line in order.customer_address
+    assert customer.city in order.customer_address
+
+
+@pytest.mark.django_db
+def test_order_customer_display_uses_snapshot_after_customer_changes(customer, apple):
+    original_name = customer.name
+    original_email = customer.email
+    original_phone_number = customer.phone_number
+    original_country = customer.country
+    original_city = customer.city
+    original_address_line = customer.address_line
+
+    order = create_draft_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(product=apple, quantity=1),
+        ],
+    )
+
+    customer.name = "Updated Customer"
+    customer.email = "updated@example.fr"
+    customer.phone_number = "+33 1 11 22 33 44"
+    customer.country = "CH"
+    customer.city = "Zürich"
+    customer.address_line = "Bahnhofstrasse 1"
+    customer.save()
+
+    order.refresh_from_db()
+
+    assert order.customer.name == "Updated Customer"
+    assert order.customer.email == "updated@example.fr"
+    assert order.customer.phone_number == "+33111223344"
+    assert order.customer.country == "CH"
+    assert order.customer.city == "Zürich"
+    assert order.customer.address_line == "Bahnhofstrasse 1"
+
+    assert order.customer_name == original_name
+    assert order.customer_email == original_email
+    assert order.customer_phone_number == original_phone_number
+    assert order.customer_country == original_country
+    assert order.customer_city == original_city
+    assert order.customer_address_line == original_address_line
+
+    assert original_address_line in order.customer_address
+    assert original_city in order.customer_address
+    assert "Bahnhofstrasse" not in order.customer_address
+    assert "Zürich" not in order.customer_address
+
+
+@pytest.mark.django_db
+def test_customer_with_order_is_protected_from_delete_but_order_snapshot_remains(
+    customer,
+    apple,
+):
+    order = create_draft_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(product=apple, quantity=1),
+        ],
+    )
+
+    original_name = customer.name
+    original_email = customer.email
+    original_phone_number = customer.phone_number
+    original_country = customer.country
+    original_city = customer.city
+    original_address_line = customer.address_line
+
+    with pytest.raises(ProtectedError):
+        customer.delete()
+
+    order.refresh_from_db()
+
+    assert order.customer_id == customer.id
+    assert order.customer_name == original_name
+    assert order.customer_email == original_email
+    assert order.customer_phone_number == original_phone_number
+    assert order.customer_country == original_country
+    assert order.customer_city == original_city
+    assert order.customer_address_line == original_address_line
 
 
 @pytest.mark.django_db

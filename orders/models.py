@@ -16,6 +16,13 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from customers.models import (
+    MAX_CUSTOMER_ADDRESS_LINE_LENGTH,
+    MAX_CUSTOMER_CITY_LENGTH,
+    MAX_CUSTOMER_COUNTRY_LENGTH,
+    MAX_CUSTOMER_NAME_LENGTH,
+    MAX_CUSTOMER_PHONE_LENGTH,
+)
 from orders.errors import (
     InvalidAllocationStatusTransition,
     InvalidOrderStatusTransition,
@@ -50,6 +57,32 @@ class Order(models.Model):
         on_delete=models.PROTECT,
         related_name="orders",
     )
+
+    customer_name_snapshot = models.CharField(
+        max_length=MAX_CUSTOMER_NAME_LENGTH,
+        blank=True,
+    )
+    customer_email_snapshot = models.EmailField(
+        max_length=254,
+        blank=True,
+    )
+    customer_phone_snapshot = models.CharField(
+        max_length=MAX_CUSTOMER_PHONE_LENGTH,
+        blank=True,
+    )
+    customer_country_snapshot = models.CharField(
+        max_length=MAX_CUSTOMER_COUNTRY_LENGTH,
+        blank=True,
+    )
+    customer_city_snapshot = models.CharField(
+        max_length=MAX_CUSTOMER_CITY_LENGTH,
+        blank=True,
+    )
+    customer_address_line_snapshot = models.CharField(
+        max_length=MAX_CUSTOMER_ADDRESS_LINE_LENGTH,
+        blank=True,
+    )
+
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -131,6 +164,54 @@ class Order(models.Model):
             self.Status.DRAFT,
             self.Status.PLACED,
         }
+
+    @property
+    def customer_snapshot_address(self) -> str:
+        parts = [
+            self.customer_address_line_snapshot,
+            self.customer_city_snapshot,
+            self.customer_country_snapshot,
+        ]
+        return ", ".join(part for part in parts if part)
+
+    @property
+    def customer_name(self) -> str:
+        return self.customer_name_snapshot or self.customer.name
+
+    @property
+    def customer_email(self) -> str:
+        return self.customer_email_snapshot or self.customer.email
+
+    @property
+    def customer_phone_number(self) -> str:
+        return self.customer_phone_snapshot or self.customer.phone_number
+
+    @property
+    def customer_country(self) -> str:
+        return self.customer_country_snapshot or self.customer.country
+
+    @property
+    def customer_city(self) -> str:
+        return self.customer_city_snapshot or self.customer.city
+
+    @property
+    def customer_address_line(self) -> str:
+        return self.customer_address_line_snapshot or self.customer.address_line
+
+    @property
+    def customer_address(self) -> str:
+        if self.customer_address_line_snapshot:
+            return self.customer_snapshot_address
+
+        return self.customer.address
+
+    def snapshot_customer(self) -> None:
+        self.customer_name_snapshot = self.customer.name
+        self.customer_email_snapshot = self.customer.email
+        self.customer_phone_snapshot = self.customer.phone_number
+        self.customer_country_snapshot = self.customer.country
+        self.customer_city_snapshot = self.customer.city
+        self.customer_address_line_snapshot = self.customer.address_line
 
     def _transition_to(self, target: str) -> None:
         if self.status == target:

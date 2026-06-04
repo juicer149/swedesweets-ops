@@ -34,7 +34,7 @@ class CustomerMembership(models.Model):
     )
     customer = models.ForeignKey(
         "customers.Customer",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="memberships",
     )
     created_at = models.DateTimeField(auto_now_add=True)
