@@ -110,6 +110,10 @@ MIDDLEWARE = [
     # Require login for all app pages except explicitly exempt paths.
     "common.middleware.LoginRequiredMiddleware",
 
+    # Custom middleware to set request.account and check view permissions.
+    "accounts.middleware.AccountContextMiddleware",
+    "accounts.middleware.ViewCapabilityMiddleware",
+
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
