@@ -86,6 +86,7 @@ INSTALLED_APPS = [
 
     # Local apps
     "config",
+    "accounts",
     "products",
     "inventory",
     "orders",

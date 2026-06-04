@@ -3,12 +3,12 @@ from __future__ import annotations
 import pytest
 
 from customers.models import Customer
-from customers.services import create_customer
+from customers.tests.factories import customer_factory
 
 
 @pytest.fixture
-def customer() -> Customer:
-    return create_customer(
+def customer(db) -> Customer:
+    return customer_factory(
         name="Nordic Corner Shop",
         email="ORDERS@EXAMPLE.FR",
         phone_number="+33 6 12 34 56 78",
@@ -19,8 +19,8 @@ def customer() -> Customer:
 
 
 @pytest.fixture
-def other_customer() -> Customer:
-    return create_customer(
+def other_customer(db) -> Customer:
+    return customer_factory(
         name="Swiss Candy Store",
         email="orders@example.ch",
         phone_number="+41 44 123 45 67",

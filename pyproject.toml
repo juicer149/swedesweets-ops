@@ -24,6 +24,8 @@ testpaths = [
     "products",
     "inventory",
     "orders",
+    "customers",
+    "accounts",
 ]
 addopts = [
     "-ra",
