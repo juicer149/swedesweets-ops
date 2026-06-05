@@ -47,14 +47,19 @@ QUEUE_PREVIEW_LIMIT = 3
 
 @login_required
 def index(request):
-    placed_count = count_placed_orders()
-    packed_count = count_packed_orders()
-    expiring_count = count_expiring_batches(days=EXPIRY_SOON_DAYS)
-    low_stock_count = count_low_stock_products(threshold=LOW_STOCK_THRESHOLD)
+    role_spec = request.role_spec
+
+    placed_count = _count_placed_orders_for_dashboard(role_spec=role_spec)
+    packed_count = _count_packed_orders_for_dashboard(role_spec=role_spec)
+    expiring_count = _count_expiring_batches_for_dashboard(role_spec=role_spec)
+    low_stock_count = _count_low_stock_products_for_dashboard(
+        role_spec=role_spec,
+    )
 
     requested_queue = request.GET.get("queue", "")
 
     queue_tabs = _build_queue_tabs(
+        role_spec=role_spec,
         placed_count=placed_count,
         packed_count=packed_count,
         expiring_count=expiring_count,
@@ -70,94 +75,154 @@ def index(request):
     )
 
     context = {
-        "dashboard_actions": _build_dashboard_actions(),
+        "dashboard_actions": _build_dashboard_actions(role_spec=role_spec),
         "dashboard_queue_tabs": queue_tabs,
-        "dashboard_queue_panel": _build_queue_panel(active_queue),
+        "dashboard_queue_panel": _build_queue_panel(
+            active_queue,
+            role_spec=role_spec,
+        ),
     }
 
     return render(request, "index.html", context)
 
 
-def _build_dashboard_actions() -> tuple[DashboardAction, ...]:
-    orders_url = reverse("orders:index")
+def _count_placed_orders_for_dashboard(*, role_spec) -> int:
+    if not role_spec.can_pack_orders:
+        return 0
 
-    return (
-        DashboardAction(
-            label="Place",
-            href=reverse("orders:create"),
-            css_class=(
-                "button button--hero-action "
-                "button--tone-place button--with-icon"
-            ),
-            aria_label="Place a new order",
-            icon="cart",
-        ),
-        DashboardAction(
-            label="Pack",
-            href=f"{orders_url}?status={Order.Status.PLACED}#orders-list",
-            css_class=(
-                "button button--hero-action "
-                "button--tone-pack button--with-icon"
-            ),
-            aria_label="View placed orders waiting to be packed",
-            icon="box",
-        ),
-        DashboardAction(
-            label="Deliver",
-            href=f"{orders_url}?status={Order.Status.PACKED}#orders-list",
-            css_class=(
-                "button button--hero-action "
-                "button--tone-deliver button--with-icon"
-            ),
-            aria_label="View packed orders ready for delivery",
-            icon="truck",
-        ),
-    )
+    return count_placed_orders()
+
+
+def _count_packed_orders_for_dashboard(*, role_spec) -> int:
+    if not role_spec.can_deliver_orders:
+        return 0
+
+    return count_packed_orders()
+
+
+def _count_expiring_batches_for_dashboard(*, role_spec) -> int:
+    if not role_spec.can_view_inventory_risks:
+        return 0
+
+    return count_expiring_batches(days=EXPIRY_SOON_DAYS)
+
+
+def _count_low_stock_products_for_dashboard(*, role_spec) -> int:
+    if not role_spec.can_view_inventory_risks:
+        return 0
+
+    return count_low_stock_products(threshold=LOW_STOCK_THRESHOLD)
+
+
+def _build_dashboard_actions(*, role_spec) -> tuple[DashboardAction, ...]:
+    orders_url = reverse("orders:index")
+    actions: list[DashboardAction] = []
+
+    if role_spec.can_create_orders:
+        actions.append(
+            DashboardAction(
+                label="Place",
+                href=reverse("orders:create"),
+                css_class=(
+                    "button button--hero-action "
+                    "button--tone-place button--with-icon"
+                ),
+                aria_label="Place a new order",
+                icon="cart",
+            )
+        )
+
+    if role_spec.can_pack_orders:
+        actions.append(
+            DashboardAction(
+                label="Pack",
+                href=f"{orders_url}?status={Order.Status.PLACED}#orders-list",
+                css_class=(
+                    "button button--hero-action "
+                    "button--tone-pack button--with-icon"
+                ),
+                aria_label="View placed orders waiting to be packed",
+                icon="box",
+            )
+        )
+
+    if role_spec.can_deliver_orders:
+        actions.append(
+            DashboardAction(
+                label="Deliver",
+                href=f"{orders_url}?status={Order.Status.PACKED}#orders-list",
+                css_class=(
+                    "button button--hero-action "
+                    "button--tone-deliver button--with-icon"
+                ),
+                aria_label="View packed orders ready for delivery",
+                icon="truck",
+            )
+        )
+
+    return tuple(actions)
 
 
 def _build_queue_tabs(
     *,
+    role_spec,
     placed_count: int,
     packed_count: int,
     expiring_count: int,
     low_stock_count: int,
 ) -> tuple[DashboardQueueTab, ...]:
     candidates = (
-        DashboardQueueTab(
-            key=QUEUE_PLACED,
-            label="Placed",
-            count=placed_count,
-            href=_dashboard_queue_href(QUEUE_PLACED),
-            tone="warning",
-            icon="cart",
+        (
+            role_spec.can_pack_orders,
+            DashboardQueueTab(
+                key=QUEUE_PLACED,
+                label="Placed",
+                count=placed_count,
+                href=_dashboard_queue_href(QUEUE_PLACED),
+                tone="warning",
+                icon="cart",
+            ),
         ),
-        DashboardQueueTab(
-            key=QUEUE_PACKED,
-            label="Packed",
-            count=packed_count,
-            href=_dashboard_queue_href(QUEUE_PACKED),
-            tone="info",
-            icon="packed",
+        (
+            role_spec.can_deliver_orders,
+            DashboardQueueTab(
+                key=QUEUE_PACKED,
+                label="Packed",
+                count=packed_count,
+                href=_dashboard_queue_href(QUEUE_PACKED),
+                tone="info",
+                icon="packed",
+            ),
         ),
-        DashboardQueueTab(
-            key=QUEUE_EXPIRING,
-            label="Expiring",
-            count=expiring_count,
-            href=_dashboard_queue_href(QUEUE_EXPIRING),
-            tone="danger",
-            icon="warning",
+        (
+            role_spec.can_view_inventory_risks,
+            DashboardQueueTab(
+                key=QUEUE_EXPIRING,
+                label="Expiring",
+                count=expiring_count,
+                href=_dashboard_queue_href(QUEUE_EXPIRING),
+                tone="danger",
+                icon="warning",
+            ),
         ),
-        DashboardQueueTab(
-            key=QUEUE_LOW_STOCK,
-            label="Low stock",
-            count=low_stock_count,
-            href=_dashboard_queue_href(QUEUE_LOW_STOCK),
-            tone="warning",
-            icon="inventory",
+        (
+            role_spec.can_view_inventory_risks,
+            DashboardQueueTab(
+                key=QUEUE_LOW_STOCK,
+                label="Low stock",
+                count=low_stock_count,
+                href=_dashboard_queue_href(QUEUE_LOW_STOCK),
+                tone="warning",
+                icon="inventory",
+            ),
         ),
     )
 
-    return tuple(tab for tab in candidates if tab.count > 0)
+    return tuple(
+        tab
+        for is_allowed, tab in candidates
+        if is_allowed and tab.count > 0
+    )
 
 
 def _resolve_active_queue(
@@ -176,17 +241,21 @@ def _resolve_active_queue(
     return queue_tabs[0].key
 
 
-def _build_queue_panel(active_queue: str) -> DashboardQueuePanel | None:
-    if active_queue == QUEUE_PLACED:
+def _build_queue_panel(
+    active_queue: str,
+    *,
+    role_spec,
+) -> DashboardQueuePanel | None:
+    if active_queue == QUEUE_PLACED and role_spec.can_pack_orders:
         return _build_placed_queue_panel()
 
-    if active_queue == QUEUE_PACKED:
+    if active_queue == QUEUE_PACKED and role_spec.can_deliver_orders:
         return _build_packed_queue_panel()
 
-    if active_queue == QUEUE_EXPIRING:
+    if active_queue == QUEUE_EXPIRING and role_spec.can_view_inventory_risks:
         return _build_expiring_queue_panel()
 
-    if active_queue == QUEUE_LOW_STOCK:
+    if active_queue == QUEUE_LOW_STOCK and role_spec.can_view_inventory_risks:
         return _build_low_stock_queue_panel()
 
     return None
@@ -253,7 +322,7 @@ def _build_low_stock_queue_panel() -> DashboardQueuePanel:
 
 def _placed_order_item(order) -> DashboardQueueItem:
     return DashboardQueueItem(
-        title=f"#{order.pk} · {order.customer.name}",
+        title=f"#{order.pk} · {order.customer_name}",
         meta=f"{order_lifecycle_label(order)} · {order_quantity_label(order)}",
         href=reverse("orders:pack", kwargs={"order_id": order.pk}),
         action_label="Pack order →",
@@ -264,7 +333,7 @@ def _placed_order_item(order) -> DashboardQueueItem:
 
 def _packed_order_item(order) -> DashboardQueueItem:
     return DashboardQueueItem(
-        title=f"#{order.pk} · {order.customer.name}",
+        title=f"#{order.pk} · {order.customer_name}",
         meta=f"{order_lifecycle_label(order)} · {order_quantity_label(order)}",
         href=reverse("orders:deliver", kwargs={"order_id": order.pk}),
         action_label="Mark delivered →",
