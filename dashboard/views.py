@@ -7,11 +7,11 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from common.dashboard import (
-    DashboardAction,
     DashboardQueueItem,
     DashboardQueuePanel,
     DashboardQueueTab,
 )
+from dashboard.actions import build_dashboard_actions
 from inventory.expiry import EXPIRY_SOON_DAYS
 from inventory.low_stock import LOW_STOCK_THRESHOLD
 from inventory.presentation import (
@@ -47,6 +47,7 @@ QUEUE_PREVIEW_LIMIT = 3
 
 @login_required
 def index(request):
+    account_role = request.account_role
     role_spec = request.role_spec
 
     placed_count = _count_placed_orders_for_dashboard(role_spec=role_spec)
@@ -75,7 +76,10 @@ def index(request):
     )
 
     context = {
-        "dashboard_actions": _build_dashboard_actions(role_spec=role_spec),
+        "dashboard_actions": build_dashboard_actions(
+            account_role=account_role,
+            role_spec=role_spec,
+        ),
         "dashboard_queue_tabs": queue_tabs,
         "dashboard_queue_panel": _build_queue_panel(
             active_queue,
@@ -83,7 +87,7 @@ def index(request):
         ),
     }
 
-    return render(request, "index.html", context)
+    return render(request, "dashboard/index.html", context)
 
 
 def _count_placed_orders_for_dashboard(*, role_spec) -> int:
@@ -112,55 +116,6 @@ def _count_low_stock_products_for_dashboard(*, role_spec) -> int:
         return 0
 
     return count_low_stock_products(threshold=LOW_STOCK_THRESHOLD)
-
-
-def _build_dashboard_actions(*, role_spec) -> tuple[DashboardAction, ...]:
-    orders_url = reverse("orders:index")
-    actions: list[DashboardAction] = []
-
-    if role_spec.can_create_orders:
-        actions.append(
-            DashboardAction(
-                label="Place",
-                href=reverse("orders:create"),
-                css_class=(
-                    "button button--hero-action "
-                    "button--tone-place button--with-icon"
-                ),
-                aria_label="Place a new order",
-                icon="cart",
-            )
-        )
-
-    if role_spec.can_pack_orders:
-        actions.append(
-            DashboardAction(
-                label="Pack",
-                href=f"{orders_url}?status={Order.Status.PLACED}#orders-list",
-                css_class=(
-                    "button button--hero-action "
-                    "button--tone-pack button--with-icon"
-                ),
-                aria_label="View placed orders waiting to be packed",
-                icon="box",
-            )
-        )
-
-    if role_spec.can_deliver_orders:
-        actions.append(
-            DashboardAction(
-                label="Deliver",
-                href=f"{orders_url}?status={Order.Status.PACKED}#orders-list",
-                css_class=(
-                    "button button--hero-action "
-                    "button--tone-deliver button--with-icon"
-                ),
-                aria_label="View packed orders ready for delivery",
-                icon="truck",
-            )
-        )
-
-    return tuple(actions)
 
 
 def _build_queue_tabs(
@@ -315,7 +270,9 @@ def _build_low_stock_queue_panel() -> DashboardQueuePanel:
         title="Low stock",
         description="Products running low.",
         items=tuple(_low_stock_item(row) for row in rows),
-        view_all_href=f"{inventory_url}?view=products&sort=available#inventory-list",
+        view_all_href=(
+            f"{inventory_url}?view=products&sort=available#inventory-list"
+        ),
         view_all_label="View low stock products →",
     )
 

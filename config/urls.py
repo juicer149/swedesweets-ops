@@ -3,11 +3,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from config.views import index
+from dashboard import views as dashboard_views
 
 
 urlpatterns = [
-    path("", index, name="index"),
+    path("", dashboard_views.index, name="index"), 
     path("admin/", admin.site.urls),
 
     # Django auth views:
