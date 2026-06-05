@@ -118,6 +118,123 @@ For local development, create a Django superuser with:
 make superuser
 ```
 
+## View access policy
+
+View authorization is deny-by-default.
+
+The `accounts` app defines a central view policy in:
+
+```text
+accounts/policies.py
+```
+
+Protected views must be mapped to a capability:
+
+```python
+VIEW_CAPABILITIES = {
+    "orders:index": "can_view_orders",
+    "orders:pack": "can_pack_orders",
+}
+```
+
+Public/auth views must be listed explicitly:
+
+```python
+PUBLIC_VIEWS = {
+    "login",
+    "logout",
+    "password_reset",
+}
+```
+
+Any resolved view that is not listed in `VIEW_CAPABILITIES` or `PUBLIC_VIEWS`
+is denied by default.
+
+Request access works like this:
+
+```text
+Django User
+  -> AccountContextMiddleware
+  -> request.account_role
+  -> request.role_spec
+  -> ViewCapabilityMiddleware
+  -> VIEW_CAPABILITIES[view_name]
+  -> role_spec.<capability>
+```
+
+This means a new view is not accessible until it has an explicit policy entry.
+
+When adding a new view:
+
+1. Add the URL route with a stable `name`.
+2. Add the route name to `accounts/policies.py`.
+3. Map it to the narrowest matching capability.
+4. Add or update tests if a new capability is introduced.
+
+Examples:
+
+```python
+"orders:detail": "can_view_orders"
+"orders:create": "can_create_orders"
+"inventory:close": "can_close_batches"
+"products:edit": "can_edit_products"
+```
+
+Owner/superuser access is handled through `AccountRole.OWNER` and `OWNER_SPEC`.
+Owner users do not bypass missing policy entries. They can access views because
+their role spec has the declared capabilities.
+
+## Navigation and role-aware UI
+
+Navigation should reflect the same capabilities used by the access policy.
+
+The app should not show links or actions that the current account cannot use.
+Route protection is handled by middleware, while navigation is a UX layer.
+
+The navigation chain is:
+
+```text
+request.role_spec
+  -> accounts/navigation.py
+  -> primary_nav_items
+  -> templates/includes/navbar.html
+```
+
+Navigation items should be built from data, not from duplicated permission logic
+inside templates.
+
+A nav item should define:
+
+```text
+label
+href
+namespace
+icon
+required capability
+```
+
+The navbar then loops over already-filtered `primary_nav_items`.
+
+When adding a new navigation link:
+
+1. Make sure the target view exists in `VIEW_CAPABILITIES`.
+2. Add a nav item with the matching capability.
+3. Keep the template generic: render nav items, do not duplicate policy rules.
+4. Test manually with owner/full staff/restricted staff when the link affects roles.
+
+This keeps authorization and navigation aligned:
+
+```text
+accounts/policies.py
+  decides what a route requires
+
+accounts/roles.py
+  decides what a role can do
+
+accounts/navigation.py
+  decides what links the role should see
+```
+
 ## Customers
 
 Customers are the operational business entities that orders belong to.
@@ -325,13 +442,22 @@ Important production concerns:
 * Run migrations before serving traffic
 * Keep debug mode disabled in production
 
+
 ## Status
 
 MVP operations system under active development.
 
+Current access model:
+
+* Business identity is resolved per request by `AccountContextMiddleware`
+* Views are denied by default unless listed in `accounts/policies.py`
+* Capabilities are defined by role specs in `accounts/roles.py`
+* Navigation is becoming role-aware through account capabilities
+
 Current focus areas:
 
-* Account role middleware
-* Permission checks for staff/customer capabilities
-* Role-aware dashboard and navigation
+* Role-aware navbar
+* Role-aware dashboard actions
+* Role-aware order detail actions
+* Account creation UI for owner/full staff
 * Customer-facing catalog/portal later
