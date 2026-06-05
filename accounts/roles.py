@@ -1,3 +1,10 @@
+"""
+Account roles and capabilities.
+
+This module answers:
+
+    What can this account role do?
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -102,11 +109,14 @@ FULL_STAFF_SPEC = RoleSpec(
 
 RESTRICTED_STAFF_SPEC = RoleSpec(
     can_view_staff_ops=True,
+
     can_view_orders=True,
     can_pack_orders=True,
     can_deliver_orders=True,
+
     can_view_inventory=True,
     can_create_batches=True,
+
     can_view_ops_products=True,
     can_view_customers=True,
 )

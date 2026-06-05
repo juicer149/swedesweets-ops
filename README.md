@@ -194,7 +194,8 @@ Route protection is handled by middleware, while navigation is a UX layer.
 The navigation chain is:
 
 ```text
-request.role_spec
+request.account_role + request.role_spec
+  -> accounts/context_processors.py
   -> accounts/navigation.py
   -> primary_nav_items
   -> templates/includes/navbar.html
@@ -202,12 +203,14 @@ request.role_spec
 
 Navigation items should be built from data, not from duplicated permission logic
 inside templates.
+`account_role` chooses the navigation family, while `role_spec` filters each
+item by capability.
 
 A nav item should define:
 
 ```text
 label
-href
+route_name
 namespace
 icon
 required capability
@@ -452,11 +455,10 @@ Current access model:
 * Business identity is resolved per request by `AccountContextMiddleware`
 * Views are denied by default unless listed in `accounts/policies.py`
 * Capabilities are defined by role specs in `accounts/roles.py`
-* Navigation is becoming role-aware through account capabilities
+* Navigation is role-aware through account capabilities
 
 Current focus areas:
 
-* Role-aware navbar
 * Role-aware dashboard actions
 * Role-aware order detail actions
 * Account creation UI for owner/full staff

@@ -18,6 +18,8 @@ def resolve_account_role(user) -> AccountRole:
         return AccountRole.OWNER
 
     has_staff_account = hasattr(user, "staff_account")
+
+    # extra query, could be optimized later, 
     has_customer_membership = user.customer_memberships.exists()
 
     if has_staff_account and has_customer_membership:
@@ -54,7 +56,7 @@ def require_capability(request, capability: str) -> None:
     if role_spec is None:
         role_spec = resolve_role_spec(request.user)
 
-    if not getattr(role_spec, capability):
+    if not getattr(role_spec, capability, False):
         raise PermissionDenied("You do not have permission to access this page.")
 
 

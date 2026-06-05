@@ -1,3 +1,12 @@
+"""
+Route access policy.
+
+This module answers:
+
+    What capability is required to reach this view?
+
+Views are denied by default unless listed here or marked public.
+"""
 from __future__ import annotations
 
 

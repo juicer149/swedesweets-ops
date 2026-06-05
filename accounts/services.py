@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
-from accounts.errors import InvalidAccountIdentity, AccountCreationError
+from accounts.errors import AccountCreationError
 from accounts.models import CustomerMembership, StaffAccount
 from accounts.roles import StaffAccessLevel
 from customers.models import Customer
@@ -117,7 +117,12 @@ def _create_user_for_account(
     else:
         user.set_unusable_password()
 
-    user.save()
+    try:
+        user.save()
+    except IntegrityError as error:
+        raise AccountCreationError(
+            "An account with this email already exists."
+        ) from error
 
     return user
 
