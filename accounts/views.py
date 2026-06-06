@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
 
+from accounts.errors import AccountCreationError
+from accounts.form_viewmodels import build_create_internal_account_form_context
+from accounts.forms import InternalAccountCreateForm
 from accounts.list_viewmodels import (
     ACCOUNT_VIEW_CUSTOMER,
     ACCOUNT_VIEW_INTERNAL,
@@ -16,6 +21,7 @@ from accounts.selectors import (
     list_internal_account_rows,
     list_unlinked_account_rows,
 )
+from accounts.services import create_internal_account
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
@@ -110,6 +116,36 @@ def index(request):
     return render(request, "accounts/index.html", context)
 
 
+@login_required
+def create_internal(request):
+    if request.method == "POST":
+        form = InternalAccountCreateForm(request.POST)
+
+        if form.is_valid():
+            try:
+                result = create_internal_account(
+                    email=form.cleaned_data["email"],
+                    access_level=form.cleaned_data["access_level"],
+                    password=form.cleaned_data["password1"],
+                )
+            except AccountCreationError as error:
+                form.add_error(None, str(error))
+            else:
+                messages.success(
+                    request,
+                    f"Internal account {result.user.email} created.",
+                )
+                return redirect(_accounts_internal_url())
+    else:
+        form = InternalAccountCreateForm()
+
+    context = build_create_internal_account_form_context(
+        form=form,
+    ).as_dict()
+
+    return render(request, "accounts/account_form.html", context)
+
+
 def _list_account_rows(
     *,
     active_view: str,
@@ -129,3 +165,10 @@ def _active_account_view(value: str) -> str:
         return value
 
     return ACCOUNT_DEFAULT_VIEW
+
+
+def _accounts_internal_url() -> str:
+    return (
+        f"{reverse('accounts:index')}"
+        f"?view={ACCOUNT_VIEW_INTERNAL}#accounts-list"
+    )

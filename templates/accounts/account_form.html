@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="account-form-title" title=title description=description %}
+
+<section class="form-section" aria-labelledby="account-form-title">
+  {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}
+</section>
+{% endblock %}

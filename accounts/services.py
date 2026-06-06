@@ -44,6 +44,24 @@ def create_restricted_staff_account(
     )
 
 
+def create_internal_account(
+    *,
+    email: str,
+    access_level: str | StaffAccessLevel,
+    password: str | None = None,
+) -> CreatedAccount:
+    try:
+        normalized_access_level = StaffAccessLevel(access_level)
+    except ValueError as error:
+        raise AccountCreationError("Choose a valid staff access level.") from error
+
+    return _create_staff_account(
+        email=email,
+        password=password,
+        access_level=normalized_access_level,
+    )
+
+
 @transaction.atomic
 def create_customer_account(
     *,

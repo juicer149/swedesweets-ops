@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.selectors import AccountListRow
-from common.page_header import PageHeader
+from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
     TONE_MUTED,
     TONE_NEUTRAL,
@@ -54,8 +54,8 @@ def build_accounts_page_header(*, active_view: str) -> PageHeader:
     return PageHeader(
         title="Accounts",
         title_id="accounts-title",
-        description="",
-        action=None,
+        description="Manage internal and customer login accounts.",
+        action=_build_accounts_page_action(active_view=active_view),
     )
 
 
@@ -171,6 +171,21 @@ def _account_card(
                 ),
             ),
         ),
+    )
+
+
+def _build_accounts_page_action(
+    *,
+    active_view: str,
+) -> PageHeaderAction | None:
+    if active_view != ACCOUNT_VIEW_INTERNAL:
+        return None
+
+    return PageHeaderAction(
+        label="Create internal account",
+        href=reverse("accounts:create_internal"),
+        icon="plus",
+        aria_label="Create internal staff account",
     )
 
 

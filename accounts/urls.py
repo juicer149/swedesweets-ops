@@ -9,4 +9,5 @@ app_name = "accounts"
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("internal/create/", views.create_internal, name="create_internal"),
 ]
