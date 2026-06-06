@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import AccountRole, RoleSpec
+from accounts.roles import AccountRole, Capability, RoleSpec
 from dashboard.viewmodels import DashboardAction
 from orders.models import Order
 
@@ -20,7 +20,7 @@ MAX_DASHBOARD_ACTIONS = 3
 @dataclass(frozen=True, slots=True)
 class DashboardActionSpec:
     label: str
-    capability: str
+    capability: Capability
     css_tone: str
     aria_label: str
     icon: str
@@ -74,7 +74,7 @@ def _add_batch_href() -> str:
 
 PLACE_ORDER_ACTION = DashboardActionSpec(
     label="Place",
-    capability="can_create_orders",
+    capability=Capability.CREATE_ORDERS,
     css_tone="button--tone-place",
     aria_label="Place a new order",
     icon="cart",
@@ -83,7 +83,7 @@ PLACE_ORDER_ACTION = DashboardActionSpec(
 
 PACK_ORDERS_ACTION = DashboardActionSpec(
     label="Pack",
-    capability="can_pack_orders",
+    capability=Capability.PACK_ORDERS,
     css_tone="button--tone-pack",
     aria_label="View placed orders waiting to be packed",
     icon="box",
@@ -92,7 +92,7 @@ PACK_ORDERS_ACTION = DashboardActionSpec(
 
 DELIVER_ORDERS_ACTION = DashboardActionSpec(
     label="Deliver",
-    capability="can_deliver_orders",
+    capability=Capability.DELIVER_ORDERS,
     css_tone="button--tone-deliver",
     aria_label="View packed orders ready for delivery",
     icon="truck",
@@ -101,7 +101,7 @@ DELIVER_ORDERS_ACTION = DashboardActionSpec(
 
 ADD_BATCH_ACTION = DashboardActionSpec(
     label="Add batch",
-    capability="can_create_batches",
+    capability=Capability.CREATE_BATCHES,
     css_tone="button--tone-pack",
     aria_label="Add a new inventory batch",
     icon="inventory",
@@ -156,7 +156,7 @@ def build_dashboard_actions(
     actions = tuple(
         candidate.build()
         for candidate in candidates
-        if getattr(role_spec, candidate.capability, False)
+        if role_spec.allows(candidate.capability)
     )
 
     return actions[:MAX_DASHBOARD_ACTIONS]

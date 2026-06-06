@@ -19,7 +19,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import AccountRole, RoleSpec
+from accounts.roles import AccountRole, Capability, RoleSpec
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +30,7 @@ class NavItem:
     route_name: str
     namespace: str
     icon: str
-    capability: str
+    capability: Capability
 
     @property
     def href(self) -> str:
@@ -43,12 +43,13 @@ class NavItem:
 # Add new primary navigation links here. Visibility is still filtered by
 # capability, but each role chooses from its own nav item set below.
 
+
 CUSTOMERS_NAV_ITEM = NavItem(
     label="Customers",
     route_name="customers:index",
     namespace="customers",
     icon="users",
-    capability="can_view_customers",
+    capability=Capability.VIEW_CUSTOMERS,
 )
 
 ORDERS_NAV_ITEM = NavItem(
@@ -56,7 +57,7 @@ ORDERS_NAV_ITEM = NavItem(
     route_name="orders:index",
     namespace="orders",
     icon="cart",
-    capability="can_view_orders",
+    capability=Capability.VIEW_ORDERS,
 )
 
 INVENTORY_NAV_ITEM = NavItem(
@@ -64,7 +65,7 @@ INVENTORY_NAV_ITEM = NavItem(
     route_name="inventory:index",
     namespace="inventory",
     icon="inventory",
-    capability="can_view_inventory",
+    capability=Capability.VIEW_INVENTORY,
 )
 
 CATALOG_NAV_ITEM = NavItem(
@@ -72,7 +73,7 @@ CATALOG_NAV_ITEM = NavItem(
     route_name="products:index",
     namespace="products",
     icon="lollipop",
-    capability="can_view_ops_products",
+    capability=Capability.VIEW_OPS_PRODUCTS,
 )
 
 
@@ -81,6 +82,7 @@ CATALOG_NAV_ITEM = NavItem(
 #
 # This is UX, not authorization. A role can have access to a route without that
 # route appearing as a top-level nav item.
+
 
 STAFF_NAV_ITEMS = (
     CUSTOMERS_NAV_ITEM,
@@ -126,5 +128,5 @@ def _filter_nav_items(
     return tuple(
         item
         for item in candidates
-        if getattr(role_spec, item.capability, False)
+        if role_spec.allows(item.capability)
     )

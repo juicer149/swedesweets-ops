@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 
 from django.urls import reverse
 
-from accounts.roles import AccountRole, RoleSpec
+from accounts.roles import AccountRole, Capability, RoleSpec
 from dashboard.viewmodels import (
     DashboardQueueItem,
     DashboardQueuePanel,
@@ -65,7 +65,7 @@ class DashboardQueueContext:
 class DashboardQueueSpec:
     key: str
     label: str
-    capability: str
+    capability: Capability
     tone: str
     icon: str
 
@@ -226,7 +226,7 @@ def _low_stock_item(row) -> DashboardQueueItem:
 PLACED_ORDERS_QUEUE = DashboardQueueSpec(
     key="placed",
     label="Placed",
-    capability="can_pack_orders",
+    capability=Capability.PACK_ORDERS,
     tone="warning",
     icon="cart",
     panel_title="Placed orders",
@@ -241,7 +241,7 @@ PLACED_ORDERS_QUEUE = DashboardQueueSpec(
 PACKED_ORDERS_QUEUE = DashboardQueueSpec(
     key="packed",
     label="Packed",
-    capability="can_deliver_orders",
+    capability=Capability.DELIVER_ORDERS,
     tone="info",
     icon="packed",
     panel_title="Packed orders",
@@ -256,7 +256,7 @@ PACKED_ORDERS_QUEUE = DashboardQueueSpec(
 EXPIRING_BATCHES_QUEUE = DashboardQueueSpec(
     key="expiring",
     label="Expiring",
-    capability="can_view_inventory_risks",
+    capability=Capability.VIEW_INVENTORY_RISKS,
     tone="danger",
     icon="warning",
     panel_title="Expiring batches",
@@ -271,7 +271,7 @@ EXPIRING_BATCHES_QUEUE = DashboardQueueSpec(
 LOW_STOCK_QUEUE = DashboardQueueSpec(
     key="low-stock",
     label="Low stock",
-    capability="can_view_inventory_risks",
+    capability=Capability.VIEW_INVENTORY_RISKS,
     tone="warning",
     icon="inventory",
     panel_title="Low stock",
@@ -363,7 +363,7 @@ def _visible_queue_specs(
     return tuple(
         queue_spec
         for queue_spec in candidates
-        if getattr(role_spec, queue_spec.capability, False)
+        if role_spec.allows(queue_spec.capability)
     )
 
 

@@ -7,7 +7,10 @@ This module answers:
 
 Views are denied by default unless listed here or marked public.
 """
+
 from __future__ import annotations
+
+from accounts.roles import Capability
 
 
 PUBLIC_VIEWS = frozenset(
@@ -24,37 +27,37 @@ PUBLIC_VIEWS = frozenset(
 )
 
 
-VIEW_CAPABILITIES = {
+VIEW_CAPABILITIES: dict[str, Capability] = {
     # Root/dashboard
-    "index": "can_view_staff_ops",
+    "index": Capability.VIEW_STAFF_OPS,
 
     # Orders
-    "orders:index": "can_view_orders",
-    "orders:detail": "can_view_orders",
-    "orders:create": "can_create_orders",
-    "orders:edit": "can_edit_orders",
-    "orders:cancel": "can_cancel_orders",
-    "orders:pack": "can_pack_orders",
-    "orders:deliver": "can_deliver_orders",
+    "orders:index": Capability.VIEW_ORDERS,
+    "orders:detail": Capability.VIEW_ORDERS,
+    "orders:create": Capability.CREATE_ORDERS,
+    "orders:edit": Capability.EDIT_ORDERS,
+    "orders:cancel": Capability.CANCEL_ORDERS,
+    "orders:pack": Capability.PACK_ORDERS,
+    "orders:deliver": Capability.DELIVER_ORDERS,
 
     # Inventory
-    "inventory:index": "can_view_inventory",
-    "inventory:detail": "can_view_inventory",
-    "inventory:create": "can_create_batches",
-    "inventory:edit": "can_edit_batches",
-    "inventory:close": "can_close_batches",
+    "inventory:index": Capability.VIEW_INVENTORY,
+    "inventory:detail": Capability.VIEW_INVENTORY,
+    "inventory:create": Capability.CREATE_BATCHES,
+    "inventory:edit": Capability.EDIT_BATCHES,
+    "inventory:close": Capability.CLOSE_BATCHES,
 
     # Products / internal ops product master
-    "products:index": "can_view_ops_products",
-    "products:detail": "can_view_ops_products",
-    "products:create": "can_create_products",
-    "products:edit": "can_edit_products",
+    "products:index": Capability.VIEW_OPS_PRODUCTS,
+    "products:detail": Capability.VIEW_OPS_PRODUCTS,
+    "products:create": Capability.CREATE_PRODUCTS,
+    "products:edit": Capability.EDIT_PRODUCTS,
 
     # Customers / internal ops customer master
-    "customers:index": "can_view_customers",
-    "customers:detail": "can_view_customers",
-    "customers:create": "can_create_customers",
-    "customers:edit": "can_edit_customers",
+    "customers:index": Capability.VIEW_CUSTOMERS,
+    "customers:detail": Capability.VIEW_CUSTOMERS,
+    "customers:create": Capability.CREATE_CUSTOMERS,
+    "customers:edit": Capability.EDIT_CUSTOMERS,
 }
 
 

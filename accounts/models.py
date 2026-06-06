@@ -27,10 +27,10 @@ class StaffAccount(models.Model):
 
 
 class CustomerMembership(models.Model):
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="customer_memberships",
+        related_name="customer_membership",
     )
     customer = models.ForeignKey(
         "customers.Customer",
@@ -41,16 +41,6 @@ class CustomerMembership(models.Model):
 
     class Meta:
         ordering = ["customer__name", "user__username"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user"],
-                name="unique_customer_membership_per_user",
-            ),
-            models.UniqueConstraint(
-                fields=["user", "customer"],
-                name="unique_customer_membership",
-            ),
-        ]
 
     def __str__(self) -> str:
         return f"{self.user} -> {self.customer}"

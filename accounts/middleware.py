@@ -99,7 +99,7 @@ class ViewCapabilityMiddleware:
         if role_spec is None:
             raise PermissionDenied("Account role context is missing.")
 
-        if not getattr(role_spec, required_capability, False):
+        if not role_spec.allows(required_capability):
             raise PermissionDenied(
                 "You do not have permission to access this page."
             )
