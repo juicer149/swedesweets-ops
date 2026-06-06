@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
 from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import (
     TableControls,
@@ -17,8 +18,8 @@ from customers.forms import (
     CustomerForm,
     build_customer_edit_initial_data,
 )
-from customers.list_viewmodels import build_customer_page_rows
 from customers.form_viewmodels import build_customer_context_items
+from customers.list_viewmodels import build_customer_page_rows
 from customers.models import Customer
 from customers.selectors import (
     CUSTOMER_SORTS,
@@ -26,8 +27,8 @@ from customers.selectors import (
     get_customer_order_summary,
     list_customers,
 )
-from orders.selectors import list_customer_orders as list_orders_for_customer
 from customers.services import create_customer, update_customer
+from orders.selectors import list_customer_orders as list_orders_for_customer
 
 
 CUSTOMERS_LIST_ANCHOR = "customers-list"
@@ -66,15 +67,7 @@ def index(request):
     )
 
     context = {
-        "page_header": PageHeader(
-            title="Customers",
-            title_id="customers-title",
-            action=PageHeaderAction(
-                label="Add customer",
-                href=reverse("customers:create"),
-                aria_label="Add a new customer",
-            ),
-        ),
+        "page_header": _customers_page_header(role_spec=request.role_spec),
         "customer_rows": build_customer_page_rows(customers),
         "filters": [],
         "table_sorts": controls.build_table_sort_links(CUSTOMER_TABLE_SORTS),
@@ -92,14 +85,14 @@ def index(request):
 def detail(request, customer_pk: int):
     customer = _get_customer_for_detail(customer_pk)
     orders = list(
-            list_orders_for_customer(customer=customer)
+        list_orders_for_customer(customer=customer)
     )
 
     context = build_customer_detail_context(
         customer=customer,
         order_summary=get_customer_order_summary(customer=customer),
         orders=orders,
-        edit_url=reverse("customers:edit", kwargs={"customer_pk": customer.pk}),
+        role_spec=request.role_spec,
         cancel_url=reverse("customers:index"),
     ).as_dict()
 
@@ -177,6 +170,28 @@ def create(request):
     }
 
     return render(request, "customers/customer_form.html", context)
+
+
+def _customers_page_header(*, role_spec: RoleSpec) -> PageHeader:
+    return PageHeader(
+        title="Customers",
+        title_id="customers-title",
+        action=_build_add_customer_header_action(role_spec=role_spec),
+    )
+
+
+def _build_add_customer_header_action(
+    *,
+    role_spec: RoleSpec,
+) -> PageHeaderAction | None:
+    if not role_spec.allows(Capability.CREATE_CUSTOMERS):
+        return None
+
+    return PageHeaderAction(
+        label="Add customer",
+        href=reverse("customers:create"),
+        aria_label="Add a new customer",
+    )
 
 
 def _get_customer_for_detail(customer_pk: int) -> Customer:

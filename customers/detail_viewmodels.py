@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
 from common.detail_cards import (
     DetailAction,
     DetailCard,
@@ -68,7 +69,7 @@ def build_customer_detail_context(
     customer: Customer,
     order_summary: CustomerOrderSummary,
     orders: list[Order],
-    edit_url: str,
+    role_spec: RoleSpec,
     cancel_url: str,
 ) -> CustomerDetailContext:
     order_rows = _build_order_rows(orders)
@@ -83,14 +84,38 @@ def build_customer_detail_context(
                 customer=customer,
                 order_summary=order_summary,
             ),
-            secondary_actions=(
-                build_edit_customer_action(href=edit_url),
+            secondary_actions=build_customer_secondary_actions(
+                customer=customer,
+                role_spec=role_spec,
             ),
         ),
         title=customer.name,
         description="",
         cancel_url=cancel_url,
     )
+
+
+def build_customer_secondary_actions(
+    *,
+    customer: Customer,
+    role_spec: RoleSpec,
+) -> tuple[DetailAction, ...]:
+    if not can_edit_customer(customer=customer, role_spec=role_spec):
+        return ()
+
+    return (
+        build_edit_customer_action(
+            href=reverse("customers:edit", kwargs={"customer_pk": customer.pk}),
+        ),
+    )
+
+
+def can_edit_customer(
+    *,
+    customer: Customer,
+    role_spec: RoleSpec,
+) -> bool:
+    return role_spec.allows(Capability.EDIT_CUSTOMERS)
 
 
 def build_edit_customer_action(*, href: str) -> DetailAction:
