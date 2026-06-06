@@ -47,12 +47,16 @@ def build_account_detail_context(
         account=account,
         activity_rows=activity_rows,
         detail_card=DetailCard(
-            header=_build_account_header(account),
+            header=_build_account_header(
+                account=account,
+                eyebrow="Account",
+                title=account.email,
+            ),
             panels=_build_account_detail_panels(
                 account=account,
                 activity_count=len(activity_rows),
             ),
-            secondary_actions=_build_account_secondary_actions(account),
+            secondary_actions=_build_manager_account_secondary_actions(),
         ),
         title=account.email,
         description="",
@@ -60,10 +64,42 @@ def build_account_detail_context(
     )
 
 
-def _build_account_header(account: AccountListRow) -> DetailHeader:
+def build_self_account_detail_context(
+    *,
+    account: AccountListRow,
+    activity_rows: tuple[AccountActivityRow, ...],
+    cancel_url: str,
+) -> AccountDetailContext:
+    return AccountDetailContext(
+        account=account,
+        activity_rows=activity_rows,
+        detail_card=DetailCard(
+            header=_build_account_header(
+                account=account,
+                eyebrow="My account",
+                title=account.email,
+            ),
+            panels=_build_account_detail_panels(
+                account=account,
+                activity_count=len(activity_rows),
+            ),
+            secondary_actions=_build_self_account_secondary_actions(),
+        ),
+        title="My account",
+        description="",
+        cancel_url=cancel_url,
+    )
+
+
+def _build_account_header(
+    *,
+    account: AccountListRow,
+    eyebrow: str,
+    title: str,
+) -> DetailHeader:
     return DetailHeader(
-        eyebrow="Account",
-        title=account.email,
+        eyebrow=eyebrow,
+        title=title,
         status_label=account.status_label,
         status_class=_account_status_class(account),
         status_icon="users",
@@ -94,13 +130,24 @@ def _build_account_detail_panels(
     )
 
 
-def _build_account_secondary_actions(
-    account: AccountListRow,
-) -> tuple[DetailAction, ...]:
+def _build_manager_account_secondary_actions() -> tuple[DetailAction, ...]:
     return (
         build_secondary_get_action(
             label="Back to accounts",
             href=_accounts_internal_url(),
+        ),
+    )
+
+
+def _build_self_account_secondary_actions() -> tuple[DetailAction, ...]:
+    return (
+        build_secondary_get_action(
+            label="Change password",
+            href=reverse("password_change"),
+        ),
+        build_secondary_get_action(
+            label="Back to dashboard",
+            href=reverse("index"),
         ),
     )
 

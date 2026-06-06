@@ -45,16 +45,25 @@
               {% endfor %}
             </div>
 
-            <form
-              class="site-nav__auth-form"
-              method="post"
-              action="{% url 'logout' %}"
-            >
-              {% csrf_token %}
-              <button class="site-nav__auth-action" type="submit">
-                Logout
-              </button>
-            </form>
+            <div class="site-nav__auth">
+              <a
+                class="site-nav__auth-action"
+                href="{% url 'accounts:me' %}"
+              >
+                My account
+              </a>
+
+              <form
+                class="site-nav__auth-form"
+                method="post"
+                action="{% url 'logout' %}"
+              >
+                {% csrf_token %}
+                <button class="site-nav__auth-action" type="submit">
+                  Logout
+                </button>
+              </form>
+            </div>
           {% else %}
             <div class="site-nav__auth">
               <a

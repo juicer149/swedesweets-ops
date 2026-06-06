@@ -183,12 +183,23 @@
 
 .form-help {
   margin-bottom: 0;
-  min-height: calc(var(--font-size-12) * 1.45 * 2);
 
   font-size: var(--font-size-12);
   font-weight: 600;
   line-height: 1.45;
   color: var(--color-neutral-600);
+}
+
+.form-help ul {
+  display: grid;
+  gap: var(--space-1);
+
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.form-help li {
+  margin: 0;
 }
 
 .form-errors,

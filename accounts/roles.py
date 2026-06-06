@@ -17,6 +17,7 @@ class Capability(StrEnum):
     VIEW_CUSTOMER_PORTAL = "can_view_customer_portal"
 
     MANAGE_ACCOUNTS = "can_manage_accounts"
+    VIEW_OWN_ACCOUNT = "can_view_own_account"
 
     # Orders
     VIEW_ORDERS = "can_view_orders"
@@ -43,6 +44,7 @@ class Capability(StrEnum):
     CREATE_CUSTOMERS = "can_create_customers"
     EDIT_CUSTOMERS = "can_edit_customers"
 
+    # Customer portal
     PLACE_CUSTOMER_ORDERS = "can_place_customer_orders"
     VIEW_OWN_ORDERS = "can_view_own_orders"
 
@@ -85,6 +87,7 @@ STAFF_CAPABILITIES = frozenset(
     {
         Capability.VIEW_STAFF_OPS,
         Capability.MANAGE_ACCOUNTS,
+        Capability.VIEW_OWN_ACCOUNT,
 
         Capability.VIEW_ORDERS,
         Capability.CREATE_ORDERS,
@@ -112,6 +115,7 @@ STAFF_CAPABILITIES = frozenset(
 RESTRICTED_STAFF_CAPABILITIES = frozenset(
     {
         Capability.VIEW_STAFF_OPS,
+        Capability.VIEW_OWN_ACCOUNT,
 
         Capability.VIEW_ORDERS,
         Capability.PACK_ORDERS,
@@ -128,6 +132,7 @@ RESTRICTED_STAFF_CAPABILITIES = frozenset(
 CUSTOMER_CAPABILITIES = frozenset(
     {
         Capability.VIEW_CUSTOMER_PORTAL,
+        Capability.VIEW_OWN_ACCOUNT,
         Capability.PLACE_CUSTOMER_ORDERS,
         Capability.VIEW_OWN_ORDERS,
     }

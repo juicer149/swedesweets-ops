@@ -23,8 +23,8 @@
       {% endfor %}
     </div>
   {% elif field.help_text %}
-    <p class="form-help">
-      {{ field.help_text }}
-    </p>
+    <div class="form-help">
+        {{ field.help_text|safe }}
+    </div>
   {% endif %}
 </div>

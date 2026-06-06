@@ -4,7 +4,14 @@ import pytest
 
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role, resolve_role_spec
-from accounts.roles import AccountRole, Capability, StaffAccessLevel
+from accounts.roles import (
+    AccountRole,
+    Capability,
+    CUSTOMER_CAPABILITIES,
+    RESTRICTED_STAFF_CAPABILITIES,
+    STAFF_CAPABILITIES,
+    StaffAccessLevel,
+)
 from accounts.tests.factories import (
     customer_membership_factory,
     full_staff_user_factory,
@@ -36,61 +43,14 @@ def customer(db) -> Customer:
     )
 
 
-def _assert_allows_all(spec, capabilities: set[Capability]) -> None:
+def _assert_allows_all(spec, capabilities: frozenset[Capability]) -> None:
     for capability in capabilities:
         assert spec.allows(capability)
 
 
-def _assert_denies_all(spec, capabilities: set[Capability]) -> None:
+def _assert_denies_all(spec, capabilities: frozenset[Capability]) -> None:
     for capability in capabilities:
         assert not spec.allows(capability)
-
-
-STAFF_CAPABILITIES = {
-    Capability.VIEW_STAFF_OPS,
-    Capability.MANAGE_ACCOUNTS,
-
-    Capability.VIEW_ORDERS,
-    Capability.CREATE_ORDERS,
-    Capability.EDIT_ORDERS,
-    Capability.CANCEL_ORDERS,
-    Capability.PACK_ORDERS,
-    Capability.DELIVER_ORDERS,
-
-    Capability.VIEW_INVENTORY,
-    Capability.CREATE_BATCHES,
-    Capability.EDIT_BATCHES,
-    Capability.CLOSE_BATCHES,
-    Capability.VIEW_INVENTORY_RISKS,
-
-    Capability.VIEW_OPS_PRODUCTS,
-    Capability.CREATE_PRODUCTS,
-    Capability.EDIT_PRODUCTS,
-
-    Capability.VIEW_CUSTOMERS,
-    Capability.CREATE_CUSTOMERS,
-    Capability.EDIT_CUSTOMERS,
-}
-
-RESTRICTED_STAFF_CAPABILITIES = {
-    Capability.VIEW_STAFF_OPS,
-
-    Capability.VIEW_ORDERS,
-    Capability.PACK_ORDERS,
-    Capability.DELIVER_ORDERS,
-
-    Capability.VIEW_INVENTORY,
-    Capability.CREATE_BATCHES,
-
-    Capability.VIEW_OPS_PRODUCTS,
-    Capability.VIEW_CUSTOMERS,
-}
-
-CUSTOMER_CAPABILITIES = {
-    Capability.VIEW_CUSTOMER_PORTAL,
-    Capability.PLACE_CUSTOMER_ORDERS,
-    Capability.VIEW_OWN_ORDERS,
-}
 
 
 @pytest.mark.django_db
@@ -109,7 +69,7 @@ def test_superuser_resolves_as_owner():
     )
     _assert_denies_all(
         spec,
-        CUSTOMER_CAPABILITIES,
+        CUSTOMER_CAPABILITIES - STAFF_CAPABILITIES,
     )
 
 
@@ -127,7 +87,7 @@ def test_full_staff_resolves_as_full_staff():
     )
     _assert_denies_all(
         spec,
-        CUSTOMER_CAPABILITIES,
+        CUSTOMER_CAPABILITIES - STAFF_CAPABILITIES,
     )
 
 
@@ -145,8 +105,7 @@ def test_restricted_staff_resolves_as_restricted_staff():
     )
     _assert_denies_all(
         spec,
-        set(Capability)
-        - RESTRICTED_STAFF_CAPABILITIES,
+        frozenset(Capability) - RESTRICTED_STAFF_CAPABILITIES,
     )
 
 
@@ -167,8 +126,7 @@ def test_customer_resolves_as_customer(user, customer):
     )
     _assert_denies_all(
         spec,
-        set(Capability)
-        - CUSTOMER_CAPABILITIES,
+        frozenset(Capability) - CUSTOMER_CAPABILITIES,
     )
 
 
@@ -180,7 +138,7 @@ def test_user_without_business_identity_resolves_as_unknown(user):
 
     _assert_denies_all(
         spec,
-        set(Capability),
+        frozenset(Capability),
     )
 
 

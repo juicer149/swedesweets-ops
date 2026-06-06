@@ -20,6 +20,7 @@ PUBLIC_VIEWS = frozenset(
 CAPABILITIES = frozenset(
     {
         Capability.MANAGE_ACCOUNTS,
+        Capability.VIEW_OWN_ACCOUNT,
     }
 )
 
@@ -28,4 +29,5 @@ VIEW_CAPABILITIES = {
     "accounts:index": Capability.MANAGE_ACCOUNTS,
     "accounts:detail": Capability.MANAGE_ACCOUNTS,
     "accounts:create_internal": Capability.MANAGE_ACCOUNTS,
+    "accounts:me": Capability.VIEW_OWN_ACCOUNT,
 }
