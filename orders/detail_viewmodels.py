@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
 from common.detail_cards import (
     ACTION_METHOD_GET,
     ACTION_METHOD_POST,
@@ -13,8 +14,8 @@ from common.detail_cards import (
     DetailCard,
     DetailHeader,
     DetailPanel,
-    build_secondary_get_action,
     build_danger_get_action,
+    build_secondary_get_action,
 )
 from common.ui import UiCard
 from orders.datatypes import PickLine
@@ -128,6 +129,121 @@ def build_order_detail_context(
         customer_maps_href=maps_directions_href(order.customer_address),
         customer_detail_href=customer_detail_href(order),
         pick_lines=pick_lines,
+    )
+
+
+def build_order_detail_primary_action(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> DetailAction | None:
+    if (
+        order.status == Order.Status.PLACED
+        and role_spec.allows(Capability.PACK_ORDERS)
+    ):
+        return build_go_to_pack_action(
+            href=reverse("orders:pack", kwargs={"order_id": order.id}),
+        )
+
+    if (
+        order.status == Order.Status.PACKED
+        and role_spec.allows(Capability.DELIVER_ORDERS)
+    ):
+        return build_go_to_deliver_action(
+            href=reverse("orders:deliver", kwargs={"order_id": order.id}),
+        )
+
+    return None
+
+
+def build_order_secondary_actions(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> tuple[DetailAction, ...]:
+    actions: list[DetailAction] = []
+
+    if can_edit_order(order=order, role_spec=role_spec):
+        actions.append(
+            build_edit_order_action(
+                href=reverse("orders:edit", kwargs={"order_id": order.id}),
+            )
+        )
+
+    if can_cancel_order(order=order, role_spec=role_spec):
+        actions.append(
+            build_cancel_order_action(
+                href=reverse("orders:cancel", kwargs={"order_id": order.id}),
+            )
+        )
+
+    return tuple(actions)
+
+
+def build_order_cancel_back_url(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> str:
+    if can_edit_order(order=order, role_spec=role_spec):
+        return reverse("orders:edit", kwargs={"order_id": order.id})
+
+    if (
+        order.status == Order.Status.PLACED
+        and role_spec.allows(Capability.PACK_ORDERS)
+    ):
+        return reverse("orders:pack", kwargs={"order_id": order.id})
+
+    return reverse("orders:detail", kwargs={"order_id": order.id})
+
+
+def build_post_edit_success_url(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> str:
+    if (
+        order.status == Order.Status.PLACED
+        and role_spec.allows(Capability.PACK_ORDERS)
+    ):
+        return reverse("orders:pack", kwargs={"order_id": order.id})
+
+    return reverse("orders:detail", kwargs={"order_id": order.id})
+
+
+def build_post_pack_success_url(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> str:
+    if (
+        order.status == Order.Status.PACKED
+        and role_spec.allows(Capability.DELIVER_ORDERS)
+    ):
+        return reverse("orders:deliver", kwargs={"order_id": order.id})
+
+    return reverse("orders:detail", kwargs={"order_id": order.id})
+
+
+def can_edit_order(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        order.can_be_edited
+        and role_spec.allows(Capability.EDIT_ORDERS)
+    )
+
+
+def can_cancel_order(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        order.can_be_cancelled
+        and role_spec.allows(Capability.CANCEL_ORDERS)
     )
 
 

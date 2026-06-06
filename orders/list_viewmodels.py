@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from django.urls import reverse
 
 from accounts.roles import Capability, RoleSpec
+from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
     StatusPresentation,
     UiCard,
@@ -40,6 +41,14 @@ class OrderPageRow:
     detail_href: str
     total_quantity: int
     card: UiCard
+
+
+def build_orders_page_header(*, role_spec: RoleSpec) -> PageHeader:
+    return PageHeader(
+        title="Orders",
+        title_id="orders-title",
+        action=_build_create_order_header_action(role_spec),
+    )
 
 
 def build_order_page_rows(
@@ -79,6 +88,20 @@ def build_order_page_row(
             detail_href=detail_href,
             role_spec=role_spec,
         ),
+    )
+
+
+def _build_create_order_header_action(
+    role_spec: RoleSpec,
+) -> PageHeaderAction | None:
+    if not role_spec.allows(Capability.CREATE_ORDERS):
+        return None
+
+    return PageHeaderAction(
+        label="Place order",
+        href=reverse("orders:create"),
+        icon="cart",
+        aria_label="Place a new order",
     )
 
 
