@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
+from common.detail_cards import DetailAction
 from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import (
     TableControls,
@@ -14,8 +16,11 @@ from common.table_controls import (
 )
 from inventory.errors import InvalidStockOperation
 from orders.detail_viewmodels import (
+    build_cancel_order_action,
     build_deliver_action,
     build_edit_order_action,
+    build_go_to_deliver_action,
+    build_go_to_pack_action,
     build_order_detail_context,
     build_pack_action,
 )
@@ -71,7 +76,7 @@ ORDER_LINE_FORMSET_PREFIX = "lines"
 ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
     filters_title_id="orders-filters-title",
     filters_aria_label="Order filters",
-    sort_title_id="orders-sort-title",
+    sort_title_id="mobile-order-sort",
     sort_select_id="mobile-order-sort",
 )
 
@@ -105,14 +110,12 @@ def index(request):
         "page_header": PageHeader(
             title="Orders",
             title_id="orders-title",
-            action=PageHeaderAction(
-                label="Place order",
-                href=reverse("orders:create"),
-                icon="cart",
-                aria_label="Place a new order",
-            ),
+            action=_build_create_order_header_action(request.role_spec),
         ),
-        "order_rows": build_order_page_rows(orders),
+        "order_rows": build_order_page_rows(
+            orders=orders,
+            role_spec=request.role_spec,
+        ),
         "filters": controls.build_filter_links(ORDER_FILTERS),
         "table_sorts": controls.build_table_sort_links(ORDER_TABLE_SORTS),
         "mobile_sort_fields": controls.build_mobile_sort_fields(ORDER_TABLE_SORTS),
@@ -194,7 +197,11 @@ def edit(request, order_id: int):
                     request,
                     f"Order #{updated_order.id} updated.",
                 )
-                return redirect("orders:pack", order_id=updated_order.id)
+
+                if request.role_spec.allows(Capability.PACK_ORDERS):
+                    return redirect("orders:pack", order_id=updated_order.id)
+
+                return redirect("orders:detail", order_id=updated_order.id)
     else:
         line_formset = OrderLineFormSet(
             initial=build_order_line_initial_data(order),
@@ -209,7 +216,7 @@ def edit(request, order_id: int):
 
     context["cancel_order_url"] = (
         reverse("orders:cancel", kwargs={"order_id": order.id})
-        if order.can_be_cancelled
+        if _can_cancel_order(order=order, role_spec=request.role_spec)
         else ""
     )
 
@@ -240,7 +247,7 @@ def cancel(request, order_id: int):
                 )
             except InvalidOrderOperation as error:
                 messages.error(request, str(error))
-                return redirect("orders:edit", order_id=order.id)
+                return redirect("orders:detail", order_id=order.id)
 
             messages.success(
                 request,
@@ -254,7 +261,10 @@ def cancel(request, order_id: int):
         order=order,
         title=f"Cancel order #{order.id}",
         description="",
-        cancel_url=reverse("orders:edit", kwargs={"order_id": order.id}),
+        cancel_url=_order_cancel_back_url(
+            order=order,
+            role_spec=request.role_spec,
+        ),
         active_panel="order",
         include_contents=True,
     ).as_dict()
@@ -287,7 +297,11 @@ def pack(request, order_id: int):
             request,
             f"Order #{packed_order.id} packed.",
         )
-        return redirect("orders:deliver", order_id=packed_order.id)
+
+        if request.role_spec.allows(Capability.DELIVER_ORDERS):
+            return redirect("orders:deliver", order_id=packed_order.id)
+
+        return redirect("orders:detail", order_id=packed_order.id)
 
     pick_lines = get_packaging_list(order=order)
 
@@ -300,10 +314,9 @@ def pack(request, order_id: int):
         include_contents=True,
         pick_lines=pick_lines,
         primary_action=build_pack_action(is_disabled=not pick_lines),
-        secondary_actions=(
-            build_edit_order_action(
-                href=reverse("orders:edit", kwargs={"order_id": order.id})
-            ),
+        secondary_actions=_build_order_secondary_actions(
+            order=order,
+            role_spec=request.role_spec,
         ),
     ).as_dict()
 
@@ -351,12 +364,6 @@ def deliver(request, order_id: int):
 def detail(request, order_id: int):
     order = _get_order_for_detail(order_id)
 
-    if order.status == Order.Status.PLACED:
-        return redirect("orders:pack", order_id=order.id)
-
-    if order.status == Order.Status.PACKED:
-        return redirect("orders:deliver", order_id=order.id)
-
     active_panel = "order" if order.status == Order.Status.CANCELLED else "contents"
 
     context = build_order_detail_context(
@@ -366,9 +373,118 @@ def detail(request, order_id: int):
         cancel_url=reverse("orders:index"),
         active_panel=active_panel,
         include_contents=True,
+        primary_action=_build_order_detail_primary_action(
+            order=order,
+            role_spec=request.role_spec,
+        ),
+        secondary_actions=_build_order_secondary_actions(
+            order=order,
+            role_spec=request.role_spec,
+        ),
     ).as_dict()
 
     return render(request, "orders/detail.html", context)
+
+
+def _build_create_order_header_action(
+    role_spec: RoleSpec,
+) -> PageHeaderAction | None:
+    if not role_spec.allows(Capability.CREATE_ORDERS):
+        return None
+
+    return PageHeaderAction(
+        label="Place order",
+        href=reverse("orders:create"),
+        icon="cart",
+        aria_label="Place a new order",
+    )
+
+
+def _build_order_detail_primary_action(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> DetailAction | None:
+    if (
+        order.status == Order.Status.PLACED
+        and role_spec.allows(Capability.PACK_ORDERS)
+    ):
+        return build_go_to_pack_action(
+            href=reverse("orders:pack", kwargs={"order_id": order.id}),
+        )
+
+    if (
+        order.status == Order.Status.PACKED
+        and role_spec.allows(Capability.DELIVER_ORDERS)
+    ):
+        return build_go_to_deliver_action(
+            href=reverse("orders:deliver", kwargs={"order_id": order.id}),
+        )
+
+    return None
+
+
+def _build_order_secondary_actions(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> tuple[DetailAction, ...]:
+    actions: list[DetailAction] = []
+
+    if _can_edit_order(order=order, role_spec=role_spec):
+        actions.append(
+            build_edit_order_action(
+                href=reverse("orders:edit", kwargs={"order_id": order.id}),
+            )
+        )
+
+    if _can_cancel_order(order=order, role_spec=role_spec):
+        actions.append(
+            build_cancel_order_action(
+                href=reverse("orders:cancel", kwargs={"order_id": order.id}),
+            )
+        )
+
+    return tuple(actions)
+
+
+def _can_edit_order(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        order.can_be_edited
+        and role_spec.allows(Capability.EDIT_ORDERS)
+    )
+
+
+def _can_cancel_order(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        order.can_be_cancelled
+        and role_spec.allows(Capability.CANCEL_ORDERS)
+    )
+
+
+def _order_cancel_back_url(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> str:
+    if _can_edit_order(order=order, role_spec=role_spec):
+        return reverse("orders:edit", kwargs={"order_id": order.id})
+
+    if (
+        order.status == Order.Status.PLACED
+        and role_spec.allows(Capability.PACK_ORDERS)
+    ):
+        return reverse("orders:pack", kwargs={"order_id": order.id})
+
+    return reverse("orders:detail", kwargs={"order_id": order.id})
 
 
 def _get_order_for_detail(order_id: int) -> Order:

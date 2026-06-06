@@ -18,6 +18,7 @@ class Capability(StrEnum):
 
     MANAGE_ACCOUNTS = "can_manage_accounts"
 
+    # Orders
     VIEW_ORDERS = "can_view_orders"
     CREATE_ORDERS = "can_create_orders"
     EDIT_ORDERS = "can_edit_orders"
@@ -25,16 +26,19 @@ class Capability(StrEnum):
     PACK_ORDERS = "can_pack_orders"
     DELIVER_ORDERS = "can_deliver_orders"
 
+    # Inventory
     VIEW_INVENTORY = "can_view_inventory"
     CREATE_BATCHES = "can_create_batches"
     EDIT_BATCHES = "can_edit_batches"
     CLOSE_BATCHES = "can_close_batches"
     VIEW_INVENTORY_RISKS = "can_view_inventory_risks"
 
+    # Ops products
     VIEW_OPS_PRODUCTS = "can_view_ops_products"
     CREATE_PRODUCTS = "can_create_products"
     EDIT_PRODUCTS = "can_edit_products"
 
+    # Customers
     VIEW_CUSTOMERS = "can_view_customers"
     CREATE_CUSTOMERS = "can_create_customers"
     EDIT_CUSTOMERS = "can_edit_customers"

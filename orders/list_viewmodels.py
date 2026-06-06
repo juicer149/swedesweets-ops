@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
 from common.ui import (
     StatusPresentation,
     UiCard,
@@ -41,13 +42,30 @@ class OrderPageRow:
     card: UiCard
 
 
-def build_order_page_rows(orders: list[Order]) -> list[OrderPageRow]:
-    return [build_order_page_row(order) for order in orders]
+def build_order_page_rows(
+    *,
+    orders: list[Order],
+    role_spec: RoleSpec,
+) -> list[OrderPageRow]:
+    return [
+        build_order_page_row(
+            order=order,
+            role_spec=role_spec,
+        )
+        for order in orders
+    ]
 
 
-def build_order_page_row(order: Order) -> OrderPageRow:
+def build_order_page_row(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> OrderPageRow:
     status = _order_status(order)
-    detail_href = _order_detail_href(order)
+    detail_href = _order_detail_href(
+        order=order,
+        role_spec=role_spec,
+    )
     total_quantity = getattr(order, "total_quantity", 0)
 
     return OrderPageRow(
@@ -59,6 +77,7 @@ def build_order_page_row(order: Order) -> OrderPageRow:
             order=order,
             status=status,
             detail_href=detail_href,
+            role_spec=role_spec,
         ),
     )
 
@@ -68,6 +87,7 @@ def _build_order_card(
     order: Order,
     status: StatusPresentation,
     detail_href: str,
+    role_spec: RoleSpec,
 ) -> UiCard:
     return UiCard(
         tone=status.tone,
@@ -78,7 +98,11 @@ def _build_order_card(
             _build_meta_row(order),
             _build_address_row(order),
         ),
-        action=_build_action(order=order, detail_href=detail_href),
+        action=_build_action(
+            order=order,
+            detail_href=detail_href,
+            role_spec=role_spec,
+        ),
     )
 
 
@@ -131,8 +155,16 @@ def _build_address_row(order: Order) -> UiCardRow:
     )
 
 
-def _build_action(*, order: Order, detail_href: str) -> UiText:
-    if order.status == Order.Status.PLACED:
+def _build_action(
+    *,
+    order: Order,
+    detail_href: str,
+    role_spec: RoleSpec,
+) -> UiText:
+    if (
+        order.status == Order.Status.PLACED
+        and role_spec.allows(Capability.PACK_ORDERS)
+    ):
         return UiText(
             text=ORDER_PACK_LABEL,
             href=_pack_order_href(order),
@@ -141,7 +173,10 @@ def _build_action(*, order: Order, detail_href: str) -> UiText:
             icon_class="button__icon",
         )
 
-    if order.status == Order.Status.PACKED:
+    if (
+        order.status == Order.Status.PACKED
+        and role_spec.allows(Capability.DELIVER_ORDERS)
+    ):
         return UiText(
             text=ORDER_DELIVER_LABEL,
             href=_deliver_order_href(order),
@@ -161,11 +196,21 @@ def _order_status(order: Order) -> StatusPresentation:
     return build_order_status_presentation(order.status)
 
 
-def _order_detail_href(order: Order) -> str:
-    if order.status == Order.Status.PLACED:
+def _order_detail_href(
+    *,
+    order: Order,
+    role_spec: RoleSpec,
+) -> str:
+    if (
+        order.status == Order.Status.PLACED
+        and role_spec.allows(Capability.PACK_ORDERS)
+    ):
         return _pack_order_href(order)
 
-    if order.status == Order.Status.PACKED:
+    if (
+        order.status == Order.Status.PACKED
+        and role_spec.allows(Capability.DELIVER_ORDERS)
+    ):
         return _deliver_order_href(order)
 
     return reverse("orders:detail", kwargs={"order_id": order.pk})
