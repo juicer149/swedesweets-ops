@@ -1,0 +1,46 @@
+{% if activity_rows %}
+  <div class="table-card table-card--embedded">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Event</th>
+          <th>Target</th>
+          <th>Context</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in activity_rows %}
+          <tr
+            class="clickable-row"
+            data-tone="{{ row.tone }}"
+            data-href="{{ row.target_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="Open {{ row.target_label }}"
+          >
+            <td>{{ row.occurred_at_label }}</td>
+            <td>{{ row.event_label }}</td>
+
+            <th scope="row">
+              <span class="row-link">
+                {{ row.target_label }}
+              </span>
+            </th>
+
+            <td>{{ row.meta }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p class="table-hint">
+      Select an activity row to open the affected record.
+    </p>
+  </div>
+{% else %}
+  <p class="form-help">
+    This account has no recorded activity yet.
+  </p>
+{% endif %}

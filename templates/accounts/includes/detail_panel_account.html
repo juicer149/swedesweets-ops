@@ -1,0 +1,37 @@
+<dl class="detail-data-list">
+  <div>
+    <dt>Email</dt>
+    <dd>{{ account.email }}</dd>
+  </div>
+
+  <div>
+    <dt>Role</dt>
+    <dd>{{ account.role_label }}</dd>
+  </div>
+
+  <div>
+    <dt>Linked identity</dt>
+    <dd>{{ account.linked_identity }}</dd>
+  </div>
+
+  <div>
+    <dt>Status</dt>
+    <dd>{{ account.status_label }}</dd>
+  </div>
+
+  <div>
+    <dt>Last login</dt>
+    <dd>
+      {% if account.last_login %}
+        {{ account.last_login|date:"Y-m-d H:i" }}
+      {% else %}
+        Never
+      {% endif %}
+    </dd>
+  </div>
+
+  <div>
+    <dt>Joined</dt>
+    <dd>{{ account.date_joined|date:"Y-m-d H:i" }}</dd>
+  </div>
+</dl>

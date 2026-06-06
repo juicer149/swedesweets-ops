@@ -35,9 +35,18 @@
 
       <tbody>
         {% for row in account_rows %}
-          <tr data-tone="{{ row.status_tone }}">
+          <tr
+            class="clickable-row"
+            data-tone="{{ row.status_tone }}"
+            data-href="{{ row.detail_href }}"
+            tabindex="0"
+            role="link"
+            aria-label="View account {{ row.email }}"
+          >
             <th scope="row">
-              {{ row.email }}
+              <span class="row-link">
+                {{ row.email }}
+              </span>
             </th>
 
             <td>{{ row.role_label }}</td>
@@ -77,5 +86,6 @@
 
 {% block scripts %}
   {{ block.super }}
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
   <script src="{% static 'js/sort_select.js' %}" defer></script>
 {% endblock %}

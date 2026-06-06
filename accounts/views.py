@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
+from accounts.detail_viewmodels import build_account_detail_context
 from accounts.errors import AccountCreationError
 from accounts.form_viewmodels import build_create_internal_account_form_context
 from accounts.forms import InternalAccountCreateForm
@@ -17,6 +18,9 @@ from accounts.list_viewmodels import (
     build_accounts_page_header,
 )
 from accounts.selectors import (
+    get_account_row,
+    get_account_user,
+    list_account_activity_rows,
     list_customer_account_rows,
     list_internal_account_rows,
     list_unlinked_account_rows,
@@ -114,6 +118,21 @@ def index(request):
     }
 
     return render(request, "accounts/index.html", context)
+
+
+@login_required
+def detail(request, user_id: int):
+    account_user = get_account_user(user_id=user_id)
+    account = get_account_row(user=account_user)
+    activity_rows = list_account_activity_rows(user=account_user)
+
+    context = build_account_detail_context(
+        account=account,
+        activity_rows=activity_rows,
+        cancel_url=_accounts_internal_url(),
+    ).as_dict()
+
+    return render(request, "accounts/detail.html", context)
 
 
 @login_required

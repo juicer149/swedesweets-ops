@@ -25,6 +25,7 @@ from customers.tests.factories import customer_factory
 MISSING_OBJECT_ID = 999999
 
 VIEW_KWARGS = {
+    "accounts:detail": {"user_id": MISSING_OBJECT_ID},
     "orders:detail": {"order_id": MISSING_OBJECT_ID},
     "orders:edit": {"order_id": MISSING_OBJECT_ID},
     "orders:cancel": {"order_id": MISSING_OBJECT_ID},

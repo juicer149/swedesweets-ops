@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+<section class="content-section content-section--wide content-section--detail">
+  <article class="content-card content-card--wide {{ detail_card.content_card_class }}">
+    {% include "includes/ui/detail_card_header.html" with header=detail_card.header %}
+
+    {% include "includes/ui/detail_panels.html" with detail_panels=detail_card.panels %}
+
+    {% include "includes/ui/detail_actions.html" with primary_action=detail_card.primary_action secondary_action=detail_card.secondary_action secondary_actions=detail_card.secondary_actions %}
+  </article>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/detail_panels.js' %}" defer></script>
+  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
+{% endblock %}

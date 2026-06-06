@@ -26,5 +26,6 @@ CAPABILITIES = frozenset(
 
 VIEW_CAPABILITIES = {
     "accounts:index": Capability.MANAGE_ACCOUNTS,
+    "accounts:detail": Capability.MANAGE_ACCOUNTS,
     "accounts:create_internal": Capability.MANAGE_ACCOUNTS,
 }

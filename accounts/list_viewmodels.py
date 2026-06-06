@@ -98,7 +98,7 @@ def _build_account_page_row(row: AccountListRow) -> AccountPageRow:
     status_tone = _status_tone(is_active=row.is_active)
     last_login_label = _datetime_label(row.last_login)
     date_joined_label = _datetime_label(row.date_joined)
-    detail_href = ""
+    detail_href = reverse("accounts:detail", kwargs={"user_id": row.user_id})
 
     return AccountPageRow(
         user_id=row.user_id,
@@ -132,7 +132,7 @@ def _account_card(
         tone=TONE_NEUTRAL if row.is_active else TONE_MUTED,
         css_class=ACCOUNT_CARD_CLASS,
         href=detail_href,
-        aria_label=f"View account {row.email}" if detail_href else "",
+        aria_label=f"View account {row.email}",
         rows=(
             UiCardRow(
                 left=UiText(
