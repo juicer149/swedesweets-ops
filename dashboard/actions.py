@@ -6,11 +6,15 @@ from dataclasses import dataclass
 from django.urls import reverse
 
 from accounts.roles import AccountRole, RoleSpec
-from common.dashboard import DashboardAction
+from dashboard.viewmodels import DashboardAction
 from orders.models import Order
 
 
 MAX_DASHBOARD_ACTIONS = 3
+
+
+# ------------------------------------------------------------------------------
+# Action specification
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,13 +39,46 @@ class DashboardActionSpec:
         )
 
 
+# ------------------------------------------------------------------------------
+# Href callbacks
+
+
+def _place_order_href() -> str:
+    return reverse("orders:create")
+
+
+def _pack_orders_href() -> str:
+    return (
+        f"{reverse('orders:index')}"
+        f"?status={Order.Status.PLACED}#orders-list"
+    )
+
+
+def _deliver_orders_href() -> str:
+    return (
+        f"{reverse('orders:index')}"
+        f"?status={Order.Status.PACKED}#orders-list"
+    )
+
+
+def _add_batch_href() -> str:
+    return reverse("inventory:create")
+
+
+# ------------------------------------------------------------------------------
+# Available actions
+#
+# Add new actions here and include them in the appropriate role's tuple in
+# DASHBOARD_ACTIONS_BY_ROLE below.
+
+
 PLACE_ORDER_ACTION = DashboardActionSpec(
     label="Place",
     capability="can_create_orders",
     css_tone="button--tone-place",
     aria_label="Place a new order",
     icon="cart",
-    build_href=lambda: reverse("orders:create"),
+    build_href=_place_order_href,
 )
 
 PACK_ORDERS_ACTION = DashboardActionSpec(
@@ -50,10 +87,7 @@ PACK_ORDERS_ACTION = DashboardActionSpec(
     css_tone="button--tone-pack",
     aria_label="View placed orders waiting to be packed",
     icon="box",
-    build_href=lambda: (
-        f"{reverse('orders:index')}"
-        f"?status={Order.Status.PLACED}#orders-list"
-    ),
+    build_href=_pack_orders_href,
 )
 
 DELIVER_ORDERS_ACTION = DashboardActionSpec(
@@ -62,10 +96,7 @@ DELIVER_ORDERS_ACTION = DashboardActionSpec(
     css_tone="button--tone-deliver",
     aria_label="View packed orders ready for delivery",
     icon="truck",
-    build_href=lambda: (
-        f"{reverse('orders:index')}"
-        f"?status={Order.Status.PACKED}#orders-list"
-    ),
+    build_href=_deliver_orders_href,
 )
 
 ADD_BATCH_ACTION = DashboardActionSpec(
@@ -74,8 +105,15 @@ ADD_BATCH_ACTION = DashboardActionSpec(
     css_tone="button--tone-pack",
     aria_label="Add a new inventory batch",
     icon="inventory",
-    build_href=lambda: reverse("inventory:create"),
+    build_href=_add_batch_href,
 )
+
+
+# ------------------------------------------------------------------------------
+# Role-specific action families
+#
+# This is UX, not authorization. A role may have access to a route without that
+# route appearing as a hero action.
 
 
 STAFF_DASHBOARD_ACTIONS = (
@@ -102,6 +140,10 @@ DASHBOARD_ACTIONS_BY_ROLE: dict[
     AccountRole.RESTRICTED_STAFF: RESTRICTED_STAFF_DASHBOARD_ACTIONS,
     AccountRole.CUSTOMER: CUSTOMER_DASHBOARD_ACTIONS,
 }
+
+
+# ------------------------------------------------------------------------------
+# Public builder
 
 
 def build_dashboard_actions(

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from common.ui import UiTone
+
+# -----------------------------------------------------------------------------
+# Dashboard actions
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DashboardAction:
     label: str
     href: str
@@ -14,27 +16,11 @@ class DashboardAction:
     icon: str = ""
 
 
-@dataclass(frozen=True)
-class DashboardMetric:
-    value: int
-    label: str
-    href: str = ""
-    tone: str = ""
+# -----------------------------------------------------------------------------
+# Dashboard queues
 
 
-@dataclass(frozen=True)
-class DashboardSummaryCard:
-    title: str
-    count: int
-    description: str
-    href: str
-    action_label: str
-    tone: UiTone
-    empty_text: str
-    icon: str
-
-
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DashboardQueueTab:
     key: str
     label: str
@@ -45,7 +31,7 @@ class DashboardQueueTab:
     is_active: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DashboardQueueItem:
     title: str
     meta: str
@@ -55,7 +41,7 @@ class DashboardQueueItem:
     icon: str = ""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DashboardQueuePanel:
     key: str
     title: str
