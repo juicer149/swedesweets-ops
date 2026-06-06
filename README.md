@@ -2,7 +2,8 @@
 
 Internal operations MVP for SwedeSweets.
 
-The app helps manage customers, products, inventory batches, orders and account access from one small Django system.
+The app helps manage customers, products, inventory batches, orders and account
+access from one small Django system.
 
 ## Features
 
@@ -15,7 +16,8 @@ The app helps manage customers, products, inventory batches, orders and account 
 - Batch-level FEFO allocation and reservation tracking
 - Historical customer snapshots on orders
 - Account roles for owner, full staff, restricted staff and customer users
-- Login-protected internal pages
+- Deny-by-default route access through account capabilities
+- Role-aware navigation, dashboard actions and dashboard queues
 - Responsive UI for desktop and mobile
 
 ## Tech stack
@@ -81,9 +83,11 @@ make clean
 
 ## Authentication and accounts
 
-All application pages require login.
+All application pages require login unless they are explicitly listed as public
+auth views.
 
-The project uses Django's built-in `User` model for authentication. Business identity is modeled separately in the `accounts` app.
+The project uses Django's built-in `User` model for authentication. Business
+identity is modeled separately in the `accounts` app.
 
 Current account roles:
 
@@ -99,6 +103,7 @@ The `accounts` app owns:
 * Customer memberships
 * Role resolution
 * Role capabilities
+* Route access policy
 * Account creation services
 
 A Django user should represent exactly one business identity:
@@ -118,6 +123,27 @@ For local development, create a Django superuser with:
 make superuser
 ```
 
+## Capabilities
+
+Capabilities are defined centrally in:
+
+```text
+accounts/roles.py
+```
+
+Code should use `Capability` values instead of raw capability strings.
+
+Example:
+
+```python
+from accounts.roles import Capability
+
+role_spec.allows(Capability.PACK_ORDERS)
+```
+
+This keeps capability names in one place and avoids duplicated string checks
+such as `"can_pack_orders"` across policies, navigation and dashboard code.
+
 ## View access policy
 
 View authorization is deny-by-default.
@@ -131,9 +157,11 @@ accounts/policies.py
 Protected views must be mapped to a capability:
 
 ```python
+from accounts.roles import Capability
+
 VIEW_CAPABILITIES = {
-    "orders:index": "can_view_orders",
-    "orders:pack": "can_pack_orders",
+    "orders:index": Capability.VIEW_ORDERS,
+    "orders:pack": Capability.PACK_ORDERS,
 }
 ```
 
@@ -159,28 +187,30 @@ Django User
   -> request.role_spec
   -> ViewCapabilityMiddleware
   -> VIEW_CAPABILITIES[view_name]
-  -> role_spec.<capability>
+  -> role_spec.allows(required_capability)
 ```
 
-This means a new view is not accessible until it has an explicit policy entry.
+This means a new protected view is not accessible until it has an explicit
+policy entry.
 
-When adding a new view:
+When adding a new protected view:
 
 1. Add the URL route with a stable `name`.
 2. Add the route name to `accounts/policies.py`.
-3. Map it to the narrowest matching capability.
+3. Map it to the narrowest matching `Capability`.
 4. Add or update tests if a new capability is introduced.
 
 Examples:
 
 ```python
-"orders:detail": "can_view_orders"
-"orders:create": "can_create_orders"
-"inventory:close": "can_close_batches"
-"products:edit": "can_edit_products"
+"orders:detail": Capability.VIEW_ORDERS
+"orders:create": Capability.CREATE_ORDERS
+"inventory:close": Capability.CLOSE_BATCHES
+"products:edit": Capability.EDIT_PRODUCTS
 ```
 
 Owner/superuser access is handled through `AccountRole.OWNER` and `OWNER_SPEC`.
+
 Owner users do not bypass missing policy entries. They can access views because
 their role spec has the declared capabilities.
 
@@ -201,12 +231,13 @@ request.account_role + request.role_spec
   -> templates/includes/navbar.html
 ```
 
-Navigation items should be built from data, not from duplicated permission logic
-inside templates.
+Navigation items are built from data, not from duplicated permission logic inside
+templates.
+
 `account_role` chooses the navigation family, while `role_spec` filters each
 item by capability.
 
-A nav item should define:
+A nav item defines:
 
 ```text
 label
@@ -221,9 +252,10 @@ The navbar then loops over already-filtered `primary_nav_items`.
 When adding a new navigation link:
 
 1. Make sure the target view exists in `VIEW_CAPABILITIES`.
-2. Add a nav item with the matching capability.
-3. Keep the template generic: render nav items, do not duplicate policy rules.
-4. Test manually with owner/full staff/restricted staff when the link affects roles.
+2. Add a nav item with the matching `Capability`.
+3. Add the nav item to the right account role family.
+4. Keep the template generic: render nav items, do not duplicate policy rules.
+5. Test manually with owner/full staff/restricted staff when the link affects roles.
 
 This keeps authorization and navigation aligned:
 
@@ -238,13 +270,46 @@ accounts/navigation.py
   decides what links the role should see
 ```
 
+## Dashboard
+
+The operations dashboard lives in the `dashboard` app.
+
+Dashboard UI is built from role-aware viewmodels:
+
+```text
+request.account_role + request.role_spec
+  -> dashboard/actions.py
+  -> dashboard/queues.py
+  -> templates/dashboard/index.html
+```
+
+`AccountRole` chooses the dashboard action and queue families. `RoleSpec` filters
+each item by capability.
+
+Examples:
+
+```text
+owner/full staff:
+  Place, Pack, Deliver
+  placed orders, packed orders, expiring batches, low stock
+
+restricted staff:
+  Pack, Deliver, Add batch
+  placed orders, packed orders
+```
+
+Dashboard UI is not authorization. Route access is still enforced by
+`accounts/policies.py` and `ViewCapabilityMiddleware`.
+
 ## Customers
 
 Customers are the operational business entities that orders belong to.
 
-Customers are not hard-deleted as part of normal application use. Instead, customers can be deactivated with `is_active=False`.
+Customers are not hard-deleted as part of normal application use. Instead,
+customers can be deactivated with `is_active=False`.
 
-This keeps historical orders intact while allowing old customers to be hidden from new workflows later.
+This keeps historical orders intact while allowing old customers to be hidden
+from new workflows later.
 
 Current customer data includes:
 
@@ -266,7 +331,8 @@ Product identity includes:
 * Stock unit
 * Weight per unit
 
-These identity fields are intentionally protected after creation because historical orders, inventory and stock conversions depend on them.
+These identity fields are intentionally protected after creation because
+historical orders, inventory and stock conversions depend on them.
 
 Editable product/catalog data includes:
 
@@ -278,7 +344,8 @@ Editable product/catalog data includes:
 * Active status
 * Optional profile data such as description, ingredients and image URL
 
-Inactive products are kept for history but should not be offered as normal order choices.
+Inactive products are kept for history but should not be offered as normal order
+choices.
 
 ## Inventory
 
@@ -299,7 +366,9 @@ Batch statuses:
 * Depleted
 * Closed
 
-Stock reservation is order-aware and expiry-aware. Expired batches are not orderable, even if they still have physical quantity and have not been manually closed.
+Stock reservation is order-aware and expiry-aware. Expired batches are not
+orderable, even if they still have physical quantity and have not been manually
+closed.
 
 Order allocation uses FEFO:
 
@@ -331,9 +400,11 @@ placed -> cancelled
 
 Order lines store normalized quantities in product stock units.
 
-Placed orders reserve inventory through batch-level allocations. Packed orders consume those allocations and reduce physical stock.
+Placed orders reserve inventory through batch-level allocations. Packed orders
+consume those allocations and reduce physical stock.
 
-Orders keep protected foreign keys to customers, products, inventory batches and audit users where historical integrity matters.
+Orders keep protected foreign keys to customers, products, inventory batches and
+audit users where historical integrity matters.
 
 Orders also store customer snapshots when created:
 
@@ -344,7 +415,8 @@ Orders also store customer snapshots when created:
 * Customer city
 * Customer address line
 
-This allows historical order views to keep showing the customer data that was true when the order was placed, even if the live customer profile changes later.
+This allows historical order views to keep showing the customer data that was
+true when the order was placed, even if the live customer profile changes later.
 
 ## Data retention and deletion policy
 
@@ -369,7 +441,8 @@ Orders:
   preserve historical data
 ```
 
-Important historical relations use `PROTECT` so data cannot accidentally disappear through cascading deletes.
+Important historical relations use `PROTECT` so data cannot accidentally
+disappear through cascading deletes.
 
 Examples:
 
@@ -379,7 +452,8 @@ Examples:
 * Order audit fields protect the user relation
 * Customer memberships protect their customer relation
 
-If anonymization is needed later, it should be implemented as explicit service-layer use cases:
+If anonymization is needed later, it should be implemented as explicit
+service-layer use cases:
 
 ```text
 customers/services.py
@@ -389,24 +463,27 @@ accounts/services.py
   anonymize_user_account(...)
 ```
 
-Anonymization should not live in `common`, because the rules are domain-specific.
+Anonymization should not live in `common`, because the rules are
+domain-specific.
 
 ## Demo data
 
-The demo seed creates sample customers, products, inventory batches and orders so the MVP can be reviewed with realistic operational data.
+The demo seed creates sample customers, products, inventory batches and orders
+so the MVP can be reviewed with realistic operational data.
 
 ## Project structure
 
 ```text
-accounts/    Account identity, roles, memberships and account creation services
+accounts/    Account identity, roles, capabilities, memberships and services
+dashboard/   Operations dashboard views, hero actions and work queues
 customers/   Customer models, views, forms, selectors and services
 products/    Product catalog, product detail views and product services
 inventory/   Batch, stock, expiry and reservation-related inventory logic
 orders/      Order placement, packing, delivery, cancellation and allocation flow
-common/      Shared UI, viewmodel, table and dashboard helpers
+common/      Shared UI, viewmodel and table helpers
 templates/   Shared and app-specific templates
 static/      CSS, JavaScript and assets
-config/      Django settings, URLs and dashboard/root views
+config/      Django settings, root URLs, ASGI and WSGI wiring
 ```
 
 ## Tests
@@ -430,21 +507,24 @@ The test suite currently covers:
 * Orders
 * Customers
 * Accounts
+* Dashboard access and role-aware UI builders
 
 ## Deployment notes
 
-This project is prepared for deployment work on Railway.
+This project is configured for Railway deployment.
+
+Production configuration uses environment variables for secrets, host settings,
+CSRF origins and database configuration.
 
 Important production concerns:
 
-* Move secrets to environment variables
+* Keep secrets in environment variables
 * Use PostgreSQL in production
 * Configure static file serving
 * Configure production `ALLOWED_HOSTS`
 * Configure production CSRF trusted origins
 * Run migrations before serving traffic
 * Keep debug mode disabled in production
-
 
 ## Status
 
@@ -453,13 +533,14 @@ MVP operations system under active development.
 Current access model:
 
 * Business identity is resolved per request by `AccountContextMiddleware`
+* Capabilities are defined centrally in `accounts/roles.py`
 * Views are denied by default unless listed in `accounts/policies.py`
-* Capabilities are defined by role specs in `accounts/roles.py`
+* View policy uses `Capability` values, not raw strings
 * Navigation is role-aware through account capabilities
+* Dashboard actions and queues are role-aware through account capabilities
 
 Current focus areas:
 
-* Role-aware dashboard actions
-* Role-aware order detail actions
+* Role-aware order, inventory, product and customer detail actions
 * Account creation UI for owner/full staff
 * Customer-facing catalog/portal later
