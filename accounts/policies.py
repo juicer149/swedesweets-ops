@@ -5,59 +5,29 @@ This module answers:
 
     What capability is required to reach this view?
 
+Each app declares the access policy for the views it owns in its own
+access.py module. This module aggregates those declarations into the policy map
+used by ViewCapabilityMiddleware.
+
 Views are denied by default unless listed here or marked public.
 """
 
 from __future__ import annotations
 
-from accounts.roles import Capability
+from accounts.access import PUBLIC_VIEWS
+from customers.access import VIEW_CAPABILITIES as CUSTOMER_VIEW_CAPABILITIES
+from dashboard.access import VIEW_CAPABILITIES as DASHBOARD_VIEW_CAPABILITIES
+from inventory.access import VIEW_CAPABILITIES as INVENTORY_VIEW_CAPABILITIES
+from orders.access import VIEW_CAPABILITIES as ORDER_VIEW_CAPABILITIES
+from products.access import VIEW_CAPABILITIES as PRODUCT_VIEW_CAPABILITIES
 
 
-PUBLIC_VIEWS = frozenset(
-    {
-        "login",
-        "logout",
-        "password_change",
-        "password_change_done",
-        "password_reset",
-        "password_reset_done",
-        "password_reset_confirm",
-        "password_reset_complete",
-    }
-)
-
-
-VIEW_CAPABILITIES: dict[str, Capability] = {
-    # Root/dashboard
-    "index": Capability.VIEW_STAFF_OPS,
-
-    # Orders
-    "orders:index": Capability.VIEW_ORDERS,
-    "orders:detail": Capability.VIEW_ORDERS,
-    "orders:create": Capability.CREATE_ORDERS,
-    "orders:edit": Capability.EDIT_ORDERS,
-    "orders:cancel": Capability.CANCEL_ORDERS,
-    "orders:pack": Capability.PACK_ORDERS,
-    "orders:deliver": Capability.DELIVER_ORDERS,
-
-    # Inventory
-    "inventory:index": Capability.VIEW_INVENTORY,
-    "inventory:detail": Capability.VIEW_INVENTORY,
-    "inventory:create": Capability.CREATE_BATCHES,
-    "inventory:edit": Capability.EDIT_BATCHES,
-    "inventory:close": Capability.CLOSE_BATCHES,
-
-    # Products / internal ops product master
-    "products:index": Capability.VIEW_OPS_PRODUCTS,
-    "products:detail": Capability.VIEW_OPS_PRODUCTS,
-    "products:create": Capability.CREATE_PRODUCTS,
-    "products:edit": Capability.EDIT_PRODUCTS,
-
-    # Customers / internal ops customer master
-    "customers:index": Capability.VIEW_CUSTOMERS,
-    "customers:detail": Capability.VIEW_CUSTOMERS,
-    "customers:create": Capability.CREATE_CUSTOMERS,
-    "customers:edit": Capability.EDIT_CUSTOMERS,
+VIEW_CAPABILITIES = {
+    **DASHBOARD_VIEW_CAPABILITIES,
+    **ORDER_VIEW_CAPABILITIES,
+    **INVENTORY_VIEW_CAPABILITIES,
+    **PRODUCT_VIEW_CAPABILITIES,
+    **CUSTOMER_VIEW_CAPABILITIES,
 }
 
 

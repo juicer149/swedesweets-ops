@@ -1,7 +1,7 @@
 # Accounts architecture
 
 The accounts app owns business identity, roles, capabilities and route access
-policy.
+enforcement.
 
 Django authentication answers:
 
@@ -27,8 +27,11 @@ permissions.py
   Resolves user -> AccountRole -> RoleSpec.
   Provides require_capability(...) for explicit checks when needed.
 
+access.py
+  Declares accounts-owned public/auth views.
+
 policies.py
-  Maps Django view names to required capabilities.
+  Aggregates app-level access declarations into one route policy map.
   Views are denied by default unless listed here or marked public.
 
 middleware.py
@@ -45,6 +48,19 @@ context_processors.py
 services.py
   Account creation use cases.
 ```
+
+Other apps own their own route access declarations:
+
+```text
+dashboard/access.py
+orders/access.py
+inventory/access.py
+products/access.py
+customers/access.py
+```
+
+Each app that owns views should declare the access policy for those views in its
+own `access.py` module.
 
 ## Business identity
 
@@ -96,14 +112,51 @@ modules should not depend on that representation. They should use
 
 ## Route policy
 
-Route access is declared in `accounts/policies.py`.
+Route access is declared app-locally and enforced centrally.
+
+Each app declares the policy for the views it owns:
+
+```text
+orders/access.py
+inventory/access.py
+products/access.py
+customers/access.py
+dashboard/access.py
+```
 
 Protected views are mapped by Django `resolver_match.view_name`:
 
 ```python
+from accounts.roles import Capability
+
+
 VIEW_CAPABILITIES = {
     "orders:pack": Capability.PACK_ORDERS,
-    "inventory:create": Capability.CREATE_BATCHES,
+    "orders:deliver": Capability.DELIVER_ORDERS,
+}
+```
+
+Public/auth views are declared in `accounts/access.py`:
+
+```python
+PUBLIC_VIEWS = frozenset(
+    {
+        "login",
+        "logout",
+        "password_reset",
+    }
+)
+```
+
+`accounts/policies.py` aggregates those app-level declarations:
+
+```python
+VIEW_CAPABILITIES = {
+    **DASHBOARD_VIEW_CAPABILITIES,
+    **ORDER_VIEW_CAPABILITIES,
+    **INVENTORY_VIEW_CAPABILITIES,
+    **PRODUCT_VIEW_CAPABILITIES,
+    **CUSTOMER_VIEW_CAPABILITIES,
 }
 ```
 
@@ -117,7 +170,9 @@ anonymous user    -> redirected to login for protected views
 authenticated user without capability -> 403
 ```
 
-This means new protected views must be added to `VIEW_CAPABILITIES`.
+This means new protected views must be added to the owning app's `access.py`.
+They become enforceable when `accounts/policies.py` aggregates that app's
+declarations.
 
 ## Navigation is not authorization
 
@@ -170,22 +225,36 @@ EXPORT_STAFF_SPEC = RoleSpec(
 )
 ```
 
-3. Map any protected views that require it in `accounts/policies.py`.
+3. Map any protected views that require it in the owning app's `access.py`.
 
 ```python
+# orders/access.py
+
 VIEW_CAPABILITIES = {
     ...
     "orders:export": Capability.EXPORT_ORDERS,
 }
 ```
 
-4. Use it in UX builders if the capability should affect visible UI.
+4. Make sure `accounts/policies.py` aggregates that app's `VIEW_CAPABILITIES`.
+
+```python
+from orders.access import VIEW_CAPABILITIES as ORDER_VIEW_CAPABILITIES
+
+
+VIEW_CAPABILITIES = {
+    ...
+    **ORDER_VIEW_CAPABILITIES,
+}
+```
+
+5. Use it in UX builders if the capability should affect visible UI.
 
 ```python
 role_spec.allows(Capability.EXPORT_ORDERS)
 ```
 
-5. Add or update tests.
+6. Add or update tests.
 
 At minimum, policy tests should prove:
 
@@ -259,15 +328,58 @@ dashboard actions/queues
 ## Adding a new protected view
 
 1. Add the URL and view normally.
-2. Add the view name to `VIEW_CAPABILITIES`.
-3. Add the required `Capability` if it does not already exist.
-4. Add UI links/actions only where appropriate.
-5. Run tests.
+2. Add the view name to the owning app's `access.py`.
+3. Map it to the required `Capability`.
+4. Add the required `Capability` in `accounts/roles.py` if it does not already exist.
+5. Make sure the app's access declarations are aggregated by `accounts/policies.py`.
+6. Add UI links/actions only where appropriate.
+7. Run tests.
 
 If a view is intentionally public, add it to `PUBLIC_VIEWS` instead.
 
-Protected views missing from both `VIEW_CAPABILITIES` and `PUBLIC_VIEWS` are
-denied by default.
+Protected views missing from both aggregated `VIEW_CAPABILITIES` and
+`PUBLIC_VIEWS` are denied by default.
+
+## App access module convention
+
+Each app with protected views should have an `access.py` module.
+
+Example:
+
+```text
+orders/
+  urls.py
+  views.py
+  access.py
+```
+
+The app owns:
+
+```text
+urls.py
+  Which routes exist?
+
+views.py
+  What does each route do?
+
+access.py
+  What capability does each route require?
+```
+
+This keeps route ownership and route access declaration close together.
+
+`accounts` still owns the central language and enforcement:
+
+```text
+accounts/roles.py
+  Capability, RoleSpec and AccountRole.
+
+accounts/policies.py
+  Aggregated VIEW_CAPABILITIES and PUBLIC_VIEWS.
+
+accounts/middleware.py
+  ViewCapabilityMiddleware enforcement.
+```
 
 ## Design rule
 
@@ -277,8 +389,11 @@ Keep these responsibilities separate:
 roles.py
   What can each role do?
 
+*/access.py
+  What capability is required to reach each app-owned route?
+
 policies.py
-  What capability is required to reach each route?
+  Aggregate app access declarations into one enforcement policy.
 
 middleware.py
   Enforce route access.

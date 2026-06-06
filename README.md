@@ -148,13 +148,17 @@ such as `"can_pack_orders"` across policies, navigation and dashboard code.
 
 View authorization is deny-by-default.
 
-The `accounts` app defines a central view policy in:
+Each app owns the access declarations for the views it owns:
 
 ```text
-accounts/policies.py
+orders/access.py
+inventory/access.py
+products/access.py
+customers/access.py
+dashboard/access.py
 ```
 
-Protected views must be mapped to a capability:
+A typical app `access.py` maps Django view names to capabilities:
 
 ```python
 from accounts.roles import Capability
@@ -165,7 +169,7 @@ VIEW_CAPABILITIES = {
 }
 ```
 
-Public/auth views must be listed explicitly:
+Public/auth views are listed explicitly in `accounts/access.py`:
 
 ```python
 PUBLIC_VIEWS = {
@@ -175,8 +179,14 @@ PUBLIC_VIEWS = {
 }
 ```
 
-Any resolved view that is not listed in `VIEW_CAPABILITIES` or `PUBLIC_VIEWS`
-is denied by default.
+The central policy module aggregates app declarations:
+
+```text
+accounts/policies.py
+```
+
+Any resolved view that is not listed in aggregated `VIEW_CAPABILITIES` or
+`PUBLIC_VIEWS` is denied by default.
 
 Request access works like this:
 
@@ -186,19 +196,20 @@ Django User
   -> request.account_role
   -> request.role_spec
   -> ViewCapabilityMiddleware
-  -> VIEW_CAPABILITIES[view_name]
+  -> accounts.policies.VIEW_CAPABILITIES[view_name]
   -> role_spec.allows(required_capability)
 ```
 
-This means a new protected view is not accessible until it has an explicit
-policy entry.
+This means a new protected view is not accessible until the app that owns it has
+an explicit policy entry.
 
 When adding a new protected view:
 
 1. Add the URL route with a stable `name`.
-2. Add the route name to `accounts/policies.py`.
+2. Add the route name to that app's `access.py`.
 3. Map it to the narrowest matching `Capability`.
-4. Add or update tests if a new capability is introduced.
+4. Add the capability in `accounts/roles.py` if it does not already exist.
+5. Add or update tests if a new capability or route policy is introduced.
 
 Examples:
 
@@ -474,16 +485,13 @@ so the MVP can be reviewed with realistic operational data.
 ## Project structure
 
 ```text
-accounts/    Account identity, roles, capabilities, memberships and services
-dashboard/   Operations dashboard views, hero actions and work queues
-customers/   Customer models, views, forms, selectors and services
-products/    Product catalog, product detail views and product services
-inventory/   Batch, stock, expiry and reservation-related inventory logic
-orders/      Order placement, packing, delivery, cancellation and allocation flow
-common/      Shared UI, viewmodel and table helpers
-templates/   Shared and app-specific templates
-static/      CSS, JavaScript and assets
-config/      Django settings, root URLs, ASGI and WSGI wiring
+accounts/    Account identity, roles, capabilities, access aggregation and services
+dashboard/   Operations dashboard views, access policy, hero actions and work queues
+customers/   Customer models, views, forms, selectors, services and access policy
+products/    Product catalog, product views, services and access policy
+inventory/   Batch, stock, expiry, reservation logic and access policy
+orders/      Order placement, packing, delivery, cancellation and access policy
+common/      Shared UI primitives and table helpers
 ```
 
 ## Tests
@@ -534,7 +542,8 @@ Current access model:
 
 * Business identity is resolved per request by `AccountContextMiddleware`
 * Capabilities are defined centrally in `accounts/roles.py`
-* Views are denied by default unless listed in `accounts/policies.py`
+* Views are denied by default unless declared in app-level `access.py` modules
+  and aggregated by `accounts/policies.py`
 * View policy uses `Capability` values, not raw strings
 * Navigation is role-aware through account capabilities
 * Dashboard actions and queues are role-aware through account capabilities
