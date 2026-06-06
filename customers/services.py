@@ -23,6 +23,7 @@ def create_customer(
     country: str,
     city: str,
     address_line: str,
+    user=None,
 ) -> Customer:
     """Create a customer with unique normalized email."""
 
@@ -34,7 +35,7 @@ def create_customer(
         )
 
     try:
-        return Customer.objects.create(
+        customer = Customer.objects.create(
             name=name,
             email=normalized_email,
             phone_number=phone_number,
@@ -47,6 +48,10 @@ def create_customer(
             f"Customer with email {normalized_email} already exists"
         ) from exc
 
+    customer.mark_as_created(user=user)
+
+    return customer
+
 
 @transaction.atomic
 def update_customer(
@@ -58,6 +63,7 @@ def update_customer(
     country: str,
     city: str,
     address_line: str,
+    user=None,
 ) -> Customer:
     """Update editable customer contact and delivery data."""
 
@@ -98,5 +104,31 @@ def update_customer(
         raise InvalidCustomerData(
             f"Customer with email {normalized_email} already exists"
         ) from exc
+
+    customer.mark_as_edited(user=user)
+
+    return customer
+
+
+@transaction.atomic
+def deactivate_customer(
+    *,
+    customer: Customer,
+    user=None,
+) -> Customer:
+    customer = Customer.objects.select_for_update().get(pk=customer.pk)
+    customer.deactivate(user=user)
+
+    return customer
+
+
+@transaction.atomic
+def reactivate_customer(
+    *,
+    customer: Customer,
+    user=None,
+) -> Customer:
+    customer = Customer.objects.select_for_update().get(pk=customer.pk)
+    customer.reactivate(user=user)
 
     return customer

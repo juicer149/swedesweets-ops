@@ -26,7 +26,9 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_CEILING
 from typing import Iterable
 
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from products.catalog import (
     MAX_IMAGE_URL_LENGTH,
@@ -118,12 +120,56 @@ class Product(models.Model):
     active = models.BooleanField(default=True)
     vegan = models.BooleanField(default=False)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    edited_at = models.DateTimeField(null=True, blank=True)
+
+    activated_at = models.DateTimeField(null=True, blank=True)
+    deactivated_at = models.DateTimeField(null=True, blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="products_created",
+    )
+    edited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="products_edited",
+    )
+    activated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="products_activated",
+    )
+    deactivated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="products_deactivated",
+    )
+
     class Meta:
         ordering = [
             "internal_number",
             "brand",
             "name",
             "weight_per_unit",
+        ]
+        indexes = [
+            models.Index(fields=["active"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["edited_at"]),
+            models.Index(fields=["activated_at"]),
+            models.Index(fields=["deactivated_at"]),
         ]
         constraints = [
             models.CheckConstraint(
@@ -245,6 +291,61 @@ class Product(models.Model):
             raise InvalidProductData(
                 "sku cannot be changed after product creation"
             )
+
+    def mark_as_created(self, *, user=None) -> None:
+        now = timezone.now()
+
+        self.created_by = user
+
+        if self.active:
+            self.activated_at = now
+            self.activated_by = user
+
+        self.save(
+            update_fields=[
+                "created_by",
+                "activated_at",
+                "activated_by",
+                "updated_at",
+            ]
+        )
+
+    def mark_as_edited(self, *, user=None) -> None:
+        self.edited_at = timezone.now()
+        self.edited_by = user
+        self.save(
+            update_fields=[
+                "edited_at",
+                "edited_by",
+                "updated_at",
+            ]
+        )
+
+    def mark_active_changed(self, *, old_active: bool, user=None) -> None:
+        if old_active == self.active:
+            return
+
+        if self.active:
+            self.activated_at = timezone.now()
+            self.activated_by = user
+            self.save(
+                update_fields=[
+                    "activated_at",
+                    "activated_by",
+                    "updated_at",
+                ]
+            )
+            return
+
+        self.deactivated_at = timezone.now()
+        self.deactivated_by = user
+        self.save(
+            update_fields=[
+                "deactivated_at",
+                "deactivated_by",
+                "updated_at",
+            ]
+        )
 
     @property
     def display_name(self, *, language: str = "sv") -> str:

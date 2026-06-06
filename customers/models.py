@@ -18,7 +18,9 @@ public API:
 
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from customers.errors import InvalidCustomerData
 
@@ -136,11 +138,54 @@ class Customer(models.Model):
     city = models.CharField(max_length=MAX_CUSTOMER_CITY_LENGTH)
     address_line = models.CharField(max_length=MAX_CUSTOMER_ADDRESS_LINE_LENGTH)
 
-    # Additional field to support soft deletion of customers.
     is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    edited_at = models.DateTimeField(null=True, blank=True)
+
+    activated_at = models.DateTimeField(null=True, blank=True)
+    deactivated_at = models.DateTimeField(null=True, blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="customers_created",
+    )
+    edited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="customers_edited",
+    )
+    activated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="customers_activated",
+    )
+    deactivated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="customers_deactivated",
+    )
 
     class Meta:
         ordering = ["name", "email"]
+        indexes = [
+            models.Index(fields=["is_active"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["edited_at"]),
+            models.Index(fields=["activated_at"]),
+            models.Index(fields=["deactivated_at"]),
+        ]
 
     @property
     def country_name(self) -> str:
@@ -191,6 +236,66 @@ class Customer(models.Model):
             kwargs["update_fields"] = update_fields
 
         super().save(*args, **kwargs)
+
+    def mark_as_created(self, *, user=None) -> None:
+        now = timezone.now()
+        self.created_by = user
+
+        if self.is_active:
+            self.activated_at = now
+            self.activated_by = user
+
+        self.save(
+            update_fields=[
+                "created_by",
+                "activated_at",
+                "activated_by",
+                "updated_at",
+            ]
+        )
+
+    def mark_as_edited(self, *, user=None) -> None:
+        self.edited_at = timezone.now()
+        self.edited_by = user
+        self.save(
+            update_fields=[
+                "edited_at",
+                "edited_by",
+                "updated_at",
+            ]
+        )
+
+    def deactivate(self, *, user=None) -> None:
+        if not self.is_active:
+            return
+
+        self.is_active = False
+        self.deactivated_at = timezone.now()
+        self.deactivated_by = user
+        self.save(
+            update_fields=[
+                "is_active",
+                "deactivated_at",
+                "deactivated_by",
+                "updated_at",
+            ]
+        )
+
+    def reactivate(self, *, user=None) -> None:
+        if self.is_active:
+            return
+
+        self.is_active = True
+        self.activated_at = timezone.now()
+        self.activated_by = user
+        self.save(
+            update_fields=[
+                "is_active",
+                "activated_at",
+                "activated_by",
+                "updated_at",
+            ]
+        )
 
     def __str__(self) -> str:
         return self.name

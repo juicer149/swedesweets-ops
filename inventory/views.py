@@ -143,6 +143,7 @@ def edit(request, batch_pk: int):
                     quantity=form.cleaned_data["quantity"],
                     best_before=form.cleaned_data["best_before"],
                     location=form.cleaned_data["location"],
+                    user=request.user,
                 )
             except InvalidStockOperation as error:
                 form.add_error(None, str(error))
@@ -181,7 +182,10 @@ def create(request):
 
         if form.is_valid():
             try:
-                batch = create_batch(**form.cleaned_data)
+                batch = create_batch(
+                    **form.cleaned_data,
+                    user=request.user,
+                )
             except InvalidStockOperation as error:
                 form.add_error(None, str(error))
             else:
@@ -217,7 +221,10 @@ def close(request, batch_pk: int):
 
     if request.method == "POST":
         try:
-            closed_batch = close_batch(batch=batch)
+            closed_batch = close_batch(
+                batch=batch,
+                user=request.user,
+            )
         except InvalidStockOperation as error:
             messages.error(request, str(error))
             return redirect("inventory:detail", batch_pk=batch.pk)

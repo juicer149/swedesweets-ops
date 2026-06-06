@@ -38,6 +38,7 @@ def create_product(
     internal_number: int | None = None,
     manufacturer: str = "",
     vegan: bool = False,
+    user=None,
 ) -> ServiceResult[Product]:
     """Create product or return existing product.
 
@@ -105,6 +106,7 @@ def create_product(
 
         raise InvalidProductData(f"Could not create product with SKU {sku}") from exc
 
+    product.mark_as_created(user=user)
     ProductProfile.objects.get_or_create(product=product)
 
     return ServiceResult(
@@ -127,6 +129,7 @@ def update_product(
     description: str = "",
     ingredients: str = "",
     image_url: str = "",
+    user=None,
 ) -> Product:
     """Update editable product catalog data.
 
@@ -138,6 +141,7 @@ def update_product(
         .select_for_update()
         .get(pk=product.pk)
     )
+    old_active = product.active
 
     validate_internal_number(internal_number)
 
@@ -170,10 +174,17 @@ def update_product(
                 "name",
                 "active",
                 "vegan",
+                "updated_at",
             ]
         )
     except IntegrityError as exc:
         raise InvalidProductData("Could not update product") from exc
+
+    product.mark_as_edited(user=user)
+    product.mark_active_changed(
+        old_active=old_active,
+        user=user,
+    )
 
     profile, _created = ProductProfile.objects.select_for_update().get_or_create(
         product=product,
@@ -198,6 +209,7 @@ def update_product_active(
     *,
     product: Product,
     active: bool,
+    user=None,
 ) -> Product:
     """Update mutable catalog status.
 
@@ -205,8 +217,15 @@ def update_product_active(
     """
 
     product = Product.objects.select_for_update().get(pk=product.pk)
+    old_active = product.active
+
     product.active = active
-    product.save(update_fields=["active"])
+    product.save(update_fields=["active", "updated_at"])
+    product.mark_as_edited(user=user)
+    product.mark_active_changed(
+        old_active=old_active,
+        user=user,
+    )
 
     return product
 

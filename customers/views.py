@@ -113,6 +113,7 @@ def edit(request, customer_pk: int):
             try:
                 updated_customer = update_customer(
                     customer=customer,
+                    user=request.user,
                     **form.cleaned_data,
                 )
             except InvalidCustomerData as error:
@@ -149,7 +150,10 @@ def create(request):
 
         if form.is_valid():
             try:
-                customer = create_customer(**form.cleaned_data)
+                customer = create_customer(
+                    **form.cleaned_data,
+                    user=request.user,
+                )
             except InvalidCustomerData as error:
                 form.add_error(None, str(error))
             else:

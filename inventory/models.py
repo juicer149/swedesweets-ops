@@ -18,13 +18,15 @@ public API:
     .pick(quantity: int)
         -> Order fulfillment: current quantity -= quantity.
 
-    .close()
+    .close(user=None)
         -> Move batch lifecycle status to CLOSED.
 """
 
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from inventory.errors import (
     InvalidBatchStatusTransition,
@@ -86,8 +88,42 @@ class InventoryBatch(models.Model):
         default=Status.ACTIVE,
     )
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    edited_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="inventory_batches_created",
+    )
+    edited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="inventory_batches_edited",
+    )
+    closed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="inventory_batches_closed",
+    )
+
     class Meta:
         ordering = ["best_before", "batch_id"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["edited_at"]),
+            models.Index(fields=["closed_at"]),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(quantity__gte=0),
@@ -205,6 +241,26 @@ class InventoryBatch(models.Model):
 
         super().save(*args, **kwargs)
 
+    def mark_as_created(self, *, user=None) -> None:
+        self.created_by = user
+        self.save(
+            update_fields=[
+                "created_by",
+                "updated_at",
+            ]
+        )
+
+    def mark_as_edited(self, *, user=None) -> None:
+        self.edited_at = timezone.now()
+        self.edited_by = user
+        self.save(
+            update_fields=[
+                "edited_at",
+                "edited_by",
+                "updated_at",
+            ]
+        )
+
     def adjust_quantity(self, *, quantity: int) -> None:
         """Set physical stock count after inventory correction."""
 
@@ -216,7 +272,7 @@ class InventoryBatch(models.Model):
         self.quantity = quantity
         self._sync_status_from_quantity()
 
-        self.save(update_fields=["quantity", "status"])
+        self.save(update_fields=["quantity", "status", "updated_at"])
 
     def _remove_quantity(self, *, quantity: int) -> None:
         """Decrease physical stock quantity in memory.
@@ -243,9 +299,9 @@ class InventoryBatch(models.Model):
             raise InvalidStockOperation(f"Batch {self.batch_id} is not available")
 
         self._remove_quantity(quantity=quantity)
-        self.save(update_fields=["quantity", "status"])
+        self.save(update_fields=["quantity", "status", "updated_at"])
 
-    def close(self) -> None:
+    def close(self, *, user=None) -> None:
         """Close this batch.
 
         Closing removes the batch from normal stock operations. It does not change
@@ -253,7 +309,16 @@ class InventoryBatch(models.Model):
         """
 
         self._transition_to(self.Status.CLOSED)
-        self.save(update_fields=["status"])
+        self.closed_at = timezone.now()
+        self.closed_by = user
+        self.save(
+            update_fields=[
+                "status",
+                "closed_at",
+                "closed_by",
+                "updated_at",
+            ]
+        )
 
     def __str__(self) -> str:
         return (

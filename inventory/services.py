@@ -13,9 +13,9 @@ from datetime import date
 from typing import Iterable
 import unicodedata
 
-from django.utils import timezone
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
+from django.utils import timezone
 
 from inventory.expiry import orderable_best_before_cutoff
 from inventory.errors import InsufficientStockError, InvalidStockOperation
@@ -61,6 +61,7 @@ def create_batch(
     batch_id: str | None = None,
     today: date | None = None,
     allow_non_future_best_before: bool = False,
+    user=None,
 ) -> InventoryBatch:
     """Create a new physical inventory batch.
 
@@ -86,6 +87,7 @@ def create_batch(
                 quantity=quantity,
                 best_before=best_before,
                 location=location,
+                user=user,
             )
         except IntegrityError as exc:
             raise InvalidStockOperation(
@@ -102,6 +104,7 @@ def create_batch(
                 quantity=quantity,
                 best_before=best_before,
                 location=location,
+                user=user,
             )
         except IntegrityError:
             continue
@@ -116,6 +119,7 @@ def update_batch(
     quantity: int,
     best_before: date,
     location: str,
+    user=None,
 ) -> InventoryBatch:
     """Correct editable fields for a physical inventory batch.
 
@@ -145,13 +149,18 @@ def update_batch(
 
     batch.best_before = best_before
     batch.location = location
-    batch.save(update_fields=["best_before", "location"])
+    batch.save(update_fields=["best_before", "location", "updated_at"])
+    batch.mark_as_edited(user=user)
 
     return batch
 
 
 @transaction.atomic
-def close_batch(*, batch: InventoryBatch) -> InventoryBatch:
+def close_batch(
+    *,
+    batch: InventoryBatch,
+    user=None,
+) -> InventoryBatch:
     """Close a batch so it is no longer orderable."""
 
     batch = (
@@ -169,7 +178,7 @@ def close_batch(*, batch: InventoryBatch) -> InventoryBatch:
             f"{reserved_quantity} units are reserved."
         )
 
-    batch.close()
+    batch.close(user=user)
     return batch
 
 
@@ -230,14 +239,18 @@ def _create_batch_with_id(
     quantity: int,
     best_before: date,
     location: str,
+    user=None,
 ) -> InventoryBatch:
-    return InventoryBatch.objects.create(
+    batch = InventoryBatch.objects.create(
         batch_id=batch_id,
         product=product,
         quantity=quantity,
         best_before=best_before,
         location=location,
     )
+    batch.mark_as_created(user=user)
+
+    return batch
 
 
 def _generate_batch_id(*, product: Product) -> str:

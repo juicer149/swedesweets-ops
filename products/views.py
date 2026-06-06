@@ -153,6 +153,7 @@ def edit(request, product_pk: int):
                     description=form.cleaned_data["description"],
                     ingredients=form.cleaned_data["ingredients"],
                     image_url=form.cleaned_data["image_url"],
+                    user=request.user,
                 )
             except InvalidProductData as error:
                 form.add_error(None, str(error))
@@ -188,7 +189,10 @@ def create(request):
 
         if form.is_valid():
             try:
-                result = create_product(**form.cleaned_data)
+                result = create_product(
+                    **form.cleaned_data,
+                    user=request.user,
+                )
             except InvalidProductData as error:
                 form.add_error(None, str(error))
             else:
