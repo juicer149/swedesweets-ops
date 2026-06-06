@@ -25,6 +25,7 @@ def test_owner_sees_full_staff_navigation():
         "Orders",
         "Inventory",
         "Catalog",
+        "Accounts",
     )
 
 
@@ -39,6 +40,7 @@ def test_full_staff_sees_full_staff_navigation():
         "Orders",
         "Inventory",
         "Catalog",
+        "Accounts",
     )
 
 

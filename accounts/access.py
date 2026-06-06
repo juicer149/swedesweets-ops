@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from accounts.roles import Capability
+
 
 PUBLIC_VIEWS = frozenset(
     {
@@ -13,3 +15,15 @@ PUBLIC_VIEWS = frozenset(
         "password_reset_complete",
     }
 )
+
+
+CAPABILITIES = frozenset(
+    {
+        Capability.MANAGE_ACCOUNTS,
+    }
+)
+
+
+VIEW_CAPABILITIES = {
+    "accounts:index": Capability.MANAGE_ACCOUNTS,
+}

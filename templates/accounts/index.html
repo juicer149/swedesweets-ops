@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Accounts | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with page_header=page_header %}
+
+<nav class="section-nav" aria-label="Account view">
+  {% for view_link in view_links %}
+    <a
+      class="section-nav__link{% if view_link.is_active %} section-nav__link--active{% endif %}"
+      href="{{ view_link.href }}"
+      {% if view_link.is_active %}aria-current="page"{% endif %}
+    >
+      {{ view_link.label }}
+    </a>
+  {% endfor %}
+</nav>
+
+<section
+  id="accounts-list"
+  class="list-section"
+  aria-labelledby="accounts-title"
+>
+  {% include "includes/table/sort_select.html" %}
+
+  <div class="table-card account-table-card">
+    <table class="data-table account-table">
+      <thead>
+        <tr>
+          {% include "includes/table/sort_headers.html" %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in account_rows %}
+          <tr data-tone="{{ row.status_tone }}">
+            <th scope="row">
+              {{ row.email }}
+            </th>
+
+            <td>{{ row.role_label }}</td>
+            <td>{{ row.linked_identity }}</td>
+
+            <td>
+              <span class="status-text status-text--{{ row.status_tone }}">
+                {{ row.status_label }}
+              </span>
+            </td>
+
+            <td>{{ row.last_login_label }}</td>
+            <td>{{ row.date_joined_label }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="empty-cell" colspan="6">
+              No accounts found.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-card-list">
+    {% for row in account_rows %}
+      {% include "includes/ui/card.html" with card=row.card only %}
+    {% empty %}
+      <article class="mobile-card mobile-card--neutral">
+        <p>No accounts found.</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/sort_select.js' %}" defer></script>
+{% endblock %}

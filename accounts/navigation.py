@@ -76,6 +76,14 @@ CATALOG_NAV_ITEM = NavItem(
     capability=Capability.VIEW_OPS_PRODUCTS,
 )
 
+ACCOUNTS_NAV_ITEM = NavItem(
+    label="Accounts",
+    route_name="accounts:index",
+    namespace="accounts",
+    icon="users",
+    capability=Capability.MANAGE_ACCOUNTS,
+)
+
 
 # -----------------------------------------------------------------------------
 # Role-specific primary navigation.
@@ -89,6 +97,7 @@ STAFF_NAV_ITEMS = (
     ORDERS_NAV_ITEM,
     INVENTORY_NAV_ITEM,
     CATALOG_NAV_ITEM,
+    ACCOUNTS_NAV_ITEM,
 )
 
 RESTRICTED_STAFF_NAV_ITEMS = (

@@ -20,7 +20,10 @@
       {% if url_name != "login" %}
         <div class="site-nav__content">
           {% if request.user.is_authenticated %}
-            <div class="site-nav__links">
+            <div
+              class="site-nav__links"
+              style="--site-nav-count: {{ primary_nav_items|length }};"
+            >
               {% for item in primary_nav_items %}
                 <a
                   class="

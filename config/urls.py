@@ -7,8 +7,10 @@ from dashboard import views as dashboard_views
 
 
 urlpatterns = [
-    path("", dashboard_views.index, name="index"), 
+    path("", dashboard_views.index, name="index"),
     path("admin/", admin.site.urls),
+
+    path("accounts/", include("accounts.urls", namespace="accounts")),
 
     # Django auth views:
     # /accounts/login/  -> name="login"

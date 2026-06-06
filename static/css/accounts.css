@@ -1,0 +1,91 @@
+/* =============================================================================
+   Account tables
+   ============================================================================= */
+
+.account-table-card {
+  width: min(100%, 1040px);
+}
+
+.account-table {
+  table-layout: auto;
+}
+
+.account-table thead th,
+.account-table thead th a,
+.account-table thead th button {
+  white-space: nowrap;
+}
+
+/* Account */
+.account-table th:nth-child(1),
+.account-table td:nth-child(1) {
+  min-width: 14rem;
+}
+
+/* Role */
+.account-table th:nth-child(2),
+.account-table td:nth-child(2) {
+  width: 9rem;
+  white-space: nowrap;
+}
+
+/* Linked identity */
+.account-table th:nth-child(3),
+.account-table td:nth-child(3) {
+  min-width: 14rem;
+}
+
+/* Status */
+.account-table th:nth-child(4),
+.account-table td:nth-child(4) {
+  width: 6.5rem;
+  white-space: nowrap;
+}
+
+/* Last login */
+.account-table th:nth-child(5),
+.account-table td:nth-child(5) {
+  width: 9.5rem;
+  white-space: nowrap;
+}
+
+/* Joined */
+.account-table th:nth-child(6),
+.account-table td:nth-child(6) {
+  width: 9.5rem;
+  white-space: nowrap;
+}
+
+
+/* =============================================================================
+   Account mobile cards
+
+   Typography is shared through ui-card-* classes in ui-cards.css.
+   Account-specific CSS keeps only spacing and account-specific wrapping rules.
+   ============================================================================= */
+
+.mobile-card--account {
+  gap: var(--space-2);
+}
+
+.mobile-card--account .ui-card__row {
+  gap: var(--space-2);
+}
+
+.mobile-card--account .ui-card-title {
+  font-size: var(--font-size-20);
+}
+
+.mobile-card--account .ui-card-location {
+  overflow-wrap: anywhere;
+}
+
+.mobile-card--account .ui-card__cell--right .status-text,
+.mobile-card--account .ui-card__cell--right .ui-card-label,
+.mobile-card--account .ui-card__cell--right .ui-card-location {
+  text-align: right;
+}
+
+.mobile-card--account .ui-card__row:last-child .ui-card-location {
+  white-space: nowrap;
+}
