@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
 from common.detail_cards import (
     DetailAction,
     DetailCard,
@@ -203,7 +204,7 @@ def build_product_detail_context(
     stock_row: AvailableStockRow | None,
     active_batches: list[InventoryBatch],
     demand_summary: ProductDeliveredDemandSummary,
-    edit_url: str,
+    role_spec: RoleSpec,
     cancel_url: str,
 ) -> ProductDetailContext:
     stock = ProductStockSummary.from_available_stock_row(
@@ -230,14 +231,38 @@ def build_product_detail_context(
                 demand=demand,
             ),
             content_card_class=product_detail_card_class(product),
-            secondary_actions=(
-                build_edit_product_action(href=edit_url),
+            secondary_actions=build_product_secondary_actions(
+                product=product,
+                role_spec=role_spec,
             ),
         ),
         title=product.display_name,
         description="",
         cancel_url=cancel_url,
     )
+
+
+def build_product_secondary_actions(
+    *,
+    product: Product,
+    role_spec: RoleSpec,
+) -> tuple[DetailAction, ...]:
+    if not can_edit_product(product=product, role_spec=role_spec):
+        return ()
+
+    return (
+        build_edit_product_action(
+            href=reverse("products:edit", kwargs={"product_pk": product.pk}),
+        ),
+    )
+
+
+def can_edit_product(
+    *,
+    product: Product,
+    role_spec: RoleSpec,
+) -> bool:
+    return role_spec.allows(Capability.EDIT_PRODUCTS)
 
 
 def build_edit_product_action(*, href: str) -> DetailAction:
