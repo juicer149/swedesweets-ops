@@ -4,7 +4,7 @@ import pytest
 from django.urls import URLPattern, URLResolver, get_resolver
 
 from accounts.policies import PUBLIC_VIEWS, VIEW_CAPABILITIES
-from accounts.roles import RoleSpec
+from accounts.roles import Capability
 
 
 EXEMPT_VIEW_NAME_PREFIXES = (
@@ -55,14 +55,10 @@ def _project_view_names() -> set[str]:
     }
 
 
-def test_all_policy_capabilities_exist_on_role_spec():
-    role_spec_fields = set(RoleSpec.__dataclass_fields__)
+def test_all_policy_capabilities_are_declared_capabilities():
+    policy_capabilities = set(VIEW_CAPABILITIES.values())
 
-    unknown_capabilities = {
-        capability
-        for capability in VIEW_CAPABILITIES.values()
-        if capability not in role_spec_fields
-    }
+    unknown_capabilities = policy_capabilities - set(Capability)
 
     assert unknown_capabilities == set()
 

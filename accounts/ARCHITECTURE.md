@@ -79,7 +79,7 @@ Capability
     Capability.VIEW_CUSTOMERS
 
 RoleSpec
-  immutable set of booleans describing what a role can do
+  immutable set of Capability values describing what a role can do
 ```
 
 Code should ask:
@@ -88,7 +88,11 @@ Code should ask:
 role_spec.allows(Capability.PACK_ORDERS)
 ```
 
-instead of checking raw strings directly.
+instead of checking raw strings or internal storage directly.
+
+`RoleSpec` currently stores capabilities as a `frozenset[Capability]`. Other
+modules should not depend on that representation. They should use
+`role_spec.allows(...)`.
 
 ## Route policy
 
@@ -140,24 +144,33 @@ class Capability(StrEnum):
     EXPORT_ORDERS = "can_export_orders"
 ```
 
-2. Add a matching field to `RoleSpec`.
+2. Enable it for the roles that should have it.
+
+If the role uses a shared capability set, add the new capability there:
 
 ```python
-@dataclass(frozen=True, slots=True)
-class RoleSpec:
-    can_export_orders: bool = False
-```
-
-3. Enable it for the roles that should have it.
-
-```python
-FULL_STAFF_SPEC = RoleSpec(
-    ...
-    can_export_orders=True,
+STAFF_CAPABILITIES = frozenset(
+    {
+        ...
+        Capability.EXPORT_ORDERS,
+    }
 )
 ```
 
-4. Map any protected views that require it in `accounts/policies.py`.
+If the role spec is defined directly, add it to that role's capability set:
+
+```python
+EXPORT_STAFF_SPEC = RoleSpec(
+    capabilities=frozenset(
+        {
+            ...
+            Capability.EXPORT_ORDERS,
+        }
+    )
+)
+```
+
+3. Map any protected views that require it in `accounts/policies.py`.
 
 ```python
 VIEW_CAPABILITIES = {
@@ -166,13 +179,13 @@ VIEW_CAPABILITIES = {
 }
 ```
 
-5. Use it in UX builders if the capability should affect visible UI.
+4. Use it in UX builders if the capability should affect visible UI.
 
 ```python
 role_spec.allows(Capability.EXPORT_ORDERS)
 ```
 
-6. Add or update tests.
+5. Add or update tests.
 
 At minimum, policy tests should prove:
 
@@ -197,12 +210,18 @@ class AccountRole(StrEnum):
 
 ```python
 WAREHOUSE_MANAGER_SPEC = RoleSpec(
-    can_view_staff_ops=True,
-    can_view_orders=True,
-    can_pack_orders=True,
-    can_deliver_orders=True,
-    can_view_inventory=True,
-    can_create_batches=True,
+    capabilities=frozenset(
+        {
+            Capability.VIEW_STAFF_OPS,
+
+            Capability.VIEW_ORDERS,
+            Capability.PACK_ORDERS,
+            Capability.DELIVER_ORDERS,
+
+            Capability.VIEW_INVENTORY,
+            Capability.CREATE_BATCHES,
+        }
+    )
 )
 ```
 

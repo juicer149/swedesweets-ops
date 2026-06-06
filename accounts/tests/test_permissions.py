@@ -4,7 +4,7 @@ import pytest
 
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role, resolve_role_spec
-from accounts.roles import AccountRole, StaffAccessLevel
+from accounts.roles import AccountRole, Capability, StaffAccessLevel
 from accounts.tests.factories import (
     customer_membership_factory,
     full_staff_user_factory,
@@ -36,6 +36,63 @@ def customer(db) -> Customer:
     )
 
 
+def _assert_allows_all(spec, capabilities: set[Capability]) -> None:
+    for capability in capabilities:
+        assert spec.allows(capability)
+
+
+def _assert_denies_all(spec, capabilities: set[Capability]) -> None:
+    for capability in capabilities:
+        assert not spec.allows(capability)
+
+
+STAFF_CAPABILITIES = {
+    Capability.VIEW_STAFF_OPS,
+    Capability.MANAGE_ACCOUNTS,
+
+    Capability.VIEW_ORDERS,
+    Capability.CREATE_ORDERS,
+    Capability.EDIT_ORDERS,
+    Capability.CANCEL_ORDERS,
+    Capability.PACK_ORDERS,
+    Capability.DELIVER_ORDERS,
+
+    Capability.VIEW_INVENTORY,
+    Capability.CREATE_BATCHES,
+    Capability.EDIT_BATCHES,
+    Capability.CLOSE_BATCHES,
+    Capability.VIEW_INVENTORY_RISKS,
+
+    Capability.VIEW_OPS_PRODUCTS,
+    Capability.CREATE_PRODUCTS,
+    Capability.EDIT_PRODUCTS,
+
+    Capability.VIEW_CUSTOMERS,
+    Capability.CREATE_CUSTOMERS,
+    Capability.EDIT_CUSTOMERS,
+}
+
+RESTRICTED_STAFF_CAPABILITIES = {
+    Capability.VIEW_STAFF_OPS,
+
+    Capability.VIEW_ORDERS,
+    Capability.PACK_ORDERS,
+    Capability.DELIVER_ORDERS,
+
+    Capability.VIEW_INVENTORY,
+    Capability.CREATE_BATCHES,
+
+    Capability.VIEW_OPS_PRODUCTS,
+    Capability.VIEW_CUSTOMERS,
+}
+
+CUSTOMER_CAPABILITIES = {
+    Capability.VIEW_CUSTOMER_PORTAL,
+    Capability.PLACE_CUSTOMER_ORDERS,
+    Capability.VIEW_OWN_ORDERS,
+}
+
+
 @pytest.mark.django_db
 def test_superuser_resolves_as_owner():
     owner = superuser_factory(
@@ -46,29 +103,14 @@ def test_superuser_resolves_as_owner():
 
     spec = resolve_role_spec(owner)
 
-    assert spec.can_view_staff_ops
-    assert spec.can_manage_accounts
-    assert spec.can_view_orders
-    assert spec.can_create_orders
-    assert spec.can_edit_orders
-    assert spec.can_cancel_orders
-    assert spec.can_pack_orders
-    assert spec.can_deliver_orders
-    assert spec.can_view_inventory
-    assert spec.can_create_batches
-    assert spec.can_edit_batches
-    assert spec.can_close_batches
-    assert spec.can_view_inventory_risks
-    assert spec.can_view_ops_products
-    assert spec.can_create_products
-    assert spec.can_edit_products
-    assert spec.can_view_customers
-    assert spec.can_create_customers
-    assert spec.can_edit_customers
-
-    assert not spec.can_view_customer_portal
-    assert not spec.can_place_customer_orders
-    assert not spec.can_view_own_orders
+    _assert_allows_all(
+        spec,
+        STAFF_CAPABILITIES,
+    )
+    _assert_denies_all(
+        spec,
+        CUSTOMER_CAPABILITIES,
+    )
 
 
 @pytest.mark.django_db
@@ -79,29 +121,14 @@ def test_full_staff_resolves_as_full_staff():
 
     spec = resolve_role_spec(user)
 
-    assert spec.can_view_staff_ops
-    assert spec.can_manage_accounts
-    assert spec.can_view_orders
-    assert spec.can_create_orders
-    assert spec.can_edit_orders
-    assert spec.can_cancel_orders
-    assert spec.can_pack_orders
-    assert spec.can_deliver_orders
-    assert spec.can_view_inventory
-    assert spec.can_create_batches
-    assert spec.can_edit_batches
-    assert spec.can_close_batches
-    assert spec.can_view_inventory_risks
-    assert spec.can_view_ops_products
-    assert spec.can_create_products
-    assert spec.can_edit_products
-    assert spec.can_view_customers
-    assert spec.can_create_customers
-    assert spec.can_edit_customers
-
-    assert not spec.can_view_customer_portal
-    assert not spec.can_place_customer_orders
-    assert not spec.can_view_own_orders
+    _assert_allows_all(
+        spec,
+        STAFF_CAPABILITIES,
+    )
+    _assert_denies_all(
+        spec,
+        CUSTOMER_CAPABILITIES,
+    )
 
 
 @pytest.mark.django_db
@@ -112,29 +139,15 @@ def test_restricted_staff_resolves_as_restricted_staff():
 
     spec = resolve_role_spec(user)
 
-    assert spec.can_view_staff_ops
-    assert spec.can_view_orders
-    assert spec.can_pack_orders
-    assert spec.can_deliver_orders
-    assert spec.can_view_inventory
-    assert spec.can_create_batches
-    assert spec.can_view_ops_products
-    assert spec.can_view_customers
-
-    assert not spec.can_manage_accounts
-    assert not spec.can_create_orders
-    assert not spec.can_edit_orders
-    assert not spec.can_cancel_orders
-    assert not spec.can_edit_batches
-    assert not spec.can_close_batches
-    assert not spec.can_view_inventory_risks
-    assert not spec.can_create_products
-    assert not spec.can_edit_products
-    assert not spec.can_create_customers
-    assert not spec.can_edit_customers
-    assert not spec.can_view_customer_portal
-    assert not spec.can_place_customer_orders
-    assert not spec.can_view_own_orders
+    _assert_allows_all(
+        spec,
+        RESTRICTED_STAFF_CAPABILITIES,
+    )
+    _assert_denies_all(
+        spec,
+        set(Capability)
+        - RESTRICTED_STAFF_CAPABILITIES,
+    )
 
 
 @pytest.mark.django_db
@@ -148,29 +161,15 @@ def test_customer_resolves_as_customer(user, customer):
 
     spec = resolve_role_spec(user)
 
-    assert spec.can_view_customer_portal
-    assert spec.can_place_customer_orders
-    assert spec.can_view_own_orders
-
-    assert not spec.can_view_staff_ops
-    assert not spec.can_manage_accounts
-    assert not spec.can_view_orders
-    assert not spec.can_create_orders
-    assert not spec.can_edit_orders
-    assert not spec.can_cancel_orders
-    assert not spec.can_pack_orders
-    assert not spec.can_deliver_orders
-    assert not spec.can_view_inventory
-    assert not spec.can_create_batches
-    assert not spec.can_edit_batches
-    assert not spec.can_close_batches
-    assert not spec.can_view_inventory_risks
-    assert not spec.can_view_ops_products
-    assert not spec.can_create_products
-    assert not spec.can_edit_products
-    assert not spec.can_view_customers
-    assert not spec.can_create_customers
-    assert not spec.can_edit_customers
+    _assert_allows_all(
+        spec,
+        CUSTOMER_CAPABILITIES,
+    )
+    _assert_denies_all(
+        spec,
+        set(Capability)
+        - CUSTOMER_CAPABILITIES,
+    )
 
 
 @pytest.mark.django_db
@@ -179,28 +178,10 @@ def test_user_without_business_identity_resolves_as_unknown(user):
 
     spec = resolve_role_spec(user)
 
-    assert not spec.can_view_staff_ops
-    assert not spec.can_view_customer_portal
-    assert not spec.can_manage_accounts
-    assert not spec.can_view_orders
-    assert not spec.can_create_orders
-    assert not spec.can_edit_orders
-    assert not spec.can_cancel_orders
-    assert not spec.can_pack_orders
-    assert not spec.can_deliver_orders
-    assert not spec.can_view_inventory
-    assert not spec.can_create_batches
-    assert not spec.can_edit_batches
-    assert not spec.can_close_batches
-    assert not spec.can_view_inventory_risks
-    assert not spec.can_view_ops_products
-    assert not spec.can_create_products
-    assert not spec.can_edit_products
-    assert not spec.can_view_customers
-    assert not spec.can_create_customers
-    assert not spec.can_edit_customers
-    assert not spec.can_place_customer_orders
-    assert not spec.can_view_own_orders
+    _assert_denies_all(
+        spec,
+        set(Capability),
+    )
 
 
 @pytest.mark.django_db

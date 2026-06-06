@@ -13,7 +13,7 @@ from accounts.middleware import (
     ViewCapabilityMiddleware,
 )
 from accounts.models import CustomerMembership, StaffAccount
-from accounts.roles import AccountRole, StaffAccessLevel
+from accounts.roles import AccountRole, Capability, StaffAccessLevel
 from accounts.tests.factories import (
     customer_membership_factory,
     full_staff_user_factory,
@@ -61,8 +61,8 @@ def test_account_context_middleware_attaches_owner_role_context():
     response_request = _attach_account_context(request)
 
     assert response_request.account_role == AccountRole.OWNER
-    assert response_request.role_spec.can_view_staff_ops
-    assert response_request.role_spec.can_manage_accounts
+    assert response_request.role_spec.allows(Capability.VIEW_STAFF_OPS)
+    assert response_request.role_spec.allows(Capability.MANAGE_ACCOUNTS)
 
 
 @pytest.mark.django_db
@@ -75,8 +75,8 @@ def test_account_context_middleware_attaches_full_staff_role_context():
     response_request = _attach_account_context(request)
 
     assert response_request.account_role == AccountRole.FULL_STAFF
-    assert response_request.role_spec.can_view_staff_ops
-    assert response_request.role_spec.can_edit_products
+    assert response_request.role_spec.allows(Capability.VIEW_STAFF_OPS)
+    assert response_request.role_spec.allows(Capability.EDIT_PRODUCTS)
 
 
 @pytest.mark.django_db
@@ -89,9 +89,9 @@ def test_account_context_middleware_attaches_restricted_staff_role_context():
     response_request = _attach_account_context(request)
 
     assert response_request.account_role == AccountRole.RESTRICTED_STAFF
-    assert response_request.role_spec.can_view_staff_ops
-    assert response_request.role_spec.can_pack_orders
-    assert not response_request.role_spec.can_edit_products
+    assert response_request.role_spec.allows(Capability.VIEW_STAFF_OPS)
+    assert response_request.role_spec.allows(Capability.PACK_ORDERS)
+    assert not response_request.role_spec.allows(Capability.EDIT_PRODUCTS)
 
 
 @pytest.mark.django_db
@@ -112,8 +112,8 @@ def test_account_context_middleware_attaches_customer_role_context():
     response_request = _attach_account_context(request)
 
     assert response_request.account_role == AccountRole.CUSTOMER
-    assert response_request.role_spec.can_view_customer_portal
-    assert not response_request.role_spec.can_view_staff_ops
+    assert response_request.role_spec.allows(Capability.VIEW_CUSTOMER_PORTAL)
+    assert not response_request.role_spec.allows(Capability.VIEW_STAFF_OPS)
 
 
 @pytest.mark.django_db
@@ -126,8 +126,8 @@ def test_account_context_middleware_attaches_unknown_role_context():
     response_request = _attach_account_context(request)
 
     assert response_request.account_role == AccountRole.UNKNOWN
-    assert not response_request.role_spec.can_view_staff_ops
-    assert not response_request.role_spec.can_view_customer_portal
+    assert not response_request.role_spec.allows(Capability.VIEW_STAFF_OPS)
+    assert not response_request.role_spec.allows(Capability.VIEW_CUSTOMER_PORTAL)
 
 
 @pytest.mark.django_db

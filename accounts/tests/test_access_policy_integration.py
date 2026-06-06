@@ -57,7 +57,7 @@ def _url_for_view_name(view_name: str) -> str:
 
 def _expected_access_by_view(role_spec) -> dict[str, bool]:
     return {
-        view_name: getattr(role_spec, capability, False)
+        view_name: role_spec.allows(capability)
         for view_name, capability in VIEW_CAPABILITIES.items()
     }
 

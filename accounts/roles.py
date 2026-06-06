@@ -65,112 +65,90 @@ class AccountRole(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class RoleSpec:
-    can_view_staff_ops: bool = False
-    can_view_customer_portal: bool = False
-
-    can_manage_accounts: bool = False
-
-    can_view_orders: bool = False
-    can_create_orders: bool = False
-    can_edit_orders: bool = False
-    can_cancel_orders: bool = False
-    can_pack_orders: bool = False
-    can_deliver_orders: bool = False
-
-    can_view_inventory: bool = False
-    can_create_batches: bool = False
-    can_edit_batches: bool = False
-    can_close_batches: bool = False
-    can_view_inventory_risks: bool = False
-
-    can_view_ops_products: bool = False
-    can_create_products: bool = False
-    can_edit_products: bool = False
-
-    can_view_customers: bool = False
-    can_create_customers: bool = False
-    can_edit_customers: bool = False
-
-    can_place_customer_orders: bool = False
-    can_view_own_orders: bool = False
+    capabilities: frozenset[Capability]
 
     def allows(self, capability: Capability) -> bool:
-        return getattr(self, capability.value, False)
+        return capability in self.capabilities
+
+    def allows_any(self, capabilities: frozenset[Capability]) -> bool:
+        return bool(self.capabilities & capabilities)
+
+    def allows_all(self, capabilities: frozenset[Capability]) -> bool:
+        return capabilities <= self.capabilities
+
+
+STAFF_CAPABILITIES = frozenset(
+    {
+        Capability.VIEW_STAFF_OPS,
+        Capability.MANAGE_ACCOUNTS,
+
+        Capability.VIEW_ORDERS,
+        Capability.CREATE_ORDERS,
+        Capability.EDIT_ORDERS,
+        Capability.CANCEL_ORDERS,
+        Capability.PACK_ORDERS,
+        Capability.DELIVER_ORDERS,
+
+        Capability.VIEW_INVENTORY,
+        Capability.CREATE_BATCHES,
+        Capability.EDIT_BATCHES,
+        Capability.CLOSE_BATCHES,
+        Capability.VIEW_INVENTORY_RISKS,
+
+        Capability.VIEW_OPS_PRODUCTS,
+        Capability.CREATE_PRODUCTS,
+        Capability.EDIT_PRODUCTS,
+
+        Capability.VIEW_CUSTOMERS,
+        Capability.CREATE_CUSTOMERS,
+        Capability.EDIT_CUSTOMERS,
+    }
+)
+
+RESTRICTED_STAFF_CAPABILITIES = frozenset(
+    {
+        Capability.VIEW_STAFF_OPS,
+
+        Capability.VIEW_ORDERS,
+        Capability.PACK_ORDERS,
+        Capability.DELIVER_ORDERS,
+
+        Capability.VIEW_INVENTORY,
+        Capability.CREATE_BATCHES,
+
+        Capability.VIEW_OPS_PRODUCTS,
+        Capability.VIEW_CUSTOMERS,
+    }
+)
+
+CUSTOMER_CAPABILITIES = frozenset(
+    {
+        Capability.VIEW_CUSTOMER_PORTAL,
+        Capability.PLACE_CUSTOMER_ORDERS,
+        Capability.VIEW_OWN_ORDERS,
+    }
+)
 
 
 OWNER_SPEC = RoleSpec(
-    can_view_staff_ops=True,
-    can_manage_accounts=True,
-
-    can_view_orders=True,
-    can_create_orders=True,
-    can_edit_orders=True,
-    can_cancel_orders=True,
-    can_pack_orders=True,
-    can_deliver_orders=True,
-
-    can_view_inventory=True,
-    can_create_batches=True,
-    can_edit_batches=True,
-    can_close_batches=True,
-    can_view_inventory_risks=True,
-
-    can_view_ops_products=True,
-    can_create_products=True,
-    can_edit_products=True,
-
-    can_view_customers=True,
-    can_create_customers=True,
-    can_edit_customers=True,
+    capabilities=STAFF_CAPABILITIES,
 )
 
 FULL_STAFF_SPEC = RoleSpec(
-    can_view_staff_ops=True,
-    can_manage_accounts=True,
-
-    can_view_orders=True,
-    can_create_orders=True,
-    can_edit_orders=True,
-    can_cancel_orders=True,
-    can_pack_orders=True,
-    can_deliver_orders=True,
-
-    can_view_inventory=True,
-    can_create_batches=True,
-    can_edit_batches=True,
-    can_close_batches=True,
-    can_view_inventory_risks=True,
-
-    can_view_ops_products=True,
-    can_create_products=True,
-    can_edit_products=True,
-
-    can_view_customers=True,
-    can_create_customers=True,
-    can_edit_customers=True,
+    capabilities=STAFF_CAPABILITIES,
 )
 
 RESTRICTED_STAFF_SPEC = RoleSpec(
-    can_view_staff_ops=True,
-
-    can_view_orders=True,
-    can_pack_orders=True,
-    can_deliver_orders=True,
-
-    can_view_inventory=True,
-    can_create_batches=True,
-
-    can_view_ops_products=True,
-    can_view_customers=True,
+    capabilities=RESTRICTED_STAFF_CAPABILITIES,
 )
 
 CUSTOMER_SPEC = RoleSpec(
-    can_view_customer_portal=True,
-    can_place_customer_orders=True,
-    can_view_own_orders=True,
+    capabilities=CUSTOMER_CAPABILITIES,
 )
 
-UNKNOWN_SPEC = RoleSpec()
+UNKNOWN_SPEC = RoleSpec(
+    capabilities=frozenset(),
+)
 
 
 ROLE_SPECS: dict[AccountRole, RoleSpec] = {
