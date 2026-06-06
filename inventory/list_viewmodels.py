@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
+from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import QuickJumpOption, QuickJumpSearch
 from common.ui import (
     QuantityInfo,
@@ -77,6 +79,14 @@ class ProductStockPageRow:
     available_quantity_info: QuantityInfo
     status: StatusPresentation
     card: UiCard
+
+
+def build_inventory_page_header(*, role_spec: RoleSpec) -> PageHeader:
+    return PageHeader(
+        title="Inventory",
+        title_id="inventory-title",
+        action=_build_add_batch_header_action(role_spec=role_spec),
+    )
 
 
 def build_inventory_view_links(
@@ -212,6 +222,20 @@ def build_product_stock_quick_jump_search(
             )
             for row in rows
         ],
+    )
+
+
+def _build_add_batch_header_action(
+    *,
+    role_spec: RoleSpec,
+) -> PageHeaderAction | None:
+    if not role_spec.allows(Capability.CREATE_BATCHES):
+        return None
+
+    return PageHeaderAction(
+        label="Add batch",
+        href=reverse("inventory:create"),
+        aria_label="Add a new batch",
     )
 
 

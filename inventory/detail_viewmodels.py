@@ -5,13 +5,14 @@ from dataclasses import dataclass
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.roles import Capability, RoleSpec
 from common.detail_cards import (
     DetailAction,
     DetailCard,
     DetailHeader,
     DetailPanel,
-    build_secondary_get_action,
     build_danger_get_action,
+    build_secondary_get_action,
 )
 from common.ui import UiCard
 from inventory.models import InventoryBatch
@@ -115,8 +116,7 @@ def build_batch_detail_context(
     batch: InventoryBatch,
     allocations: list[Allocation],
     cancel_url: str,
-    edit_url: str = "",
-    close_url: str = "",
+    role_spec: RoleSpec,
 ) -> BatchDetailContext:
     usage_rows = _build_usage_rows(allocations)
     stock = BatchStockSummary.from_batch_and_allocations(
@@ -146,15 +146,60 @@ def build_batch_detail_context(
                 usage_count=len(usage_rows),
             ),
             content_card_class=batch_detail_card_class(batch),
-            secondary_actions=_build_secondary_actions(
+            secondary_actions=build_batch_secondary_actions(
                 batch=batch,
-                edit_url=edit_url,
-                close_url=close_url,
+                role_spec=role_spec,
             ),
         ),
         title=f"Batch {batch.batch_id}",
         description="",
         cancel_url=cancel_url,
+    )
+
+
+def build_batch_secondary_actions(
+    *,
+    batch: InventoryBatch,
+    role_spec: RoleSpec,
+) -> tuple[DetailAction, ...]:
+    actions: list[DetailAction] = []
+
+    if can_edit_batch(batch=batch, role_spec=role_spec):
+        actions.append(
+            build_edit_batch_action(
+                href=reverse("inventory:edit", kwargs={"batch_pk": batch.pk}),
+            )
+        )
+
+    if can_close_batch(batch=batch, role_spec=role_spec):
+        actions.append(
+            build_close_batch_action(
+                href=reverse("inventory:close", kwargs={"batch_pk": batch.pk}),
+            )
+        )
+
+    return tuple(actions)
+
+
+def can_edit_batch(
+    *,
+    batch: InventoryBatch,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        batch.status != InventoryBatch.Status.CLOSED
+        and role_spec.allows(Capability.EDIT_BATCHES)
+    )
+
+
+def can_close_batch(
+    *,
+    batch: InventoryBatch,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        batch.status != InventoryBatch.Status.CLOSED
+        and role_spec.allows(Capability.CLOSE_BATCHES)
     )
 
 
@@ -166,28 +211,10 @@ def build_edit_batch_action(*, href: str) -> DetailAction:
 
 
 def build_close_batch_action(*, href: str) -> DetailAction:
-    return build_danger_get_action( 
+    return build_danger_get_action(
         label="Close batch",
         href=href,
     )
-
-
-def _build_secondary_actions(
-    *,
-    batch: InventoryBatch,
-    edit_url: str,
-    close_url: str,
-) -> tuple[DetailAction, ...]:
-    actions: list[DetailAction] = []
-
-    if batch.status != InventoryBatch.Status.CLOSED:
-        if edit_url:
-            actions.append(build_edit_batch_action(href=edit_url))
-
-        if close_url:
-            actions.append(build_close_batch_action(href=close_url))
-
-    return tuple(actions)
 
 
 def _build_batch_header(batch: InventoryBatch) -> DetailHeader:

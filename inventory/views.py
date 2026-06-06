@@ -5,30 +5,34 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
     TableFilter,
     TableSortField,
 )
-from inventory.detail_viewmodels import build_batch_detail_context
+from inventory.detail_viewmodels import (
+    build_batch_detail_context,
+    can_close_batch,
+    can_edit_batch,
+)
 from inventory.errors import InvalidStockOperation
 from inventory.forms import (
     BatchEditForm,
     BatchForm,
     build_batch_edit_initial_data,
 )
-from inventory.list_viewmodels import (
-    build_batch_page_rows,
-    build_batch_quick_jump_search,
-    build_inventory_view_links,
-    build_product_stock_page_rows,
-    build_product_stock_quick_jump_search,
-)
 from inventory.form_viewmodels import (
     build_batch_context_items,
     build_close_batch_context_items,
+)
+from inventory.list_viewmodels import (
+    build_batch_page_rows,
+    build_batch_quick_jump_search,
+    build_inventory_page_header,
+    build_inventory_view_links,
+    build_product_stock_page_rows,
+    build_product_stock_quick_jump_search,
 )
 from inventory.models import InventoryBatch
 from inventory.selectors import (
@@ -109,8 +113,7 @@ def detail(request, batch_pk: int):
         batch=batch,
         allocations=allocations,
         cancel_url=reverse("inventory:index"),
-        edit_url=reverse("inventory:edit", kwargs={"batch_pk": batch.pk}),
-        close_url=reverse("inventory:close", kwargs={"batch_pk": batch.pk}),
+        role_spec=request.role_spec,
     ).as_dict()
 
     return render(request, "inventory/detail.html", context)
@@ -120,10 +123,10 @@ def detail(request, batch_pk: int):
 def edit(request, batch_pk: int):
     batch = _get_batch_for_detail(batch_pk)
 
-    if batch.status == InventoryBatch.Status.CLOSED:
+    if not can_edit_batch(batch=batch, role_spec=request.role_spec):
         messages.error(
             request,
-            f"Batch {batch.batch_id} cannot be edited because it is closed.",
+            f"Batch {batch.batch_id} cannot be edited.",
         )
         return redirect("inventory:detail", batch_pk=batch.pk)
 
@@ -205,10 +208,10 @@ def create(request):
 def close(request, batch_pk: int):
     batch = _get_batch_for_detail(batch_pk)
 
-    if batch.status == InventoryBatch.Status.CLOSED:
+    if not can_close_batch(batch=batch, role_spec=request.role_spec):
         messages.error(
             request,
-            f"Batch {batch.batch_id} is already closed.",
+            f"Batch {batch.batch_id} cannot be closed.",
         )
         return redirect("inventory:detail", batch_pk=batch.pk)
 
@@ -257,7 +260,7 @@ def _build_batches_index_context(request) -> dict[str, object]:
     )
 
     return {
-        "page_header": _inventory_page_header(),
+        "page_header": build_inventory_page_header(role_spec=request.role_spec),
         "active_view": INVENTORY_VIEW_BATCHES,
         "view_links": _inventory_view_links(active_view=INVENTORY_VIEW_BATCHES),
         "quick_jump_search": build_batch_quick_jump_search(batch_page_rows),
@@ -297,7 +300,7 @@ def _build_products_index_context(request) -> dict[str, object]:
     )
 
     return {
-        "page_header": _inventory_page_header(),
+        "page_header": build_inventory_page_header(role_spec=request.role_spec),
         "active_view": INVENTORY_VIEW_PRODUCTS,
         "view_links": _inventory_view_links(active_view=INVENTORY_VIEW_PRODUCTS),
         "quick_jump_search": build_product_stock_quick_jump_search(product_page_rows),
@@ -305,7 +308,9 @@ def _build_products_index_context(request) -> dict[str, object]:
         "product_rows": product_page_rows,
         "filters": [],
         "table_sorts": controls.build_table_sort_links(PRODUCT_STOCK_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(PRODUCT_STOCK_TABLE_SORTS),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(
+            PRODUCT_STOCK_TABLE_SORTS
+        ),
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": INVENTORY_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": [
@@ -317,18 +322,6 @@ def _build_products_index_context(request) -> dict[str, object]:
         "active_status": "",
         "active_sort": controls.active_sort,
     }
-
-
-def _inventory_page_header() -> PageHeader:
-    return PageHeader(
-        title="Inventory",
-        title_id="inventory-title",
-        action=PageHeaderAction(
-            label="Add batch",
-            href=reverse("inventory:create"),
-            aria_label="Add a new batch",
-        ),
-    )
 
 
 def _inventory_view_links(
