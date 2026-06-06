@@ -89,3 +89,151 @@
 .mobile-card--account .ui-card__row:last-child .ui-card-location {
   white-space: nowrap;
 }
+
+
+/* =============================================================================
+   Account detail
+
+   Account detail can contain long emails and long activity labels. Keep those
+   values inside the card so they do not create page-level horizontal overflow.
+   ============================================================================= */
+
+.account-detail-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.account-detail-card .content-card__header {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.account-detail-card .content-card__header > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.account-detail-card .content-card__header h2 {
+  max-width: 100%;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.account-detail-card .detail-panels,
+.account-detail-card .detail-panels__triggers,
+.account-detail-card .detail-panels__bodies,
+.account-detail-card .detail-panel,
+.account-detail-card .detail-panel__body,
+.account-detail-card .detail-panel-body,
+.account-detail-card .detail-data-list,
+.account-detail-card .table-card,
+.account-detail-card .data-table {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.account-detail-card .detail-panel-trigger {
+  min-width: 0;
+}
+
+.account-detail-card .detail-panel-trigger__summary {
+  max-width: 100%;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.account-detail-card .detail-data-list dd {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+
+/* =============================================================================
+   Account activity table
+   ============================================================================= */
+
+.account-activity-table-card {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.account-activity-table {
+  table-layout: auto;
+}
+
+.account-activity-table th,
+.account-activity-table td {
+  overflow-wrap: anywhere;
+}
+
+.account-activity-table th:nth-child(1),
+.account-activity-table td:nth-child(1) {
+  white-space: nowrap;
+}
+
+.account-activity-table th:nth-child(2),
+.account-activity-table td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.account-activity-table th:nth-child(3),
+.account-activity-table td:nth-child(3) {
+  min-width: 9rem;
+}
+
+.account-activity-table th:nth-child(4),
+.account-activity-table td:nth-child(4) {
+  min-width: 10rem;
+}
+
+
+@media (max-width: 760px) {
+  .account-detail-card {
+    width: min(100%, calc(100vw - (2 * var(--space-3))));
+    overflow: hidden;
+  }
+
+  .account-detail-card .content-card__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-detail-card .content-card__header h2 {
+    font-size: clamp(1.55rem, 8vw, var(--font-size-28));
+    line-height: 1.05;
+  }
+
+  .account-detail-card .detail-panel__body,
+  .account-detail-card .detail-panel-body {
+    padding: var(--space-4);
+    overflow: hidden;
+  }
+
+  .account-activity-table-card {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .account-activity-table {
+    min-width: 42rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .account-detail-card {
+    width: min(100%, calc(100vw - (2 * var(--space-2))));
+  }
+
+  .account-detail-card .content-card__header h2 {
+    font-size: clamp(1.35rem, 7vw, 2rem);
+  }
+
+  .account-detail-card .detail-panel__body,
+  .account-detail-card .detail-panel-body {
+    padding: var(--space-3);
+  }
+}

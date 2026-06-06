@@ -4,12 +4,19 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
+from django.urls import resolve
+
+from accounts.policies import PUBLIC_VIEWS
 
 
 class LoginRequiredMiddleware:
     """Require authentication for all non-exempt application pages.
 
     Admin keeps its own login flow. Static and media files are ignored.
+
+    Some Django auth views must remain reachable before login. Those are
+    declared as PUBLIC_VIEWS in the accounts access policy and checked here by
+    resolved view name.
     """
 
     def __init__(self, get_response):
@@ -20,6 +27,9 @@ class LoginRequiredMiddleware:
             return self.get_response(request)
 
         if self._is_exempt_path(request.path_info):
+            return self.get_response(request)
+
+        if self._is_public_view(request.path_info):
             return self.get_response(request)
 
         return redirect_to_login(
@@ -43,6 +53,15 @@ class LoginRequiredMiddleware:
             prefix and path.startswith(prefix)
             for prefix in exempt_prefixes
         )
+
+    @staticmethod
+    def _is_public_view(path: str) -> bool:
+        try:
+            resolver_match = resolve(path)
+        except Exception:
+            return False
+
+        return resolver_match.view_name in PUBLIC_VIEWS
 
     @staticmethod
     def _path_from_url(url: str) -> str:

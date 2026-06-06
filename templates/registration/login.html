@@ -20,26 +20,44 @@
     </header>
 
     {% if form.non_field_errors %}
-      <div class="form-errors">
-        {{ form.non_field_errors }}
+      <div class="form-errors" role="alert">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
       </div>
     {% endif %}
 
     <div class="form-grid">
-      <div class="form-field form-field--full">
-        <label for="{{ form.username.id_for_label }}">
+      <div class="form-field form-field--full{% if form.username.errors %} form-field--error{% endif %}">
+        <label class="form-label" for="{{ form.username.id_for_label }}">
           Username
         </label>
+
         {{ form.username }}
-        {{ form.username.errors }}
+
+        {% if form.username.errors %}
+          <div class="form-field__errors" role="alert">
+            {% for error in form.username.errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
       </div>
 
-      <div class="form-field form-field--full">
-        <label for="{{ form.password.id_for_label }}">
+      <div class="form-field form-field--full{% if form.password.errors %} form-field--error{% endif %}">
+        <label class="form-label" for="{{ form.password.id_for_label }}">
           Password
         </label>
+
         {{ form.password }}
-        {{ form.password.errors }}
+
+        {% if form.password.errors %}
+          <div class="form-field__errors" role="alert">
+            {% for error in form.password.errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
       </div>
     </div>
 
@@ -54,6 +72,13 @@
       >
         Login
       </button>
+
+      <a
+        class="button button--md button--ghost button--tone-neutral"
+        href="{% url 'password_reset' %}"
+      >
+        Forgot password?
+      </a>
     </div>
   </form>
 </section>

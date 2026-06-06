@@ -5,7 +5,7 @@
 
 {% block content %}
 <section class="content-section content-section--wide content-section--detail">
-  <article class="content-card content-card--wide {{ detail_card.content_card_class }}">
+  <article class="content-card content-card--wide account-detail-card {{ detail_card.content_card_class }}">
     {% include "includes/ui/detail_card_header.html" with header=detail_card.header %}
 
     {% include "includes/ui/detail_panels.html" with detail_panels=detail_card.panels %}
