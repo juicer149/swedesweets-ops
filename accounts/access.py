@@ -3,7 +3,7 @@ from __future__ import annotations
 from accounts.roles import Capability
 
 
-PUBLIC_VIEWS = frozenset(
+AUTH_EXEMPT_VIEWS = frozenset(
     {
         "login",
         "logout",

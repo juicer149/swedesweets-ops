@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from django.urls import reverse
 
-from accounts.policies import PUBLIC_VIEWS, VIEW_CAPABILITIES
+from accounts.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from accounts.roles import (
     AccountRole,
     CUSTOMER_SPEC,
@@ -180,11 +180,11 @@ def test_every_policy_view_can_be_reversed():
         assert _url_for_view_name(view_name)
 
 
-def test_public_views_are_not_also_protected():
+def test_auth_exempt_views_are_not_also_protected():
     protected_view_names = set(VIEW_CAPABILITIES)
-    public_view_names = set(PUBLIC_VIEWS)
+    auth_exempt_view_names = set(AUTH_EXEMPT_VIEWS)
 
-    assert protected_view_names.isdisjoint(public_view_names)
+    assert protected_view_names.isdisjoint(auth_exempt_view_names)
 
 
 def test_role_specs_cover_expected_policy_shape():

@@ -169,15 +169,25 @@ VIEW_CAPABILITIES = {
 }
 ```
 
-Public/auth views are listed explicitly in `accounts/access.py`:
+Auth-exempt views are listed explicitly in `accounts/access.py`:
 
 ```python
-PUBLIC_VIEWS = {
+AUTH_EXEMPT_VIEWS = {
     "login",
     "logout",
     "password_reset",
 }
 ```
+These views are allowed through the custom login/access middleware because
+Django auth either needs them before login or enforces its own access rules.
+
+Auth-exempt does not always mean public. For example, password_change is
+auth-exempt from the custom middleware, but Django still requires an
+authenticated user.
+
+Any resolved view that is not listed in aggregated VIEW_CAPABILITIES or
+AUTH_EXEMPT_VIEWS is denied by default.
+
 
 The central policy module aggregates app declarations:
 
@@ -186,7 +196,7 @@ accounts/policies.py
 ```
 
 Any resolved view that is not listed in aggregated `VIEW_CAPABILITIES` or
-`PUBLIC_VIEWS` is denied by default.
+`AUTH_EXEMPT_VIEWS` is denied by default.
 
 Request access works like this:
 
@@ -518,6 +528,38 @@ The test suite currently covers:
 * Dashboard access and role-aware UI builders
 
 ## Deployment notes
+
+## Email
+
+Local development can use Django's console email backend. In that mode password
+reset emails are printed to the server logs.
+
+Production email requires real SMTP settings from the mail provider.
+
+Temporary internal/demo setup:
+
+```env
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+DEFAULT_FROM_EMAIL=SwedeSweets <info@swedesweets.se>
+SERVER_EMAIL=SwedeSweets <info@swedesweets.se>
+```
+
+Production SMTP setup:
+
+```env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+DEFAULT_FROM_EMAIL=SwedeSweets <info@swedesweets.se>
+SERVER_EMAIL=SwedeSweets <info@swedesweets.se>
+EMAIL_HOST=<smtp-host>
+EMAIL_PORT=587
+EMAIL_HOST_USER=info@swedesweets.se
+EMAIL_HOST_PASSWORD=<smtp-or-app-password>
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+EMAIL_TIMEOUT=10
+```
+Do not deploy placeholder SMTP values such as smtp.your-provider.com or
+your-smtp-password.
 
 This project is configured for Railway deployment.
 

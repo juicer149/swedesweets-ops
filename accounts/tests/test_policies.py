@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from django.urls import URLPattern, URLResolver, get_resolver
 
-from accounts.policies import PUBLIC_VIEWS, VIEW_CAPABILITIES
+from accounts.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from accounts.roles import Capability
 
 
@@ -66,7 +66,7 @@ def test_all_policy_capabilities_are_declared_capabilities():
 @pytest.mark.django_db
 def test_all_policy_view_names_exist_in_urlconf():
     view_names = _project_view_names()
-    policy_view_names = set(VIEW_CAPABILITIES) | set(PUBLIC_VIEWS)
+    policy_view_names = set(VIEW_CAPABILITIES) | set(AUTH_EXEMPT_VIEWS)
 
     missing_view_names = policy_view_names - view_names
 
@@ -76,7 +76,7 @@ def test_all_policy_view_names_exist_in_urlconf():
 @pytest.mark.django_db
 def test_all_project_views_have_access_policy():
     view_names = _project_view_names()
-    policy_view_names = set(VIEW_CAPABILITIES) | set(PUBLIC_VIEWS)
+    policy_view_names = set(VIEW_CAPABILITIES) | set(AUTH_EXEMPT_VIEWS)
 
     views_without_policy = view_names - policy_view_names
 

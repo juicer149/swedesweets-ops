@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.urls import resolve
 
-from accounts.policies import PUBLIC_VIEWS
+from accounts.policies import AUTH_EXEMPT_VIEWS
 
 
 class LoginRequiredMiddleware:
@@ -14,9 +14,11 @@ class LoginRequiredMiddleware:
 
     Admin keeps its own login flow. Static and media files are ignored.
 
-    Some Django auth views must remain reachable before login. Those are
-    declared as PUBLIC_VIEWS in the accounts access policy and checked here by
-    resolved view name.
+    Django auth views such as login and password reset must be reachable before
+    login. Those view names are declared in accounts.policies.AUTH_EXEMPT_VIEWS.
+
+    Auth-exempt does not necessarily mean public. Some exempt views, such as
+    password_change, still enforce login through Django's built-in auth view.
     """
 
     def __init__(self, get_response):
@@ -29,7 +31,7 @@ class LoginRequiredMiddleware:
         if self._is_exempt_path(request.path_info):
             return self.get_response(request)
 
-        if self._is_public_view(request.path_info):
+        if self._is_auth_exempt_view(request.path_info):
             return self.get_response(request)
 
         return redirect_to_login(
@@ -55,13 +57,13 @@ class LoginRequiredMiddleware:
         )
 
     @staticmethod
-    def _is_public_view(path: str) -> bool:
+    def _is_auth_exempt_view(path: str) -> bool:
         try:
             resolver_match = resolve(path)
         except Exception:
             return False
 
-        return resolver_match.view_name in PUBLIC_VIEWS
+        return resolver_match.view_name in AUTH_EXEMPT_VIEWS
 
     @staticmethod
     def _path_from_url(url: str) -> str:

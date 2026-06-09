@@ -136,10 +136,18 @@ VIEW_CAPABILITIES = {
 }
 ```
 
-Public/auth views are declared in `accounts/access.py`:
+Auth-exempt views are declared in `accounts/access.py`.
+
+These views are allowed through the custom login/access middleware because
+Django's built-in auth views own their own access flow, or because the view must
+be reachable before login.
+
+Auth-exempt does not always mean public. For example, `password_change` is
+auth-exempt from the custom middleware, but Django still requires an
+authenticated user.
 
 ```python
-PUBLIC_VIEWS = frozenset(
+AUTH_EXEMPT_VIEWS = frozenset(
     {
         "login",
         "logout",
@@ -335,10 +343,10 @@ dashboard actions/queues
 6. Add UI links/actions only where appropriate.
 7. Run tests.
 
-If a view is intentionally public, add it to `PUBLIC_VIEWS` instead.
+If a view is intentionally auth-exempt, add it to `AUTH_EXEMPT_VIEWS` instead.
 
 Protected views missing from both aggregated `VIEW_CAPABILITIES` and
-`PUBLIC_VIEWS` are denied by default.
+`AUTH_EXEMPT_VIEWS` are denied by default.
 
 ## App access module convention
 
@@ -375,7 +383,7 @@ accounts/roles.py
   Capability, RoleSpec and AccountRole.
 
 accounts/policies.py
-  Aggregated VIEW_CAPABILITIES and PUBLIC_VIEWS.
+  Aggregated VIEW_CAPABILITIES and AUTH_EXEMPT_VIEWS.
 
 accounts/middleware.py
   ViewCapabilityMiddleware enforcement.

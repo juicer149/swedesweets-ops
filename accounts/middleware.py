@@ -7,8 +7,8 @@ from django.core.exceptions import PermissionDenied
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role
 from accounts.policies import (
+    AUTH_EXEMPT_VIEWS,
     EXEMPT_PATH_PREFIXES,
-    PUBLIC_VIEWS,
     VIEW_CAPABILITIES,
 )
 from accounts.roles import get_role_spec
@@ -52,11 +52,14 @@ class ViewCapabilityMiddleware:
     Rules:
 
         - exempt paths are ignored
-        - public views are allowed
+        - auth-exempt views are allowed through this middleware
         - protected views require a capability
         - views missing from policy are denied
         - missing or false capabilities are denied
         - anonymous users are redirected to login for protected views
+
+    Auth-exempt does not always mean public. Some Django auth views, such as
+    password_change, enforce their own login requirement.
     """
 
     def __init__(self, get_response):
@@ -78,7 +81,7 @@ class ViewCapabilityMiddleware:
 
         view_name = resolver_match.view_name
 
-        if view_name in PUBLIC_VIEWS:
+        if view_name in AUTH_EXEMPT_VIEWS:
             return None
 
         required_capability = VIEW_CAPABILITIES.get(view_name)

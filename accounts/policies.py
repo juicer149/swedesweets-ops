@@ -9,13 +9,13 @@ Each app declares the access policy for the views it owns in its own
 access.py module. This module aggregates those declarations into the policy map
 used by ViewCapabilityMiddleware.
 
-Views are denied by default unless listed here or marked public.
+Views are denied by default unless listed here or marked auth-exempt.
 """
 
 from __future__ import annotations
 
 from accounts.access import (
-    PUBLIC_VIEWS,
+    AUTH_EXEMPT_VIEWS as ACCOUNT_AUTH_EXEMPT_VIEWS,
     VIEW_CAPABILITIES as ACCOUNT_VIEW_CAPABILITIES,
 )
 from customers.access import VIEW_CAPABILITIES as CUSTOMER_VIEW_CAPABILITIES
@@ -23,6 +23,9 @@ from dashboard.access import VIEW_CAPABILITIES as DASHBOARD_VIEW_CAPABILITIES
 from inventory.access import VIEW_CAPABILITIES as INVENTORY_VIEW_CAPABILITIES
 from orders.access import VIEW_CAPABILITIES as ORDER_VIEW_CAPABILITIES
 from products.access import VIEW_CAPABILITIES as PRODUCT_VIEW_CAPABILITIES
+
+
+AUTH_EXEMPT_VIEWS = ACCOUNT_AUTH_EXEMPT_VIEWS
 
 
 VIEW_CAPABILITIES = {
