@@ -107,3 +107,96 @@ class InternalAccountCreateForm(forms.Form):
             self.add_error("password1", error)
 
         return cleaned_data
+
+
+class InternalAccountEditForm(forms.Form):
+    email = forms.EmailField(
+        max_length=254,
+        label="Email",
+        error_messages={
+            "required": "Enter an email address.",
+            "invalid": "Enter a valid email address.",
+            "max_length": "Email address must be at most 254 characters.",
+        },
+        widget=forms.EmailInput(
+            attrs={
+                "autocomplete": "email",
+            }
+        ),
+    )
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label="First name",
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "given-name",
+            }
+        ),
+    )
+
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label="Last name",
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "family-name",
+            }
+        ),
+    )
+
+    access_level = forms.ChoiceField(
+        choices=INTERNAL_ACCOUNT_ACCESS_LEVEL_CHOICES,
+        label="Access level",
+        help_text=(
+            "Restricted staff can work with orders and inventory. "
+            "Full staff can manage operations and accounts."
+        ),
+        error_messages={
+            "required": "Choose an access level.",
+            "invalid_choice": "Choose a valid access level.",
+        },
+        widget=forms.RadioSelect(
+            attrs={
+                "class": "radio-chip-group",
+            }
+        ),
+    )
+
+    is_active = forms.BooleanField(
+        required=False,
+        label="Account status",
+        help_text=(
+            "Inactive users cannot log in. Existing audit history is kept."
+        ),
+        widget=forms.CheckboxInput(
+            attrs={
+                "class": "product-tag-toggle__input",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        set_form_field_layout(
+            self,
+            full=("email", "access_level"),
+            half=("first_name", "last_name", "is_active"),
+        )
+
+        self.fields["is_active"].tag_toggle = True
+        self.fields["is_active"].tag_toggle_class = "product-tag-toggle"
+        self.fields["is_active"].tag_toggle_icon = "check"
+        self.fields["is_active"].tag_toggle_label = "Active"
+
+    def clean_email(self) -> str:
+        return self.cleaned_data["email"].strip().lower()
+
+    def clean_first_name(self) -> str:
+        return self.cleaned_data["first_name"].strip()
+
+    def clean_last_name(self) -> str:
+        return self.cleaned_data["last_name"].strip()

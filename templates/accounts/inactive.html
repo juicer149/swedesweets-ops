@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Account inactive | SwedeSweets{% endblock %}
+
+{% block content %}
+<section class="content-section content-section--detail">
+  <article class="content-card content-card--wide">
+    <header class="content-card__header">
+      <div>
+        <p class="eyebrow">Account access</p>
+        <h2>Account inactive</h2>
+      </div>
+
+      <span class="status-text status-text--warning">
+        Inactive
+      </span>
+    </header>
+
+    <div class="detail-panel-body">
+      <p>
+        This account can no longer access SwedeSweets Ops.
+      </p>
+
+      <p>
+        If you believe this is a mistake, contact your SwedeSweets manager or
+        the person responsible for account access.
+      </p>
+    </div>
+
+    <footer class="detail-actions">
+      <a class="button button--secondary" href="{% url 'login' %}">
+        Back to login
+      </a>
+    </footer>
+  </article>
+</section>
+{% endblock %}

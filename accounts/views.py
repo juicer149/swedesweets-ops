@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from accounts.detail_viewmodels import (
@@ -10,8 +10,11 @@ from accounts.detail_viewmodels import (
     build_self_account_detail_context,
 )
 from accounts.errors import AccountCreationError
-from accounts.form_viewmodels import build_create_internal_account_form_context
-from accounts.forms import InternalAccountCreateForm
+from accounts.form_viewmodels import (
+    build_create_internal_account_form_context,
+    build_edit_internal_account_form_context,
+)
+from accounts.forms import InternalAccountCreateForm, InternalAccountEditForm
 from accounts.list_viewmodels import (
     ACCOUNT_VIEW_CUSTOMER,
     ACCOUNT_VIEW_INTERNAL,
@@ -20,6 +23,7 @@ from accounts.list_viewmodels import (
     build_account_view_links,
     build_accounts_page_header,
 )
+from accounts.models import StaffAccount
 from accounts.selectors import (
     get_account_row,
     get_account_user,
@@ -28,7 +32,7 @@ from accounts.selectors import (
     list_internal_account_rows,
     list_unlinked_account_rows,
 )
-from accounts.services import create_internal_account
+from accounts.services import create_internal_account, update_internal_account
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
@@ -78,6 +82,10 @@ ACCOUNT_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
     sort_title_id="accounts-sort-title",
     sort_select_id="mobile-account-sort",
 )
+
+
+def inactive(request):
+    return render(request, "accounts/inactive.html")
 
 
 @login_required
@@ -147,6 +155,7 @@ def detail(request, user_id: int):
         account=account,
         activity_rows=activity_rows,
         cancel_url=_accounts_internal_url(),
+        edit_url=_internal_account_edit_url(account_user),
     ).as_dict()
 
     return render(request, "accounts/detail.html", context)
@@ -182,6 +191,52 @@ def create_internal(request):
     return render(request, "accounts/account_form.html", context)
 
 
+@login_required
+def edit_internal(request, user_id: int):
+    staff_account = get_object_or_404(
+        StaffAccount.objects.select_related("user"),
+        user_id=user_id,
+    )
+    account_user = staff_account.user
+
+    if request.method == "POST":
+        form = InternalAccountEditForm(request.POST)
+
+        if form.is_valid():
+            try:
+                update_internal_account(
+                    user=account_user,
+                    email=form.cleaned_data["email"],
+                    first_name=form.cleaned_data["first_name"],
+                    last_name=form.cleaned_data["last_name"],
+                    access_level=form.cleaned_data["access_level"],
+                    is_active=form.cleaned_data["is_active"],
+                    actor=request.user,
+                )
+            except AccountCreationError as error:
+                form.add_error(None, str(error))
+            else:
+                messages.success(
+                    request,
+                    f"Internal account {form.cleaned_data['email']} updated.",
+                )
+                return redirect(
+                    "accounts:detail",
+                    user_id=account_user.pk,
+                )
+    else:
+        form = InternalAccountEditForm(
+            initial=_internal_account_edit_initial(staff_account)
+        )
+
+    context = build_edit_internal_account_form_context(
+        form=form,
+        user_id=account_user.pk,
+    ).as_dict()
+
+    return render(request, "accounts/account_form.html", context)
+
+
 def _list_account_rows(
     *,
     active_view: str,
@@ -201,6 +256,28 @@ def _active_account_view(value: str) -> str:
         return value
 
     return ACCOUNT_DEFAULT_VIEW
+
+
+def _internal_account_edit_initial(staff_account: StaffAccount) -> dict:
+    user = staff_account.user
+
+    return {
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "access_level": staff_account.access_level,
+        "is_active": user.is_active,
+    }
+
+
+def _internal_account_edit_url(user) -> str:
+    if not hasattr(user, "staff_account"):
+        return ""
+
+    return reverse(
+        "accounts:edit_internal",
+        kwargs={"user_id": user.pk},
+    )
 
 
 def _accounts_internal_url() -> str:

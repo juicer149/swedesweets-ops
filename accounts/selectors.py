@@ -328,7 +328,7 @@ def _order_activity_rows(*, user) -> list[AccountActivityRow]:
             target_label=f"Order #{order.pk}",
             target_href=reverse("orders:detail", kwargs={"order_id": order.pk}),
             meta=order.customer_name,
-            tone="success",
+            tone="warning",
         )
         for order in orders
         if order.placed_at is not None

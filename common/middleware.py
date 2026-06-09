@@ -3,7 +3,9 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.contrib.auth import logout
 from django.contrib.auth.views import redirect_to_login
+from django.shortcuts import redirect
 from django.urls import resolve
 
 from accounts.policies import AUTH_EXEMPT_VIEWS
@@ -19,6 +21,10 @@ class LoginRequiredMiddleware:
 
     Auth-exempt does not necessarily mean public. Some exempt views, such as
     password_change, still enforce login through Django's built-in auth view.
+
+    Inactive authenticated sessions are logged out and sent to the inactive
+    account information page. This covers the case where an account is disabled
+    after the user already has a valid session.
     """
 
     def __init__(self, get_response):
@@ -26,6 +32,10 @@ class LoginRequiredMiddleware:
 
     def __call__(self, request):
         if request.user.is_authenticated:
+            if not request.user.is_active:
+                logout(request)
+                return redirect("accounts:inactive")
+
             return self.get_response(request)
 
         if self._is_exempt_path(request.path_info):

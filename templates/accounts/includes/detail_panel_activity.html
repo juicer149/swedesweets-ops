@@ -39,6 +39,53 @@
       Select an activity row to open the affected record.
     </p>
   </div>
+
+  <div class="mobile-card-list account-activity-card-list">
+    {% for row in activity_rows %}
+      <a
+        class="mobile-card mobile-card--{{ row.tone }} mobile-card--clickable mobile-card--account-activity"
+        href="{{ row.target_href }}"
+        aria-label="Open {{ row.target_label }}"
+      >
+        <div class="ui-card__row">
+          <div class="ui-card__cell ui-card__cell--left">
+            <span class="ui-card-id">
+              {{ row.event_label }}
+            </span>
+          </div>
+
+          <div class="ui-card__cell ui-card__cell--right">
+            <span class="ui-card-location">
+              <span class="ui-card-label">Time</span>
+              {{ row.occurred_at_label }}
+            </span>
+          </div>
+        </div>
+
+        <div class="ui-card__row">
+          <div class="ui-card__cell ui-card__cell--left">
+            <span class="ui-card-title">
+              {{ row.target_label }}
+            </span>
+          </div>
+        </div>
+
+        <div class="ui-card__row">
+          <div class="ui-card__cell ui-card__cell--left">
+            <span class="ui-card-muted">
+              {{ row.meta }}
+            </span>
+          </div>
+        </div>
+
+        <footer class="ui-card__footer ui-card__footer--hint">
+          <span class="ui-card__hint">
+            Open affected record
+          </span>
+        </footer>
+      </a>
+    {% endfor %}
+  </div>
 {% else %}
   <p class="form-help">
     This account has no recorded activity yet.

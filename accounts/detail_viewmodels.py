@@ -42,6 +42,7 @@ def build_account_detail_context(
     account: AccountListRow,
     activity_rows: tuple[AccountActivityRow, ...],
     cancel_url: str,
+    edit_url: str = "",
 ) -> AccountDetailContext:
     return AccountDetailContext(
         account=account,
@@ -56,7 +57,9 @@ def build_account_detail_context(
                 account=account,
                 activity_count=len(activity_rows),
             ),
-            secondary_actions=_build_manager_account_secondary_actions(),
+            secondary_actions=_build_manager_account_secondary_actions(
+                edit_url=edit_url,
+            ),
         ),
         title=account.email,
         description="",
@@ -130,13 +133,28 @@ def _build_account_detail_panels(
     )
 
 
-def _build_manager_account_secondary_actions() -> tuple[DetailAction, ...]:
-    return (
+def _build_manager_account_secondary_actions(
+    *,
+    edit_url: str,
+) -> tuple[DetailAction, ...]:
+    actions: list[DetailAction] = []
+
+    if edit_url:
+        actions.append(
+            build_secondary_get_action(
+                label="Edit account",
+                href=edit_url,
+            )
+        )
+
+    actions.append(
         build_secondary_get_action(
             label="Back to accounts",
             href=_accounts_internal_url(),
-        ),
+        )
     )
+
+    return tuple(actions)
 
 
 def _build_self_account_secondary_actions() -> tuple[DetailAction, ...]:

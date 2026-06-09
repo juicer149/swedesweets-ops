@@ -63,6 +63,63 @@ def create_internal_account(
 
 
 @transaction.atomic
+def update_internal_account(
+    *,
+    user,
+    email: str,
+    first_name: str,
+    last_name: str,
+    access_level: str | StaffAccessLevel,
+    is_active: bool,
+    actor,
+):
+    try:
+        normalized_access_level = StaffAccessLevel(access_level)
+    except ValueError as error:
+        raise AccountCreationError("Choose a valid staff access level.") from error
+
+    email = _normalize_email(email)
+
+    staff_account = StaffAccount.objects.select_for_update().get(user=user)
+    user = User.objects.select_for_update().get(pk=user.pk)
+
+    _validate_internal_account_update(
+        user=user,
+        staff_account=staff_account,
+        email=email,
+        access_level=normalized_access_level,
+        is_active=is_active,
+        actor=actor,
+    )
+
+    user.username = email
+    user.email = email
+    user.first_name = first_name.strip()
+    user.last_name = last_name.strip()
+    user.is_active = is_active
+
+    staff_account.access_level = normalized_access_level
+
+    try:
+        user.save(
+            update_fields=[
+                "username",
+                "email",
+                "first_name",
+                "last_name",
+                "is_active",
+            ]
+        )
+        staff_account.save(update_fields=["access_level"])
+    except IntegrityError as error:
+        raise AccountCreationError(
+            "An account with this email already exists."
+        ) from error
+
+    return user
+
+
+@transaction.atomic
 def create_customer_account(
     *,
     email: str,
@@ -143,6 +200,34 @@ def _create_user_for_account(
         ) from error
 
     return user
+
+
+def _validate_internal_account_update(
+    *,
+    user,
+    staff_account: StaffAccount,
+    email: str,
+    access_level: StaffAccessLevel,
+    is_active: bool,
+    actor,
+) -> None:
+    if User.objects.filter(username=email).exclude(pk=user.pk).exists():
+        raise AccountCreationError("An account with this email already exists.")
+
+    if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+        raise AccountCreationError("An account with this email already exists.")
+
+    if user.pk == actor.pk and not is_active:
+        raise AccountCreationError("You cannot deactivate your own account.")
+
+    if (
+        user.pk == actor.pk
+        and staff_account.access_level == StaffAccessLevel.FULL
+        and access_level == StaffAccessLevel.RESTRICTED
+    ):
+        raise AccountCreationError(
+            "You cannot remove your own account management access."
+        )
 
 
 def _normalize_email(value: str) -> str:

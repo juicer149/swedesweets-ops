@@ -190,6 +190,62 @@
 }
 
 
+/* =============================================================================
+   Account activity mobile cards
+   ============================================================================= */
+
+.mobile-card--account-activity {
+  gap: var(--space-2);
+}
+
+.mobile-card--account-activity .ui-card__row {
+  gap: var(--space-2);
+}
+
+.mobile-card--account-activity .ui-card-title {
+  font-size: var(--font-size-18);
+}
+
+.mobile-card--account-activity .ui-card-muted {
+  overflow-wrap: anywhere;
+}
+
+.mobile-card--account-activity .ui-card__cell--right .ui-card-location,
+.mobile-card--account-activity .ui-card__cell--right .ui-card-label {
+  text-align: right;
+}
+
+/* =============================================================================
+   Account activity mobile tone accents
+   ============================================================================= */
+
+.mobile-card--account-activity.mobile-card--warning {
+  background: rgb(var(--color-status-warning) / 0.075);
+  border: 1px solid rgb(var(--color-status-warning) / 0.32);
+}
+
+.mobile-card--account-activity.mobile-card--info {
+  background: rgb(var(--color-status-info) / 0.07);
+  border: 1px solid rgb(var(--color-status-info) / 0.32);
+}
+
+.mobile-card--account-activity.mobile-card--success {
+  background: rgb(var(--color-status-success) / 0.07);
+  border: 1px solid rgb(var(--color-status-success) / 0.28);
+}
+
+.mobile-card--account-activity.mobile-card--danger {
+  background: rgb(var(--color-status-danger) / 0.08);
+  border: 1px solid rgb(var(--color-status-danger) / 0.30);
+}
+
+.mobile-card--account-activity.mobile-card--muted,
+.mobile-card--account-activity.mobile-card--neutral {
+  background: rgb(var(--color-status-muted) / 0.07);
+  border: 1px solid rgb(var(--color-status-muted) / 0.22);
+}
+
+
 @media (max-width: 760px) {
   .account-detail-card {
     width: min(100%, calc(100vw - (2 * var(--space-3))));

@@ -5,7 +5,7 @@ from typing import Any
 
 from django.urls import reverse
 
-from accounts.forms import InternalAccountCreateForm
+from accounts.forms import InternalAccountCreateForm, InternalAccountEditForm
 from accounts.list_viewmodels import ACCOUNT_VIEW_INTERNAL
 
 
@@ -15,7 +15,7 @@ class AccountFormContext:
     description: str
     submit_label: str
     cancel_url: str
-    form: InternalAccountCreateForm
+    form: InternalAccountCreateForm | InternalAccountEditForm
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -39,6 +39,22 @@ def build_create_internal_account_form_context(
         ),
         submit_label="Create account",
         cancel_url=_accounts_internal_url(),
+    )
+
+
+def build_edit_internal_account_form_context(
+    *,
+    form: InternalAccountEditForm,
+    user_id: int,
+) -> AccountFormContext:
+    return AccountFormContext(
+        form=form,
+        title="Edit internal account",
+        description=(
+            "Update account email, staff access level and login status."
+        ),
+        submit_label="Save account",
+        cancel_url=reverse("accounts:detail", kwargs={"user_id": user_id}),
     )
 
 
