@@ -4,6 +4,9 @@ Account roles and capabilities.
 This module answers:
 
     What can this account role do?
+
+It also owns stable role metadata such as labels and sort ranks. It should not
+know about Django User objects, StaffAccount rows or CustomerMembership rows.
 """
 
 from __future__ import annotations
@@ -56,8 +59,8 @@ class StaffAccessLevel(StrEnum):
     @classmethod
     def choices(cls) -> list[tuple[str, str]]:
         return [
-            (cls.RESTRICTED, "Restricted"),
-            (cls.FULL, "Full"),
+            (cls.RESTRICTED.value, "Restricted"),
+            (cls.FULL.value, "Full"),
         ]
 
 
@@ -169,5 +172,49 @@ ROLE_SPECS: dict[AccountRole, RoleSpec] = {
 }
 
 
+ROLE_LABELS: dict[AccountRole, str] = {
+    AccountRole.OWNER: "Owner",
+    AccountRole.FULL_STAFF: "Full staff",
+    AccountRole.RESTRICTED_STAFF: "Restricted staff",
+    AccountRole.CUSTOMER: "Customer",
+    AccountRole.UNKNOWN: "Unlinked",
+}
+
+
+ROLE_RANKS: dict[AccountRole, int] = {
+    AccountRole.OWNER: 0,
+    AccountRole.FULL_STAFF: 1,
+    AccountRole.RESTRICTED_STAFF: 2,
+    AccountRole.CUSTOMER: 3,
+    AccountRole.UNKNOWN: 4,
+}
+
+
+STAFF_ACCESS_LEVEL_LABELS: dict[StaffAccessLevel, str] = {
+    StaffAccessLevel.RESTRICTED: "Restricted access",
+    StaffAccessLevel.FULL: "Full access",
+}
+
+
 def get_role_spec(role: AccountRole) -> RoleSpec:
     return ROLE_SPECS[role]
+
+
+def get_role_label(role: AccountRole) -> str:
+    return ROLE_LABELS.get(role, "Unknown")
+
+
+def get_role_rank(role: AccountRole) -> int:
+    return ROLE_RANKS.get(role, 99)
+
+
+def get_staff_access_level_label(access_level: StaffAccessLevel | str) -> str:
+    try:
+        normalized_access_level = StaffAccessLevel(access_level)
+    except ValueError:
+        return "Unknown access"
+
+    return STAFF_ACCESS_LEVEL_LABELS.get(
+        normalized_access_level,
+        "Unknown access",
+    )
