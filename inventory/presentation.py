@@ -13,10 +13,6 @@ from inventory.selectors import AvailableStockRow, BatchListRow
 
 INVENTORY_CARD_CLASS = "mobile-card mobile-card--inventory"
 
-INVENTORY_VIEW_BATCHES_LABEL = "Batches"
-INVENTORY_VIEW_PRODUCTS_LABEL = "Product stock"
-
-
 INVENTORY_STATUS_ACTIVE = StatusPresentation(
     value=InventoryBatch.Status.ACTIVE,
     label="Active",

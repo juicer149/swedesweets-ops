@@ -19,8 +19,6 @@ from inventory.low_stock import LOW_STOCK_THRESHOLD
 from inventory.models import InventoryBatch
 from inventory.presentation import (
     INVENTORY_CARD_CLASS,
-    INVENTORY_VIEW_BATCHES_LABEL,
-    INVENTORY_VIEW_PRODUCTS_LABEL,
     batch_quantity_label,
     batch_status_presentation,
     expiry_css_class,
@@ -35,9 +33,6 @@ from inventory.selectors import (
     BatchListRow,
     ExpiryInfo,
 )
-
-
-CARD_DETAILS_HINT = "Open details →"
 
 
 @dataclass(frozen=True)
@@ -98,13 +93,13 @@ def build_inventory_view_links(
     return (
         InventoryViewLink(
             key="batches",
-            label=INVENTORY_VIEW_BATCHES_LABEL,
+            label="Batches",
             href=batches_href,
             is_active=active_view == "batches",
         ),
         InventoryViewLink(
             key="products",
-            label=INVENTORY_VIEW_PRODUCTS_LABEL,
+            label="Product stock",
             href=products_href,
             is_active=active_view == "products",
         ),
@@ -271,7 +266,7 @@ def _batch_card(
         css_class=INVENTORY_CARD_CLASS,
         href=detail_href,
         aria_label=f"View batch {row.batch.batch_id}",
-        footer_hint=CARD_DETAILS_HINT,
+        footer_hint="Open details →",
         rows=(
             UiCardRow(
                 left=UiText(
@@ -342,7 +337,7 @@ def _product_stock_card(
         css_class=INVENTORY_CARD_CLASS,
         href=product_href,
         aria_label=f"View product {row.product.display_name}",
-        footer_hint=CARD_DETAILS_HINT,
+        footer_hint="Open details →",
         rows=(
             UiCardRow(
                 left=UiText(

@@ -8,9 +8,6 @@ from inventory.presentation import (
 )
 
 
-CARD_DETAILS_HINT = "Open details →"
-
-
 def build_batch_mini_card(
     *,
     batch: InventoryBatch,
@@ -23,7 +20,7 @@ def build_batch_mini_card(
         css_class=INVENTORY_CARD_CLASS,
         href=batch_href,
         aria_label=f"View batch {batch.batch_id}",
-        footer_hint=CARD_DETAILS_HINT,
+        footer_hint="Open details →",
         rows=(
             UiCardRow(
                 left=UiText(
