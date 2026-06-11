@@ -32,7 +32,7 @@ from products.mini_cards import build_product_quantity_mini_card
 from products.models import Product
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class OrderContentLine:
     product: Product
     product_detail_href: str
@@ -43,7 +43,7 @@ class OrderContentLine:
     card: UiCard
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class OrderDetailContext:
     order: Order
     content_lines: list[OrderContentLine]

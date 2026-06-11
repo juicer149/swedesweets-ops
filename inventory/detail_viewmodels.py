@@ -27,7 +27,7 @@ from orders.models import Allocation
 from products.mini_cards import build_product_mini_card
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BatchStockSummary:
     physical_quantity: int
     physical_quantity_label: str
@@ -70,7 +70,7 @@ class BatchStockSummary:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BatchUsageRow:
     order_id: int
     order_href: str
@@ -83,7 +83,7 @@ class BatchUsageRow:
     card: UiCard
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BatchDetailContext:
     batch: InventoryBatch
     stock: BatchStockSummary

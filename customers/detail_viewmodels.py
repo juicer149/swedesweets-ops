@@ -25,7 +25,7 @@ from orders.presentation import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class CustomerOrderRow:
     order_id: int
     order_href: str
@@ -39,7 +39,7 @@ class CustomerOrderRow:
     card: UiCard
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class CustomerDetailContext:
     customer: Customer
     order_summary: CustomerOrderSummary

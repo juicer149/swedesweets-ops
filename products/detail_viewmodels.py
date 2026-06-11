@@ -30,7 +30,7 @@ from products.presentation import (
 from products.selectors import ProductDeliveredDemandSummary
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductStockSummary:
     product: Product
     batch_count: int
@@ -79,7 +79,7 @@ class ProductStockSummary:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductProfileSummary:
     description: str
     ingredients: str
@@ -107,7 +107,7 @@ class ProductProfileSummary:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductBatchRow:
     batch_id: str
     batch_href: str
@@ -119,7 +119,7 @@ class ProductBatchRow:
     card: UiCard
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductDemandSummary:
     product: Product
     delivered_order_count: int
@@ -166,7 +166,7 @@ class ProductDemandSummary:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductDetailContext:
     product: Product
     profile: ProductProfileSummary
