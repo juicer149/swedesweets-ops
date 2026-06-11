@@ -11,16 +11,6 @@ from common.ui import (
 from products.models import Product
 
 
-PRODUCT_DETAIL_PANEL_ICON = "lollipop"
-PRODUCT_INVENTORY_PANEL_ICON = "inventory"
-PRODUCT_DEMAND_PANEL_ICON = "truck"
-
-PRODUCT_EDIT_LABEL = "Edit product"
-
-PRODUCT_TAG_ICON_CLASS = "product-tag__icon"
-PRODUCT_TAG_VEGAN_CLASS = "product-tag product-tag--vegan"
-
-
 @dataclass(frozen=True)
 class ProductTagPresentation:
     label: str
@@ -51,9 +41,9 @@ PRODUCT_STATUS_INACTIVE = StatusPresentation(
 
 PRODUCT_TAG_VEGAN = ProductTagPresentation(
     label="Vegan",
-    css_class=PRODUCT_TAG_VEGAN_CLASS,
+    css_class="product-tag product-tag--vegan",
     icon="leaf",
-    icon_class=PRODUCT_TAG_ICON_CLASS,
+    icon_class="product-tag__icon",
 )
 
 

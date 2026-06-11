@@ -20,9 +20,6 @@ from products.presentation import (
 )
 
 
-CARD_DETAILS_HINT = "Open details →"
-
-
 @dataclass(frozen=True)
 class ProductPageRow:
     product: Product
@@ -69,7 +66,7 @@ def _product_card(
         css_class="mobile-card mobile-card--product",
         href=detail_href,
         aria_label=f"View product {product.display_name}",
-        footer_hint=CARD_DETAILS_HINT,
+        footer_hint="Open details →",
         rows=_product_card_rows(
             product=product,
             status=status,

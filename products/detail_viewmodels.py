@@ -20,10 +20,6 @@ from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow
 from products.models import Product
 from products.presentation import (
-    PRODUCT_DEMAND_PANEL_ICON,
-    PRODUCT_DETAIL_PANEL_ICON,
-    PRODUCT_EDIT_LABEL,
-    PRODUCT_INVENTORY_PANEL_ICON,
     ProductTagPresentation,
     product_attribute_tags,
     product_detail_card_class,
@@ -267,7 +263,7 @@ def can_edit_product(
 
 def build_edit_product_action(*, href: str) -> DetailAction:
     return build_secondary_get_action(
-        label=PRODUCT_EDIT_LABEL,
+        label="Edit product",
         href=href,
     )
 
@@ -294,7 +290,7 @@ def _build_product_detail_panels(
             label="Product",
             summary=product.display_name,
             body_template="products/includes/detail_panel_product.html",
-            icon=PRODUCT_DETAIL_PANEL_ICON,
+            icon="lollipop",
             is_active=True,
         ),
         DetailPanel(
@@ -305,7 +301,7 @@ def _build_product_detail_panels(
                 quantity=stock.available_quantity,
             ),
             body_template="products/includes/detail_panel_inventory.html",
-            icon=PRODUCT_INVENTORY_PANEL_ICON,
+            icon="inventory",
         ),
         DetailPanel(
             key="demand",
@@ -315,7 +311,7 @@ def _build_product_detail_panels(
                 quantity=demand.delivered_quantity,
             ),
             body_template="products/includes/detail_panel_demand.html",
-            icon=PRODUCT_DEMAND_PANEL_ICON,
+            icon="truck",
         ),
     )
 
