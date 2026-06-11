@@ -21,12 +21,6 @@ ACCOUNT_VIEW_INTERNAL = "internal"
 ACCOUNT_VIEW_CUSTOMER = "customer"
 ACCOUNT_VIEW_UNLINKED = "unlinked"
 
-ACCOUNT_VIEW_INTERNAL_LABEL = "Internal"
-ACCOUNT_VIEW_CUSTOMER_LABEL = "Customer"
-ACCOUNT_VIEW_UNLINKED_LABEL = "Unlinked"
-
-ACCOUNT_CARD_CLASS = "mobile-card mobile-card--account"
-
 
 @dataclass(frozen=True, slots=True)
 class AccountViewLink:
@@ -66,19 +60,19 @@ def build_account_view_links(
     return (
         AccountViewLink(
             key=ACCOUNT_VIEW_INTERNAL,
-            label=ACCOUNT_VIEW_INTERNAL_LABEL,
+            label="Internal",
             href=_accounts_view_href(ACCOUNT_VIEW_INTERNAL),
             is_active=active_view == ACCOUNT_VIEW_INTERNAL,
         ),
         AccountViewLink(
             key=ACCOUNT_VIEW_CUSTOMER,
-            label=ACCOUNT_VIEW_CUSTOMER_LABEL,
+            label="Customer",
             href=_accounts_view_href(ACCOUNT_VIEW_CUSTOMER),
             is_active=active_view == ACCOUNT_VIEW_CUSTOMER,
         ),
         AccountViewLink(
             key=ACCOUNT_VIEW_UNLINKED,
-            label=ACCOUNT_VIEW_UNLINKED_LABEL,
+            label="Unlinked",
             href=_accounts_view_href(ACCOUNT_VIEW_UNLINKED),
             is_active=active_view == ACCOUNT_VIEW_UNLINKED,
         ),
@@ -130,7 +124,7 @@ def _account_card(
 ) -> UiCard:
     return UiCard(
         tone=TONE_NEUTRAL if row.is_active else TONE_MUTED,
-        css_class=ACCOUNT_CARD_CLASS,
+        css_class="mobile-card mobile-card--account",
         href=detail_href,
         aria_label=f"View account {row.email}",
         rows=(

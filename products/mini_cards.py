@@ -5,9 +5,6 @@ from products.models import Product
 from products.presentation import product_status_presentation
 
 
-PRODUCT_DETAILS_HINT = "Open product →"
-
-
 def build_product_mini_card(
     *,
     product: Product,
@@ -26,7 +23,7 @@ def build_product_mini_card(
         css_class="mobile-card mobile-card--relation mobile-card--product-mini",
         href=product_href,
         aria_label=f"View product {product.display_name}",
-        footer_hint=PRODUCT_DETAILS_HINT,
+        footer_hint="Open product →",
         rows=(
             UiCardRow(
                 left=UiText(
@@ -67,7 +64,7 @@ def build_product_quantity_mini_card(
         css_class="mobile-card mobile-card--relation mobile-card--product-mini",
         href=product_href,
         aria_label=f"View product {product.display_name}",
-        footer_hint=PRODUCT_DETAILS_HINT,
+        footer_hint="Open product →",
         rows=(
             UiCardRow(
                 left=UiText(
