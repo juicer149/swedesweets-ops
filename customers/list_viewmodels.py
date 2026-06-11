@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from django.urls import reverse
 
 from common.ui import (
+    TONE_NEUTRAL,
     UiCard,
     UiCardRow,
     UiText,
@@ -13,14 +14,6 @@ from common.ui import (
     tel_link,
 )
 from customers.models import Customer
-from customers.presentation import (
-    CUSTOMER_ACTION_LABEL,
-    CUSTOMER_CARD_CLASS,
-    CUSTOMER_CONTACT_CLASS,
-    EXTERNAL_LINK_REL,
-    EXTERNAL_LINK_TARGET,
-    customer_card_tone,
-)
 
 
 @dataclass(frozen=True)
@@ -56,8 +49,8 @@ def _customer_card(
     detail_href: str,
 ) -> UiCard:
     return UiCard(
-        tone=customer_card_tone(),
-        css_class=CUSTOMER_CARD_CLASS,
+        tone=TONE_NEUTRAL,
+        css_class="mobile-card mobile-card--customer",
         rows=_customer_card_rows(customer),
         action=_customer_detail_action(detail_href),
     )
@@ -86,7 +79,7 @@ def _customer_email_row(customer: Customer) -> UiCardRow:
         left=UiText(
             text=customer.email,
             href=mailto_link(customer.email),
-            css_class=CUSTOMER_CONTACT_CLASS,
+            css_class="ui-card-contact",
             icon="mail",
             icon_class="ui-card-contact__icon",
         ),
@@ -98,7 +91,7 @@ def _customer_phone_row(customer: Customer) -> UiCardRow:
         left=UiText(
             text=customer.phone_number,
             href=tel_link(customer.phone_number),
-            css_class=CUSTOMER_CONTACT_CLASS,
+            css_class="ui-card-contact",
             icon="phone",
             icon_class="ui-card-contact__icon",
         ),
@@ -110,9 +103,9 @@ def _customer_address_row(customer: Customer) -> UiCardRow:
         left=UiText(
             text=customer.address,
             href=maps_search_link(customer.address),
-            css_class=CUSTOMER_CONTACT_CLASS,
-            target=EXTERNAL_LINK_TARGET,
-            rel=EXTERNAL_LINK_REL,
+            css_class="ui-card-contact",
+            target="_blank",
+            rel="noopener noreferrer",
             icon="map-pin",
             icon_class="ui-card-contact__icon",
         ),
@@ -121,7 +114,7 @@ def _customer_address_row(customer: Customer) -> UiCardRow:
 
 def _customer_detail_action(detail_href: str) -> UiText:
     return UiText(
-        text=CUSTOMER_ACTION_LABEL,
+        text="View customer →",
         href=detail_href,
         css_class="ui-card-link",
     )

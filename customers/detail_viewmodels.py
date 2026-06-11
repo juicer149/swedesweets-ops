@@ -25,9 +25,6 @@ from orders.presentation import (
 )
 
 
-CUSTOMER_EDIT_LABEL = "Edit customer"
-
-
 @dataclass(frozen=True)
 class CustomerOrderRow:
     order_id: int
@@ -120,7 +117,7 @@ def can_edit_customer(
 
 def build_edit_customer_action(*, href: str) -> DetailAction:
     return build_secondary_get_action(
-        label=CUSTOMER_EDIT_LABEL,
+        label="Edit customer",
         href=href,
     )
 
