@@ -16,7 +16,7 @@ from common.ui import (
 from customers.models import Customer
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class CustomerPageRow:
     customer: Customer
     detail_href: str
@@ -25,12 +25,12 @@ class CustomerPageRow:
 
 def build_customer_page_rows(customers: list[Customer]) -> list[CustomerPageRow]:
     return [
-        build_customer_page_row(customer)
+        _build_customer_page_row(customer)
         for customer in customers
     ]
 
 
-def build_customer_page_row(customer: Customer) -> CustomerPageRow:
+def _build_customer_page_row(customer: Customer) -> CustomerPageRow:
     detail_href = _customer_detail_href(customer)
 
     return CustomerPageRow(

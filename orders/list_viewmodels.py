@@ -23,7 +23,7 @@ from orders.presentation import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class OrderPageRow:
     order: Order
     status: StatusPresentation
@@ -46,7 +46,7 @@ def build_order_page_rows(
     role_spec: RoleSpec,
 ) -> list[OrderPageRow]:
     return [
-        build_order_page_row(
+        _build_order_page_row(
             order=order,
             role_spec=role_spec,
         )
@@ -54,7 +54,7 @@ def build_order_page_rows(
     ]
 
 
-def build_order_page_row(
+def _build_order_page_row(
     *,
     order: Order,
     role_spec: RoleSpec,
@@ -200,7 +200,7 @@ def _build_action(
                 "button button--card-action "
                 "button--tone-deliver "
                 "button--with-icon"
-            ),
+                ),
             icon="truck",
             icon_class="button__icon",
         )

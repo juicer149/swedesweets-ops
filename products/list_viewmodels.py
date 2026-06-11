@@ -20,7 +20,7 @@ from products.presentation import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductPageRow:
     product: Product
     status: StatusPresentation
@@ -32,12 +32,12 @@ class ProductPageRow:
 
 def build_product_page_rows(products: list[Product]) -> list[ProductPageRow]:
     return [
-        build_product_page_row(product)
+        _build_product_page_row(product)
         for product in products
     ]
 
 
-def build_product_page_row(product: Product) -> ProductPageRow:
+def _build_product_page_row(product: Product) -> ProductPageRow:
     status = product_status_presentation(product)
     detail_href = _product_detail_href(product)
 

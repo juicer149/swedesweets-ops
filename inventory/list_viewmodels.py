@@ -35,7 +35,7 @@ from inventory.selectors import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class InventoryViewLink:
     key: str
     label: str
@@ -43,7 +43,7 @@ class InventoryViewLink:
     is_active: bool
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BatchPageRow:
     batch: InventoryBatch
     expiry: ExpiryInfo
@@ -54,7 +54,7 @@ class BatchPageRow:
     card: UiCard
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProductStockPageRow:
     product_id: int
     product_href: str
@@ -108,12 +108,12 @@ def build_inventory_view_links(
 
 def build_batch_page_rows(rows: list[BatchListRow]) -> list[BatchPageRow]:
     return [
-        build_batch_page_row(row)
+        _build_batch_page_row(row)
         for row in rows
     ]
 
 
-def build_batch_page_row(row: BatchListRow) -> BatchPageRow:
+def _build_batch_page_row(row: BatchListRow) -> BatchPageRow:
     status = batch_status_presentation(row.batch)
     quantity = build_quantity_info(
         quantity=row.batch.quantity,
@@ -142,12 +142,12 @@ def build_product_stock_page_rows(
     rows: list[AvailableStockRow],
 ) -> list[ProductStockPageRow]:
     return [
-        build_product_stock_page_row(row)
+        _build_product_stock_page_row(row)
         for row in rows
     ]
 
 
-def build_product_stock_page_row(row: AvailableStockRow) -> ProductStockPageRow:
+def _build_product_stock_page_row(row: AvailableStockRow) -> ProductStockPageRow:
     status = product_stock_status_presentation(row)
     product_href = reverse("products:detail", kwargs={"product_pk": row.product_id})
     available_quantity_info = build_quantity_info(
