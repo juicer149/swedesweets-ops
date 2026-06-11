@@ -20,28 +20,6 @@ from orders.models import Order
 
 ORDER_CARD_BASE_CLASS = "mobile-card mobile-card--order"
 
-ORDER_ID_CLASS = "ui-card-order-id"
-ORDER_TITLE_CLASS = "ui-card-order-customer"
-ORDER_META_CLASS = "ui-card-order-meta"
-ORDER_ADDRESS_CLASS = "ui-card-order-address"
-ORDER_ADDRESS_LINK_CLASS = "ui-card-order-address ui-card-order-address--link"
-
-ORDER_BUTTON_PACK_CLASS = (
-    "button button--card-action button--tone-pack button--with-icon"
-)
-ORDER_BUTTON_DELIVER_CLASS = (
-    "button button--card-action button--tone-deliver button--with-icon"
-)
-
-ORDER_DETAILS_LABEL = "See details →"
-ORDER_PACK_LABEL = "Pack order"
-ORDER_DELIVER_LABEL = "Mark delivered"
-
-ORDER_CONFIRM_PACK_LABEL = "Confirm packed"
-ORDER_CONFIRM_DELIVER_LABEL = "Confirm delivered"
-ORDER_EDIT_LABEL = "Edit order"
-ORDER_CANCEL_LABEL = "Cancel order"
-
 ORDER_CARD_CLASS_BY_STATUS = {
     Order.Status.DRAFT: "mobile-card--order-draft",
     Order.Status.PLACED: "mobile-card--order-placed",
@@ -96,11 +74,15 @@ ORDER_DETAIL_CARD_CLASS_BY_STATUS = {
 }
 
 
-def order_card_class(status: str) -> str:
+def _order_card_class(status: str) -> str:
     return ORDER_CARD_CLASS_BY_STATUS.get(
         status,
         ORDER_CARD_CLASS_BY_STATUS[Order.Status.DRAFT],
     )
+
+
+def order_card_css_class(status: str) -> str:
+    return f"{ORDER_CARD_BASE_CLASS} {_order_card_class(status)}"
 
 
 def order_mobile_status_class(status: str) -> str:

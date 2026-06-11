@@ -3,15 +3,11 @@ from __future__ import annotations
 from common.ui import UiCard, UiCardRow, UiText
 from orders.models import Order
 from orders.presentation import (
-    ORDER_CARD_BASE_CLASS,
     build_order_status_presentation,
     contents_summary,
-    order_card_class,
+    order_card_css_class,
     order_lifecycle_label,
 )
-
-
-CARD_DETAILS_HINT = "Open order →"
 
 
 def build_order_usage_mini_card(
@@ -28,10 +24,10 @@ def build_order_usage_mini_card(
 
     return UiCard(
         tone=status.tone,
-        css_class=_order_card_class(order),
+        css_class=order_card_css_class(order.status),
         href=order_href,
         aria_label=f"View order #{order.pk}",
-        footer_hint=CARD_DETAILS_HINT,
+        footer_hint="Open order →",
         rows=(
             _order_header_row(order=order, status=status),
             UiCardRow(
@@ -68,10 +64,10 @@ def build_customer_order_mini_card(
 
     return UiCard(
         tone=status.tone,
-        css_class=_order_card_class(order),
+        css_class=order_card_css_class(order.status),
         href=order_href,
         aria_label=f"View order #{order.pk}",
-        footer_hint=CARD_DETAILS_HINT,
+        footer_hint="Open order →",
         rows=(
             _order_header_row(order=order, status=status),
             UiCardRow(
@@ -110,8 +106,6 @@ def _order_header_row(
     )
 
 
-def _order_card_class(order: Order) -> str:
-    return f"{ORDER_CARD_BASE_CLASS} {order_card_class(order.status)}"
 
 
 def _order_product_count(order: Order) -> int:

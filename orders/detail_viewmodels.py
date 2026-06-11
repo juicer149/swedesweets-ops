@@ -21,12 +21,6 @@ from common.ui import UiCard
 from orders.datatypes import PickLine
 from orders.models import Order, OrderLine
 from orders.presentation import (
-    ORDER_CANCEL_LABEL,
-    ORDER_CONFIRM_DELIVER_LABEL,
-    ORDER_CONFIRM_PACK_LABEL,
-    ORDER_DELIVER_LABEL,
-    ORDER_EDIT_LABEL,
-    ORDER_PACK_LABEL,
     contents_summary,
     maps_directions_href,
     order_detail_card_class,
@@ -249,7 +243,7 @@ def can_cancel_order(
 
 def build_go_to_pack_action(*, href: str) -> DetailAction:
     return DetailAction(
-        label=ORDER_PACK_LABEL,
+        label="Pack order",
         href=href,
         icon="box",
         method=ACTION_METHOD_GET,
@@ -259,7 +253,7 @@ def build_go_to_pack_action(*, href: str) -> DetailAction:
 
 def build_go_to_deliver_action(*, href: str) -> DetailAction:
     return DetailAction(
-        label=ORDER_DELIVER_LABEL,
+        label="Mark delivered",
         href=href,
         icon="truck",
         method=ACTION_METHOD_GET,
@@ -269,7 +263,7 @@ def build_go_to_deliver_action(*, href: str) -> DetailAction:
 
 def build_pack_action(*, is_disabled: bool = False) -> DetailAction:
     return DetailAction(
-        label=ORDER_CONFIRM_PACK_LABEL,
+        label="Confirm packed",
         icon="box",
         method=ACTION_METHOD_POST,
         tone=ACTION_TONE_PACK,
@@ -280,7 +274,7 @@ def build_pack_action(*, is_disabled: bool = False) -> DetailAction:
 
 def build_deliver_action() -> DetailAction:
     return DetailAction(
-        label=ORDER_CONFIRM_DELIVER_LABEL,
+        label="Confirm delivered",
         icon="truck",
         method=ACTION_METHOD_POST,
         tone=ACTION_TONE_DELIVER,
@@ -289,14 +283,14 @@ def build_deliver_action() -> DetailAction:
 
 def build_edit_order_action(*, href: str) -> DetailAction:
     return build_secondary_get_action(
-        label=ORDER_EDIT_LABEL,
+        label="Edit order",
         href=href,
     )
 
 
 def build_cancel_order_action(*, href: str) -> DetailAction:
     return build_danger_get_action(
-        label=ORDER_CANCEL_LABEL,
+        label="Cancel order",
         href=href,
         icon="x",
     )

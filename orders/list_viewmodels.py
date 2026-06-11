@@ -14,21 +14,10 @@ from common.ui import (
 )
 from orders.models import Order
 from orders.presentation import (
-    ORDER_ADDRESS_CLASS,
-    ORDER_ADDRESS_LINK_CLASS,
-    ORDER_BUTTON_DELIVER_CLASS,
-    ORDER_BUTTON_PACK_CLASS,
-    ORDER_CARD_BASE_CLASS,
-    ORDER_DELIVER_LABEL,
-    ORDER_DETAILS_LABEL,
-    ORDER_ID_CLASS,
-    ORDER_META_CLASS,
-    ORDER_PACK_LABEL,
-    ORDER_TITLE_CLASS,
     build_order_status_presentation,
     maps_directions_href,
     order_action_link_class,
-    order_card_class,
+    order_card_css_class,
     order_lifecycle_label,
     order_quantity_label,
 )
@@ -114,7 +103,7 @@ def _build_order_card(
 ) -> UiCard:
     return UiCard(
         tone=status.tone,
-        css_class=f"{ORDER_CARD_BASE_CLASS} {order_card_class(order.status)}",
+        css_class=order_card_css_class(order.status),
         rows=(
             _build_header_row(order, status),
             _build_customer_row(order),
@@ -133,7 +122,7 @@ def _build_header_row(order: Order, status: StatusPresentation) -> UiCardRow:
     return UiCardRow(
         left=UiText(
             text=f"#{order.pk}",
-            css_class=ORDER_ID_CLASS,
+            css_class="ui-card-order-id",
         ),
         right=status.text,
     )
@@ -143,7 +132,7 @@ def _build_customer_row(order: Order) -> UiCardRow:
     return UiCardRow(
         center=UiText(
             text=order.customer_name,
-            css_class=ORDER_TITLE_CLASS,
+            css_class="ui-card-order-customer",
         ),
     )
 
@@ -152,7 +141,7 @@ def _build_meta_row(order: Order) -> UiCardRow:
     return UiCardRow(
         center=UiText(
             text=f"{order_lifecycle_label(order)} · {order_quantity_label(order)}",
-            css_class=ORDER_META_CLASS,
+            css_class="ui-card-order-meta",
         ),
     )
 
@@ -163,7 +152,7 @@ def _build_address_row(order: Order) -> UiCardRow:
             center=UiText(
                 text=order.customer_address,
                 href=maps_directions_href(order.customer_address),
-                css_class=ORDER_ADDRESS_LINK_CLASS,
+                css_class="ui-card-order-address ui-card-order-address--link",
                 target="_blank",
                 rel="noopener noreferrer",
                 aria_label=f"Open directions to {order.customer_address}",
@@ -173,7 +162,7 @@ def _build_address_row(order: Order) -> UiCardRow:
     return UiCardRow(
         center=UiText(
             text=order.customer_address,
-            css_class=ORDER_ADDRESS_CLASS,
+            css_class="ui-card-order-address",
         ),
     )
 
@@ -189,9 +178,13 @@ def _build_action(
         and role_spec.allows(Capability.PACK_ORDERS)
     ):
         return UiText(
-            text=ORDER_PACK_LABEL,
+            text="Pack order",
             href=_pack_order_href(order),
-            css_class=ORDER_BUTTON_PACK_CLASS,
+            css_class=(
+                "button button--card-action "
+                "button--tone-pack "
+                "button--with-icon"
+                ),
             icon="box",
             icon_class="button__icon",
         )
@@ -201,15 +194,19 @@ def _build_action(
         and role_spec.allows(Capability.DELIVER_ORDERS)
     ):
         return UiText(
-            text=ORDER_DELIVER_LABEL,
+            text="Mark delivered",
             href=_deliver_order_href(order),
-            css_class=ORDER_BUTTON_DELIVER_CLASS,
+            css_class=(
+                "button button--card-action "
+                "button--tone-deliver "
+                "button--with-icon"
+            ),
             icon="truck",
             icon_class="button__icon",
         )
 
     return UiText(
-        text=ORDER_DETAILS_LABEL,
+        text="See details →",
         href=detail_href,
         css_class=order_action_link_class(order.status),
     )
