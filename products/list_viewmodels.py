@@ -10,6 +10,9 @@ from common.ui import (
     UiCardRow,
     UiText,
 )
+from accounts.roles import Capability, RoleSpec
+from common.page_header import PageHeader, PageHeaderAction
+from common.table_controls import QuickJumpOption, QuickJumpSearch
 from products.models import Product
 from products.presentation import (
     ProductTagPresentation,
@@ -28,6 +31,28 @@ class ProductPageRow:
     weight_label: str
     unit_label: str
     card: UiCard
+
+
+def build_products_page_header(*, role_spec: RoleSpec) -> PageHeader:
+    return PageHeader(
+        title="Products",
+        title_id="products-title",
+        action=_build_add_product_header_action(role_spec=role_spec),
+    )
+
+
+def _build_add_product_header_action(
+    *,
+    role_spec: RoleSpec,
+) -> PageHeaderAction | None:
+    if not role_spec.allows(Capability.CREATE_PRODUCTS):
+        return None
+
+    return PageHeaderAction(
+        label="Add product",
+        href=reverse("products:create"),
+        aria_label="Add a new product",
+    )
 
 
 def build_product_page_rows(products: list[Product]) -> list[ProductPageRow]:
@@ -52,6 +77,25 @@ def _build_product_page_row(product: Product) -> ProductPageRow:
             status=status,
             detail_href=detail_href,
         ),
+    )
+
+
+def build_product_quick_jump_search(
+    rows: list[ProductPageRow],
+) -> QuickJumpSearch:
+    return QuickJumpSearch(
+        title="Find",
+        title_id="products-quick-jump-title",
+        select_id="products-quick-jump",
+        placeholder="Search by code, brand, or name",
+        aria_label="Find product",
+        options=[
+            QuickJumpOption(
+                label=row.product.catalog_label,
+                url=row.detail_href,
+            )
+            for row in rows
+        ],
     )
 
 

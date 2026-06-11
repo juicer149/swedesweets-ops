@@ -5,8 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
-from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
@@ -19,7 +17,10 @@ from customers.forms import (
     build_customer_edit_initial_data,
 )
 from customers.form_viewmodels import build_customer_context_items
-from customers.list_viewmodels import build_customer_page_rows
+from customers.list_viewmodels import (
+    build_customer_page_rows,
+    build_customers_page_header,
+)
 from customers.models import Customer
 from customers.selectors import (
     CUSTOMER_SORTS,
@@ -67,7 +68,7 @@ def index(request):
     )
 
     context = {
-        "page_header": _customers_page_header(role_spec=request.role_spec),
+        "page_header": build_customers_page_header(role_spec=request.role_spec),
         "customer_rows": build_customer_page_rows(customers),
         "filters": [],
         "table_sorts": controls.build_table_sort_links(CUSTOMER_TABLE_SORTS),
@@ -174,28 +175,6 @@ def create(request):
     }
 
     return render(request, "customers/customer_form.html", context)
-
-
-def _customers_page_header(*, role_spec: RoleSpec) -> PageHeader:
-    return PageHeader(
-        title="Customers",
-        title_id="customers-title",
-        action=_build_add_customer_header_action(role_spec=role_spec),
-    )
-
-
-def _build_add_customer_header_action(
-    *,
-    role_spec: RoleSpec,
-) -> PageHeaderAction | None:
-    if not role_spec.allows(Capability.CREATE_CUSTOMERS):
-        return None
-
-    return PageHeaderAction(
-        label="Add customer",
-        href=reverse("customers:create"),
-        aria_label="Add a new customer",
-    )
 
 
 def _get_customer_for_detail(customer_pk: int) -> Customer:

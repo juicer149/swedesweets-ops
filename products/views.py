@@ -5,11 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
-from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import (
-    QuickJumpOption,
-    QuickJumpSearch,
     TableControls,
     TableControlsTemplate,
     TableFilter,
@@ -27,7 +23,11 @@ from products.forms import (
     build_product_edit_initial_data,
 )
 from products.form_viewmodels import build_product_context_items
-from products.list_viewmodels import build_product_page_rows
+from products.list_viewmodels import (
+    build_product_page_rows,
+    build_product_quick_jump_search,
+    build_products_page_header,
+    )
 from products.models import Product
 from products.selectors import (
     DEFAULT_PRODUCT_SORT,
@@ -90,13 +90,13 @@ def index(request):
     )
 
     product_rows = build_product_page_rows(products)
-    quick_jump_search = _build_product_quick_jump_search(product_rows)
+    quick_jump_search = build_product_quick_jump_search(product_rows) 
     filters = controls.build_filter_links(PRODUCT_FILTERS)
     sort_links = controls.build_table_sort_links(PRODUCT_TABLE_SORTS)
     mobile_sort_fields = controls.build_mobile_sort_fields(PRODUCT_TABLE_SORTS)
 
     context = {
-        "page_header": _products_page_header(role_spec=request.role_spec),
+        "page_header": build_products_page_header(role_spec=request.role_spec),
         "product_rows": product_rows,
         "quick_jump_search": quick_jump_search,
         "filters": filters,
@@ -216,28 +216,6 @@ def create(request):
     return render(request, "products/product_form.html", context)
 
 
-def _products_page_header(*, role_spec: RoleSpec) -> PageHeader:
-    return PageHeader(
-        title="Products",
-        title_id="products-title",
-        action=_build_add_product_header_action(role_spec=role_spec),
-    )
-
-
-def _build_add_product_header_action(
-    *,
-    role_spec: RoleSpec,
-) -> PageHeaderAction | None:
-    if not role_spec.allows(Capability.CREATE_PRODUCTS):
-        return None
-
-    return PageHeaderAction(
-        label="Add product",
-        href=reverse("products:create"),
-        aria_label="Add a new product",
-    )
-
-
 def _get_product_for_detail(product_pk: int) -> Product:
     return get_object_or_404(
         Product.objects.select_related("profile"),
@@ -251,20 +229,3 @@ def _get_stock_row_for_product(product: Product):
             return row
 
     return None
-
-
-def _build_product_quick_jump_search(product_rows):
-    return QuickJumpSearch(
-        title="Find",
-        title_id="products-quick-jump-title",
-        select_id="products-quick-jump",
-        placeholder="Search by code, brand, or name",
-        aria_label="Find product",
-        options=[
-            QuickJumpOption(
-                label=row.product.catalog_label,
-                url=row.detail_href,
-            )
-            for row in product_rows
-        ],
-    )

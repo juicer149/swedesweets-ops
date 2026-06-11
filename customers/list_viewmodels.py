@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
+from accounts.roles import Capability, RoleSpec
+from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
     TONE_NEUTRAL,
     UiCard,
@@ -21,6 +23,28 @@ class CustomerPageRow:
     customer: Customer
     detail_href: str
     card: UiCard
+
+
+def build_customers_page_header(*, role_spec: RoleSpec) -> PageHeader:
+    return PageHeader(
+        title="Customers",
+        title_id="customers-title",
+        action=_build_add_customer_header_action(role_spec=role_spec),
+    )
+
+
+def _build_add_customer_header_action(
+    *,
+    role_spec: RoleSpec,
+) -> PageHeaderAction | None:
+    if not role_spec.allows(Capability.CREATE_CUSTOMERS):
+        return None
+
+    return PageHeaderAction(
+        label="Add customer",
+        href=reverse("customers:create"),
+        aria_label="Add a new customer",
+    )
 
 
 def build_customer_page_rows(customers: list[Customer]) -> list[CustomerPageRow]:
