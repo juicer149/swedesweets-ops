@@ -114,7 +114,7 @@ def index(request):
 
 @login_required
 def detail(request, product_pk: int):
-    product = _get_product_for_detail(product_pk)
+    product = _get_product_or_404(product_pk)
 
     context = build_product_detail_context(
         product=product,
@@ -132,7 +132,7 @@ def detail(request, product_pk: int):
 
 @login_required
 def edit(request, product_pk: int):
-    product = _get_product_for_detail(product_pk)
+    product = _get_product_or_404(product_pk)
 
     if request.method == "POST":
         form = ProductEditForm(
@@ -216,7 +216,7 @@ def create(request):
     return render(request, "products/product_form.html", context)
 
 
-def _get_product_for_detail(product_pk: int) -> Product:
+def _get_product_or_404(product_pk: int) -> Product:
     return get_object_or_404(
         Product.objects.select_related("profile"),
         pk=product_pk,

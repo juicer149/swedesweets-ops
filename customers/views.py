@@ -84,7 +84,7 @@ def index(request):
 
 @login_required
 def detail(request, customer_pk: int):
-    customer = _get_customer_for_detail(customer_pk)
+    customer = _get_customer_or_404(customer_pk)
     orders = list(
         list_orders_for_customer(customer=customer)
     )
@@ -102,7 +102,7 @@ def detail(request, customer_pk: int):
 
 @login_required
 def edit(request, customer_pk: int):
-    customer = _get_customer_for_detail(customer_pk)
+    customer = _get_customer_or_404(customer_pk)
 
     if request.method == "POST":
         form = CustomerForm(
@@ -177,7 +177,7 @@ def create(request):
     return render(request, "customers/customer_form.html", context)
 
 
-def _get_customer_for_detail(customer_pk: int) -> Customer:
+def _get_customer_or_404(customer_pk: int) -> Customer:
     return get_object_or_404(
         Customer.objects,
         pk=customer_pk,

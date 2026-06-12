@@ -106,7 +106,7 @@ def index(request):
 
 @login_required
 def detail(request, batch_pk: int):
-    batch = _get_batch_for_detail(batch_pk)
+    batch = _get_batch_or_404(batch_pk)
     allocations = list_batch_allocations(batch=batch)
 
     context = build_batch_detail_context(
@@ -121,7 +121,7 @@ def detail(request, batch_pk: int):
 
 @login_required
 def edit(request, batch_pk: int):
-    batch = _get_batch_for_detail(batch_pk)
+    batch = _get_batch_or_404(batch_pk)
 
     if not can_edit_batch(batch=batch, role_spec=request.role_spec):
         messages.error(
@@ -210,7 +210,7 @@ def create(request):
 
 @login_required
 def close(request, batch_pk: int):
-    batch = _get_batch_for_detail(batch_pk)
+    batch = _get_batch_or_404(batch_pk)
 
     if not can_close_batch(batch=batch, role_spec=request.role_spec):
         messages.error(
@@ -349,7 +349,7 @@ def _active_inventory_view(value: str) -> str:
     return INVENTORY_DEFAULT_VIEW
 
 
-def _get_batch_for_detail(batch_pk: int) -> InventoryBatch:
+def _get_batch_or_404(batch_pk: int) -> InventoryBatch:
     return get_object_or_404(
         InventoryBatch.objects.select_related("product"),
         pk=batch_pk,

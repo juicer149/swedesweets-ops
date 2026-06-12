@@ -165,7 +165,7 @@ def create(request):
 
 @login_required
 def edit(request, order_id: int):
-    order = _get_order_for_detail(order_id)
+    order = _get_order_or_404(order_id)
 
     if not order.can_be_edited:
         messages.error(
@@ -224,7 +224,7 @@ def edit(request, order_id: int):
 
 @login_required
 def cancel(request, order_id: int):
-    order = _get_order_for_detail(order_id)
+    order = _get_order_or_404(order_id)
 
     if not order.can_be_cancelled:
         messages.error(
@@ -276,7 +276,7 @@ def cancel(request, order_id: int):
 
 @login_required
 def pack(request, order_id: int):
-    order = _get_order_for_detail(order_id)
+    order = _get_order_or_404(order_id)
 
     if order.status != Order.Status.PLACED:
         messages.error(
@@ -325,7 +325,7 @@ def pack(request, order_id: int):
 
 @login_required
 def deliver(request, order_id: int):
-    order = _get_order_for_detail(order_id)
+    order = _get_order_or_404(order_id)
 
     if order.status != Order.Status.PACKED:
         messages.error(
@@ -362,7 +362,7 @@ def deliver(request, order_id: int):
 
 @login_required
 def detail(request, order_id: int):
-    order = _get_order_for_detail(order_id)
+    order = _get_order_or_404(order_id)
 
     active_panel = "order" if order.status == Order.Status.CANCELLED else "contents"
 
@@ -386,7 +386,7 @@ def detail(request, order_id: int):
     return render(request, "orders/detail.html", context)
 
 
-def _get_order_for_detail(order_id: int) -> Order:
+def _get_order_or_404(order_id: int) -> Order:
     return get_object_or_404(
         Order.objects
         .select_related(
