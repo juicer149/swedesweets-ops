@@ -83,6 +83,7 @@ PRODUCT_STOCK_TABLE_SORTS = [
 
 INVENTORY_LIST_ANCHOR = "inventory-list"
 INVENTORY_FILTER_QUERY_KEY = "status"
+INVENTORY_VIEW_QUERY_KEY = "view"
 
 INVENTORY_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
     filters_title_id="inventory-filters-title",
@@ -94,7 +95,9 @@ INVENTORY_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 
 @login_required
 def index(request):
-    active_view = _active_inventory_view(request.GET.get("view", ""))
+    active_view = _active_inventory_view(
+        request.GET.get(INVENTORY_VIEW_QUERY_KEY, "")
+    )
 
     if active_view == INVENTORY_VIEW_PRODUCTS:
         context = _build_products_index_context(request)
@@ -295,7 +298,7 @@ def _build_products_index_context(request) -> dict[str, object]:
         default_sort=DEFAULT_PRODUCT_STOCK_SORT,
         filter_query_key=INVENTORY_FILTER_QUERY_KEY,
         extra_query_params={
-            "view": INVENTORY_VIEW_PRODUCTS,
+            INVENTORY_VIEW_QUERY_KEY: INVENTORY_VIEW_PRODUCTS,
         },
     )
 
