@@ -14,6 +14,25 @@ from customers.errors import InvalidCustomerData
 from customers.models import Customer, normalize_customer_email
 
 
+CUSTOMER_EMAIL_EXISTS_MESSAGE = "Customer with email {email} already exists"
+
+
+def _ensure_customer_email_is_available(
+    *,
+    email: str,
+    exclude_customer: Customer | None = None,
+) -> None:
+    customers = Customer.objects.filter(email=email)
+
+    if exclude_customer is not None:
+        customers = customers.exclude(pk=exclude_customer.pk)
+
+    if customers.exists():
+        raise InvalidCustomerData(
+            CUSTOMER_EMAIL_EXISTS_MESSAGE.format(email=email)
+        )
+
+
 @transaction.atomic
 def create_customer(
     *,
@@ -28,11 +47,7 @@ def create_customer(
     """Create a customer with unique normalized email."""
 
     normalized_email = normalize_customer_email(email)
-
-    if Customer.objects.filter(email=normalized_email).exists():
-        raise InvalidCustomerData(
-            f"Customer with email {normalized_email} already exists"
-        )
+    _ensure_customer_email_is_available(email=normalized_email)
 
     try:
         customer = Customer.objects.create(
@@ -45,7 +60,7 @@ def create_customer(
         )
     except IntegrityError as exc:
         raise InvalidCustomerData(
-            f"Customer with email {normalized_email} already exists"
+            CUSTOMER_EMAIL_EXISTS_MESSAGE.format(email=normalized_email)
         ) from exc
 
     customer.mark_as_created(user=user)
@@ -70,17 +85,10 @@ def update_customer(
     customer = Customer.objects.select_for_update().get(pk=customer.pk)
     normalized_email = normalize_customer_email(email)
 
-    email_is_taken = (
-        Customer.objects
-        .filter(email=normalized_email)
-        .exclude(pk=customer.pk)
-        .exists()
+    _ensure_customer_email_is_available(
+        email=normalized_email,
+        exclude_customer=customer,
     )
-
-    if email_is_taken:
-        raise InvalidCustomerData(
-            f"Customer with email {normalized_email} already exists"
-        )
 
     customer.name = name
     customer.email = normalized_email
@@ -102,7 +110,7 @@ def update_customer(
         )
     except IntegrityError as exc:
         raise InvalidCustomerData(
-            f"Customer with email {normalized_email} already exists"
+            CUSTOMER_EMAIL_EXISTS_MESSAGE.format(email=normalized_email)
         ) from exc
 
     customer.mark_as_edited(user=user)
