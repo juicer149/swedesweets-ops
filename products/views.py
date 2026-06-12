@@ -90,18 +90,14 @@ def index(request):
     )
 
     product_rows = build_product_page_rows(products)
-    quick_jump_search = build_product_quick_jump_search(product_rows) 
-    filters = controls.build_filter_links(PRODUCT_FILTERS)
-    sort_links = controls.build_table_sort_links(PRODUCT_TABLE_SORTS)
-    mobile_sort_fields = controls.build_mobile_sort_fields(PRODUCT_TABLE_SORTS)
 
     context = {
         "page_header": build_products_page_header(role_spec=request.role_spec),
         "product_rows": product_rows,
-        "quick_jump_search": quick_jump_search,
-        "filters": filters,
-        "table_sorts": sort_links,
-        "mobile_sort_fields": mobile_sort_fields,
+        "quick_jump_search": build_product_quick_jump_search(product_rows), 
+        "filters": controls.build_filter_links(PRODUCT_FILTERS), 
+        "table_sorts": controls.build_table_sort_links(PRODUCT_TABLE_SORTS), 
+        "mobile_sort_fields": controls.build_mobile_sort_fields(PRODUCT_TABLE_SORTS), 
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": PRODUCT_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": ["number", "weight"],
