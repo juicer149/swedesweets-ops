@@ -22,12 +22,15 @@ from products.forms import (
     ProductForm,
     build_product_edit_initial_data,
 )
-from products.form_viewmodels import build_product_context_items
+from products.form_viewmodels import (
+    build_create_product_form_context,
+    build_edit_product_form_context,
+)
 from products.list_viewmodels import (
     build_product_page_rows,
     build_product_quick_jump_search,
     build_products_page_header,
-    )
+)
 from products.models import Product
 from products.selectors import (
     DEFAULT_PRODUCT_SORT,
@@ -163,15 +166,10 @@ def edit(request, product_pk: int):
             product=product,
         )
 
-    context = {
-        "form": form,
-        "product": product,
-        "product_context_items": build_product_context_items(product),
-        "title": f"Edit - {product.display_name}",
-        "description": "",
-        "submit_label": "Update product",
-        "cancel_url": reverse("products:detail", kwargs={"product_pk": product.pk}),
-    }
+    context = build_edit_product_form_context(
+        form=form,
+        product=product,
+    ).as_dict()
 
     return render(request, "products/product_form.html", context)
 
@@ -199,13 +197,9 @@ def create(request):
     else:
         form = ProductForm()
 
-    context = {
-        "form": form,
-        "title": "Add product",
-        "description": "",
-        "submit_label": "Add product",
-        "cancel_url": reverse("products:index"),
-    }
+    context = build_create_product_form_context(
+        form=form,
+    ).as_dict()
 
     return render(request, "products/product_form.html", context)
 
