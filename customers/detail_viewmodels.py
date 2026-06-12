@@ -14,15 +14,17 @@ from common.detail_cards import (
 )
 from common.ui import StatusPresentation, UiCard
 from customers.models import Customer
-from orders.selectors import CustomerOrderSummary
 from orders.mini_cards import build_customer_order_mini_card
 from orders.models import Order
 from orders.presentation import (
     build_order_status_presentation,
     contents_summary,
     order_lifecycle_label,
+    order_product_count,
+    order_total_quantity,
     quantity_label,
 )
+from orders.selectors import CustomerOrderSummary
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,8 +164,8 @@ def _build_order_rows(orders: list[Order]) -> list[CustomerOrderRow]:
     for order in orders:
         order_href = reverse("orders:detail", kwargs={"order_id": order.id})
         status = build_order_status_presentation(order.status)
-        product_count = _order_product_count(order)
-        quantity = _order_total_quantity(order)
+        product_count = order_product_count(order)
+        quantity = order_total_quantity(order)
         contents_label = contents_summary(
             product_count=product_count,
             total_quantity=quantity,
@@ -183,40 +185,11 @@ def _build_order_rows(orders: list[Order]) -> list[CustomerOrderRow]:
                 card=build_customer_order_mini_card(
                     order=order,
                     order_href=order_href,
-                    quantity=quantity,
                 ),
             )
         )
 
     return rows
-
-
-def _order_product_count(order: Order) -> int:
-    annotated_count = getattr(order, "product_count", None)
-
-    if annotated_count is not None:
-        return int(annotated_count)
-
-    prefetched_lines = getattr(order, "_prefetched_objects_cache", {}).get("lines")
-
-    if prefetched_lines is not None:
-        return len(prefetched_lines)
-
-    return order.lines.count()
-
-
-def _order_total_quantity(order: Order) -> int:
-    annotated_quantity = getattr(order, "total_quantity", None)
-
-    if annotated_quantity is not None:
-        return int(annotated_quantity)
-
-    prefetched_lines = getattr(order, "_prefetched_objects_cache", {}).get("lines")
-
-    if prefetched_lines is not None:
-        return sum(line.quantity_in_units for line in prefetched_lines)
-
-    return sum(line.quantity_in_units for line in order.lines.all())
 
 
 def _order_summary_label(total_orders: int) -> str:

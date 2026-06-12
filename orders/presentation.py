@@ -178,8 +178,40 @@ def quantity_label(quantity: int) -> str:
     return "1 unit" if quantity == 1 else f"{quantity} units"
 
 
+def order_product_count(order: Order) -> int:
+    annotated_count = getattr(order, "product_count", None)
+
+    if annotated_count is not None:
+        return int(annotated_count)
+
+    prefetched_lines = getattr(
+        order, "_prefetched_objects_cache", {}
+    ).get("lines")
+
+    if prefetched_lines is not None:
+        return len(prefetched_lines)
+
+    return order.lines.count()
+
+
+def order_total_quantity(order: Order) -> int:
+    annotated_quantity = getattr(order, "total_quantity", None)
+
+    if annotated_quantity is not None:
+        return int(annotated_quantity)
+
+    prefetched_lines = getattr(
+        order, "_prefetched_objects_cache", {}
+    ).get("lines")
+
+    if prefetched_lines is not None:
+        return sum(line.quantity_in_units for line in prefetched_lines)
+
+    return sum(line.quantity_in_units for line in order.lines.all())
+
+
 def order_quantity_label(order: Order) -> str:
-    return quantity_label(getattr(order, "total_quantity", 0))
+    return quantity_label(order_total_quantity(order))
 
 
 def contents_summary(*, product_count: int, total_quantity: int) -> str:

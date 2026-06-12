@@ -7,6 +7,8 @@ from orders.presentation import (
     contents_summary,
     order_card_css_class,
     order_lifecycle_label,
+    order_product_count,
+    order_total_quantity,
 )
 
 
@@ -56,7 +58,6 @@ def build_customer_order_mini_card(
     *,
     order: Order,
     order_href: str,
-    quantity: int,
 ) -> UiCard:
     """Build a compact order card for customer detail views."""
 
@@ -73,11 +74,8 @@ def build_customer_order_mini_card(
             UiCardRow(
                 left=UiText(
                     text=contents_summary(
-                        product_count=_order_product_count(order),
-                        total_quantity=_order_total_quantity(
-                            order=order,
-                            fallback_quantity=quantity,
-                        ),
+                        product_count=order_product_count(order),
+                        total_quantity=order_total_quantity(order),
                     ),
                     css_class="ui-card-title",
                 ),
@@ -104,32 +102,3 @@ def _order_header_row(
         ),
         right=status.text,
     )
-
-
-
-
-def _order_product_count(order: Order) -> int:
-    annotated_count = getattr(order, "product_count", None)
-
-    if annotated_count is not None:
-        return int(annotated_count)
-
-    prefetched_lines = getattr(order, "_prefetched_objects_cache", {}).get("lines")
-
-    if prefetched_lines is not None:
-        return len(prefetched_lines)
-
-    return order.lines.count()
-
-
-def _order_total_quantity(
-    *,
-    order: Order,
-    fallback_quantity: int,
-) -> int:
-    annotated_quantity = getattr(order, "total_quantity", None)
-
-    if annotated_quantity is not None:
-        return int(annotated_quantity)
-
-    return fallback_quantity
