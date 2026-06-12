@@ -14,7 +14,7 @@ from common.detail_cards import (
 )
 from common.ui import StatusPresentation, UiCard
 from customers.models import Customer
-from customers.selectors import CustomerOrderSummary
+from orders.selectors import CustomerOrderSummary
 from orders.mini_cards import build_customer_order_mini_card
 from orders.models import Order
 from orders.presentation import (

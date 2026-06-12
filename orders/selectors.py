@@ -1,42 +1,20 @@
 """
 Order read selectors.
 
-public API:
-    list_orders(
-        *,
-        status: str | None = None,
-        sort: str | None = None,
-    ) -> QuerySet[Order]
-        -> Return orders for the orders list page.
-
-    list_customer_orders(
-        *,
-        customer,
-    ) -> QuerySet[Order]
-        -> Return orders for a customer detail page.
-
-    get_packaging_list(*, order: Order) -> list[PickLine]
-        -> Return reserved allocation lines for packing.
-
-    get_packed_lines(*, order: Order) -> list[PickLine]
-        -> Return consumed allocation lines after packing.
-
-    list_placed_orders_for_dashboard(
-        *,
-        limit: int = 3,
-    ) -> QuerySet[Order]
-        -> Return placed orders for the dashboard overview.
-
-    count_placed_orders() -> int
-        -> Count placed orders.
+This module owns read-side order queries used by order pages, customer detail
+pages, dashboard summaries, and packing workflows.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
 
 from django.db.models import (
     Case,
     Count,
     IntegerField,
+    Max,
     QuerySet,
     Sum,
     Value,
@@ -45,6 +23,7 @@ from django.db.models import (
 from django.db.models.functions import Coalesce
 
 from common.table_tools import normalize_sort
+from customers.models import Customer
 from orders.datatypes import PickLine
 from orders.models import Allocation, Order
 
@@ -63,6 +42,17 @@ ORDER_SORTS: dict[str, tuple[str, ...]] = {
     "quantity": ("total_quantity", "id"),
     "-quantity": ("-total_quantity", "id"),
 }
+
+
+@dataclass(frozen=True, slots=True)
+class CustomerOrderSummary:
+    total_orders: int
+    placed_orders: int
+    packed_orders: int
+    delivered_orders: int
+    cancelled_orders: int
+    last_ordered_at: Any | None
+
 
 def list_orders(
     *,
@@ -102,7 +92,7 @@ def list_orders(
 
 def list_customer_orders(
     *,
-    customer,
+    customer: Customer,
 ) -> QuerySet[Order]:
     """Return orders for a customer detail page.
 
@@ -117,6 +107,38 @@ def list_customer_orders(
             status_rank=_status_rank_expression(),
         )
         .order_by("-created_at", "-id")
+    )
+
+
+def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:
+    """Return order counts and latest order timestamp for a customer."""
+
+    stats = (
+        Order.objects
+        .filter(customer=customer)
+        .aggregate(
+            total_orders=Count("id"),
+            last_ordered_at=Max("created_at"),
+        )
+    )
+
+    orders_by_status = {
+        row["status"]: row["count"]
+        for row in (
+            Order.objects
+            .filter(customer=customer)
+            .values("status")
+            .annotate(count=Count("id"))
+        )
+    }
+
+    return CustomerOrderSummary(
+        total_orders=stats["total_orders"] or 0,
+        placed_orders=orders_by_status.get(Order.Status.PLACED, 0),
+        packed_orders=orders_by_status.get(Order.Status.PACKED, 0),
+        delivered_orders=orders_by_status.get(Order.Status.DELIVERED, 0),
+        cancelled_orders=orders_by_status.get(Order.Status.CANCELLED, 0),
+        last_ordered_at=stats["last_ordered_at"],
     )
 
 

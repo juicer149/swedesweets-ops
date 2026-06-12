@@ -28,11 +28,13 @@ from customers.models import Customer
 from customers.selectors import (
     CUSTOMER_SORTS,
     DEFAULT_CUSTOMER_SORT,
-    get_customer_order_summary,
     list_customers,
 )
 from customers.services import create_customer, update_customer
-from orders.selectors import list_customer_orders as list_orders_for_customer
+from orders.selectors import (
+    get_customer_order_summary,
+    list_customer_orders as list_orders_for_customer,
+)
 
 
 CUSTOMERS_LIST_ANCHOR = "customers-list"
