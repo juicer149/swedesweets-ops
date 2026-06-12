@@ -125,7 +125,6 @@ def index(request):
         "table_controls_template": ACCOUNT_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": [],
         "active_view": active_view,
-        "active_sort": controls.active_sort,
     }
 
     return render(request, "accounts/index.html", context)

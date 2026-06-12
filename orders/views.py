@@ -120,8 +120,6 @@ def index(request):
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": ORDER_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": ["quantity"],
-        "active_status": controls.active_filter,
-        "active_sort": controls.active_sort,
     }
 
     return render(request, "orders/index.html", context)

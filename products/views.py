@@ -101,8 +101,6 @@ def index(request):
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": PRODUCT_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": ["number", "weight"],
-        "active_filter": controls.active_filter,
-        "active_sort": controls.active_sort,
     }
 
     return render(request, "products/index.html", context)

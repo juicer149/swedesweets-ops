@@ -282,8 +282,6 @@ def _build_batches_index_context(request) -> dict[str, object]:
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": INVENTORY_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": ["quantity"],
-        "active_status": controls.active_filter,
-        "active_sort": controls.active_sort,
     }
 
 
@@ -329,8 +327,6 @@ def _build_products_index_context(request) -> dict[str, object]:
             "reserved",
             "available",
         ],
-        "active_status": "",
-        "active_sort": controls.active_sort,
     }
 
 
