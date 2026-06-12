@@ -1,19 +1,8 @@
 """
 Customer domain model.
 
-class Customer
-fields:
-    name, email, phone_number, country, city, address_line
-
-public API:
-    .save(*args, **kwargs)
-        -> Normalize customer fields before saving.
-
-    .country_name -> str
-        -> Return the display name for the stored country code.
-
-    .address -> str
-        -> Return a formatted address for display and map links.
+Customer owns contact and delivery address data, normalizes persisted fields,
+and records basic lifecycle/audit timestamps.
 """
 
 from __future__ import annotations
