@@ -10,13 +10,16 @@ from common.table_controls import (
     TableControlsTemplate,
     TableSortField,
 )
-from customers.detail_viewmodels import build_customer_detail_context
 from customers.errors import InvalidCustomerData
 from customers.forms import (
     CustomerForm,
     build_customer_edit_initial_data,
 )
-from customers.form_viewmodels import build_customer_context_items
+from customers.detail_viewmodels import build_customer_detail_context
+from customers.form_viewmodels import (
+    build_create_customer_form_context,
+    build_edit_customer_form_context,
+)
 from customers.list_viewmodels import (
     build_customer_page_rows,
     build_customers_page_header,
@@ -130,15 +133,10 @@ def edit(request, customer_pk: int):
             customer=customer,
         )
 
-    context = {
-        "form": form,
-        "customer": customer,
-        "customer_context_items": build_customer_context_items(customer),
-        "title": f"Edit - {customer.name}",
-        "description": "",
-        "submit_label": "Update customer",
-        "cancel_url": reverse("customers:detail", kwargs={"customer_pk": customer.pk}),
-    }
+    context = build_edit_customer_form_context(
+        form=form,
+        customer=customer,
+    ).as_dict()
 
     return render(request, "customers/customer_form.html", context)
 
@@ -165,13 +163,9 @@ def create(request):
     else:
         form = CustomerForm()
 
-    context = {
-        "form": form,
-        "title": "Add customer",
-        "description": "",
-        "submit_label": "Add customer",
-        "cancel_url": reverse("customers:index"),
-    }
+    context = build_create_customer_form_context(
+        form= form,
+    ).as_dict()
 
     return render(request, "customers/customer_form.html", context)
 
