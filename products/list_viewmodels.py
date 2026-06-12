@@ -17,7 +17,6 @@ from products.models import Product
 from products.presentation import (
     ProductTagPresentation,
     product_attribute_tags,
-    product_code_label,
     product_manufacturer_label,
     product_status_presentation,
 )
@@ -143,7 +142,7 @@ def _product_header_row(
 ) -> UiCardRow:
     return UiCardRow(
         left=UiText(
-            text=product_code_label(product),
+            text=product.code_label,
             css_class="ui-card-id",
         ),
         right=status.text,

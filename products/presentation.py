@@ -72,13 +72,6 @@ def product_detail_card_class(product: Product) -> str:
     return "content-card--muted"
 
 
-def product_code_label(product: Product) -> str:
-    if product.internal_number is None:
-        return product.sku
-
-    return f"#{product.internal_number}"
-
-
 def product_manufacturer_label(product: Product) -> str:
     if product.manufacturer:
         return product.manufacturer
@@ -93,10 +86,6 @@ def product_brand_label(product: Product) -> str:
     return "—"
 
 
-def product_weight_label(product: Product) -> str:
-    return product.unit_weight_label
-
-
 def product_vegan_label(product: Product) -> str:
     return "Yes" if product.vegan else "No"
 
@@ -108,7 +97,3 @@ def product_attribute_tags(product: Product) -> tuple[ProductTagPresentation, ..
         tags.append(PRODUCT_TAG_VEGAN)
 
     return tuple(tags)
-
-
-def stock_quantity_label(*, product: Product, quantity: int) -> str:
-    return product.stock_quantity_label(quantity)

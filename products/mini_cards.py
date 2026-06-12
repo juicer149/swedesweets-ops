@@ -78,13 +78,9 @@ def build_product_quantity_mini_card(
             ),
             UiCardRow(
                 left=UiText(
-                    text=_product_identity_label(product),
+                    text=f"{product.code_label} • {product.display_name}",
                     css_class="ui-card-title",
                 ),
             ),
         ),
     )
-
-
-def _product_identity_label(product: Product) -> str:
-    return f"{product.code_label} • {product.display_name}"

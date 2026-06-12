@@ -25,7 +25,6 @@ from products.presentation import (
     product_detail_card_class,
     product_detail_status_class,
     product_status_icon,
-    stock_quantity_label,
 )
 from products.selectors import ProductDeliveredDemandSummary
 
@@ -296,20 +295,14 @@ def _build_product_detail_panels(
         DetailPanel(
             key="inventory",
             label="Inventory",
-            summary=stock_quantity_label(
-                product=product,
-                quantity=stock.available_quantity,
-            ),
+            summary=product.stock_quantity_label(stock.available_quantity),
             body_template="products/includes/detail_panel_inventory.html",
             icon="inventory",
         ),
         DetailPanel(
             key="demand",
             label="Demand",
-            summary=stock_quantity_label(
-                product=product,
-                quantity=demand.delivered_quantity,
-            ),
+            summary=product.stock_quantity_label(demand.delivered_quantity),
             body_template="products/includes/detail_panel_demand.html",
             icon="truck",
         ),
