@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import  RoleSpec
+from accounts.roles import RoleSpec
 from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
     StatusPresentation,
@@ -93,7 +93,7 @@ def _build_create_order_header_action(
 
     return PageHeaderAction(
         label="Place order",
-        href=reverse("orders:create"),
+        href=_create_order_href(),
         icon="cart",
         aria_label="Place a new order",
     )
@@ -186,7 +186,7 @@ def _build_action(
                 "button button--card-action "
                 "button--tone-pack "
                 "button--with-icon"
-                ),
+            ),
             icon="box",
             icon_class="button__icon",
         )
@@ -199,7 +199,7 @@ def _build_action(
                 "button button--card-action "
                 "button--tone-deliver "
                 "button--with-icon"
-                ),
+            ),
             icon="truck",
             icon_class="button__icon",
         )
@@ -226,6 +226,14 @@ def _order_detail_href(
     if can_deliver_order(order=order, role_spec=role_spec):
         return _deliver_order_href(order)
 
+    return _order_detail_base_href(order) 
+
+
+def _create_order_href() -> str:
+    return reverse("orders:create")
+
+
+def _order_detail_base_href(order: Order) -> str:
     return reverse("orders:detail", kwargs={"order_id": order.pk})
 
 

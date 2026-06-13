@@ -139,12 +139,12 @@ def build_order_detail_primary_action(
 ) -> DetailAction | None:
     if can_pack_order(order=order, role_spec=role_spec):
         return build_go_to_pack_action(
-            href=reverse("orders:pack", kwargs={"order_id": order.id}),
+            href=order_pack_href(order),
         )
 
     if can_deliver_order(order=order, role_spec=role_spec):
         return build_go_to_deliver_action(
-            href=reverse("orders:deliver", kwargs={"order_id": order.id}),
+            href=order_deliver_href(order),
         )
 
     return None
@@ -159,9 +159,9 @@ def build_order_secondary_actions(
 
     if can_edit_order(order=order, role_spec=role_spec):
         actions.append(
-            build_secondary_get_action( 
+            build_secondary_get_action(
                 label="Edit order",
-                href=reverse("orders:edit", kwargs={"order_id": order.id}),
+                href=order_edit_href(order),
             )
         )
 
@@ -169,7 +169,7 @@ def build_order_secondary_actions(
         actions.append(
             build_danger_get_action(
                 label="Cancel order",
-                href=reverse("orders:cancel", kwargs={"order_id": order.id}),
+                href=order_cancel_href(order),
                 icon="x",
             )
         )
@@ -183,15 +183,15 @@ def build_order_cancel_back_url(
     role_spec: RoleSpec,
 ) -> str:
     if can_edit_order(order=order, role_spec=role_spec):
-        return reverse("orders:edit", kwargs={"order_id": order.id})
+        return order_edit_href(order)
 
     if can_pack_order(order=order, role_spec=role_spec):
-        return reverse("orders:pack", kwargs={"order_id": order.id})
+        return order_pack_href(order)
 
     if can_deliver_order(order=order, role_spec=role_spec):
-        return reverse("orders:deliver", kwargs={"order_id": order.id})
+        return order_deliver_href(order)
 
-    return reverse("orders:detail", kwargs={"order_id": order.id})
+    return order_detail_href(order)
 
 
 def build_post_edit_success_url(
@@ -200,11 +200,9 @@ def build_post_edit_success_url(
     role_spec: RoleSpec,
 ) -> str:
     if can_pack_order(order=order, role_spec=role_spec):
-        # kanske skulle göra dessa till helper funktoner som i list_viewmodels.py?
-        #dvs för alla reverse url's
-        return reverse("orders:pack", kwargs={"order_id": order.id})
+        return order_pack_href(order)
 
-    return reverse("orders:detail", kwargs={"order_id": order.id})
+    return order_detail_href(order)
 
 
 def build_post_pack_success_url(
@@ -213,10 +211,9 @@ def build_post_pack_success_url(
     role_spec: RoleSpec,
 ) -> str:
     if can_deliver_order(order=order, role_spec=role_spec):
-        return reverse("orders:deliver", kwargs={"order_id": order.id})
+        return order_deliver_href(order)
 
-    return reverse("orders:detail", kwargs={"order_id": order.id})
-
+    return order_detail_href(order)
 
 
 def build_go_to_pack_action(*, href: str) -> DetailAction:
@@ -257,7 +254,6 @@ def build_deliver_action() -> DetailAction:
         method=ACTION_METHOD_POST,
         tone=ACTION_TONE_DELIVER,
     )
-
 
 
 def _build_order_header(order: Order) -> DetailHeader:
@@ -318,36 +314,52 @@ def _build_order_detail_panels(
     return tuple(panels)
 
 
-#jag har ju sådana href helpers här redan för andra?
 def order_detail_href(order: Order) -> str:
     return reverse("orders:detail", kwargs={"order_id": order.pk})
+
+
+def order_edit_href(order: Order) -> str:
+    return reverse("orders:edit", kwargs={"order_id": order.pk})
+
+
+def order_cancel_href(order: Order) -> str:
+    return reverse("orders:cancel", kwargs={"order_id": order.pk})
+
+
+def order_pack_href(order: Order) -> str:
+    return reverse("orders:pack", kwargs={"order_id": order.pk})
+
+
+def order_deliver_href(order: Order) -> str:
+    return reverse("orders:deliver", kwargs={"order_id": order.pk})
 
 
 def customer_detail_href(order: Order) -> str:
     return reverse("customers:detail", kwargs={"customer_pk": order.customer_id})
 
 
+def product_detail_href(product_id: int) -> str:
+    return reverse("products:detail", kwargs={"product_pk": product_id})
+
+
 def _build_content_lines(lines: list[OrderLine]) -> list[OrderContentLine]:
     content_lines: list[OrderContentLine] = []
 
     for line in lines:
-        product_detail_href = reverse(
-            "products:detail",
-            kwargs={"product_pk": line.product_id},
-        )
+        line_product_detail_href = product_detail_href(line.product_id)
         quantity_text = line.product.stock_quantity_label(line.quantity_in_units)
 
         content_lines.append(
             OrderContentLine(
                 product=line.product,
-                product_detail_href=product_detail_href,
+                product_detail_href=line_product_detail_href,
                 quantity=line.quantity_in_units,
                 quantity_label=quantity_text,
                 unit=line.get_unit_display(),
                 catalog_label=line.product.catalog_label,
                 card=build_product_quantity_mini_card(
                     product=line.product,
-                    product_href=product_detail_href,
+                    product_href=line_product_detail_href,
                     quantity_label=quantity_text,
                 ),
             )
