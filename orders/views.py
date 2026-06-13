@@ -12,10 +12,8 @@ from common.table_controls import (
     TableSortField,
 )
 from inventory.errors import InvalidStockOperation
-from orders.access import can_cancel_order
 from orders.detail_viewmodels import (
     build_deliver_action,
-    build_order_cancel_back_url,
     build_order_detail_context,
     build_order_detail_primary_action,
     build_order_secondary_actions,
@@ -25,6 +23,7 @@ from orders.detail_viewmodels import (
 )
 from orders.errors import InvalidOrderOperation
 from orders.form_viewmodels import (
+    build_cancel_order_form_context,
     build_create_order_form_context,
     build_edit_order_form_context,
 )
@@ -209,13 +208,8 @@ def edit(request, order_id: int):
     context = build_edit_order_form_context(
         order=order,
         line_formset=line_formset,
+        role_spec=request.role_spec,
     ).as_dict()
-
-    context["cancel_order_url"] = (
-        reverse("orders:cancel", kwargs={"order_id": order.id})
-        if can_cancel_order(order=order, role_spec=request.role_spec)
-        else ""
-    )
 
     return render(request, "orders/order_form.html", context)
 
@@ -254,20 +248,11 @@ def cancel(request, order_id: int):
     else:
         form = OrderCancelForm()
 
-    context = build_order_detail_context(
+    context = build_cancel_order_form_context(
         order=order,
-        title=f"Cancel order #{order.id}",
-        description="",
-        cancel_url=build_order_cancel_back_url(
-            order=order,
-            role_spec=request.role_spec,
-        ),
-        active_panel="order",
-        include_contents=True,
+        form=form,
+        role_spec=request.role_spec,
     ).as_dict()
-
-    context["form"] = form
-    context["submit_label"] = "Cancel order"
 
     return render(request, "orders/cancel.html", context)
 
