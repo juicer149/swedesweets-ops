@@ -12,6 +12,12 @@ from common.table_controls import (
     TableSortField,
 )
 from inventory.errors import InvalidStockOperation
+from orders.access import (
+    can_cancel_order,
+    can_deliver_order,
+    can_edit_order,
+    can_pack_order,
+)
 from orders.detail_viewmodels import (
     build_deliver_action,
     build_order_detail_context,
@@ -164,7 +170,7 @@ def create(request):
 def edit(request, order_id: int):
     order = _get_order_or_404(order_id)
 
-    if not order.can_be_edited:
+    if not can_edit_order(order=order, role_spec=request.role_spec):
         messages.error(
             request,
             f"Order #{order.id} cannot be edited because it is {order.status}.",
@@ -218,7 +224,7 @@ def edit(request, order_id: int):
 def cancel(request, order_id: int):
     order = _get_order_or_404(order_id)
 
-    if not order.can_be_cancelled:
+    if not can_cancel_order(order=order, role_spec=request.role_spec): 
         messages.error(
             request,
             f"Order #{order.id} cannot be cancelled because it is {order.status}.",
@@ -261,7 +267,7 @@ def cancel(request, order_id: int):
 def pack(request, order_id: int):
     order = _get_order_or_404(order_id)
 
-    if order.status != Order.Status.PLACED:
+    if not can_pack_order(order=order, role_spec=request.role_spec): 
         messages.error(
             request,
             f"Order #{order.id} cannot be packed because it is {order.status}.",
@@ -310,7 +316,7 @@ def pack(request, order_id: int):
 def deliver(request, order_id: int):
     order = _get_order_or_404(order_id)
 
-    if order.status != Order.Status.PACKED:
+    if not can_deliver_order(order=order, role_spec=request.role_spec): 
         messages.error(
             request,
             f"Order #{order.id} cannot be delivered because it is {order.status}.",
