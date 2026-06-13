@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from accounts.roles import Capability
+from accounts.roles import Capability, RoleSpec
+from inventory.models import InventoryBatch
 
 
 CAPABILITIES = frozenset(
@@ -21,3 +22,29 @@ VIEW_CAPABILITIES = {
     "inventory:edit": Capability.EDIT_BATCHES,
     "inventory:close": Capability.CLOSE_BATCHES,
 }
+
+
+def can_create_batch(*, role_spec: RoleSpec) -> bool:
+    return role_spec.allows(Capability.CREATE_BATCHES)
+
+
+def can_edit_batch(
+    *,
+    batch: InventoryBatch,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        batch.status != InventoryBatch.Status.CLOSED
+        and role_spec.allows(Capability.EDIT_BATCHES)
+    )
+
+
+def can_close_batch(
+    *,
+    batch: InventoryBatch,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        batch.status != InventoryBatch.Status.CLOSED
+        and role_spec.allows(Capability.CLOSE_BATCHES)
+    )

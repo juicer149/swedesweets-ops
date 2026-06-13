@@ -4,7 +4,8 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import RoleSpec
+from inventory.access import can_create_batch
 from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import QuickJumpOption, QuickJumpSearch
 from common.ui import (
@@ -224,7 +225,7 @@ def _build_add_batch_header_action(
     *,
     role_spec: RoleSpec,
 ) -> PageHeaderAction | None:
-    if not role_spec.allows(Capability.CREATE_BATCHES):
+    if not can_create_batch(role_spec=role_spec):
         return None
 
     return PageHeaderAction(

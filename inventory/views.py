@@ -11,10 +11,9 @@ from common.table_controls import (
     TableFilter,
     TableSortField,
 )
+from inventory.access import can_close_batch, can_edit_batch
 from inventory.detail_viewmodels import (
     build_batch_detail_context,
-    can_close_batch,
-    can_edit_batch,
 )
 from inventory.errors import InvalidStockOperation
 from inventory.forms import (

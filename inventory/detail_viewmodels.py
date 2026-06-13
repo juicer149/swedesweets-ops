@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import RoleSpec
 from common.detail_cards import (
     DetailAction,
     DetailCard,
@@ -15,13 +15,14 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
+from inventory.access import can_close_batch, can_edit_batch
+from inventory.expiry import build_expiry_info
 from inventory.models import InventoryBatch
 from inventory.presentation import (
     batch_detail_card_class,
     batch_detail_status_class,
     batch_status_icon,
 )
-from inventory.selectors import build_expiry_info
 from orders.mini_cards import build_order_usage_mini_card
 from orders.models import Allocation
 from products.mini_cards import build_product_mini_card
@@ -166,55 +167,21 @@ def build_batch_secondary_actions(
 
     if can_edit_batch(batch=batch, role_spec=role_spec):
         actions.append(
-            build_edit_batch_action(
+            build_secondary_get_action(
+                label="Edit batch",
                 href=reverse("inventory:edit", kwargs={"batch_pk": batch.pk}),
             )
         )
 
     if can_close_batch(batch=batch, role_spec=role_spec):
         actions.append(
-            build_close_batch_action(
+            build_danger_get_action(
+                label="Close batch",
                 href=reverse("inventory:close", kwargs={"batch_pk": batch.pk}),
             )
         )
 
     return tuple(actions)
-
-
-def can_edit_batch(
-    *,
-    batch: InventoryBatch,
-    role_spec: RoleSpec,
-) -> bool:
-    return (
-        batch.status != InventoryBatch.Status.CLOSED
-        and role_spec.allows(Capability.EDIT_BATCHES)
-    )
-
-
-def can_close_batch(
-    *,
-    batch: InventoryBatch,
-    role_spec: RoleSpec,
-) -> bool:
-    return (
-        batch.status != InventoryBatch.Status.CLOSED
-        and role_spec.allows(Capability.CLOSE_BATCHES)
-    )
-
-
-def build_edit_batch_action(*, href: str) -> DetailAction:
-    return build_secondary_get_action(
-        label="Edit batch",
-        href=href,
-    )
-
-
-def build_close_batch_action(*, href: str) -> DetailAction:
-    return build_danger_get_action(
-        label="Close batch",
-        href=href,
-    )
 
 
 def _build_batch_header(batch: InventoryBatch) -> DetailHeader:
