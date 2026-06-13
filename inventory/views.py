@@ -22,8 +22,9 @@ from inventory.forms import (
     build_batch_edit_initial_data,
 )
 from inventory.form_viewmodels import (
-    build_batch_context_items,
-    build_close_batch_context_items,
+    build_close_batch_form_context,
+    build_create_batch_form_context,
+    build_edit_batch_form_context,
 )
 from inventory.list_viewmodels import (
     build_batch_page_rows,
@@ -161,18 +162,11 @@ def edit(request, batch_pk: int):
             batch=batch,
         )
 
-    context = {
-        "form": form,
-        "batch": batch,
-        "batch_context_items": build_batch_context_items(batch),
-        "title": f"Edit batch {batch.batch_id}",
-        "description": (
-            "Correct physical stock, location or best-before date. "
-            "Product and batch ID are kept fixed for traceability."
-        ),
-        "submit_label": "Update batch",
-        "cancel_url": reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
-    }
+    context = build_edit_batch_form_context(
+        form=form,
+        batch=batch,
+        cancel_url=reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
+    ).as_dict()
 
     return render(request, "inventory/batch_form.html", context)
 
@@ -199,13 +193,10 @@ def create(request):
     else:
         form = BatchForm()
 
-    context = {
-        "form": form,
-        "title": "Add batch",
-        "description": "",
-        "submit_label": "Add batch",
-        "cancel_url": reverse("inventory:index"),
-    }
+    context = build_create_batch_form_context(
+        form=form,
+        cancel_url=reverse("inventory:index"),
+    ).as_dict()
 
     return render(request, "inventory/batch_form.html", context)
 
@@ -237,14 +228,10 @@ def close(request, batch_pk: int):
         )
         return redirect("inventory:detail", batch_pk=closed_batch.pk)
 
-    context = {
-        "batch": batch,
-        "batch_context_items": build_close_batch_context_items(batch),
-        "title": f"Close batch {batch.batch_id}",
-        "description": "",
-        "submit_label": "Close batch",
-        "cancel_url": reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
-    }
+    context = build_close_batch_form_context(
+        batch=batch,
+        cancel_url=reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
+    ).as_dict()
 
     return render(request, "inventory/close.html", context)
 
