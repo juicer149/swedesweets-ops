@@ -10,9 +10,10 @@ from common.ui import (
     UiCardRow,
     UiText,
 )
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import RoleSpec
 from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import QuickJumpOption, QuickJumpSearch
+from products.access import can_create_product
 from products.models import Product
 from products.presentation import (
     ProductTagPresentation,
@@ -44,7 +45,7 @@ def _build_add_product_header_action(
     *,
     role_spec: RoleSpec,
 ) -> PageHeaderAction | None:
-    if not role_spec.allows(Capability.CREATE_PRODUCTS):
+    if not can_create_product(role_spec=role_spec):
         return None
 
     return PageHeaderAction(

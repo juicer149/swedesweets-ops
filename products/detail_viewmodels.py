@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import RoleSpec
 from common.detail_cards import (
     DetailAction,
     DetailCard,
@@ -18,6 +18,7 @@ from common.ui import UiCard
 from inventory.mini_cards import build_batch_mini_card
 from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow
+from products.access import can_edit_product
 from products.models import Product
 from products.presentation import (
     ProductTagPresentation,
@@ -246,24 +247,10 @@ def build_product_secondary_actions(
         return ()
 
     return (
-        build_edit_product_action(
+        build_secondary_get_action(
+            label="Edit product",
             href=reverse("products:edit", kwargs={"product_pk": product.pk}),
         ),
-    )
-
-
-def can_edit_product(
-    *,
-    product: Product,
-    role_spec: RoleSpec,
-) -> bool:
-    return role_spec.allows(Capability.EDIT_PRODUCTS)
-
-
-def build_edit_product_action(*, href: str) -> DetailAction:
-    return build_secondary_get_action(
-        label="Edit product",
-        href=href,
     )
 
 
