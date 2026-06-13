@@ -4,13 +4,18 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import  RoleSpec
 from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
     StatusPresentation,
     UiCard,
     UiCardRow,
     UiText,
+)
+from orders.access import (
+    can_create_order,
+    can_deliver_order,
+    can_pack_order,
 )
 from orders.models import Order
 from orders.presentation import (
@@ -83,7 +88,7 @@ def _build_order_page_row(
 def _build_create_order_header_action(
     role_spec: RoleSpec,
 ) -> PageHeaderAction | None:
-    if not role_spec.allows(Capability.CREATE_ORDERS):
+    if not can_create_order(role_spec=role_spec):
         return None
 
     return PageHeaderAction(
@@ -173,10 +178,7 @@ def _build_action(
     detail_href: str,
     role_spec: RoleSpec,
 ) -> UiText:
-    if (
-        order.status == Order.Status.PLACED
-        and role_spec.allows(Capability.PACK_ORDERS)
-    ):
+    if can_pack_order(order=order, role_spec=role_spec):
         return UiText(
             text="Pack order",
             href=_pack_order_href(order),
@@ -189,10 +191,7 @@ def _build_action(
             icon_class="button__icon",
         )
 
-    if (
-        order.status == Order.Status.PACKED
-        and role_spec.allows(Capability.DELIVER_ORDERS)
-    ):
+    if can_deliver_order(order=order, role_spec=role_spec):
         return UiText(
             text="Mark delivered",
             href=_deliver_order_href(order),
@@ -221,16 +220,10 @@ def _order_detail_href(
     order: Order,
     role_spec: RoleSpec,
 ) -> str:
-    if (
-        order.status == Order.Status.PLACED
-        and role_spec.allows(Capability.PACK_ORDERS)
-    ):
+    if can_pack_order(order=order, role_spec=role_spec):
         return _pack_order_href(order)
 
-    if (
-        order.status == Order.Status.PACKED
-        and role_spec.allows(Capability.DELIVER_ORDERS)
-    ):
+    if can_deliver_order(order=order, role_spec=role_spec):
         return _deliver_order_href(order)
 
     return reverse("orders:detail", kwargs={"order_id": order.pk})

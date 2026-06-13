@@ -12,6 +12,7 @@ from common.table_controls import (
     TableSortField,
 )
 from inventory.errors import InvalidStockOperation
+from orders.access import can_cancel_order
 from orders.detail_viewmodels import (
     build_deliver_action,
     build_order_cancel_back_url,
@@ -21,7 +22,6 @@ from orders.detail_viewmodels import (
     build_pack_action,
     build_post_edit_success_url,
     build_post_pack_success_url,
-    can_cancel_order,
 )
 from orders.errors import InvalidOrderOperation
 from orders.form_viewmodels import (

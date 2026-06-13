@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import RoleSpec
 from common.detail_cards import (
     ACTION_METHOD_GET,
     ACTION_METHOD_POST,
@@ -18,6 +18,12 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
+from orders.access import (
+    can_cancel_order,
+    can_deliver_order,
+    can_edit_order,
+    can_pack_order,
+)
 from orders.datatypes import PickLine
 from orders.models import Order, OrderLine
 from orders.presentation import (
@@ -131,18 +137,12 @@ def build_order_detail_primary_action(
     order: Order,
     role_spec: RoleSpec,
 ) -> DetailAction | None:
-    if (
-        order.status == Order.Status.PLACED
-        and role_spec.allows(Capability.PACK_ORDERS)
-    ):
+    if can_pack_order(order=order, role_spec=role_spec):
         return build_go_to_pack_action(
             href=reverse("orders:pack", kwargs={"order_id": order.id}),
         )
 
-    if (
-        order.status == Order.Status.PACKED
-        and role_spec.allows(Capability.DELIVER_ORDERS)
-    ):
+    if can_deliver_order(order=order, role_spec=role_spec):
         return build_go_to_deliver_action(
             href=reverse("orders:deliver", kwargs={"order_id": order.id}),
         )
@@ -159,15 +159,18 @@ def build_order_secondary_actions(
 
     if can_edit_order(order=order, role_spec=role_spec):
         actions.append(
-            build_edit_order_action(
+            build_secondary_get_action( 
+                label="Edit order",
                 href=reverse("orders:edit", kwargs={"order_id": order.id}),
             )
         )
 
     if can_cancel_order(order=order, role_spec=role_spec):
         actions.append(
-            build_cancel_order_action(
+            build_danger_get_action(
+                label="Cancel order",
                 href=reverse("orders:cancel", kwargs={"order_id": order.id}),
+                icon="x",
             )
         )
 
@@ -182,11 +185,11 @@ def build_order_cancel_back_url(
     if can_edit_order(order=order, role_spec=role_spec):
         return reverse("orders:edit", kwargs={"order_id": order.id})
 
-    if (
-        order.status == Order.Status.PLACED
-        and role_spec.allows(Capability.PACK_ORDERS)
-    ):
+    if can_pack_order(order=order, role_spec=role_spec):
         return reverse("orders:pack", kwargs={"order_id": order.id})
+
+    if can_deliver_order(order=order, role_spec=role_spec):
+        return reverse("orders:deliver", kwargs={"order_id": order.id})
 
     return reverse("orders:detail", kwargs={"order_id": order.id})
 
@@ -196,10 +199,9 @@ def build_post_edit_success_url(
     order: Order,
     role_spec: RoleSpec,
 ) -> str:
-    if (
-        order.status == Order.Status.PLACED
-        and role_spec.allows(Capability.PACK_ORDERS)
-    ):
+    if can_pack_order(order=order, role_spec=role_spec):
+        # kanske skulle göra dessa till helper funktoner som i list_viewmodels.py?
+        #dvs för alla reverse url's
         return reverse("orders:pack", kwargs={"order_id": order.id})
 
     return reverse("orders:detail", kwargs={"order_id": order.id})
@@ -210,35 +212,11 @@ def build_post_pack_success_url(
     order: Order,
     role_spec: RoleSpec,
 ) -> str:
-    if (
-        order.status == Order.Status.PACKED
-        and role_spec.allows(Capability.DELIVER_ORDERS)
-    ):
+    if can_deliver_order(order=order, role_spec=role_spec):
         return reverse("orders:deliver", kwargs={"order_id": order.id})
 
     return reverse("orders:detail", kwargs={"order_id": order.id})
 
-
-def can_edit_order(
-    *,
-    order: Order,
-    role_spec: RoleSpec,
-) -> bool:
-    return (
-        order.can_be_edited
-        and role_spec.allows(Capability.EDIT_ORDERS)
-    )
-
-
-def can_cancel_order(
-    *,
-    order: Order,
-    role_spec: RoleSpec,
-) -> bool:
-    return (
-        order.can_be_cancelled
-        and role_spec.allows(Capability.CANCEL_ORDERS)
-    )
 
 
 def build_go_to_pack_action(*, href: str) -> DetailAction:
@@ -280,20 +258,6 @@ def build_deliver_action() -> DetailAction:
         tone=ACTION_TONE_DELIVER,
     )
 
-
-def build_edit_order_action(*, href: str) -> DetailAction:
-    return build_secondary_get_action(
-        label="Edit order",
-        href=href,
-    )
-
-
-def build_cancel_order_action(*, href: str) -> DetailAction:
-    return build_danger_get_action(
-        label="Cancel order",
-        href=href,
-        icon="x",
-    )
 
 
 def _build_order_header(order: Order) -> DetailHeader:
@@ -354,6 +318,7 @@ def _build_order_detail_panels(
     return tuple(panels)
 
 
+#jag har ju sådana href helpers här redan för andra?
 def order_detail_href(order: Order) -> str:
     return reverse("orders:detail", kwargs={"order_id": order.pk})
 
