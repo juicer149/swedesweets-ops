@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import RoleSpec
 from common.detail_cards import (
     DetailAction,
     DetailCard,
@@ -13,6 +13,7 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import StatusPresentation, UiCard
+from customers.access import can_edit_customer
 from customers.models import Customer
 from orders.mini_cards import build_customer_order_mini_card
 from orders.models import Order
@@ -103,24 +104,10 @@ def build_customer_secondary_actions(
         return ()
 
     return (
-        build_edit_customer_action(
+        build_secondary_get_action(
+            label="Edit customer",
             href=reverse("customers:edit", kwargs={"customer_pk": customer.pk}),
         ),
-    )
-
-
-def can_edit_customer(
-    *,
-    customer: Customer,
-    role_spec: RoleSpec,
-) -> bool:
-    return role_spec.allows(Capability.EDIT_CUSTOMERS)
-
-
-def build_edit_customer_action(*, href: str) -> DetailAction:
-    return build_secondary_get_action(
-        label="Edit customer",
-        href=href,
     )
 
 

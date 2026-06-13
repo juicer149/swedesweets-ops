@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
+from accounts.roles import RoleSpec
 from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
     TONE_NEUTRAL,
@@ -15,6 +15,7 @@ from common.ui import (
     maps_search_link,
     tel_link,
 )
+from customers.access import can_create_customer
 from customers.models import Customer
 
 
@@ -37,7 +38,7 @@ def _build_add_customer_header_action(
     *,
     role_spec: RoleSpec,
 ) -> PageHeaderAction | None:
-    if not role_spec.allows(Capability.CREATE_CUSTOMERS):
+    if not can_create_customer(role_spec=role_spec):
         return None
 
     return PageHeaderAction(
