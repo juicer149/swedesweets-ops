@@ -24,23 +24,37 @@ from customers.tests.factories import customer_factory
 
 MISSING_OBJECT_ID = 999999
 
+ACCOUNT_USER_KWARGS = {"user_id": MISSING_OBJECT_ID}
+ORDER_KWARGS = {"order_id": MISSING_OBJECT_ID}
+BATCH_KWARGS = {"batch_pk": MISSING_OBJECT_ID}
+PRODUCT_KWARGS = {"product_pk": MISSING_OBJECT_ID}
+CUSTOMER_KWARGS = {"customer_pk": MISSING_OBJECT_ID}
+
 VIEW_KWARGS = {
-    "accounts:detail": {"user_id": MISSING_OBJECT_ID},
-    "accounts:edit_internal": {"user_id": MISSING_OBJECT_ID},
-    "orders:detail": {"order_id": MISSING_OBJECT_ID},
-    "orders:edit": {"order_id": MISSING_OBJECT_ID},
-    "orders:cancel": {"order_id": MISSING_OBJECT_ID},
-    "orders:pack": {"order_id": MISSING_OBJECT_ID},
-    "orders:deliver": {"order_id": MISSING_OBJECT_ID},
-    "inventory:detail": {"batch_pk": MISSING_OBJECT_ID},
-    "inventory:edit": {"batch_pk": MISSING_OBJECT_ID},
-    "inventory:close": {"batch_pk": MISSING_OBJECT_ID},
-    "products:detail": {"product_pk": MISSING_OBJECT_ID},
-    "products:edit": {"product_pk": MISSING_OBJECT_ID},
-    "customers:detail": {"customer_pk": MISSING_OBJECT_ID},
-    "customers:edit": {"customer_pk": MISSING_OBJECT_ID},
-    "customer_portal:order_detail": {"order_id": MISSING_OBJECT_ID},
+    "accounts:detail": ACCOUNT_USER_KWARGS,
+    "accounts:edit_internal": ACCOUNT_USER_KWARGS,
+    "accounts:activate_customer_account": ACCOUNT_USER_KWARGS,
+    "accounts:deactivate_customer_account": ACCOUNT_USER_KWARGS,
+
+    "orders:detail": ORDER_KWARGS,
+    "orders:edit": ORDER_KWARGS,
+    "orders:cancel": ORDER_KWARGS,
+    "orders:pack": ORDER_KWARGS,
+    "orders:deliver": ORDER_KWARGS,
+
+    "inventory:detail": BATCH_KWARGS,
+    "inventory:edit": BATCH_KWARGS,
+    "inventory:close": BATCH_KWARGS,
+
+    "products:detail": PRODUCT_KWARGS,
+    "products:edit": PRODUCT_KWARGS,
+
+    "customers:detail": CUSTOMER_KWARGS,
+    "customers:edit": CUSTOMER_KWARGS,
+
+    "customer_portal:order_detail": ORDER_KWARGS,
 }
+
 
 ALLOWED_GET_STATUS_CODES = {
     200,

@@ -36,6 +36,8 @@ VIEW_CAPABILITIES = {
     "accounts:edit_internal": Capability.MANAGE_ACCOUNTS,
 
     "accounts:create_customer_account": Capability.MANAGE_ACCOUNTS,
+    "accounts:activate_customer_account": Capability.MANAGE_ACCOUNTS,
+    "accounts:deactivate_customer_account": Capability.MANAGE_ACCOUNTS,
 
     "accounts:detail": Capability.MANAGE_ACCOUNTS,
 }
@@ -53,3 +55,14 @@ def get_after_login_redirect_name(
         return "index"
 
     return "accounts:me"
+
+
+def can_manage_customer_account_status(
+    *,
+    target_account_role: AccountRole,
+    role_spec: RoleSpec,
+) -> bool:
+    return (
+        target_account_role == AccountRole.CUSTOMER
+        and role_spec.allows(Capability.MANAGE_ACCOUNTS)
+    )

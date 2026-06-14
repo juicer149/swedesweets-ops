@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="customer-account-status-title" title=title description=description %}
+
+<section class="form-section" aria-labelledby="customer-account-status-title">
+  {% include "includes/ui/form_context_card.html" with aria_label="Customer account summary" eyebrow="Customer login account" heading=account_user.email items=context_items only %}
+
+  <form method="post" class="form-card" novalidate>
+    {% csrf_token %}
+
+    <div class="form-actions">
+      <button class="button button--md button--solid button--tone-{{ submit_tone }}" type="submit">
+        {{ submit_label }}
+      </button>
+
+      <a class="button button--md button--ghost button--tone-neutral" href="{{ cancel_url }}">
+        Back
+      </a>
+    </div>
+  </form>
+</section>
+{% endblock %}

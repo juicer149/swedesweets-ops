@@ -145,6 +145,33 @@ def create_customer_account(
 
 
 @transaction.atomic
+def set_customer_account_active_status(
+    *,
+    user,
+    is_active: bool,
+    actor,
+):
+    if user.pk == actor.pk and not is_active:
+        raise AccountCreationError("You cannot deactivate your own account.")
+
+    membership_exists = (
+        CustomerMembership.objects
+        .select_for_update()
+        .filter(user=user)
+        .exists()
+    )
+
+    if not membership_exists:
+        raise AccountCreationError("This is not a customer account.")
+
+    user = User.objects.select_for_update().get(pk=user.pk)
+    user.is_active = is_active
+    user.save(update_fields=["is_active"])
+
+    return user
+
+
+@transaction.atomic
 def _create_staff_account(
     *,
     email: str,

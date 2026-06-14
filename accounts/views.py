@@ -2,13 +2,19 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from accounts.access import get_after_login_redirect_name
+from accounts.access import (
+    can_manage_customer_account_status,
+    get_after_login_redirect_name,
+)
 from accounts.detail_viewmodels import (
     build_account_detail_context,
+    build_customer_account_status_context,
     build_self_account_detail_context,
+    customer_account_status_success_message,
 )
 from accounts.errors import AccountCreationError
 from accounts.form_viewmodels import (
@@ -18,7 +24,7 @@ from accounts.form_viewmodels import (
 )
 from accounts.forms import (
     CustomerAccountCreateForm,
-    InternalAccountCreateForm, 
+    InternalAccountCreateForm,
     InternalAccountEditForm,
 )
 from accounts.list_viewmodels import (
@@ -29,7 +35,8 @@ from accounts.list_viewmodels import (
     build_account_view_links,
     build_accounts_page_header,
 )
-from accounts.models import StaffAccount
+from accounts.models import CustomerMembership, StaffAccount
+from accounts.roles import AccountRole
 from accounts.selectors import (
     get_account_row,
     get_account_user,
@@ -40,7 +47,8 @@ from accounts.selectors import (
 )
 from accounts.services import (
     create_customer_account as create_customer_login_account,
-    create_internal_account, 
+    create_internal_account,
+    set_customer_account_active_status,
     update_internal_account,
 )
 from common.table_controls import (
@@ -60,7 +68,7 @@ ACCOUNT_ALLOWED_VIEWS = {
 ACCOUNT_LIST_ANCHOR = "accounts-list"
 ACCOUNT_VIEW_QUERY_KEY = "view"
 
-#TODO: flytta till selectors eller services, och använd i list_account_rows
+# TODO: Move account sort aliases closer to account selectors.
 ACCOUNT_SORTS = {
     "account": ("email", "username"),
     "-account": ("-email", "-username"),
@@ -159,7 +167,7 @@ def me(request):
     context = build_self_account_detail_context(
         account=account,
         activity_rows=activity_rows,
-        cancel_url=reverse("index"),
+        cancel_url=reverse("accounts:after_login"),
     ).as_dict()
 
     return render(request, "accounts/detail.html", context)
@@ -174,7 +182,8 @@ def detail(request, user_id: int):
     context = build_account_detail_context(
         account=account,
         activity_rows=activity_rows,
-        cancel_url=_accounts_internal_url(),
+        cancel_url=_accounts_url_for_account(account),
+        role_spec=request.role_spec,
         edit_url=_internal_account_edit_url(account_user),
     ).as_dict()
 
@@ -287,6 +296,74 @@ def create_customer_account(request):
     return render(request, "accounts/account_form.html", context)
 
 
+@login_required
+def activate_customer_account(request, user_id: int):
+    return _change_customer_account_status(
+        request=request,
+        user_id=user_id,
+        is_active=True,
+    )
+
+
+@login_required
+def deactivate_customer_account(request, user_id: int):
+    return _change_customer_account_status(
+        request=request,
+        user_id=user_id,
+        is_active=False,
+    )
+
+
+def _change_customer_account_status(
+    *,
+    request,
+    user_id: int,
+    is_active: bool,
+):
+    membership = get_object_or_404(
+        CustomerMembership.objects.select_related("user", "customer"),
+        user_id=user_id,
+    )
+    account_user = membership.user
+
+    if not can_manage_customer_account_status(
+        target_account_role=AccountRole.CUSTOMER,
+        role_spec=request.role_spec,
+    ):
+        raise PermissionDenied("You cannot change this account status.")
+
+    if request.method == "POST":
+        try:
+            set_customer_account_active_status(
+                user=account_user,
+                is_active=is_active,
+                actor=request.user,
+            )
+        except AccountCreationError as error:
+            messages.error(request, str(error))
+        else:
+            messages.success(
+                request,
+                customer_account_status_success_message(
+                    email=account_user.email,
+                    is_active=is_active,
+                ),
+            )
+
+        return redirect("accounts:detail", user_id=account_user.pk)
+
+    context = build_customer_account_status_context(
+        membership=membership,
+        is_active=is_active,
+    ).as_dict()
+
+    return render(
+        request,
+        "accounts/customer_account_status.html",
+        context,
+    )
+
+
 def _list_account_rows(
     *,
     active_view: str,
@@ -330,6 +407,16 @@ def _internal_account_edit_url(user) -> str:
     )
 
 
+def _accounts_url_for_account(account) -> str:
+    if account.account_role == AccountRole.CUSTOMER:
+        return _accounts_customer_url()
+
+    if account.account_role == AccountRole.UNKNOWN:
+        return _accounts_unlinked_url()
+
+    return _accounts_internal_url()
+
+
 def _accounts_internal_url() -> str:
     return (
         f"{reverse('accounts:index')}"
@@ -341,4 +428,11 @@ def _accounts_customer_url() -> str:
     return (
         f"{reverse('accounts:index')}"
         f"?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
+    )
+
+
+def _accounts_unlinked_url() -> str:
+    return (
+        f"{reverse('accounts:index')}"
+        f"?view={ACCOUNT_VIEW_UNLINKED}#accounts-list"
     )

@@ -7,6 +7,7 @@ from accounts import views
 
 app_name = "accounts"
 
+
 urlpatterns = [
     path("", views.index, name="index"),
     path("me/", views.me, name="me"),
@@ -25,5 +26,16 @@ urlpatterns = [
         views.create_customer_account,
         name="create_customer_account",
     ),
+    path(
+        "customer/<int:user_id>/activate/",
+        views.activate_customer_account,
+        name="activate_customer_account",
+    ),
+    path(
+        "customer/<int:user_id>/deactivate/",
+        views.deactivate_customer_account,
+        name="deactivate_customer_account",
+    ),
+
     path("<int:user_id>/", views.detail, name="detail"),
 ]
