@@ -187,6 +187,10 @@ def _create_user_for_account(
         email=email,
     )
 
+    # TODO: Replace manually assigned temporary passwords with an emailed
+    # password setup flow. This helper already supports password=None, which
+    # creates an unusable password until the user sets one through a tokenized
+    # setup/reset link.
     if password:
         user.set_password(password)
     else:

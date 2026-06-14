@@ -3,6 +3,7 @@ from __future__ import annotations
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 
 from accounts.roles import StaffAccessLevel
 from common.form_layout import set_form_field_layout
@@ -180,6 +181,13 @@ class CustomerAccountCreateForm(forms.Form):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+        create_customer_url = reverse("customers:create")
+        self.fields["customer"].help_text = (
+            "Can’t find the customer? "
+            f'<a href="{create_customer_url}">Create the customer record</a> '
+            "before adding a login account."
+        )
 
         set_form_field_layout(
             self,

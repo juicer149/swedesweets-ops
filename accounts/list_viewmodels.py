@@ -48,7 +48,7 @@ def build_accounts_page_header(*, active_view: str) -> PageHeader:
     return PageHeader(
         title="Accounts",
         title_id="accounts-title",
-        description="Manage internal and customer login accounts.",
+        description="",
         action=_build_accounts_page_action(active_view=active_view),
     )
 
