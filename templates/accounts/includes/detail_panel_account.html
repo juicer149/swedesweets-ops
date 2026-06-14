@@ -11,7 +11,15 @@
 
   <div>
     <dt>Linked identity</dt>
-    <dd>{{ account.linked_identity }}</dd>
+    <dd>
+      {% if account.linked_identity_href %}
+        <a class="detail-list__link" href="{{ account.linked_identity_href }}">
+          {{ account.linked_identity }}
+        </a>
+      {% else %}
+        {{ account.linked_identity }}
+      {% endif %}
+    </dd>
   </div>
 
   <div>

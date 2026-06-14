@@ -36,6 +36,7 @@ class AccountPageRow:
     email: str
     role_label: str
     linked_identity: str
+    linked_identity_href: str
     status_label: str
     status_tone: str
     last_login_label: str
@@ -99,6 +100,7 @@ def _build_account_page_row(row: AccountListRow) -> AccountPageRow:
         email=row.email,
         role_label=row.role_label,
         linked_identity=row.linked_identity,
+        linked_identity_href=row.linked_identity_href,
         status_label=row.status_label,
         status_tone=status_tone,
         last_login_label=last_login_label,

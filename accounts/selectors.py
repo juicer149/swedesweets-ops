@@ -45,6 +45,7 @@ class AccountListRow:
     account_role: AccountRole
     role_label: str
     linked_identity: str
+    linked_identity_href: str
     status_label: str
     is_active: bool
     last_login: datetime | None
@@ -67,6 +68,7 @@ class ResolvedAccountIdentity:
     account_role: AccountRole
     role_label: str
     linked_identity: str
+    linked_identity_href: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -326,20 +328,6 @@ def list_unlinked_account_rows(*, sort: str) -> tuple[AccountListRow, ...]:
     )
 
 
-def _list_account_rows_for_roles(
-    *,
-    roles: frozenset[AccountRole],
-    sort: str,
-) -> tuple[AccountListRow, ...]:
-    rows = tuple(
-        row
-        for row in _list_all_account_rows()
-        if row.account_role in roles
-    )
-
-    return _sort_account_rows(rows=rows, sort=sort)
-
-
 def list_account_activity_rows(*, user) -> tuple[AccountActivityRow, ...]:
     rows = _activity_rows_from_specs(
         user=user,
@@ -353,6 +341,20 @@ def list_account_activity_rows(*, user) -> tuple[AccountActivityRow, ...]:
             reverse=True,
         )[:ACCOUNT_ACTIVITY_LIMIT]
     )
+
+
+def _list_account_rows_for_roles(
+    *,
+    roles: frozenset[AccountRole],
+    sort: str,
+) -> tuple[AccountListRow, ...]:
+    rows = tuple(
+        row
+        for row in _list_all_account_rows()
+        if row.account_role in roles
+    )
+
+    return _sort_account_rows(rows=rows, sort=sort)
 
 
 def _list_all_account_rows() -> tuple[AccountListRow, ...]:
@@ -379,6 +381,7 @@ def _build_account_row(user) -> AccountListRow:
         account_role=identity.account_role,
         role_label=identity.role_label,
         linked_identity=identity.linked_identity,
+        linked_identity_href=identity.linked_identity_href,
         status_label=_status_label(user=user),
         is_active=user.is_active,
         last_login=user.last_login,
@@ -397,10 +400,13 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
         )
 
     if _has_staff_account(user) and _has_customer_membership(user):
+        customer = user.customer_membership.customer
+
         return ResolvedAccountIdentity(
             account_role=account_role,
             role_label="Invalid identity",
-            linked_identity="Staff and customer",
+            linked_identity=f"Staff and customer · {customer.name}",
+            linked_identity_href=_customer_detail_href(customer),
         )
 
     if account_role in {
@@ -416,10 +422,13 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
         )
 
     if account_role == AccountRole.CUSTOMER:
+        customer = user.customer_membership.customer
+
         return ResolvedAccountIdentity(
             account_role=account_role,
             role_label=get_role_label(account_role),
-            linked_identity=user.customer_membership.customer.name,
+            linked_identity=customer.name,
+            linked_identity_href=_customer_detail_href(customer),
         )
 
     if _has_staff_account(user):
@@ -430,10 +439,13 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
         )
 
     if _has_customer_membership(user):
+        customer = user.customer_membership.customer
+
         return ResolvedAccountIdentity(
             account_role=account_role,
             role_label="Invalid customer account",
-            linked_identity=user.customer_membership.customer.name,
+            linked_identity=customer.name,
+            linked_identity_href=_customer_detail_href(customer),
         )
 
     return ResolvedAccountIdentity(
@@ -448,6 +460,13 @@ def _resolve_safe_account_role(user) -> AccountRole:
         return resolve_account_role(user)
     except InvalidAccountIdentity:
         return AccountRole.UNKNOWN
+
+
+def _customer_detail_href(customer: Customer) -> str:
+    return reverse(
+        "customers:detail",
+        kwargs={"customer_pk": customer.pk},
+    )
 
 
 def _staff_identity_label(access_level: StaffAccessLevel | str) -> str:
@@ -615,7 +634,8 @@ def _activity_row(
     )
 
 
-# TODO: Consider creating a common utility for formatting datetimes in the local timezone, duo to same usage in multiple places across the codebase.
+# TODO: Consider creating a common utility for formatting datetimes in the local
+# timezone, due to the same usage in multiple places across the codebase.
 def _datetime_label(value: datetime) -> str:
     return timezone.localtime(value).strftime("%Y-%m-%d %H:%M")
 
