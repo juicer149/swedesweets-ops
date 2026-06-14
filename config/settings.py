@@ -196,7 +196,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "index"
+LOGIN_REDIRECT_URL = "accounts:after_login"
 LOGOUT_REDIRECT_URL = "login"
 
 

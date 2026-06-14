@@ -5,16 +5,22 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from accounts.access import get_after_login_redirect_name
 from accounts.detail_viewmodels import (
     build_account_detail_context,
     build_self_account_detail_context,
 )
 from accounts.errors import AccountCreationError
 from accounts.form_viewmodels import (
+    build_create_customer_account_form_context,
     build_create_internal_account_form_context,
     build_edit_internal_account_form_context,
 )
-from accounts.forms import InternalAccountCreateForm, InternalAccountEditForm
+from accounts.forms import (
+    CustomerAccountCreateForm,
+    InternalAccountCreateForm, 
+    InternalAccountEditForm,
+)
 from accounts.list_viewmodels import (
     ACCOUNT_VIEW_CUSTOMER,
     ACCOUNT_VIEW_INTERNAL,
@@ -32,7 +38,11 @@ from accounts.selectors import (
     list_internal_account_rows,
     list_unlinked_account_rows,
 )
-from accounts.services import create_internal_account, update_internal_account
+from accounts.services import (
+    create_customer_account as create_customer_login_account,
+    create_internal_account, 
+    update_internal_account,
+)
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
@@ -50,6 +60,7 @@ ACCOUNT_ALLOWED_VIEWS = {
 ACCOUNT_LIST_ANCHOR = "accounts-list"
 ACCOUNT_VIEW_QUERY_KEY = "view"
 
+#TODO: flytta till selectors eller services, och använd i list_account_rows
 ACCOUNT_SORTS = {
     "account": ("email", "username"),
     "-account": ("-email", "-username"),
@@ -86,6 +97,16 @@ ACCOUNT_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 
 def inactive(request):
     return render(request, "accounts/inactive.html")
+
+
+@login_required
+def after_login(request):
+    return redirect(
+        get_after_login_redirect_name(
+            account_role=request.account_role,
+            role_spec=request.role_spec,
+        )
+    )
 
 
 @login_required
@@ -236,6 +257,36 @@ def edit_internal(request, user_id: int):
     return render(request, "accounts/account_form.html", context)
 
 
+@login_required
+def create_customer_account(request):
+    if request.method == "POST":
+        form = CustomerAccountCreateForm(request.POST)
+
+        if form.is_valid():
+            try:
+                result = create_customer_login_account(
+                    email=form.cleaned_data["email"],
+                    customer=form.cleaned_data["customer"],
+                    password=form.cleaned_data["password1"],
+                )
+            except AccountCreationError as error:
+                form.add_error(None, str(error))
+            else:
+                messages.success(
+                    request,
+                    f"Customer account {result.user.email} created.",
+                )
+                return redirect(_accounts_customer_url())
+    else:
+        form = CustomerAccountCreateForm()
+
+    context = build_create_customer_account_form_context(
+        form=form,
+    ).as_dict()
+
+    return render(request, "accounts/account_form.html", context)
+
+
 def _list_account_rows(
     *,
     active_view: str,
@@ -283,4 +334,11 @@ def _accounts_internal_url() -> str:
     return (
         f"{reverse('accounts:index')}"
         f"?view={ACCOUNT_VIEW_INTERNAL}#accounts-list"
+    )
+
+
+def _accounts_customer_url() -> str:
+    return (
+        f"{reverse('accounts:index')}"
+        f"?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
     )

@@ -5,8 +5,12 @@ from typing import Any
 
 from django.urls import reverse
 
-from accounts.forms import InternalAccountCreateForm, InternalAccountEditForm
-from accounts.list_viewmodels import ACCOUNT_VIEW_INTERNAL
+from accounts.forms import (
+    CustomerAccountCreateForm,
+    InternalAccountCreateForm, 
+    InternalAccountEditForm,
+)
+from accounts.list_viewmodels import ACCOUNT_VIEW_CUSTOMER, ACCOUNT_VIEW_INTERNAL
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,7 +19,11 @@ class AccountFormContext:
     description: str
     submit_label: str
     cancel_url: str
-    form: InternalAccountCreateForm | InternalAccountEditForm
+    form: (
+        CustomerAccountCreateForm
+        | InternalAccountCreateForm 
+        | InternalAccountEditForm
+    )
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -25,6 +33,21 @@ class AccountFormContext:
             "cancel_url": self.cancel_url,
             "form": self.form,
         }
+
+
+def build_create_customer_account_form_context(
+    *,
+    form: CustomerAccountCreateForm,
+) -> AccountFormContext:
+    return AccountFormContext(
+        form=form,
+        title="Create customer account",
+        description=(
+            "Create a customer portal login linked to an existing customer."
+        ),
+        submit_label="Create account",
+        cancel_url=_accounts_customer_url(),
+    )
 
 
 def build_create_internal_account_form_context(
@@ -55,6 +78,13 @@ def build_edit_internal_account_form_context(
         ),
         submit_label="Save account",
         cancel_url=reverse("accounts:detail", kwargs={"user_id": user_id}),
+    )
+
+
+def _accounts_customer_url() -> str:
+    return (
+        f"{reverse('accounts:index')}"
+        f"?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
     )
 
 

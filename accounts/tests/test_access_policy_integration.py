@@ -47,8 +47,13 @@ ALLOWED_GET_STATUS_CODES = {
     404,
 }
 
+REDIRECT_VIEW_NAMES = {
+    "accounts:after_login",
+}
+
 DENIED_STATUS_CODE = 403
 LOGIN_REDIRECT_STATUS_CODE = 302
+REDIRECT_STATUS_CODE = 302
 
 
 def _url_for_view_name(view_name: str) -> str:
@@ -63,6 +68,18 @@ def _expected_access_by_view(role_spec) -> dict[str, bool]:
         view_name: role_spec.allows(capability)
         for view_name, capability in VIEW_CAPABILITIES.items()
     }
+
+
+def _assert_allowed_get_response(
+    *,
+    view_name: str,
+    response,
+) -> None:
+    if view_name in REDIRECT_VIEW_NAMES:
+        assert response.status_code == REDIRECT_STATUS_CODE
+        return
+
+    assert response.status_code in ALLOWED_GET_STATUS_CODES
 
 
 def _assert_redirects_to_login(response) -> None:
@@ -98,7 +115,10 @@ def test_owner_access_matches_declared_capabilities(client):
         response = client.get(_url_for_view_name(view_name))
 
         if should_allow:
-            assert response.status_code in ALLOWED_GET_STATUS_CODES
+            _assert_allowed_get_response(
+                view_name=view_name,
+                response=response,
+            )
         else:
             assert response.status_code == DENIED_STATUS_CODE
 
@@ -115,7 +135,10 @@ def test_full_staff_access_matches_declared_capabilities(client):
         response = client.get(_url_for_view_name(view_name))
 
         if should_allow:
-            assert response.status_code in ALLOWED_GET_STATUS_CODES
+            _assert_allowed_get_response(
+                view_name=view_name,
+                response=response,
+            )
         else:
             assert response.status_code == DENIED_STATUS_CODE
 
@@ -132,7 +155,10 @@ def test_restricted_staff_access_matches_declared_capabilities(client):
         response = client.get(_url_for_view_name(view_name))
 
         if should_allow:
-            assert response.status_code in ALLOWED_GET_STATUS_CODES
+            _assert_allowed_get_response(
+                view_name=view_name,
+                response=response,
+            )
         else:
             assert response.status_code == DENIED_STATUS_CODE
 
@@ -155,7 +181,10 @@ def test_customer_user_access_matches_declared_capabilities(client):
         response = client.get(_url_for_view_name(view_name))
 
         if should_allow:
-            assert response.status_code in ALLOWED_GET_STATUS_CODES
+            _assert_allowed_get_response(
+                view_name=view_name,
+                response=response,
+            )
         else:
             assert response.status_code == DENIED_STATUS_CODE
 
@@ -172,7 +201,10 @@ def test_unknown_user_access_matches_declared_capabilities(client):
         response = client.get(_url_for_view_name(view_name))
 
         if should_allow:
-            assert response.status_code in ALLOWED_GET_STATUS_CODES
+            _assert_allowed_get_response(
+                view_name=view_name,
+                response=response,
+            )
         else:
             assert response.status_code == DENIED_STATUS_CODE
 
