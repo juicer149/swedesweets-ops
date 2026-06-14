@@ -39,6 +39,7 @@ VIEW_KWARGS = {
     "products:edit": {"product_pk": MISSING_OBJECT_ID},
     "customers:detail": {"customer_pk": MISSING_OBJECT_ID},
     "customers:edit": {"customer_pk": MISSING_OBJECT_ID},
+    "customer_portal:order_detail": {"order_id": MISSING_OBJECT_ID},
 }
 
 ALLOWED_GET_STATUS_CODES = {

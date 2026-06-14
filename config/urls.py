@@ -21,6 +21,7 @@ urlpatterns = [
     path("inventory/", include("inventory.urls", namespace="inventory")),
     path("products/", include("products.urls", namespace="products")),
     path("customers/", include("customers.urls", namespace="customers")),
+    path("my/", include("customer_portal.urls", namespace="customer_portal")),
 ]
 
 # Serve uploaded files from Django in development.

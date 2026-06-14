@@ -21,6 +21,7 @@ class Capability(StrEnum):
 
     MANAGE_ACCOUNTS = "can_manage_accounts"
     VIEW_OWN_ACCOUNT = "can_view_own_account"
+    EDIT_OWN_ACCOUNT = "can_edit_own_account"
 
     # Orders
     VIEW_ORDERS = "can_view_orders"
@@ -119,6 +120,7 @@ RESTRICTED_STAFF_CAPABILITIES = frozenset(
     {
         Capability.VIEW_STAFF_OPS,
         Capability.VIEW_OWN_ACCOUNT,
+        Capability.EDIT_OWN_ACCOUNT,
 
         Capability.VIEW_ORDERS,
         Capability.PACK_ORDERS,
@@ -136,6 +138,7 @@ CUSTOMER_CAPABILITIES = frozenset(
     {
         Capability.VIEW_CUSTOMER_PORTAL,
         Capability.VIEW_OWN_ACCOUNT,
+        Capability.EDIT_OWN_ACCOUNT,
         Capability.PLACE_CUSTOMER_ORDERS,
         Capability.VIEW_OWN_ORDERS,
     }
