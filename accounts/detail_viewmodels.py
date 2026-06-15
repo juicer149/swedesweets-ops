@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 
@@ -113,6 +113,8 @@ def build_self_account_detail_context(
     activity_rows: tuple[AccountActivityRow, ...],
     cancel_url: str,
 ) -> AccountDetailContext:
+    account = _self_safe_account_row(account)
+
     return AccountDetailContext(
         account=account,
         activity_rows=activity_rows,
@@ -127,7 +129,7 @@ def build_self_account_detail_context(
                 activity_count=len(activity_rows),
             ),
             content_card_class=_account_detail_card_class(account),
-            secondary_actions=_build_self_account_secondary_actions(),
+            secondary_actions=_build_self_account_secondary_actions(account=account),
         ),
         title="My account",
         description="",
@@ -192,6 +194,16 @@ def customer_account_status_success_message(
 
 # -----------------------------------------------------------------------------
 # Detail card builders
+
+
+def _self_safe_account_row(account: AccountListRow) -> AccountListRow:
+    if account.account_role != AccountRole.CUSTOMER:
+        return account
+
+    return replace(
+        account,
+        linked_identity_href="",
+    )
 
 
 def _build_account_header(
@@ -286,17 +298,25 @@ def _build_customer_account_status_action(
     )
 
 
-def _build_self_account_secondary_actions() -> tuple[DetailAction, ...]:
-    return (
+def _build_self_account_secondary_actions(
+    *,
+    account: AccountListRow,
+) -> tuple[DetailAction, ...]:
+    actions = [
         build_secondary_get_action(
             label="Change password",
             href=reverse("password_change"),
         ),
+    ]
+
+    actions.append(
         build_secondary_get_action(
             label="Back to start",
             href=reverse("accounts:after_login"),
-        ),
+        )
     )
+
+    return tuple(actions)
 
 
 # -----------------------------------------------------------------------------
