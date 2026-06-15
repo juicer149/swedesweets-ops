@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from accounts.roles import AccountRole, Capability, RoleSpec
 
@@ -86,7 +87,7 @@ ACCOUNTS_NAV_ITEM = NavItem(
 )
 
 CUSTOMER_PORTAL_ORDERS_NAV_ITEM = NavItem(
-    label="Orders",
+    label=_("Orders"),
     route_name="customer_portal:orders",
     namespace="customer_portal",
     icon="packed",
@@ -95,7 +96,7 @@ CUSTOMER_PORTAL_ORDERS_NAV_ITEM = NavItem(
 )
 
 CUSTOMER_PORTAL_CATALOG_NAV_ITEM = NavItem(
-    label="Catalog",
+    label=_("Catalog"),
     route_name="customer_portal:catalog",
     namespace="customer_portal",
     icon="lollipop",
@@ -104,7 +105,7 @@ CUSTOMER_PORTAL_CATALOG_NAV_ITEM = NavItem(
 )
 
 CUSTOMER_PORTAL_PROFILE_NAV_ITEM = NavItem(
-    label="Profile",
+    label=_("Profile"),
     route_name="customer_portal:profile",
     namespace="customer_portal",
     icon="users",
@@ -113,7 +114,7 @@ CUSTOMER_PORTAL_PROFILE_NAV_ITEM = NavItem(
 )
 
 CUSTOMER_PORTAL_CONTACT_NAV_ITEM = NavItem(
-    label="Contact",
+    label=_("Contact"),
     route_name="customer_portal:contact",
     namespace="customer_portal",
     icon="tag",

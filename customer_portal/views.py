@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.utils.translation import gettext as _
 
 from customer_portal.selectors import get_portal_customer_for_user
 from customer_portal.viewmodels import (
@@ -32,34 +33,34 @@ def index(request):
 
 @login_required
 def orders(request):
-    return HttpResponse("My orders")
+    return HttpResponse(_("My orders"))
 
 
 @login_required
 def place_order(request):
-    return HttpResponse("Place order")
+    return HttpResponse(_("Place order"))
 
 
 @login_required
 def order_detail(request, order_id: int):
-    return HttpResponse(f"My order {order_id}")
+    return HttpResponse(_("My order %(order_id)s") % {"order_id": order_id})
 
 
 @login_required
 def catalog(request):
-    return HttpResponse("Customer catalog")
+    return HttpResponse(_("Customer catalog"))
 
 
 @login_required
 def profile(request):
-    return HttpResponse("My profile")
+    return HttpResponse(_("My profile"))
 
 
 @login_required
 def edit_profile(request):
-    return HttpResponse("Edit my profile")
+    return HttpResponse(_("Edit my profile"))
 
 
 @login_required
 def contact(request):
-    return HttpResponse("Contact SwedeSweets")
+    return HttpResponse(_("Contact SwedeSweets"))

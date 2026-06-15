@@ -5,6 +5,7 @@ from datetime import datetime
 
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 RECENT_PORTAL_ORDER_LIMIT = 5
@@ -76,10 +77,10 @@ def build_portal_home_context(
     )
 
     return PortalHomeContext(
-        title=f"Welcome back, {customer.name}",
+        title=_("Welcome back, %(name)s") % {"name": customer.name},
         title_id="customer-portal-title",
-        eyebrow="Customer portal",
-        description=(
+        eyebrow=_("Customer portal"),
+        description=_(
             "Place new orders, review your order history, "
             "and follow recent activity."
         ),
@@ -88,26 +89,26 @@ def build_portal_home_context(
         actions=_build_home_actions(),
         metrics=(
             PortalMetric(
-                label="Total orders",
+                label=_("Total orders"),
                 value=str(order_summary.total_orders),
-                subtext="All orders placed with SwedeSweets",
+                subtext=_("All orders placed with SwedeSweets"),
             ),
             PortalMetric(
-                label="In progress",
+                label=_("In progress"),
                 value=str(in_progress_orders),
-                subtext="Placed or packed orders",
+                subtext=_("Placed or packed orders"),
                 tone="info",
             ),
             PortalMetric(
-                label="Delivered",
+                label=_("Delivered"),
                 value=str(order_summary.delivered_orders),
-                subtext="Completed deliveries",
+                subtext=_("Completed deliveries"),
                 tone="success",
             ),
             PortalMetric(
-                label="Last order",
+                label=_("Last order"),
                 value=_optional_date_label(order_summary.last_ordered_at),
-                subtext="Most recent order date",
+                subtext=_("Most recent order date"),
                 tone="muted",
             ),
         ),
@@ -121,23 +122,23 @@ def build_portal_home_context(
 def _build_home_actions() -> tuple[PortalHomeAction, ...]:
     return (
         PortalHomeAction(
-            label="Place order",
+            label=_("Place order"),
             href=reverse("customer_portal:place_order"),
             css_class=(
                 "button button--hero-action button--tone-place "
                 "button--with-icon"
             ),
-            aria_label="Place a new customer order",
+            aria_label=_("Place a new customer order"),
             icon="cart",
         ),
         PortalHomeAction(
-            label="Order history",
+            label=_("Order history"),
             href=reverse("customer_portal:orders"),
             css_class=(
                 "button button--hero-action button--tone-pack "
                 "button--with-icon"
             ),
-            aria_label="View your order history",
+            aria_label=_("View your order history"),
             icon="packed",
         ),
     )
@@ -159,7 +160,7 @@ def _recent_order_row(order) -> PortalRecentOrderRow:
         status_label=order.get_status_display(),
         status_class=f"status-text status-text--{order.status}",
         created_at_label=_datetime_label(order.created_at),
-        action_label="View order →",
+        action_label=_("View order →"),
     )
 
 
@@ -182,12 +183,12 @@ def _customer_location_label(customer) -> str:
     if location:
         return location
 
-    return "No location added"
+    return _("No location added")
 
 
 def _optional_date_label(value: datetime | None) -> str:
     if value is None:
-        return "Never"
+        return _("Never")
 
     return timezone.localtime(value).strftime("%Y-%m-%d")
 
