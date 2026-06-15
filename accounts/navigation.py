@@ -129,6 +129,17 @@ def build_primary_nav_items(
     )
 
 
+def build_home_href(
+    *,
+    account_role: AccountRole | None,
+    role_spec: RoleSpec | None,
+) -> str:
+    if account_role is None or role_spec is None:
+        return reverse("login")
+
+    return reverse("accounts:after_login")
+
+
 def _filter_nav_items(
     *,
     candidates: tuple[NavItem, ...],
