@@ -15,6 +15,7 @@ from __future__ import annotations
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from customers.models import (
     MAX_CUSTOMER_ADDRESS_LINE_LENGTH,
@@ -31,18 +32,18 @@ from orders.errors import (
 
 class Order(models.Model):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        PLACED = "placed", "Placed"
-        PACKED = "packed", "Packed"
-        DELIVERED = "delivered", "Delivered"
-        CANCELLED = "cancelled", "Cancelled"
+        DRAFT = "draft", _("Draft") 
+        PLACED = "placed", _("Placed")
+        PACKED = "packed", _("Packed") 
+        DELIVERED = "delivered", _("Delivered") 
+        CANCELLED = "cancelled", _("Cancelled") 
 
     class CancelReason(models.TextChoices):
-        CUSTOMER_REQUEST = "customer_request", "Customer request"
-        ORDER_ENTRY_ERROR = "order_entry_error", "Order entry error"
-        DUPLICATE_ORDER = "duplicate_order", "Duplicate order"
-        OUT_OF_STOCK = "out_of_stock", "Out of stock"
-        OTHER = "other", "Other"
+        CUSTOMER_REQUEST = "customer_request", _("Customer request")
+        ORDER_ENTRY_ERROR = "order_entry_error", _("Order entry error") 
+        DUPLICATE_ORDER = "duplicate_order", _("Duplicate order") 
+        OUT_OF_STOCK = "out_of_stock", _("Out of stock") 
+        OTHER = "other", _("Other") 
 
     ALLOWED_TRANSITIONS = {
         Status.DRAFT: {Status.PLACED, Status.CANCELLED},
@@ -306,9 +307,9 @@ class Order(models.Model):
 
 class OrderLine(models.Model):
     class Unit(models.TextChoices):
-        STOCK_UNIT = "stock_unit", "Stock unit"
-        KG = "kg", "Kg"
-        GRAMS = "grams", "Grams"
+        STOCK_UNIT = "stock_unit", _("Stock unit")
+        KG = "kg", _("Kg") 
+        GRAMS = "grams", _("Grams")
 
     order = models.ForeignKey(
         Order,
@@ -362,9 +363,9 @@ class Allocation(models.Model):
     """
 
     class Status(models.TextChoices):
-        RESERVED = "reserved", "Reserved"
-        CONSUMED = "consumed", "Consumed"
-        CANCELLED = "cancelled", "Cancelled"
+        RESERVED = "reserved", _("Reserved") 
+        CONSUMED = "consumed", _("Consumed") 
+        CANCELLED = "cancelled", _("Cancelled") 
 
     ALLOWED_TRANSITIONS = {
         Status.RESERVED: {

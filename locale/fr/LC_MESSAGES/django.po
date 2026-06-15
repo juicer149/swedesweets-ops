@@ -1,0 +1,248 @@
+# French translations for SwedeSweets MVP.
+# Copyright (C) 2026 SwedeSweets
+# This file is distributed under the same license as the SwedeSweets MVP package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SwedeSweets MVP\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-15 17:24+0200\n"
+"PO-Revision-Date: 2026-06-15 17:24+0200\n"
+"Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: accounts/navigation.py:90
+msgid "Orders"
+msgstr "Commandes"
+
+#: accounts/navigation.py:99
+msgid "Catalog"
+msgstr "Catalogue"
+
+#: accounts/navigation.py:108
+msgid "Profile"
+msgstr "Profil"
+
+#: accounts/navigation.py:117
+msgid "Contact"
+msgstr "Contact"
+
+#: customer_portal/viewmodels.py:80
+#, python-format
+msgid "Welcome back, %(name)s"
+msgstr "Bon retour, %(name)s"
+
+#: customer_portal/viewmodels.py:82
+msgid "Customer portal"
+msgstr "Portail client"
+
+#: customer_portal/viewmodels.py:84
+msgid ""
+"Place new orders, review your order history, and follow recent activity."
+msgstr ""
+"Passez de nouvelles commandes, consultez votre historique de commandes et "
+"suivez l’activité récente."
+
+#: customer_portal/viewmodels.py:92
+msgid "Total orders"
+msgstr "Total des commandes"
+
+#: customer_portal/viewmodels.py:94
+msgid "All orders placed with SwedeSweets"
+msgstr "Toutes les commandes passées avec SwedeSweets"
+
+#: customer_portal/viewmodels.py:97
+msgid "In progress"
+msgstr "En cours"
+
+#: customer_portal/viewmodels.py:99
+msgid "Placed or packed orders"
+msgstr "Commandes passées ou emballées"
+
+#: customer_portal/viewmodels.py:103 orders/models.py:38
+msgid "Delivered"
+msgstr "Livrée"
+
+#: customer_portal/viewmodels.py:105
+msgid "Completed deliveries"
+msgstr "Livraisons terminées"
+
+#: customer_portal/viewmodels.py:109
+msgid "Last order"
+msgstr "Dernière commande"
+
+#: customer_portal/viewmodels.py:111
+msgid "Most recent order date"
+msgstr "Date de la commande la plus récente"
+
+#: customer_portal/viewmodels.py:125 customer_portal/views.py:41
+msgid "Place order"
+msgstr "Passer une commande"
+
+#: customer_portal/viewmodels.py:131
+msgid "Place a new customer order"
+msgstr "Passer une nouvelle commande client"
+
+#: customer_portal/viewmodels.py:135
+msgid "Order history"
+msgstr "Historique des commandes"
+
+#: customer_portal/viewmodels.py:141
+msgid "View your order history"
+msgstr "Voir votre historique de commandes"
+
+#: customer_portal/viewmodels.py:163
+msgid "View order →"
+msgstr "Voir la commande →"
+
+#: customer_portal/viewmodels.py:186
+msgid "No location added"
+msgstr "Aucune localisation ajoutée"
+
+#: customer_portal/viewmodels.py:191
+msgid "Never"
+msgstr "Jamais"
+
+#: customer_portal/views.py:36
+msgid "My orders"
+msgstr "Mes commandes"
+
+#: customer_portal/views.py:46
+#, python-format
+msgid "My order %(order_id)s"
+msgstr "Ma commande %(order_id)s"
+
+#: customer_portal/views.py:51
+msgid "Customer catalog"
+msgstr "Catalogue client"
+
+#: customer_portal/views.py:56
+msgid "My profile"
+msgstr "Mon profil"
+
+#: customer_portal/views.py:61
+msgid "Edit my profile"
+msgstr "Modifier mon profil"
+
+#: customer_portal/views.py:66
+msgid "Contact SwedeSweets"
+msgstr "Contacter SwedeSweets"
+
+#: orders/models.py:35
+msgid "Draft"
+msgstr "Brouillon"
+
+#: orders/models.py:36
+msgid "Placed"
+msgstr "Passée"
+
+#: orders/models.py:37
+msgid "Packed"
+msgstr "Emballée"
+
+#: orders/models.py:39 orders/models.py:368
+msgid "Cancelled"
+msgstr "Annulée"
+
+#: orders/models.py:42
+msgid "Customer request"
+msgstr "Demande du client"
+
+#: orders/models.py:43
+msgid "Order entry error"
+msgstr "Erreur de saisie de commande"
+
+#: orders/models.py:44
+msgid "Duplicate order"
+msgstr "Commande en double"
+
+#: orders/models.py:45
+msgid "Out of stock"
+msgstr "Rupture de stock"
+
+#: orders/models.py:46
+msgid "Other"
+msgstr "Autre"
+
+#: orders/models.py:310
+msgid "Stock unit"
+msgstr "Unité de stock"
+
+#: orders/models.py:311
+msgid "Kg"
+msgstr "kg"
+
+#: orders/models.py:312
+msgid "Grams"
+msgstr "Grammes"
+
+#: orders/models.py:366
+msgid "Reserved"
+msgstr "Réservée"
+
+#: orders/models.py:367
+msgid "Consumed"
+msgstr "Consommée"
+
+#: templates/customer_portal/index.html:16
+msgid "Customer portal actions"
+msgstr "Actions du portail client"
+
+#: templates/customer_portal/index.html:32
+msgid "Customer account summary"
+msgstr "Résumé du compte client"
+
+#: templates/customer_portal/index.html:38
+msgid "Customer portal summary"
+msgstr "Résumé du portail client"
+
+#: templates/customer_portal/index.html:52
+msgid "Recent orders"
+msgstr "Commandes récentes"
+
+#: templates/customer_portal/index.html:54
+msgid "Your latest order activity."
+msgstr "Votre activité de commande la plus récente."
+
+#: templates/customer_portal/index.html:59
+msgid "View all orders"
+msgstr "Voir toutes les commandes"
+
+#: templates/customer_portal/index.html:71
+#, python-format
+msgid "Order #%(order_id)s"
+msgstr "Commande n° %(order_id)s"
+
+#: templates/customer_portal/index.html:87
+msgid "No orders yet"
+msgstr "Aucune commande pour le moment"
+
+#: templates/customer_portal/index.html:89
+msgid "Your recent orders will appear here once orders have been placed."
+msgstr ""
+"Vos commandes récentes apparaîtront ici une fois qu’elles auront été passées."
+
+#: templates/includes/navbar.html:7
+msgid "Primary navigation"
+msgstr "Navigation principale"
+
+#: templates/includes/navbar.html:11
+msgid "SwedeSweets home"
+msgstr "Accueil SwedeSweets"
+
+#: templates/includes/navbar.html:65
+msgid "My account"
+msgstr "Mon compte"
+
+#: templates/includes/navbar.html:75
+msgid "Logout"
+msgstr "Déconnexion"
+
+#: templates/includes/navbar.html:85
+msgid "Login"
+msgstr "Connexion"

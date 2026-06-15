@@ -1,14 +1,14 @@
-{% load static %}
+{% load static i18n %}
 
 {% with namespace=request.resolver_match.namespace %}
 {% with url_name=request.resolver_match.url_name %}
 <header class="site-header{% if url_name == 'login' %} site-header--auth{% endif %}">
   <div class="container">
-    <nav class="site-nav" aria-label="Primary navigation">
+    <nav class="site-nav" aria-label="{% trans 'Primary navigation' %}">
       <a
         class="site-brand"
         href="{{ site_home_href }}"
-        aria-label="SwedeSweets home"
+        aria-label="{% trans 'SwedeSweets home' %}"
       >
         <img
           class="site-brand__logo"
@@ -62,7 +62,7 @@
                 class="site-nav__auth-action"
                 href="{% url 'accounts:me' %}"
               >
-                My account
+                {% trans "My account" %}
               </a>
 
               <form
@@ -72,7 +72,7 @@
               >
                 {% csrf_token %}
                 <button class="site-nav__auth-action" type="submit">
-                  Logout
+                  {% trans "Logout" %}
                 </button>
               </form>
             </div>
@@ -82,7 +82,7 @@
                 class="site-nav__auth-action"
                 href="{% url 'login' %}"
               >
-                Login
+                {% trans "Login" %}
               </a>
             </div>
           {% endif %}

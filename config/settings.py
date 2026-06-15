@@ -238,7 +238,17 @@ EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
 # Internationalization
 # =============================================================================
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = os.environ.get("DJANGO_LANGUAGE_CODE", "en")
+
+LANGUAGES = [
+    ("en", "English"),
+    ("fr", "French"),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
 TIME_ZONE = "Europe/Stockholm"
 USE_I18N = True
 USE_TZ = True
