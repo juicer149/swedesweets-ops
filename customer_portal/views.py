@@ -46,6 +46,11 @@ def order_detail(request, order_id: int):
 
 
 @login_required
+def catalog(request):
+    return HttpResponse("Customer catalog")
+
+
+@login_required
 def profile(request):
     return HttpResponse("My profile")
 
@@ -53,3 +58,8 @@ def profile(request):
 @login_required
 def edit_profile(request):
     return HttpResponse("Edit my profile")
+
+
+@login_required
+def contact(request):
+    return HttpResponse("Contact SwedeSweets")

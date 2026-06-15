@@ -31,6 +31,7 @@ class NavItem:
     namespace: str
     icon: str
     capability: Capability
+    active_url_names: tuple[str, ...] = ()
 
     @property
     def href(self) -> str:
@@ -68,8 +69,8 @@ INVENTORY_NAV_ITEM = NavItem(
     capability=Capability.VIEW_INVENTORY,
 )
 
-CATALOG_NAV_ITEM = NavItem(
-    label="Catalog",
+PRODUCTS_NAV_ITEM = NavItem(
+    label="Products",
     route_name="products:index",
     namespace="products",
     icon="lollipop",
@@ -84,6 +85,42 @@ ACCOUNTS_NAV_ITEM = NavItem(
     capability=Capability.MANAGE_ACCOUNTS,
 )
 
+CUSTOMER_PORTAL_ORDERS_NAV_ITEM = NavItem(
+    label="Orders",
+    route_name="customer_portal:orders",
+    namespace="customer_portal",
+    icon="packed",
+    capability=Capability.VIEW_OWN_ORDERS,
+    active_url_names=("orders", "order_detail"),
+)
+
+CUSTOMER_PORTAL_CATALOG_NAV_ITEM = NavItem(
+    label="Catalog",
+    route_name="customer_portal:catalog",
+    namespace="customer_portal",
+    icon="lollipop",
+    capability=Capability.VIEW_CUSTOMER_PORTAL,
+    active_url_names=("catalog",),
+)
+
+CUSTOMER_PORTAL_PROFILE_NAV_ITEM = NavItem(
+    label="Profile",
+    route_name="customer_portal:profile",
+    namespace="customer_portal",
+    icon="users",
+    capability=Capability.VIEW_OWN_ACCOUNT,
+    active_url_names=("profile", "edit_profile"),
+)
+
+CUSTOMER_PORTAL_CONTACT_NAV_ITEM = NavItem(
+    label="Contact",
+    route_name="customer_portal:contact",
+    namespace="customer_portal",
+    icon="tag",
+    capability=Capability.VIEW_CUSTOMER_PORTAL,
+    active_url_names=("contact",),
+)
+
 
 # -----------------------------------------------------------------------------
 # Role-specific primary navigation.
@@ -96,7 +133,7 @@ STAFF_NAV_ITEMS = (
     CUSTOMERS_NAV_ITEM,
     ORDERS_NAV_ITEM,
     INVENTORY_NAV_ITEM,
-    CATALOG_NAV_ITEM,
+    PRODUCTS_NAV_ITEM,
     ACCOUNTS_NAV_ITEM,
 )
 
@@ -105,7 +142,12 @@ RESTRICTED_STAFF_NAV_ITEMS = (
     INVENTORY_NAV_ITEM,
 )
 
-CUSTOMER_NAV_ITEMS: tuple[NavItem, ...] = ()
+CUSTOMER_NAV_ITEMS = (
+    CUSTOMER_PORTAL_ORDERS_NAV_ITEM,
+    CUSTOMER_PORTAL_CATALOG_NAV_ITEM,
+    CUSTOMER_PORTAL_PROFILE_NAV_ITEM,
+    CUSTOMER_PORTAL_CONTACT_NAV_ITEM,
+)
 
 
 NAV_ITEMS_BY_ROLE: dict[AccountRole, tuple[NavItem, ...]] = {

@@ -29,12 +29,24 @@
                   class="
                     site-nav__link
                     {% if namespace == item.namespace %}
-                      site-nav__link--active
+                      {% if item.active_url_names %}
+                        {% if url_name in item.active_url_names %}
+                          site-nav__link--active
+                        {% endif %}
+                      {% else %}
+                        site-nav__link--active
+                      {% endif %}
                     {% endif %}
                   "
                   href="{{ item.href }}"
                   {% if namespace == item.namespace %}
-                    aria-current="page"
+                    {% if item.active_url_names %}
+                      {% if url_name in item.active_url_names %}
+                        aria-current="page"
+                      {% endif %}
+                    {% else %}
+                      aria-current="page"
+                    {% endif %}
                   {% endif %}
                 >
                   <span class="site-nav__icon" aria-hidden="true">
