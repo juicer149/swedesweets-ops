@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 17:24+0200\n"
-"PO-Revision-Date: 2026-06-15 17:24+0200\n"
+"POT-Creation-Date: 2026-06-15 20:27+0200\n"
+"PO-Revision-Date: 2026-06-15 18:05+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: accounts/navigation.py:90
+#: accounts/navigation.py:90 customer_portal/viewmodels.py:135
 msgid "Orders"
 msgstr "Commandes"
 
@@ -32,10 +32,51 @@ msgstr "Profil"
 msgid "Contact"
 msgstr "Contact"
 
+#: customer_portal/order_list_viewmodels.py:38
+#: templates/customer_portal/orders.html:4
+msgid "Order history"
+msgstr "Historique des commandes"
+
+#: customer_portal/order_list_viewmodels.py:40
+msgid "Review your orders and follow their current status."
+msgstr "Consultez vos commandes et suivez leur statut actuel."
+
+#: customer_portal/order_list_viewmodels.py:42
+#: customer_portal/viewmodels.py:125 customer_portal/views.py:117
+msgid "Place order"
+msgstr "Passer une commande"
+
+#: customer_portal/order_list_viewmodels.py:45
+msgid "Place a new order"
+msgstr "Passer une nouvelle commande"
+
+#: customer_portal/order_list_viewmodels.py:101
+#: customer_portal/viewmodels.py:163
+msgid "View order →"
+msgstr "Voir la commande →"
+
+#: customer_portal/order_list_viewmodels.py:114
+#: templates/customer_portal/index.html:71
+#, python-format
+msgid "Order #%(order_id)s"
+msgstr "Commande n° %(order_id)s"
+
+#: customer_portal/order_list_viewmodels.py:128
+#, python-format
+msgid "%(created_at)s · %(quantity)s"
+msgstr "%(created_at)s · %(quantity)s"
+
+#: customer_portal/order_list_viewmodels.py:150
+#, python-format
+msgid "%(count)s unit"
+msgid_plural "%(count)s units"
+msgstr[0] "%(count)s unité"
+msgstr[1] "%(count)s unités"
+
 #: customer_portal/viewmodels.py:80
 #, python-format
 msgid "Welcome back, %(name)s"
-msgstr "Bon retour, %(name)s"
+msgstr "Bienvenue, %(name)s"
 
 #: customer_portal/viewmodels.py:82
 msgid "Customer portal"
@@ -45,8 +86,8 @@ msgstr "Portail client"
 msgid ""
 "Place new orders, review your order history, and follow recent activity."
 msgstr ""
-"Passez de nouvelles commandes, consultez votre historique de commandes et "
-"suivez l’activité récente."
+"Passez de nouvelles commandes, consultez votre historique et suivez "
+"l’activité récente."
 
 #: customer_portal/viewmodels.py:92
 msgid "Total orders"
@@ -62,7 +103,7 @@ msgstr "En cours"
 
 #: customer_portal/viewmodels.py:99
 msgid "Placed or packed orders"
-msgstr "Commandes passées ou emballées"
+msgstr "Commandes passées ou préparées"
 
 #: customer_portal/viewmodels.py:103 orders/models.py:38
 msgid "Delivered"
@@ -70,7 +111,7 @@ msgstr "Livrée"
 
 #: customer_portal/viewmodels.py:105
 msgid "Completed deliveries"
-msgstr "Livraisons terminées"
+msgstr "Commandes livrées"
 
 #: customer_portal/viewmodels.py:109
 msgid "Last order"
@@ -78,27 +119,15 @@ msgstr "Dernière commande"
 
 #: customer_portal/viewmodels.py:111
 msgid "Most recent order date"
-msgstr "Date de la commande la plus récente"
-
-#: customer_portal/viewmodels.py:125 customer_portal/views.py:41
-msgid "Place order"
-msgstr "Passer une commande"
+msgstr "Date de la dernière commande"
 
 #: customer_portal/viewmodels.py:131
 msgid "Place a new customer order"
-msgstr "Passer une nouvelle commande client"
-
-#: customer_portal/viewmodels.py:135
-msgid "Order history"
-msgstr "Historique des commandes"
+msgstr "Passer une nouvelle commande"
 
 #: customer_portal/viewmodels.py:141
 msgid "View your order history"
 msgstr "Voir votre historique de commandes"
-
-#: customer_portal/viewmodels.py:163
-msgid "View order →"
-msgstr "Voir la commande →"
 
 #: customer_portal/viewmodels.py:186
 msgid "No location added"
@@ -108,28 +137,48 @@ msgstr "Aucune localisation ajoutée"
 msgid "Never"
 msgstr "Jamais"
 
-#: customer_portal/views.py:36
-msgid "My orders"
-msgstr "Mes commandes"
+#: customer_portal/views.py:37
+msgid "All"
+msgstr "Toutes"
+
+#: customer_portal/views.py:45
+msgid "Order"
+msgstr "Commande"
 
 #: customer_portal/views.py:46
+msgid "Created"
+msgstr "Créée"
+
+#: customer_portal/views.py:47
+msgid "Status"
+msgstr "Statut"
+
+#: customer_portal/views.py:48
+msgid "Quantity"
+msgstr "Quantité"
+
+#: customer_portal/views.py:53
+msgid "Order filters"
+msgstr "Filtres des commandes"
+
+#: customer_portal/views.py:122
 #, python-format
 msgid "My order %(order_id)s"
 msgstr "Ma commande %(order_id)s"
 
-#: customer_portal/views.py:51
+#: customer_portal/views.py:127
 msgid "Customer catalog"
-msgstr "Catalogue client"
+msgstr "Catalogue"
 
-#: customer_portal/views.py:56
+#: customer_portal/views.py:132
 msgid "My profile"
 msgstr "Mon profil"
 
-#: customer_portal/views.py:61
+#: customer_portal/views.py:137
 msgid "Edit my profile"
 msgstr "Modifier mon profil"
 
-#: customer_portal/views.py:66
+#: customer_portal/views.py:142
 msgid "Contact SwedeSweets"
 msgstr "Contacter SwedeSweets"
 
@@ -143,7 +192,7 @@ msgstr "Passée"
 
 #: orders/models.py:37
 msgid "Packed"
-msgstr "Emballée"
+msgstr "Préparée"
 
 #: orders/models.py:39 orders/models.py:368
 msgid "Cancelled"
@@ -195,11 +244,11 @@ msgstr "Actions du portail client"
 
 #: templates/customer_portal/index.html:32
 msgid "Customer account summary"
-msgstr "Résumé du compte client"
+msgstr "Résumé du compte"
 
 #: templates/customer_portal/index.html:38
 msgid "Customer portal summary"
-msgstr "Résumé du portail client"
+msgstr "Résumé du portail"
 
 #: templates/customer_portal/index.html:52
 msgid "Recent orders"
@@ -207,16 +256,11 @@ msgstr "Commandes récentes"
 
 #: templates/customer_portal/index.html:54
 msgid "Your latest order activity."
-msgstr "Votre activité de commande la plus récente."
+msgstr "Votre activité de commande récente."
 
 #: templates/customer_portal/index.html:59
 msgid "View all orders"
 msgstr "Voir toutes les commandes"
-
-#: templates/customer_portal/index.html:71
-#, python-format
-msgid "Order #%(order_id)s"
-msgstr "Commande n° %(order_id)s"
 
 #: templates/customer_portal/index.html:87
 msgid "No orders yet"
@@ -226,6 +270,21 @@ msgstr "Aucune commande pour le moment"
 msgid "Your recent orders will appear here once orders have been placed."
 msgstr ""
 "Vos commandes récentes apparaîtront ici une fois qu’elles auront été passées."
+
+#: templates/customer_portal/orders.html:33
+#, python-format
+msgid "View order #%(order_id)s"
+msgstr "Voir la commande n° %(order_id)s"
+
+#: templates/customer_portal/orders.html:37
+#, python-format
+msgid "#%(order_id)s"
+msgstr "n° %(order_id)s"
+
+#: templates/customer_portal/orders.html:56
+#: templates/customer_portal/orders.html:69
+msgid "No orders found."
+msgstr "Aucune commande trouvée."
 
 #: templates/includes/navbar.html:7
 msgid "Primary navigation"

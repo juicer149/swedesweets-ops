@@ -231,6 +231,47 @@
 
 
 /* =============================================================================
+   Portal order history
+   ============================================================================= */
+
+.portal-history-card {
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.portal-history-card .ui-card-row {
+  align-items: baseline;
+}
+
+.portal-history-card__title {
+  font-size: var(--font-size-18);
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.portal-history-card .status-text {
+  font-size: var(--font-size-16);
+  font-weight: 850;
+}
+
+.portal-history-card__meta {
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.portal-history-card__action {
+  justify-self: start;
+  margin-top: var(--space-1);
+
+  font-size: var(--font-size-16);
+}
+
+
+/* =============================================================================
    Responsive
    ============================================================================= */
 
@@ -260,22 +301,39 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
+    width: min(100%, 44rem);
+    margin-inline: auto;
   }
 
   .portal-hero__nav .button--hero-action {
     min-width: 0;
-    height: clamp(2.6rem, 10vw, 3.25rem);
+    width: 100%;
+    height: clamp(2.75rem, 10vw, 3.35rem);
     min-height: 0;
-    padding-inline: clamp(0.35rem, 2vw, var(--space-3));
+    padding-inline: clamp(0.45rem, 2vw, var(--space-3));
 
     justify-content: center;
 
-    font-size: clamp(0.78rem, 3.1vw, var(--font-size-14));
+    font-size: clamp(0.78rem, 3vw, var(--font-size-14));
+    line-height: 1.05;
+  }
+
+  .portal-hero__nav .button__label {
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .portal-hero__nav .button__icon,
+  .portal-hero__nav .button__arrow {
+    flex: 0 0 auto;
   }
 
   .portal-hero__nav .button__icon {
     width: clamp(0.95rem, 3.7vw, 1.15rem);
-   height: clamp(0.95rem, 3.7vw, 1.15rem);
+    height: clamp(0.95rem, 3.7vw, 1.15rem);
   }
 
   .portal-hero__account {
@@ -322,6 +380,31 @@
 
   .portal-order-item__action {
     justify-self: start;
+  }
+
+  .portal-history-card {
+    padding: var(--space-3);
+  }
+
+  .portal-history-card__title {
+    font-size: var(--font-size-16);
+  }
+
+  .portal-history-card .status-text,
+  .portal-history-card__meta,
+  .portal-history-card__action {
+    font-size: var(--font-size-14);
+  }
+}
+
+@media (max-width: 560px) {
+  .portal-hero__nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-hero__nav .button--hero-action {
+    justify-self: center;
+    width: min(100%, 24rem);
   }
 }
 

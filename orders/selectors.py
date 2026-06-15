@@ -44,6 +44,20 @@ ORDER_SORTS: dict[str, tuple[str, ...]] = {
 }
 
 
+CUSTOMER_ORDER_SORTS: dict[str, tuple[str, ...]] = {
+    "order": ("id",),
+    "-order": ("-id",),
+    "created": ("created_at", "id"),
+    "-created": ("-created_at", "-id"),
+    "status": ("status_rank", "-id"),
+    "-status": ("-status_rank", "-id"),
+    "quantity": ("total_quantity", "id"),
+    "-quantity": ("-total_quantity", "id"),
+}
+
+DEFAULT_CUSTOMER_ORDER_SORT = DEFAULT_ORDER_SORT
+
+
 @dataclass(frozen=True, slots=True)
 class CustomerOrderSummary:
     total_orders: int
@@ -92,22 +106,39 @@ def list_orders(
 
 def list_customer_orders(
     *,
-    customer: Customer,
+    customer,
+    status: str | None = None,
+    sort: str | None = None,
 ) -> QuerySet[Order]:
-    """Return orders for a customer detail page.
+    """Return orders scoped to one customer.
 
-    Newest first because the customer detail page is usually used to inspect the
-    latest relationship/history for that customer.
+    This is used by customer-facing views and customer detail pages.
+
+    The database query owns filtering and sorting. The caller must provide the
+    already-authorized customer object; customer portal views should get that
+    customer from the authenticated user's customer membership.
     """
 
-    return (
-        customer.orders
+    normalized_sort = normalize_sort(
+        sort,
+        allowed_sorts=CUSTOMER_ORDER_SORTS,
+        default_sort=DEFAULT_CUSTOMER_ORDER_SORT,
+    )
+
+    orders = (
+        Order.objects
+        .select_related("customer")
+        .filter(customer=customer)
         .annotate(
             **_order_summary_annotations(),
             status_rank=_status_rank_expression(),
         )
-        .order_by("-created_at", "-id")
     )
+
+    if status in Order.Status.values:
+        orders = orders.filter(status=status)
+
+    return orders.order_by(*CUSTOMER_ORDER_SORTS[normalized_sort])
 
 
 def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:

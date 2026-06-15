@@ -132,7 +132,7 @@ def _build_home_actions() -> tuple[PortalHomeAction, ...]:
             icon="cart",
         ),
         PortalHomeAction(
-            label=_("Order history"),
+            label=_("Orders"),
             href=reverse("customer_portal:orders"),
             css_class=(
                 "button button--hero-action button--tone-pack "
