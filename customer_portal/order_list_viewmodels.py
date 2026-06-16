@@ -33,16 +33,29 @@ class PortalOrderPageRow:
     card: UiCard
 
 
-def build_portal_orders_page_header() -> PageHeader:
+def build_portal_orders_page_header(
+    *,
+    active_draft_order=None,
+) -> PageHeader:
+    has_active_draft = active_draft_order is not None
+
     return PageHeader(
         title=_("Order history"),
         title_id="portal-orders-title",
         description=_("Review your orders and follow their current status."),
         action=PageHeaderAction(
-            label=_("Place order"),
+            label=(
+                _("Continue draft")
+                if has_active_draft
+                else _("Place order")
+            ),
             href=reverse("customer_portal:place_order"),
             icon="cart",
-            aria_label=_("Place a new order"),
+            aria_label=(
+                _("Continue your unfinished order")
+                if has_active_draft
+                else _("Place a new order")
+            ),
         ),
     )
 

@@ -106,6 +106,7 @@ def index(request):
 @login_required
 def orders(request):
     customer = get_portal_customer_for_user(user=request.user)
+    active_draft_order = get_active_draft_order_for_customer(customer=customer)
 
     controls = TableControls.from_request_values(
         base_path=request.path,
@@ -127,7 +128,9 @@ def orders(request):
     )
 
     context = {
-        "page_header": build_portal_orders_page_header(),
+        "page_header": build_portal_orders_page_header(
+            active_draft_order=active_draft_order,
+        ),
         "order_rows": build_portal_order_page_rows(
             orders=customer_orders,
         ),
