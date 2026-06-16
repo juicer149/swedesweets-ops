@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 19:06+0200\n"
+"POT-Creation-Date: 2026-06-16 19:23+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -862,6 +862,14 @@ msgstr "Déconnexion"
 msgid "Login"
 msgstr "Connexion"
 
+#: templates/includes/ui/form.html:29
+msgid "Save"
+msgstr "Enregistrer"
+
+#: templates/includes/ui/form.html:35
+msgid "Cancel"
+msgstr "Annulée"
+
 #: templates/registration/login.html:12
 msgid "Operations"
 msgstr "Opérations"
@@ -996,8 +1004,8 @@ msgstr "Votre nom d’utilisateur :"
 #: templates/registration/password_reset_email.html:15
 msgid "If you did not request this password reset, you can ignore this email."
 msgstr ""
-"Si vous n’avez pas demandé cette réinitialisation, vous pouvez ignorer cet "
-"e-mail."
+"Si vous n’avez pas demandé cette réinitialisation, vous pouvez ignorer cet e-"
+"mail."
 
 #: templates/registration/password_reset_form.html:4
 #: templates/registration/password_reset_form.html:7
