@@ -140,10 +140,7 @@
           value="discard_draft"
           formnovalidate
         >
-          <span class="button__icon" aria-hidden="true">
-            {% include "includes/ui/icon.html" with name="trash" only %}
-          </span>
-          <span class="button__label">{{ discard_draft_label }}</span>
+          {{ discard_draft_label }}
         </button>
       {% endif %}
     </div>
