@@ -7,6 +7,7 @@ AUTH_EXEMPT_VIEWS = frozenset(
     {
         "login",
         "logout",
+        "set_language",
         "password_change",
         "password_change_done",
         "password_reset",

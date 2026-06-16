@@ -7,6 +7,8 @@ from dashboard import views as dashboard_views
 
 
 urlpatterns = [
+    path("i18n/", include("django.conf.urls.i18n")),
+
     path("", dashboard_views.index, name="index"),
     path("admin/", admin.site.urls),
 

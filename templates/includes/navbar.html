@@ -17,47 +17,53 @@
         >
       </a>
 
-      {% if url_name != "login" %}
-        <div class="site-nav__content">
-          {% if request.user.is_authenticated %}
-            <div
-              class="site-nav__links"
-              style="--site-nav-count: {{ primary_nav_items|length }};"
-            >
-              {% for item in primary_nav_items %}
-                <a
-                  class="
-                    site-nav__link
-                    {% if namespace == item.namespace %}
-                      {% if item.active_url_names %}
-                        {% if url_name in item.active_url_names %}
-                          site-nav__link--active
-                        {% endif %}
-                      {% else %}
-                        site-nav__link--active
-                      {% endif %}
-                    {% endif %}
-                  "
-                  href="{{ item.href }}"
+      <div class="site-nav__content">
+        {% if request.user.is_authenticated and url_name != "login" %}
+          <div
+            class="site-nav__links"
+            style="--site-nav-count: {{ primary_nav_items|length }};"
+          >
+            {% for item in primary_nav_items %}
+              <a
+                class="
+                  site-nav__link
                   {% if namespace == item.namespace %}
                     {% if item.active_url_names %}
                       {% if url_name in item.active_url_names %}
-                        aria-current="page"
+                        site-nav__link--active
                       {% endif %}
                     {% else %}
-                      aria-current="page"
+                      site-nav__link--active
                     {% endif %}
                   {% endif %}
-                >
-                  <span class="site-nav__icon" aria-hidden="true">
-                    {% include "includes/ui/icon.html" with name=item.icon %}
-                  </span>
-                  <span>{{ item.label }}</span>
-                </a>
-              {% endfor %}
-            </div>
+                "
+                href="{{ item.href }}"
+                {% if namespace == item.namespace %}
+                  {% if item.active_url_names %}
+                    {% if url_name in item.active_url_names %}
+                      aria-current="page"
+                    {% endif %}
+                  {% else %}
+                    aria-current="page"
+                  {% endif %}
+                {% endif %}
+              >
+                <span class="site-nav__icon" aria-hidden="true">
+                  {% include "includes/ui/icon.html" with name=item.icon %}
+                </span>
+                <span>{{ item.label }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="site-nav__links site-nav__links--empty" aria-hidden="true"></div>
+        {% endif %}
 
-            <div class="site-nav__auth">
+        <div class="site-nav__auth">
+          {% include "includes/language_switcher.html" %}
+
+          {% if request.user.is_authenticated %}
+            {% if url_name != "login" %}
               <a
                 class="site-nav__auth-action"
                 href="{% url 'accounts:me' %}"
@@ -75,19 +81,19 @@
                   {% trans "Logout" %}
                 </button>
               </form>
-            </div>
+            {% endif %}
           {% else %}
-            <div class="site-nav__auth">
+            {% if url_name != "login" %}
               <a
                 class="site-nav__auth-action"
                 href="{% url 'login' %}"
               >
                 {% trans "Login" %}
               </a>
-            </div>
+            {% endif %}
           {% endif %}
         </div>
-      {% endif %}
+      </div>
     </nav>
   </div>
 </header>

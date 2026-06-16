@@ -1,0 +1,36 @@
+{% load i18n %}
+
+<form
+  class="language-switcher"
+  action="{% url 'set_language' %}"
+  method="post"
+  aria-label="{% trans 'Language' %}"
+>
+  {% csrf_token %}
+
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+  {% get_current_language as CURRENT_LANGUAGE %}
+
+  <button
+    class="language-switcher__option{% if CURRENT_LANGUAGE == 'en' %} language-switcher__option--active{% endif %}"
+    type="submit"
+    name="language"
+    value="en"
+    {% if CURRENT_LANGUAGE == 'en' %}aria-current="true"{% endif %}
+  >
+    EN
+  </button>
+
+  <span class="language-switcher__separator" aria-hidden="true">/</span>
+
+  <button
+    class="language-switcher__option{% if CURRENT_LANGUAGE == 'fr' %} language-switcher__option--active{% endif %}"
+    type="submit"
+    name="language"
+    value="fr"
+    {% if CURRENT_LANGUAGE == 'fr' %}aria-current="true"{% endif %}
+  >
+    FR
+  </button>
+</form>
