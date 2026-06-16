@@ -7,6 +7,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from orders.presentation import (
+    customer_order_status_label,
+    order_status_tone,
+)
+
 
 RECENT_PORTAL_ORDER_LIMIT = 5
 
@@ -169,7 +174,7 @@ def _build_home_actions(
 
 
 def _recent_order_row(order) -> PortalRecentOrderRow:
-    tone = _order_status_tone(order.status)
+    tone = order_status_tone(order.status)
 
     return PortalRecentOrderRow(
         order_id=order.pk,
@@ -181,20 +186,11 @@ def _recent_order_row(order) -> PortalRecentOrderRow:
             "mobile-card mobile-card--clickable "
             f"mobile-card--{tone} portal-order-item"
         ),
-        status_label=order.get_status_display(),
+        status_label=customer_order_status_label(order.status),
         status_class=f"status-text status-text--{order.status}",
         created_at_label=_datetime_label(order.created_at),
         action_label=_("View order →"),
     )
-
-
-def _order_status_tone(status: str) -> str:
-    return {
-        "placed": "warning",
-        "packed": "info",
-        "delivered": "success",
-        "cancelled": "danger",
-    }.get(status, "neutral")
 
 
 def _customer_location_label(customer) -> str:

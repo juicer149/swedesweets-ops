@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import ngettext
 
 from common.detail_cards import (
     DetailCard,
@@ -20,9 +19,11 @@ from common.ui import (
 from orders.models import Order, OrderLine
 from orders.presentation import (
     contents_summary,
+    customer_order_status_label,
     order_detail_card_class,
     order_detail_status_class,
     order_status_icon,
+    quantity_label,
 )
 from products.models import Product
 
@@ -78,7 +79,7 @@ def build_portal_order_detail_context(
         content_lines=content_lines,
         product_count=product_count,
         total_quantity=total_quantity,
-        total_quantity_label=_quantity_label(total_quantity),
+        total_quantity_label=quantity_label(total_quantity),
         detail_card=DetailCard(
             header=_build_order_header(order),
             panels=_build_order_detail_panels(
@@ -100,7 +101,7 @@ def _build_order_header(order: Order) -> DetailHeader:
     return DetailHeader(
         eyebrow=_("Order details"),
         title=_("Order #%(order_id)s") % {"order_id": order.pk},
-        status_label=order.get_status_display(),
+        status_label=customer_order_status_label(order.status),
         status_class=order_detail_status_class(order.status),
         status_icon=order_status_icon(order.status),
     )
@@ -116,7 +117,7 @@ def _build_order_detail_panels(
         DetailPanel(
             key="order",
             label=_("Order"),
-            summary=_status_summary(order),
+            summary=customer_order_status_label(order.status),
             body_template="customer_portal/includes/detail_panel_order.html",
             icon="cart",
             is_active=order.status == Order.Status.CANCELLED,
@@ -137,17 +138,17 @@ def _build_order_detail_panels(
 
 def _build_content_line(line: OrderLine) -> PortalOrderContentLine:
     product = line.product
-    quantity_label = _quantity_label(line.quantity_in_units)
+    line_quantity_label = quantity_label(line.quantity_in_units)
 
     return PortalOrderContentLine(
         product=product,
         quantity=line.quantity_in_units,
-        quantity_label=quantity_label,
+        quantity_label=line_quantity_label,
         unit=line.get_unit_display(),
         catalog_label=product.catalog_label,
         card=_build_content_line_card(
             product=product,
-            quantity_label=quantity_label,
+            quantity_label=line_quantity_label,
         ),
     )
 
@@ -174,22 +175,3 @@ def _build_content_line_card(
             ),
         ),
     )
-
-
-def _status_summary(order: Order) -> str:
-    return {
-        Order.Status.DRAFT: _("Draft"),
-        Order.Status.PLACED: _("Received"),
-        Order.Status.PACKED: _("Prepared"),
-        Order.Status.DELIVERED: _("Delivered"),
-        Order.Status.CANCELLED: _("Cancelled"),
-    }.get(order.status, order.get_status_display())
-
-
-
-def _quantity_label(quantity: int) -> str:
-    return ngettext(
-        "%(count)s unit",
-        "%(count)s units",
-        quantity,
-    ) % {"count": quantity}

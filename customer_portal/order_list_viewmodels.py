@@ -6,7 +6,6 @@ from datetime import datetime
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import ngettext
 
 from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
@@ -20,6 +19,7 @@ from orders.presentation import (
     build_order_status_presentation,
     order_action_link_class,
     order_card_css_class,
+    quantity_label,
 )
 
 
@@ -140,7 +140,7 @@ def _build_meta_row(
         left=UiText(
             text=_("%(created_at)s · %(quantity)s") % {
                 "created_at": created_at_label,
-                "quantity": _quantity_label(total_quantity),
+                "quantity": quantity_label(total_quantity),
             },
             css_class="ui-card-order-meta portal-history-card__meta",
         ),
@@ -156,11 +156,3 @@ def _order_detail_href(order: Order) -> str:
 
 def _date_label(value: datetime) -> str:
     return timezone.localtime(value).strftime("%Y-%m-%d")
-
-
-def _quantity_label(quantity: int) -> str:
-    return ngettext(
-        "%(count)s unit",
-        "%(count)s units",
-        quantity,
-    ) % {"count": quantity}

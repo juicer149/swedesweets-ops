@@ -75,6 +75,21 @@ ORDER_DETAIL_CARD_CLASS_BY_STATUS = {
     Order.Status.CANCELLED: "content-card--danger",
 }
 
+CUSTOMER_ORDER_STATUS_LABEL_BY_STATUS = {
+    Order.Status.DRAFT: _("Draft"),
+    Order.Status.PLACED: _("Received"),
+    Order.Status.PACKED: _("Prepared"),
+    Order.Status.DELIVERED: _("Delivered"),
+    Order.Status.CANCELLED: _("Cancelled"),
+}
+
+
+def customer_order_status_label(status: str) -> str:
+    return CUSTOMER_ORDER_STATUS_LABEL_BY_STATUS.get(
+        status,
+        order_status_label(status),
+    )
+
 
 def _order_card_class(status: str) -> str:
     return ORDER_CARD_CLASS_BY_STATUS.get(
