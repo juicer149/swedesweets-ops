@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Page not found{% endblock %}
+{% block title %}{% trans "Page not found" %}{% endblock %}
 
 {% block content %}
   <main class="container error-page" aria-labelledby="error-title">
@@ -8,17 +9,19 @@
       <p class="error-card__code">404</p>
 
       <h1 id="error-title" class="error-card__title">
-        Page not found
+        {% trans "Page not found" %}
       </h1>
 
       <p class="error-card__body">
-        We could not find that page or record. It may have been deleted,
-        moved, or the link may be wrong.
+        {% blocktrans trimmed %}
+          We could not find that page or record. It may have been deleted,
+          moved, or the link may be wrong.
+        {% endblocktrans %}
       </p>
 
       <div class="error-card__actions">
-        <a class="button button--primary" href="/">
-          Back to dashboard
+        <a class="button button--primary" href="{% url 'accounts:after_login' %}">
+          {% trans "Back to start" %}
         </a>
       </div>
     </section>

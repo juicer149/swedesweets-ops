@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Bad request{% endblock %}
+{% block title %}{% trans "Bad request" %}{% endblock %}
 
 {% block content %}
   <main class="container error-page" aria-labelledby="error-title">
@@ -8,17 +9,19 @@
       <p class="error-card__code">400</p>
 
       <h1 id="error-title" class="error-card__title">
-        Bad request
+        {% trans "Bad request" %}
       </h1>
 
       <p class="error-card__body">
-        The request could not be understood by the system. Go back and try
-        again, or return to the dashboard.
+        {% blocktrans trimmed %}
+          The request could not be understood by the system. Go back and try
+          again, or return to your start page.
+        {% endblocktrans %}
       </p>
 
       <div class="error-card__actions">
-        <a class="button button--primary" href="/">
-          Back to dashboard
+        <a class="button button--primary" href="{% url 'accounts:after_login' %}">
+          {% trans "Back to start" %}
         </a>
       </div>
     </section>

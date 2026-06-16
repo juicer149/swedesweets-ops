@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 14:38+0200\n"
+"POT-Creation-Date: 2026-06-16 15:08+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -133,27 +133,28 @@ msgstr "La quantité est trop élevée."
 msgid "e.g. 2"
 msgstr "p. ex. 2"
 
-#: customer_portal/forms.py:99
+#: customer_portal/forms.py:101
 msgid "Choose a product for this line."
 msgstr "Choisissez un produit pour cette ligne."
 
-#: customer_portal/forms.py:105
+#: customer_portal/forms.py:107
 msgid "Enter a quantity for this line."
 msgstr "Saisissez une quantité pour cette ligne."
 
-#: customer_portal/forms.py:158
+#: customer_portal/forms.py:160
 msgid "Add at least one product."
-msgstr "Ajoutez au moins un produit." 
+msgstr "Ajoutez au moins un produit."
 
-#: customer_portal/forms.py:182
+#: customer_portal/forms.py:184
 #, python-format
 msgid "Only %(available)s available for %(product)s."
 msgstr "Seulement %(available)s disponibles pour %(product)s."
 
-#: customer_portal/forms.py:193
+#: customer_portal/forms.py:195
 #, python-format
 msgid "%(product)s is unusually large. Maximum is %(maximum)s per order."
-msgstr "%(product)s est trop volumineux. Le maximum est de %(maximum)s par commande."
+msgstr ""
+"%(product)s est trop volumineux. Le maximum est de %(maximum)s par commande."
 
 #: customer_portal/order_list_viewmodels.py:38
 #: templates/customer_portal/orders.html:4
@@ -411,6 +412,59 @@ msgid "%(count)s case"
 msgid_plural "%(count)s cases"
 msgstr[0] "%(count)s caisse"
 msgstr[1] "%(count)s caisses"
+
+#: templates/400.html:4 templates/400.html:12
+msgid "Bad request"
+msgstr "Requête incorrecte"
+
+#: templates/400.html:16
+msgid ""
+"The request could not be understood by the system. Go back and try again, or "
+"return to your start page."
+msgstr ""
+"Le système n’a pas pu comprendre la requête. Revenez en arrière et réessayez, "
+"ou retournez à votre page d’accueil."
+
+#: templates/400.html:24 templates/403.html:24 templates/404.html:24
+#: templates/500.html:24
+msgid "Back to start"
+msgstr "Retour à l’accueil"
+
+#: templates/403.html:4 templates/403.html:12
+msgid "Access denied"
+msgstr "Accès refusé"
+
+#: templates/403.html:16
+msgid ""
+"Your account does not have access to this area. If this seems wrong, contact "
+"the system owner."
+msgstr ""
+"Votre compte n’a pas accès à cette zone. Si cela vous semble incorrect, "
+"contactez l’administrateur du système."
+
+#: templates/404.html:4 templates/404.html:12
+msgid "Page not found"
+msgstr "Page introuvable"
+
+#: templates/404.html:16
+msgid ""
+"We could not find that page or record. It may have been deleted, moved, or "
+"the link may be wrong."
+msgstr ""
+"Nous n’avons pas trouvé cette page ou cet enregistrement. Il a peut-être été "
+"supprimé, déplacé, ou le lien est peut-être incorrect."
+
+#: templates/500.html:4 templates/500.html:12
+msgid "Something went wrong"
+msgstr "Une erreur est survenue"
+
+#: templates/500.html:16
+msgid ""
+"The system hit an unexpected error. Try again, or contact the system owner "
+"if it keeps happening."
+msgstr ""
+"Le système a rencontré une erreur inattendue. Réessayez, ou contactez "
+"l’administrateur du système si le problème persiste."
 
 #: templates/customer_portal/includes/detail_panel_items.html:41
 msgid "No order items found."
