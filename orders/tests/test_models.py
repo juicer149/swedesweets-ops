@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-
+from django.db import IntegrityError, transaction
 import pytest
 
 from inventory.services import create_batch
@@ -23,6 +23,25 @@ def test_new_order_starts_as_draft(customer):
     assert order.status == Order.Status.DRAFT
     assert order.can_be_edited is False
     assert order.can_be_cancelled is True
+
+
+@pytest.mark.django_db
+def test_customer_can_have_only_one_active_draft_order(customer):
+    Order.objects.create(customer=customer)
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            Order.objects.create(customer=customer)
+
+
+@pytest.mark.django_db
+def test_customer_can_create_new_draft_after_previous_draft_is_cancelled(customer):
+    draft = Order.objects.create(customer=customer)
+    draft.cancel(reason=Order.CancelReason.CUSTOMER_REQUEST)
+
+    new_draft = Order.objects.create(customer=customer)
+
+    assert new_draft.status == Order.Status.DRAFT
 
 
 @pytest.mark.django_db

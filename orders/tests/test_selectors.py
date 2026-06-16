@@ -110,9 +110,18 @@ def test_list_orders_annotates_total_quantity(customer, apple, stocked_inventory
 
 @pytest.mark.django_db
 def test_list_customer_orders_returns_only_customer_orders(customer, other_customer):
-    first = Order.objects.create(customer=customer)
-    second = Order.objects.create(customer=customer)
-    other = Order.objects.create(customer=other_customer)
+    first = Order.objects.create(
+        customer=customer,
+        status=Order.Status.PLACED,
+    )
+    second = Order.objects.create(
+        customer=customer,
+        status=Order.Status.PACKED,
+    )
+    other = Order.objects.create(
+        customer=other_customer,
+        status=Order.Status.PLACED,
+    )
 
     orders = list_customer_orders(customer=customer)
 

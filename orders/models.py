@@ -155,6 +155,14 @@ class Order(models.Model):
             models.Index(fields=["cancelled_at"]),
         ]
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=["customer"],
+                condition=models.Q(status="draft"),
+                name="unique_draft_order_per_customer",
+            ),
+        ]
+
     @property
     def can_be_edited(self) -> bool:
         return self.status == self.Status.PLACED
