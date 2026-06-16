@@ -99,11 +99,11 @@ msgstr ""
 
 #: customer_portal/form_viewmodels.py:49
 msgid "Save draft"
-msgstr ""
+msgstr "Enregistrer"
 
 #: customer_portal/form_viewmodels.py:50
 msgid "Discard draft"
-msgstr ""
+msgstr "Abandonner"
 
 #: customer_portal/forms.py:31
 #: templates/customer_portal/includes/detail_panel_items.html:8
@@ -592,7 +592,7 @@ msgstr "Ajoutez au moins un produit. Les lignes vides sont ignorées."
 #: templates/customer_portal/place_order.html:57
 #: templates/customer_portal/place_order.html:103
 msgid "Remove"
-msgstr "Supprimer"
+msgstr "Retirer"
 
 #: templates/customer_portal/place_order.html:86
 msgid "Add product"
