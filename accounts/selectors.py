@@ -328,10 +328,15 @@ def list_unlinked_account_rows(*, sort: str) -> tuple[AccountListRow, ...]:
     )
 
 
-def list_account_activity_rows(*, user) -> tuple[AccountActivityRow, ...]:
+def list_account_activity_rows(
+    *,
+    user,
+    use_customer_portal_links: bool = False,
+) -> tuple[AccountActivityRow, ...]:
     rows = _activity_rows_from_specs(
         user=user,
         specs=ACCOUNT_ACTIVITY_SPECS,
+        use_customer_portal_links=use_customer_portal_links,
     )
 
     return tuple(
@@ -563,6 +568,7 @@ def _activity_rows_from_specs(
     *,
     user,
     specs: tuple[ActivitySpec, ...],
+    use_customer_portal_links: bool = False,
 ) -> list[AccountActivityRow]:
     rows: list[AccountActivityRow] = []
 
@@ -585,6 +591,7 @@ def _activity_rows_from_specs(
             _activity_row_from_spec(
                 item=item,
                 spec=spec,
+                use_customer_portal_links=use_customer_portal_links,
             )
             for item in queryset
         )
@@ -596,6 +603,7 @@ def _activity_row_from_spec(
     *,
     item,
     spec: ActivitySpec,
+    use_customer_portal_links: bool = False,
 ) -> AccountActivityRow:
     occurred_at = getattr(item, spec.occurred_at_field)
 
@@ -603,14 +611,35 @@ def _activity_row_from_spec(
         occurred_at=occurred_at,
         event_label=spec.event_label,
         target_label=spec.target_label(item),
-        target_href=reverse(
-            spec.route_name,
-            kwargs={
-                spec.route_kwarg: item.pk,
-            },
+        target_href=_activity_target_href(
+            item=item,
+            spec=spec,
+            use_customer_portal_links=use_customer_portal_links,
         ),
         meta=spec.meta(item),
         tone=spec.tone,
+    )
+
+
+def _activity_target_href(
+    *,
+    item,
+    spec: ActivitySpec,
+    use_customer_portal_links: bool,
+) -> str:
+    if use_customer_portal_links and isinstance(item, Order):
+        return reverse(
+            "customer_portal:order_detail",
+            kwargs={
+                "order_id": item.pk,
+            },
+        )
+
+    return reverse(
+        spec.route_name,
+        kwargs={
+            spec.route_kwarg: item.pk,
+        },
     )
 
 

@@ -162,7 +162,10 @@ def index(request):
 @login_required
 def me(request):
     account = get_account_row(user=request.user)
-    activity_rows = list_account_activity_rows(user=request.user)
+    activity_rows = list_account_activity_rows(
+        user=request.user,
+        use_customer_portal_links=hasattr(request.user, "customer_membership"),
+    )
 
     context = build_self_account_detail_context(
         account=account,
