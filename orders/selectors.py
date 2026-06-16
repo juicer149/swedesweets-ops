@@ -28,6 +28,13 @@ from orders.datatypes import PickLine
 from orders.models import Allocation, Order
 
 
+ORDER_HISTORY_STATUSES = (
+    Order.Status.PLACED,
+    Order.Status.PACKED,
+    Order.Status.DELIVERED,
+    Order.Status.CANCELLED,
+)
+
 DEFAULT_ORDER_SORT = "status"
 
 ORDER_SORTS: dict[str, tuple[str, ...]] = {
@@ -78,9 +85,8 @@ def list_orders(
     Invalid querystring values are ignored deliberately, so bad user input falls
     back to the default operational ordering instead of crashing the page.
 
-    Default ordering uses a domain-specific status rank:
-
-        placed -> packed -> delivered -> cancelled -> draft
+    Drafts are customer work-in-progress and are excluded from the default
+    operational order history.
     """
 
     normalized_sort = normalize_sort(
@@ -98,8 +104,10 @@ def list_orders(
         )
     )
 
-    if status in Order.Status.values:
-        orders = orders.filter(status=status)
+    orders = _apply_order_history_status_filter(
+        orders,
+        status=status,
+    )
 
     return orders.order_by(*ORDER_SORTS[normalized_sort])
 
@@ -117,6 +125,9 @@ def list_customer_orders(
     The database query owns filtering and sorting. The caller must provide the
     already-authorized customer object; customer portal views should get that
     customer from the authenticated user's customer membership.
+
+    Drafts are shown through the dedicated "continue draft" flow, not in order
+    history.
     """
 
     normalized_sort = normalize_sort(
@@ -135,29 +146,32 @@ def list_customer_orders(
         )
     )
 
-    if status in Order.Status.values:
-        orders = orders.filter(status=status)
+    orders = _apply_order_history_status_filter(
+        orders,
+        status=status,
+    )
 
     return orders.order_by(*CUSTOMER_ORDER_SORTS[normalized_sort])
 
 
 def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:
-    """Return order counts and latest order timestamp for a customer."""
+    """Return order counts and latest order timestamp for a customer.
 
-    stats = (
-        Order.objects
-        .filter(customer=customer)
-        .aggregate(
-            total_orders=Count("id"),
-            last_ordered_at=Max("created_at"),
-        )
+    Drafts are excluded because they are unfinished work-in-progress, not placed
+    order history.
+    """
+
+    orders = _order_history_queryset().filter(customer=customer)
+
+    stats = orders.aggregate(
+        total_orders=Count("id"),
+        last_ordered_at=Max("created_at"),
     )
 
     orders_by_status = {
         row["status"]: row["count"]
         for row in (
-            Order.objects
-            .filter(customer=customer)
+            orders
             .values("status")
             .annotate(count=Count("id"))
         )
@@ -177,6 +191,8 @@ def get_active_draft_order_for_customer(
     *,
     customer,
 ) -> Order | None:
+    """Return the customer's active draft order, if one exists."""
+
     return (
         Order.objects
         .filter(
@@ -266,6 +282,32 @@ def _build_pick_line(allocation: Allocation) -> PickLine:
         quantity=allocation.quantity,
         quantity_label=product.stock_quantity_label(allocation.quantity),
     )
+
+
+def _order_history_queryset() -> QuerySet[Order]:
+    """Return orders that belong to order history.
+
+    Drafts are excluded because they are unfinished customer work-in-progress.
+    """
+
+    return Order.objects.exclude(status=Order.Status.DRAFT)
+
+
+def _apply_order_history_status_filter(
+    orders: QuerySet[Order],
+    *,
+    status: str | None,
+) -> QuerySet[Order]:
+    """Apply optional status filtering for order history queries.
+
+    A valid explicit status is respected. Without a valid explicit status, draft
+    orders are excluded from history views.
+    """
+
+    if status in Order.Status.values:
+        return orders.filter(status=status)
+
+    return orders.exclude(status=Order.Status.DRAFT)
 
 
 def _order_summary_annotations() -> dict[str, object]:
