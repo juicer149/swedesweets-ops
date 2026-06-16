@@ -25,6 +25,7 @@ from typing import Iterable
 
 from django.db import transaction, IntegrityError
 from django.db.models import Sum
+from django.utils import timezone
 
 from customers.models import Customer
 from inventory.models import InventoryBatch
@@ -140,7 +141,8 @@ def replace_draft_order_lines(
             normalized_lines=normalized_lines,
         )
 
-    order.mark_as_edited(user=user)
+    order.updated_at = timezone.now()
+    order.save(update_fields=["updated_at"])
 
     return order
 
