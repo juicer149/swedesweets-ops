@@ -114,7 +114,7 @@ def test_catalog_label_includes_code_display_name_and_weight():
         weight_per_unit=2200,
     )
 
-    assert product.catalog_label == "#23 · Tyrkisk Peber — Original · 2200 g / box"
+    assert product.catalog_label == "#23 · Tyrkisk Peber — Original · 2200 g / Box"
 
 
 @pytest.mark.django_db

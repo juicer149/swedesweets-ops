@@ -54,7 +54,7 @@ def test_product_choice_field_label_includes_internal_number_weight_and_stock(ap
     )
 
     assert field.label_from_instance(apple) == (
-        "#1 · Generic — Apple · 5000 g / box · 12 boxes"
+        "#1 · Generic — Apple · 5000 g / Box · 12 boxes"
     )
 
 

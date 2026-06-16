@@ -22,7 +22,7 @@ def test_product_choice_field_label_from_instance(apple):
     field = ProductChoiceField(queryset=type(apple).objects.all())
 
     assert field.label_from_instance(apple) == (
-        "GENERIC-APPLE-5000 · Generic — Apple · 5000 g / box"
+        "GENERIC-APPLE-5000 · Generic — Apple · 5000 g / Box"
     )
 
 

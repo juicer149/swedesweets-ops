@@ -5,6 +5,8 @@ from urllib.parse import quote_plus
 
 from django.utils import timezone
 from django.utils.timesince import timesince
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 
 from common.ui import (
     StatusPresentation,
@@ -150,32 +152,46 @@ def build_order_status_presentation(status: str) -> StatusPresentation:
 def order_lifecycle_label(order: Order) -> str:
     if order.status == Order.Status.PLACED and order.placed_at:
         return relative_time_label(
-            prefix="Placed",
+            prefix=Order.Status.PLACED.label,
             value=order.placed_at,
         )
 
     if order.status == Order.Status.PACKED and order.packed_at:
         return relative_time_label(
-            prefix="Packed",
+            prefix=Order.Status.PACKED.label,
             value=order.packed_at,
         )
 
     if order.status == Order.Status.DELIVERED and order.delivered_at:
-        return order.delivered_at.strftime("Delivered %Y-%m-%d")
+        return _("Delivered %(date)s") % {
+            "date": order.delivered_at.strftime("%Y-%m-%d"),
+        }
 
     if order.status == Order.Status.CANCELLED and order.cancelled_at:
-        return order.cancelled_at.strftime("Cancelled %Y-%m-%d")
+        return _("Cancelled %(date)s") % {
+            "date": order.cancelled_at.strftime("%Y-%m-%d"),
+        }
 
-    return order.created_at.strftime("Created %Y-%m-%d")
+    return _("Created %(date)s") % {
+        "date": order.created_at.strftime("%Y-%m-%d"),
+    }
 
 
 def relative_time_label(*, prefix: str, value: datetime) -> str:
     elapsed = timesince(value, timezone.now()).split(",")[0]
-    return f"{prefix} {elapsed} ago"
+
+    return _("%(prefix)s %(elapsed)s ago") % {
+        "prefix": prefix,
+        "elapsed": elapsed,
+    }
 
 
 def quantity_label(quantity: int) -> str:
-    return "1 unit" if quantity == 1 else f"{quantity} units"
+    return ngettext(
+        "%(count)s unit",
+        "%(count)s units",
+        quantity,
+    ) % {"count": quantity}
 
 
 def order_product_count(order: Order) -> int:
@@ -185,7 +201,9 @@ def order_product_count(order: Order) -> int:
         return int(annotated_count)
 
     prefetched_lines = getattr(
-        order, "_prefetched_objects_cache", {}
+        order,
+        "_prefetched_objects_cache",
+        {},
     ).get("lines")
 
     if prefetched_lines is not None:
@@ -201,7 +219,9 @@ def order_total_quantity(order: Order) -> int:
         return int(annotated_quantity)
 
     prefetched_lines = getattr(
-        order, "_prefetched_objects_cache", {}
+        order,
+        "_prefetched_objects_cache",
+        {},
     ).get("lines")
 
     if prefetched_lines is not None:
@@ -215,8 +235,18 @@ def order_quantity_label(order: Order) -> str:
 
 
 def contents_summary(*, product_count: int, total_quantity: int) -> str:
-    product_label = "product" if product_count == 1 else "products"
-    return f"{product_count} {product_label} · {quantity_label(total_quantity)}"
+    product_label = ngettext(
+        "%(count)s product",
+        "%(count)s products",
+        product_count,
+    ) % {"count": product_count}
+
+    quantity_text = quantity_label(total_quantity)
+
+    return _("%(products)s · %(quantity)s") % {
+        "products": product_label,
+        "quantity": quantity_text,
+    }
 
 
 def maps_directions_href(address: str) -> str:

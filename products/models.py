@@ -29,6 +29,8 @@ from typing import Iterable
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext
 
 from products.catalog import (
     MAX_IMAGE_URL_LENGTH,
@@ -65,17 +67,10 @@ class Product(models.Model):
     """
 
     class StockUnit(models.TextChoices):
-        BOX = "box", "Box"
-        PIECE = "piece", "Piece"
-        BAG = "bag", "Bag"
-        CASE = "case", "Case"
-
-    STOCK_UNIT_PLURALS = {
-        StockUnit.BOX.value: "boxes",
-        StockUnit.PIECE.value: "pieces",
-        StockUnit.BAG.value: "bags",
-        StockUnit.CASE.value: "cases",
-    }
+        BOX = "box", _("Box")
+        PIECE = "piece", _("Piece")
+        BAG = "bag", _("Bag")
+        CASE = "case", _("Case")
 
     internal_number = models.PositiveSmallIntegerField(
         null=True,
@@ -362,19 +357,20 @@ class Product(models.Model):
 
     @property
     def stock_unit_singular(self) -> str:
-        return self.stock_unit
-
-    @property
-    def stock_unit_plural(self) -> str:
-        return self.STOCK_UNIT_PLURALS[self.stock_unit]
+        return self.get_stock_unit_display()
 
     @property
     def weight_label(self) -> str:
-        return f"{self.weight_per_unit} g"
+        return _("%(weight)s g") % {
+            "weight": self.weight_per_unit,
+        }
 
     @property
     def unit_weight_label(self) -> str:
-        return f"{self.weight_per_unit} g / {self.stock_unit_singular}"
+        return _("%(weight)s g / %(unit)s") % {
+            "weight": self.weight_per_unit,
+            "unit": self.stock_unit_singular,
+        }
 
     @property
     def catalog_label(self) -> str:
@@ -399,12 +395,30 @@ class Product(models.Model):
         if quantity < 0:
             raise InvalidProductData("quantity must be non-negative")
 
-        unit = (
-            self.stock_unit_singular
-            if quantity == 1
-            else self.stock_unit_plural
-        )
-        return f"{quantity} {unit}"
+        labels = {
+            self.StockUnit.BOX: ngettext(
+                "%(count)s box",
+                "%(count)s boxes",
+                quantity,
+            ),
+            self.StockUnit.PIECE: ngettext(
+                "%(count)s piece",
+                "%(count)s pieces",
+                quantity,
+            ),
+            self.StockUnit.BAG: ngettext(
+                "%(count)s bag",
+                "%(count)s bags",
+                quantity,
+            ),
+            self.StockUnit.CASE: ngettext(
+                "%(count)s case",
+                "%(count)s cases",
+                quantity,
+            ),
+        }
+
+        return labels[self.stock_unit] % {"count": quantity}
 
     def grams_to_units(self, *, grams: int) -> int:
         """Convert grams into whole stock units for this product."""

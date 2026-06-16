@@ -1,0 +1,42 @@
+{% load i18n %}
+
+{% if content_lines %}
+  <div class="table-card table-card--embedded">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{% trans "Product" %}</th>
+          <th class="numeric-cell">{% trans "Quantity" %}</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for line in content_lines %}
+          <tr>
+            <th scope="row">
+              {{ line.product.display_name }}
+
+              {% if line.catalog_label %}
+                <span class="table-cell-subtext">
+                  {{ line.catalog_label }}
+                </span>
+              {% endif %}
+            </th>
+
+            <td class="numeric-cell">
+              <strong>{{ line.quantity_label }}</strong>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-card-list">
+    {% for line in content_lines %}
+      {% include "includes/ui/card.html" with card=line.card only %}
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="form-help">{% trans "No order items found." %}</p>
+{% endif %}

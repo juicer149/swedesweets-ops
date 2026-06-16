@@ -12,11 +12,17 @@ from common.table_controls import (
     TableFilter,
     TableSortField,
 )
+from customer_portal.detail_viewmodels import (
+    build_portal_order_detail_context,
+)
 from customer_portal.order_list_viewmodels import (
     build_portal_order_page_rows,
     build_portal_orders_page_header,
 )
-from customer_portal.selectors import get_portal_customer_for_user
+from customer_portal.selectors import (
+    get_portal_customer_for_user,
+    get_portal_order_for_user,
+)
 from customer_portal.viewmodels import (
     RECENT_PORTAL_ORDER_LIMIT,
     build_portal_home_context,
@@ -119,7 +125,16 @@ def place_order(request):
 
 @login_required
 def order_detail(request, order_id: int):
-    return HttpResponse(_("My order %(order_id)s") % {"order_id": order_id})
+    order = get_portal_order_for_user(
+        user=request.user,
+        order_id=order_id,
+    )
+
+    context = build_portal_order_detail_context(
+        order=order,
+    ).as_dict()
+
+    return render(request, "customer_portal/order_detail.html", context)
 
 
 @login_required

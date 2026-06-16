@@ -1,0 +1,59 @@
+{% load i18n %}
+
+<dl class="detail-data-list">
+  <div>
+    <dt>{% trans "Order" %}</dt>
+    <dd>#{{ order.id }}</dd>
+  </div>
+
+  <div>
+    <dt>{% trans "Status" %}</dt>
+    <dd>{{ order.get_status_display }}</dd>
+  </div>
+
+  <div>
+    <dt>{% trans "Created" %}</dt>
+    <dd>{{ order.created_at|date:"Y-m-d H:i" }}</dd>
+  </div>
+
+  {% if order.placed_at %}
+    <div>
+      <dt>{% trans "Placed" %}</dt>
+      <dd>{{ order.placed_at|date:"Y-m-d H:i" }}</dd>
+    </div>
+  {% endif %}
+
+  {% if order.packed_at %}
+    <div>
+      <dt>{% trans "Prepared" %}</dt>
+      <dd>{{ order.packed_at|date:"Y-m-d H:i" }}</dd>
+    </div>
+  {% endif %}
+
+  {% if order.delivered_at %}
+    <div>
+      <dt>{% trans "Delivered" %}</dt>
+      <dd>{{ order.delivered_at|date:"Y-m-d H:i" }}</dd>
+    </div>
+  {% endif %}
+
+  {% if order.cancelled_at %}
+    <div>
+      <dt>{% trans "Cancelled" %}</dt>
+      <dd>{{ order.cancelled_at|date:"Y-m-d H:i" }}</dd>
+    </div>
+  {% endif %}
+
+  <div>
+    <dt>{% trans "Contents" %}</dt>
+    <dd>
+      {% blocktrans count product_count=product_count %}
+        {{ product_count }} product
+      {% plural %}
+        {{ product_count }} products
+      {% endblocktrans %}
+      ·
+      {{ total_quantity_label }}
+    </dd>
+  </div>
+</dl>

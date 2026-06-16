@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 20:27+0200\n"
-"PO-Revision-Date: 2026-06-15 18:05+0200\n"
+"POT-Creation-Date: 2026-06-16 14:00+0200\n"
+"PO-Revision-Date: 2026-06-16 13:45+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -32,6 +32,60 @@ msgstr "Profil"
 msgid "Contact"
 msgstr "Contact"
 
+#: customer_portal/detail_viewmodels.py:94
+#: customer_portal/detail_viewmodels.py:102
+#: customer_portal/order_list_viewmodels.py:114
+#: templates/customer_portal/index.html:71
+#, python-format
+msgid "Order #%(order_id)s"
+msgstr "Commande n° %(order_id)s"
+
+#: customer_portal/detail_viewmodels.py:101
+msgid "Order details"
+msgstr "Détails de la commande"
+
+#: customer_portal/detail_viewmodels.py:118 customer_portal/views.py:51
+#: templates/customer_portal/includes/detail_panel_order.html:5
+msgid "Order"
+msgstr "Commande"
+
+#: customer_portal/detail_viewmodels.py:126
+msgid "Items"
+msgstr "Articles"
+
+#: customer_portal/detail_viewmodels.py:181 orders/models.py:35
+msgid "Draft"
+msgstr "Brouillon"
+
+#: customer_portal/detail_viewmodels.py:182
+msgid "Received"
+msgstr "Reçue"
+
+#: customer_portal/detail_viewmodels.py:183
+#: templates/customer_portal/includes/detail_panel_order.html:28
+msgid "Prepared"
+msgstr "Préparée"
+
+#: customer_portal/detail_viewmodels.py:184 customer_portal/viewmodels.py:103
+#: orders/models.py:38
+#: templates/customer_portal/includes/detail_panel_order.html:35
+msgid "Delivered"
+msgstr "Livrée"
+
+#: customer_portal/detail_viewmodels.py:185 orders/models.py:39
+#: orders/models.py:368
+#: templates/customer_portal/includes/detail_panel_order.html:42
+msgid "Cancelled"
+msgstr "Annulée"
+
+#: customer_portal/detail_viewmodels.py:192
+#: customer_portal/order_list_viewmodels.py:150 orders/presentation.py:191
+#, python-format
+msgid "%(count)s unit"
+msgid_plural "%(count)s units"
+msgstr[0] "%(count)s unité"
+msgstr[1] "%(count)s unités"
+
 #: customer_portal/order_list_viewmodels.py:38
 #: templates/customer_portal/orders.html:4
 msgid "Order history"
@@ -42,7 +96,7 @@ msgid "Review your orders and follow their current status."
 msgstr "Consultez vos commandes et suivez leur statut actuel."
 
 #: customer_portal/order_list_viewmodels.py:42
-#: customer_portal/viewmodels.py:125 customer_portal/views.py:117
+#: customer_portal/viewmodels.py:125 customer_portal/views.py:123
 msgid "Place order"
 msgstr "Passer une commande"
 
@@ -55,23 +109,10 @@ msgstr "Passer une nouvelle commande"
 msgid "View order →"
 msgstr "Voir la commande →"
 
-#: customer_portal/order_list_viewmodels.py:114
-#: templates/customer_portal/index.html:71
-#, python-format
-msgid "Order #%(order_id)s"
-msgstr "Commande n° %(order_id)s"
-
 #: customer_portal/order_list_viewmodels.py:128
 #, python-format
 msgid "%(created_at)s · %(quantity)s"
 msgstr "%(created_at)s · %(quantity)s"
-
-#: customer_portal/order_list_viewmodels.py:150
-#, python-format
-msgid "%(count)s unit"
-msgid_plural "%(count)s units"
-msgstr[0] "%(count)s unité"
-msgstr[1] "%(count)s unités"
 
 #: customer_portal/viewmodels.py:80
 #, python-format
@@ -105,10 +146,6 @@ msgstr "En cours"
 msgid "Placed or packed orders"
 msgstr "Commandes passées ou préparées"
 
-#: customer_portal/viewmodels.py:103 orders/models.py:38
-msgid "Delivered"
-msgstr "Livrée"
-
 #: customer_portal/viewmodels.py:105
 msgid "Completed deliveries"
 msgstr "Commandes livrées"
@@ -137,66 +174,53 @@ msgstr "Aucune localisation ajoutée"
 msgid "Never"
 msgstr "Jamais"
 
-#: customer_portal/views.py:37
+#: customer_portal/views.py:43
 msgid "All"
 msgstr "Toutes"
 
-#: customer_portal/views.py:45
-msgid "Order"
-msgstr "Commande"
-
-#: customer_portal/views.py:46
+#: customer_portal/views.py:52
+#: templates/customer_portal/includes/detail_panel_order.html:15
 msgid "Created"
 msgstr "Créée"
 
-#: customer_portal/views.py:47
+#: customer_portal/views.py:53
+#: templates/customer_portal/includes/detail_panel_order.html:10
 msgid "Status"
 msgstr "Statut"
 
-#: customer_portal/views.py:48
+#: customer_portal/views.py:54
+#: templates/customer_portal/includes/detail_panel_items.html:9
 msgid "Quantity"
 msgstr "Quantité"
 
-#: customer_portal/views.py:53
+#: customer_portal/views.py:59
 msgid "Order filters"
 msgstr "Filtres des commandes"
 
-#: customer_portal/views.py:122
-#, python-format
-msgid "My order %(order_id)s"
-msgstr "Ma commande %(order_id)s"
-
-#: customer_portal/views.py:127
+#: customer_portal/views.py:142
 msgid "Customer catalog"
 msgstr "Catalogue"
 
-#: customer_portal/views.py:132
+#: customer_portal/views.py:147
 msgid "My profile"
 msgstr "Mon profil"
 
-#: customer_portal/views.py:137
+#: customer_portal/views.py:152
 msgid "Edit my profile"
 msgstr "Modifier mon profil"
 
-#: customer_portal/views.py:142
+#: customer_portal/views.py:157
 msgid "Contact SwedeSweets"
 msgstr "Contacter SwedeSweets"
 
-#: orders/models.py:35
-msgid "Draft"
-msgstr "Brouillon"
-
 #: orders/models.py:36
+#: templates/customer_portal/includes/detail_panel_order.html:21
 msgid "Placed"
 msgstr "Passée"
 
 #: orders/models.py:37
 msgid "Packed"
 msgstr "Préparée"
-
-#: orders/models.py:39 orders/models.py:368
-msgid "Cancelled"
-msgstr "Annulée"
 
 #: orders/models.py:42
 msgid "Customer request"
@@ -238,6 +262,121 @@ msgstr "Réservée"
 msgid "Consumed"
 msgstr "Consommée"
 
+#: orders/presentation.py:166
+#, python-format
+msgid "Delivered %(date)s"
+msgstr "Livrée le %(date)s"
+
+#: orders/presentation.py:171
+#, python-format
+msgid "Cancelled %(date)s"
+msgstr "Annulée le %(date)s"
+
+#: orders/presentation.py:175
+#, python-format
+msgid "Created %(date)s"
+msgstr "Créée le %(date)s"
+
+#: orders/presentation.py:183
+#, python-format
+msgid "%(prefix)s %(elapsed)s ago"
+msgstr "%(prefix)s il y a %(elapsed)s"
+
+#: orders/presentation.py:239
+#, python-format
+msgid "%(count)s product"
+msgid_plural "%(count)s products"
+msgstr[0] "%(count)s produit"
+msgstr[1] "%(count)s produits"
+
+#: orders/presentation.py:246
+#, python-format
+msgid "%(products)s · %(quantity)s"
+msgstr "%(products)s · %(quantity)s"
+
+#: products/models.py:70
+msgid "Box"
+msgstr "Boîte"
+
+#: products/models.py:71
+msgid "Piece"
+msgstr "Pièce"
+
+#: products/models.py:72
+msgid "Bag"
+msgstr "Sachet"
+
+#: products/models.py:73
+msgid "Case"
+msgstr "Caisse"
+
+#: products/models.py:364
+#, python-format
+msgid "%(weight)s g"
+msgstr "%(weight)s g"
+
+#: products/models.py:370
+#, python-format
+msgid "%(weight)s g/%(unit)s"
+msgstr "%(weight)s g/%(unit)s"
+
+#: products/models.py:400
+#, python-format
+msgid "%(count)s box"
+msgid_plural "%(count)s boxes"
+msgstr[0] "%(count)s boîte"
+msgstr[1] "%(count)s boîtes"
+
+#: products/models.py:405
+#, python-format
+msgid "%(count)s piece"
+msgid_plural "%(count)s pieces"
+msgstr[0] "%(count)s pièce"
+msgstr[1] "%(count)s pièces"
+
+#: products/models.py:410
+msgid "%(count)s bag"
+msgid_plural "%(count)s bags"
+msgstr[0] "%(count)s sachet"
+msgstr[1] "%(count)s sachets"
+
+#: products/models.py:415
+msgid "%(count)s case"
+msgid_plural "%(count)s cases"
+msgstr[0] "%(count)s caisse"
+msgstr[1] "%(count)s caisses"
+
+#: templates/customer_portal/includes/detail_panel_items.html:8
+msgid "Product"
+msgstr "Produit"
+
+#: templates/customer_portal/includes/detail_panel_items.html:41
+msgid "No order items found."
+msgstr "Aucun article trouvé pour cette commande."
+
+#: templates/customer_portal/includes/detail_panel_order.html:48
+msgid "Contents"
+msgstr "Contenu"
+
+#: templates/customer_portal/includes/detail_panel_order.html:50
+#, python-format
+msgid ""
+"\n"
+"        %(product_count)s product\n"
+"      "
+msgid_plural ""
+"\n"
+"        %(product_count)s products\n"
+"      "
+msgstr[0] ""
+"\n"
+"        %(product_count)s produit\n"
+"      "
+msgstr[1] ""
+"\n"
+"        %(product_count)s produits\n"
+"      "
+
 #: templates/customer_portal/index.html:16
 msgid "Customer portal actions"
 msgstr "Actions du portail client"
@@ -270,6 +409,10 @@ msgstr "Aucune commande pour le moment"
 msgid "Your recent orders will appear here once orders have been placed."
 msgstr ""
 "Vos commandes récentes apparaîtront ici une fois qu’elles auront été passées."
+
+#: templates/customer_portal/order_detail.html:10
+msgid "Back to order history"
+msgstr "Retour à l’historique des commandes"
 
 #: templates/customer_portal/orders.html:33
 #, python-format
@@ -305,3 +448,21 @@ msgstr "Déconnexion"
 #: templates/includes/navbar.html:85
 msgid "Login"
 msgstr "Connexion"
+
+#~ msgid "Delivery"
+#~ msgstr "Livraison"
+
+#~ msgid "Delivery details"
+#~ msgstr "Détails de livraison"
+
+#~ msgid "Name"
+#~ msgstr "Nom"
+
+#~ msgid "Email"
+#~ msgstr "E-mail"
+
+#~ msgid "Phone"
+#~ msgstr "Téléphone"
+
+#~ msgid "Delivery address"
+#~ msgstr "Adresse de livraison"
