@@ -14,6 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from django.utils.translation import gettext_lazy as _
+
 
 class Capability(StrEnum):
     VIEW_STAFF_OPS = "can_view_staff_ops"
@@ -60,8 +62,8 @@ class StaffAccessLevel(StrEnum):
     @classmethod
     def choices(cls) -> list[tuple[str, str]]:
         return [
-            (cls.RESTRICTED.value, "Restricted"),
-            (cls.FULL.value, "Full"),
+            (cls.RESTRICTED.value, _("Restricted")),
+            (cls.FULL.value, _("Full")),
         ]
 
 
@@ -176,11 +178,11 @@ ROLE_SPECS: dict[AccountRole, RoleSpec] = {
 
 
 ROLE_LABELS: dict[AccountRole, str] = {
-    AccountRole.OWNER: "Owner",
-    AccountRole.FULL_STAFF: "Full staff",
-    AccountRole.RESTRICTED_STAFF: "Restricted staff",
-    AccountRole.CUSTOMER: "Customer",
-    AccountRole.UNKNOWN: "Unlinked",
+    AccountRole.OWNER: _("Owner"),
+    AccountRole.FULL_STAFF: _("Full staff"),
+    AccountRole.RESTRICTED_STAFF: _("Restricted staff"),
+    AccountRole.CUSTOMER: _("Customer"),
+    AccountRole.UNKNOWN: _("Unlinked"),
 }
 
 
@@ -194,8 +196,8 @@ ROLE_RANKS: dict[AccountRole, int] = {
 
 
 STAFF_ACCESS_LEVEL_LABELS: dict[StaffAccessLevel, str] = {
-    StaffAccessLevel.RESTRICTED: "Restricted access",
-    StaffAccessLevel.FULL: "Full access",
+    StaffAccessLevel.RESTRICTED: _("Restricted access"),
+    StaffAccessLevel.FULL: _("Full access"),
 }
 
 
@@ -204,7 +206,7 @@ def get_role_spec(role: AccountRole) -> RoleSpec:
 
 
 def get_role_label(role: AccountRole) -> str:
-    return ROLE_LABELS.get(role, "Unknown")
+    return ROLE_LABELS.get(role, _("Unknown"))
 
 
 def get_role_rank(role: AccountRole) -> int:
@@ -215,9 +217,9 @@ def get_staff_access_level_label(access_level: StaffAccessLevel | str) -> str:
     try:
         normalized_access_level = StaffAccessLevel(access_level)
     except ValueError:
-        return "Unknown access"
+        return _("Unknown access")
 
     return STAFF_ACCESS_LEVEL_LABELS.get(
         normalized_access_level,
-        "Unknown access",
+        _("Unknown access"),
     )

@@ -6,6 +6,8 @@ from typing import Any
 
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 
 from accounts.access import can_manage_customer_account_status
 from accounts.roles import AccountRole, RoleSpec
@@ -87,7 +89,7 @@ def build_account_detail_context(
         detail_card=DetailCard(
             header=_build_account_header(
                 account=account,
-                eyebrow="Account",
+                eyebrow=_("Account"),
                 title=account.email,
             ),
             panels=_build_account_detail_panels(
@@ -121,7 +123,7 @@ def build_self_account_detail_context(
         detail_card=DetailCard(
             header=_build_account_header(
                 account=account,
-                eyebrow="My account",
+                eyebrow=_("My account"),
                 title=account.email,
             ),
             panels=_build_account_detail_panels(
@@ -131,7 +133,7 @@ def build_self_account_detail_context(
             content_card_class=_account_detail_card_class(account),
             secondary_actions=_build_self_account_secondary_actions(account=account),
         ),
-        title="My account",
+        title=_("My account"),
         description="",
         cancel_url=cancel_url,
     )
@@ -148,7 +150,11 @@ def build_customer_account_status_context(
     )
 
     return CustomerAccountStatusContext(
-        title=f"{action_label} for {account_user.email}",
+        title=_("%(action)s for %(email)s")
+        % {
+            "action": action_label,
+            "email": account_user.email,
+        },
         description=_customer_account_status_description(
             is_active=is_active,
         ),
@@ -164,15 +170,15 @@ def build_customer_account_status_context(
         customer=membership.customer,
         context_items=(
             {
-                "label": "Login email",
+                "label": _("Login email"),
                 "value": account_user.email,
             },
             {
-                "label": "Linked customer",
+                "label": _("Linked customer"),
                 "value": membership.customer.name,
             },
             {
-                "label": "Current status",
+                "label": _("Current status"),
                 "value": _active_status_label(
                     is_active=account_user.is_active,
                 ),
@@ -187,9 +193,9 @@ def customer_account_status_success_message(
     is_active: bool,
 ) -> str:
     if is_active:
-        return f"Customer account {email} activated."
+        return _("Customer account %(email)s activated.") % {"email": email}
 
-    return f"Customer account {email} deactivated."
+    return _("Customer account %(email)s deactivated.") % {"email": email}
 
 
 # -----------------------------------------------------------------------------
@@ -229,7 +235,7 @@ def _build_account_detail_panels(
     return (
         DetailPanel(
             key="account",
-            label="Account",
+            label=_("Account"),
             summary=account.role_label,
             body_template="accounts/includes/detail_panel_account.html",
             icon="users",
@@ -237,7 +243,7 @@ def _build_account_detail_panels(
         ),
         DetailPanel(
             key="activity",
-            label="Activity",
+            label=_("Activity"),
             summary=_activity_summary(activity_count),
             body_template="accounts/includes/detail_panel_activity.html",
             icon="inventory",
@@ -256,7 +262,7 @@ def _build_manager_account_secondary_actions(
     if edit_url:
         actions.append(
             build_secondary_get_action(
-                label="Edit account",
+                label=_("Edit account"),
                 href=edit_url,
             )
         )
@@ -269,7 +275,7 @@ def _build_manager_account_secondary_actions(
 
     actions.append(
         build_secondary_get_action(
-            label="Back to accounts",
+            label=_("Back to accounts"),
             href=_accounts_url_for_account(account),
         )
     )
@@ -282,7 +288,7 @@ def _build_customer_account_status_action(
 ) -> DetailAction:
     if account.is_active:
         return build_danger_get_action(
-            label="Deactivate login",
+            label=_("Deactivate login"),
             href=reverse(
                 "accounts:deactivate_customer_account",
                 kwargs={"user_id": account.user_id},
@@ -290,7 +296,7 @@ def _build_customer_account_status_action(
         )
 
     return build_secondary_get_action(
-        label="Activate login",
+        label=_("Activate login"),
         href=reverse(
             "accounts:activate_customer_account",
             kwargs={"user_id": account.user_id},
@@ -304,14 +310,14 @@ def _build_self_account_secondary_actions(
 ) -> tuple[DetailAction, ...]:
     actions = [
         build_secondary_get_action(
-            label="Change password",
+            label=_("Change password"),
             href=reverse("password_change"),
         ),
     ]
 
     actions.append(
         build_secondary_get_action(
-            label="Back to start",
+            label=_("Back to start"),
             href=reverse("accounts:after_login"),
         )
     )
@@ -338,10 +344,11 @@ def _account_status_class(account: AccountListRow) -> str:
 
 
 def _activity_summary(activity_count: int) -> str:
-    if activity_count == 1:
-        return "1 event"
-
-    return f"{activity_count} events"
+    return ngettext(
+        "%(count)d event",
+        "%(count)d events",
+        activity_count,
+    ) % {"count": activity_count}
 
 
 def _customer_account_status_action_label(
@@ -349,9 +356,9 @@ def _customer_account_status_action_label(
     is_active: bool,
 ) -> str:
     if is_active:
-        return "Activate login"
+        return _("Activate login")
 
-    return "Deactivate login"
+    return _("Deactivate login")
 
 
 def _customer_account_status_submit_tone(
@@ -369,9 +376,9 @@ def _customer_account_status_description(
     is_active: bool,
 ) -> str:
     if is_active:
-        return "Allow this customer account to log in again."
+        return _("Allow this customer account to log in again.")
 
-    return (
+    return _(
         "Prevent this customer account from logging in. "
         "Existing customer data and historical records are kept."
     )
@@ -382,14 +389,14 @@ def _active_status_label(
     is_active: bool,
 ) -> str:
     if is_active:
-        return "Active"
+        return _("Active")
 
-    return "Inactive"
+    return _("Inactive")
 
 
 def account_datetime_label(value: datetime | None) -> str:
     if value is None:
-        return "Never"
+        return _("Never")
 
     return timezone.localtime(value).strftime("%Y-%m-%d %H:%M")
 

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Login | SwedeSweets{% endblock %}
+{% block title %}{% trans "Login" %} | SwedeSweets{% endblock %}
 
 {% block content %}
 <section class="auth-page" aria-labelledby="login-title">
@@ -8,14 +9,14 @@
     {% csrf_token %}
 
     <header class="auth-card__header">
-      <p class="auth-card__eyebrow">Operations</p>
+      <p class="auth-card__eyebrow">{% trans "Operations" %}</p>
 
       <h1 id="login-title" class="auth-card__title">
-        Login
+        {% trans "Login" %}
       </h1>
 
       <p class="auth-card__description">
-        Sign in to access SwedeSweets operations.
+        {% trans "Sign in to access SwedeSweets operations." %}
       </p>
     </header>
 
@@ -30,7 +31,7 @@
     <div class="form-grid">
       <div class="form-field form-field--full{% if form.username.errors %} form-field--error{% endif %}">
         <label class="form-label" for="{{ form.username.id_for_label }}">
-          Username
+          {% trans "Username" %}
         </label>
 
         {{ form.username }}
@@ -46,7 +47,7 @@
 
       <div class="form-field form-field--full{% if form.password.errors %} form-field--error{% endif %}">
         <label class="form-label" for="{{ form.password.id_for_label }}">
-          Password
+          {% trans "Password" %}
         </label>
 
         {{ form.password }}
@@ -70,14 +71,14 @@
         class="button button--lg button--solid button--tone-place auth-card__submit"
         type="submit"
       >
-        Login
+        {% trans "Login" %}
       </button>
 
       <a
         class="button button--md button--ghost button--tone-neutral"
         href="{% url 'password_reset' %}"
       >
-        Forgot password?
+        {% trans "Forgot password?" %}
       </a>
     </div>
   </form>

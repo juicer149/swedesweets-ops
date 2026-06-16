@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role
@@ -90,10 +91,10 @@ ORDER_ACTIVITY_SPECS = (
         model=Order,
         actor_field="placed_by",
         occurred_at_field="placed_at",
-        event_label="Placed order",
+        event_label=_("Placed order"),
         route_name="orders:detail",
         route_kwarg="order_id",
-        target_label=lambda order: f"Order #{order.pk}",
+        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
         meta=lambda order: order.customer_name,
         tone="warning",
         select_related=("customer",),
@@ -102,10 +103,10 @@ ORDER_ACTIVITY_SPECS = (
         model=Order,
         actor_field="packed_by",
         occurred_at_field="packed_at",
-        event_label="Packed order",
+        event_label=_("Packed order"),
         route_name="orders:detail",
         route_kwarg="order_id",
-        target_label=lambda order: f"Order #{order.pk}",
+        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
         meta=lambda order: order.customer_name,
         tone="info",
         select_related=("customer",),
@@ -114,10 +115,10 @@ ORDER_ACTIVITY_SPECS = (
         model=Order,
         actor_field="delivered_by",
         occurred_at_field="delivered_at",
-        event_label="Delivered order",
+        event_label=_("Delivered order"),
         route_name="orders:detail",
         route_kwarg="order_id",
-        target_label=lambda order: f"Order #{order.pk}",
+        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
         meta=lambda order: order.customer_name,
         tone="success",
         select_related=("customer",),
@@ -126,10 +127,10 @@ ORDER_ACTIVITY_SPECS = (
         model=Order,
         actor_field="cancelled_by",
         occurred_at_field="cancelled_at",
-        event_label="Cancelled order",
+        event_label=_("Cancelled order"),
         route_name="orders:detail",
         route_kwarg="order_id",
-        target_label=lambda order: f"Order #{order.pk}",
+        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
         meta=lambda order: order.customer_name,
         tone="danger",
         select_related=("customer",),
@@ -138,10 +139,10 @@ ORDER_ACTIVITY_SPECS = (
         model=Order,
         actor_field="edited_by",
         occurred_at_field="edited_at",
-        event_label="Edited order",
+        event_label=_("Edited order"),
         route_name="orders:detail",
         route_kwarg="order_id",
-        target_label=lambda order: f"Order #{order.pk}",
+        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
         meta=lambda order: order.customer_name,
         tone="neutral",
         select_related=("customer",),
@@ -401,7 +402,7 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
         return ResolvedAccountIdentity(
             account_role=account_role,
             role_label=get_role_label(account_role),
-            linked_identity="Superuser",
+            linked_identity=_("Superuser"),
         )
 
     if _has_staff_account(user) and _has_customer_membership(user):
@@ -409,8 +410,10 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
 
         return ResolvedAccountIdentity(
             account_role=account_role,
-            role_label="Invalid identity",
-            linked_identity=f"Staff and customer · {customer.name}",
+            role_label=_("Invalid identity"), 
+            linked_identity=_("Staff and customer · %(customer)s") % {
+                "customer": customer.name,
+            }, 
             linked_identity_href=_customer_detail_href(customer),
         )
 
@@ -439,8 +442,8 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
     if _has_staff_account(user):
         return ResolvedAccountIdentity(
             account_role=account_role,
-            role_label="Invalid staff account",
-            linked_identity="Internal staff",
+            role_label=_("Invalid staff account"),
+            linked_identity=_("Internal staff"),
         )
 
     if _has_customer_membership(user):
@@ -448,7 +451,7 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
 
         return ResolvedAccountIdentity(
             account_role=account_role,
-            role_label="Invalid customer account",
+            role_label=_("Invalid customer account"),
             linked_identity=customer.name,
             linked_identity_href=_customer_detail_href(customer),
         )
@@ -475,14 +478,16 @@ def _customer_detail_href(customer: Customer) -> str:
 
 
 def _staff_identity_label(access_level: StaffAccessLevel | str) -> str:
-    return f"Internal staff · {get_staff_access_level_label(access_level)}"
+    return _("Internal staff · %(access_level)s") % {
+        "access_level": get_staff_access_level_label(access_level),
+    }
 
 
 def _status_label(*, user) -> str:
     if user.is_active:
-        return "Active"
+        return _("Active")
 
-    return "Inactive"
+    return _("Inactive")
 
 
 def _sort_account_rows(

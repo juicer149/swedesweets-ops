@@ -1,16 +1,18 @@
+{% load i18n %}
+
 <dl class="detail-data-list">
   <div>
-    <dt>Email</dt>
+    <dt>{% trans "Email" %}</dt>
     <dd>{{ account.email }}</dd>
   </div>
 
   <div>
-    <dt>Role</dt>
+    <dt>{% trans "Role" %}</dt>
     <dd>{{ account.role_label }}</dd>
   </div>
 
   <div>
-    <dt>Linked identity</dt>
+    <dt>{% trans "Linked identity" %}</dt>
     <dd>
       {% if account.linked_identity_href %}
         <a class="detail-list__link" href="{{ account.linked_identity_href }}">
@@ -23,23 +25,23 @@
   </div>
 
   <div>
-    <dt>Status</dt>
+    <dt>{% trans "Status" %}</dt>
     <dd>{{ account.status_label }}</dd>
   </div>
 
   <div>
-    <dt>Last login</dt>
+    <dt>{% trans "Last login" %}</dt>
     <dd>
       {% if account.last_login %}
         {{ account.last_login|date:"Y-m-d H:i" }}
       {% else %}
-        Never
+        {% trans "Never" %}
       {% endif %}
     </dd>
   </div>
 
   <div>
-    <dt>Joined</dt>
+    <dt>{% trans "Joined" %}</dt>
     <dd>{{ account.date_joined|date:"Y-m-d H:i" }}</dd>
   </div>
 </dl>

@@ -1,12 +1,14 @@
+{% load i18n %}
+
 {% if activity_rows %}
   <div class="table-card table-card--embedded account-activity-table-card">
     <table class="data-table account-activity-table">
       <thead>
         <tr>
-          <th>Time</th>
-          <th>Event</th>
-          <th>Target</th>
-          <th>Context</th>
+          <th>{% trans "Time" %}</th>
+          <th>{% trans "Event" %}</th>
+          <th>{% trans "Target" %}</th>
+          <th>{% trans "Context" %}</th>
         </tr>
       </thead>
 
@@ -18,7 +20,7 @@
             data-href="{{ row.target_href }}"
             tabindex="0"
             role="link"
-            aria-label="Open {{ row.target_label }}"
+            aria-label="{% blocktrans with target=row.target_label %}Open {{ target }}{% endblocktrans %}"
           >
             <td>{{ row.occurred_at_label }}</td>
             <td>{{ row.event_label }}</td>
@@ -36,7 +38,7 @@
     </table>
 
     <p class="table-hint">
-      Select an activity row to open the affected record.
+      {% trans "Select an activity row to open the affected record." %}
     </p>
   </div>
 
@@ -45,7 +47,7 @@
       <a
         class="mobile-card mobile-card--{{ row.tone }} mobile-card--clickable mobile-card--account-activity"
         href="{{ row.target_href }}"
-        aria-label="Open {{ row.target_label }}"
+        aria-label="{% blocktrans with target=row.target_label %}Open {{ target }}{% endblocktrans %}"
       >
         <div class="ui-card__row">
           <div class="ui-card__cell ui-card__cell--left">
@@ -56,7 +58,7 @@
 
           <div class="ui-card__cell ui-card__cell--right">
             <span class="ui-card-location">
-              <span class="ui-card-label">Time</span>
+              <span class="ui-card-label">{% trans "Time" %}</span>
               {{ row.occurred_at_label }}
             </span>
           </div>
@@ -80,7 +82,7 @@
 
         <footer class="ui-card__footer ui-card__footer--hint">
           <span class="ui-card__hint">
-            Open affected record
+            {% trans "Open affected record" %}
           </span>
         </footer>
       </a>
@@ -88,6 +90,6 @@
   </div>
 {% else %}
   <p class="form-help">
-    This account has no recorded activity yet.
+    {% trans "This account has no recorded activity yet." %}
   </p>
 {% endif %}

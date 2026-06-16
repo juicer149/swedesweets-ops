@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 17:08+0200\n"
+"POT-Creation-Date: 2026-06-16 19:06+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -15,6 +15,107 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: accounts/detail_viewmodels.py:92 accounts/detail_viewmodels.py:238
+msgid "Account"
+msgstr "Compte"
+
+#: accounts/detail_viewmodels.py:126 accounts/detail_viewmodels.py:136
+#: templates/includes/navbar.html:65
+msgid "My account"
+msgstr "Mon compte"
+
+#: accounts/detail_viewmodels.py:153
+#, python-format
+msgid "%(action)s for %(email)s"
+msgstr "%(action)s pour %(email)s"
+
+#: accounts/detail_viewmodels.py:173
+msgid "Login email"
+msgstr "E-mail de connexion"
+
+#: accounts/detail_viewmodels.py:177
+msgid "Linked customer"
+msgstr "Client associé"
+
+#: accounts/detail_viewmodels.py:181
+msgid "Current status"
+msgstr "Statut actuel"
+
+#: accounts/detail_viewmodels.py:196
+#, python-format
+msgid "Customer account %(email)s activated."
+msgstr "Le compte client %(email)s a été activé."
+
+#: accounts/detail_viewmodels.py:198
+#, python-format
+msgid "Customer account %(email)s deactivated."
+msgstr "Le compte client %(email)s a été désactivé."
+
+#: accounts/detail_viewmodels.py:246
+msgid "Activity"
+msgstr "Activité"
+
+#: accounts/detail_viewmodels.py:265
+msgid "Edit account"
+msgstr "Modifier le compte"
+
+#: accounts/detail_viewmodels.py:278
+msgid "Back to accounts"
+msgstr "Retour aux comptes"
+
+#: accounts/detail_viewmodels.py:291 accounts/detail_viewmodels.py:361
+msgid "Deactivate login"
+msgstr "Désactiver la connexion"
+
+#: accounts/detail_viewmodels.py:299 accounts/detail_viewmodels.py:359
+msgid "Activate login"
+msgstr "Activer la connexion"
+
+#: accounts/detail_viewmodels.py:313
+#: templates/registration/password_change_form.html:4
+#: templates/registration/password_change_form.html:7
+#: templates/registration/password_change_form.html:13
+msgid "Change password"
+msgstr "Modifier le mot de passe"
+
+#: accounts/detail_viewmodels.py:320 templates/400.html:24
+#: templates/403.html:24 templates/404.html:24 templates/500.html:24
+#: templates/registration/password_change_done.html:29
+msgid "Back to start"
+msgstr "Retour à l’accueil"
+
+#: accounts/detail_viewmodels.py:348
+#, python-format
+msgid "%(count)d event"
+msgid_plural "%(count)d events"
+msgstr[0] "%(count)d événement"
+msgstr[1] "%(count)d événements"
+
+#: accounts/detail_viewmodels.py:379
+msgid "Allow this customer account to log in again."
+msgstr "Autoriser ce compte client à se connecter à nouveau."
+
+#: accounts/detail_viewmodels.py:382
+msgid ""
+"Prevent this customer account from logging in. Existing customer data and "
+"historical records are kept."
+msgstr ""
+"Empêcher ce compte client de se connecter. Les données client existantes et "
+"les historiques sont conservés."
+
+#: accounts/detail_viewmodels.py:392 accounts/selectors.py:488
+msgid "Active"
+msgstr "Actif"
+
+#: accounts/detail_viewmodels.py:394 accounts/selectors.py:490
+msgid "Inactive"
+msgstr "Inactif"
+
+#: accounts/detail_viewmodels.py:399 customer_portal/viewmodels.py:215
+#: templates/accounts/includes/detail_panel_account.html:38
+msgid "Never"
+msgstr "Jamais"
 
 #: accounts/navigation.py:90 customer_portal/viewmodels.py:159
 msgid "Orders"
@@ -32,13 +133,109 @@ msgstr "Profil"
 msgid "Contact"
 msgstr "Contact"
 
+#: accounts/roles.py:65
+msgid "Restricted"
+msgstr "Limité"
+
+#: accounts/roles.py:66
+msgid "Full"
+msgstr "Complet"
+
+#: accounts/roles.py:181
+msgid "Owner"
+msgstr "Propriétaire"
+
+#: accounts/roles.py:182
+msgid "Full staff"
+msgstr "Personnel complet"
+
+#: accounts/roles.py:183
+msgid "Restricted staff"
+msgstr "Personnel limité"
+
+#: accounts/roles.py:184
+msgid "Customer"
+msgstr "Client"
+
+#: accounts/roles.py:185
+msgid "Unlinked"
+msgstr "Non associé"
+
+#: accounts/roles.py:199
+msgid "Restricted access"
+msgstr "Accès limité"
+
+#: accounts/roles.py:200
+msgid "Full access"
+msgstr "Accès complet"
+
+#: accounts/roles.py:209
+msgid "Unknown"
+msgstr "Inconnu"
+
+#: accounts/roles.py:220 accounts/roles.py:224
+msgid "Unknown access"
+msgstr "Accès inconnu"
+
+#: accounts/selectors.py:94
+msgid "Placed order"
+msgstr "Commande passée"
+
+#: accounts/selectors.py:97 accounts/selectors.py:109 accounts/selectors.py:121
+#: accounts/selectors.py:133 accounts/selectors.py:145
 #: customer_portal/detail_viewmodels.py:94
 #: customer_portal/detail_viewmodels.py:102
-#: customer_portal/order_list_viewmodels.py:114
+#: customer_portal/order_list_viewmodels.py:127
 #: templates/customer_portal/index.html:71
 #, python-format
 msgid "Order #%(order_id)s"
 msgstr "Commande n° %(order_id)s"
+
+#: accounts/selectors.py:106
+msgid "Packed order"
+msgstr "Commande préparée"
+
+#: accounts/selectors.py:118
+msgid "Delivered order"
+msgstr "Commande livrée"
+
+#: accounts/selectors.py:130
+msgid "Cancelled order"
+msgstr "Commande annulée"
+
+#: accounts/selectors.py:142
+msgid "Edited order"
+msgstr "Commande modifiée"
+
+#: accounts/selectors.py:405
+msgid "Superuser"
+msgstr "Superutilisateur"
+
+#: accounts/selectors.py:413
+msgid "Invalid identity"
+msgstr "Identité invalide"
+
+#: accounts/selectors.py:414
+#, python-format
+msgid "Staff and customer · %(customer)s"
+msgstr "Personnel et client · %(customer)s"
+
+#: accounts/selectors.py:445
+msgid "Invalid staff account"
+msgstr "Compte personnel invalide"
+
+#: accounts/selectors.py:446
+msgid "Internal staff"
+msgstr "Personnel interne"
+
+#: accounts/selectors.py:454
+msgid "Invalid customer account"
+msgstr "Compte client invalide"
+
+#: accounts/selectors.py:481
+#, python-format
+msgid "Internal staff · %(access_level)s"
+msgstr "Personnel interne · %(access_level)s"
 
 #: customer_portal/detail_viewmodels.py:101
 msgid "Order details"
@@ -79,7 +276,7 @@ msgid "Cancelled"
 msgstr "Annulée"
 
 #: customer_portal/detail_viewmodels.py:192
-#: customer_portal/order_list_viewmodels.py:150 orders/presentation.py:191
+#: customer_portal/order_list_viewmodels.py:163 orders/presentation.py:191
 #, python-format
 msgid "%(count)s unit"
 msgid_plural "%(count)s units"
@@ -87,7 +284,7 @@ msgstr[0] "%(count)s unité"
 msgstr[1] "%(count)s unités"
 
 #: customer_portal/form_viewmodels.py:46 customer_portal/form_viewmodels.py:48
-#: customer_portal/order_list_viewmodels.py:42
+#: customer_portal/order_list_viewmodels.py:50
 #: customer_portal/viewmodels.py:133
 msgid "Place order"
 msgstr "Passer une commande"
@@ -164,25 +361,35 @@ msgid "%(product)s is unusually large. Maximum is %(maximum)s per order."
 msgstr ""
 "%(product)s est trop volumineux. Le maximum est de %(maximum)s par commande."
 
-#: customer_portal/order_list_viewmodels.py:38
+#: customer_portal/order_list_viewmodels.py:43
 #: templates/customer_portal/orders.html:4
 msgid "Order history"
 msgstr "Historique des commandes"
 
-#: customer_portal/order_list_viewmodels.py:40
+#: customer_portal/order_list_viewmodels.py:45
 msgid "Review your orders and follow their current status."
 msgstr "Consultez vos commandes et suivez leur statut actuel."
 
-#: customer_portal/order_list_viewmodels.py:45
+#: customer_portal/order_list_viewmodels.py:48
+#: customer_portal/viewmodels.py:131
+msgid "Continue draft"
+msgstr "Continuer le brouillon"
+
+#: customer_portal/order_list_viewmodels.py:55
+#: customer_portal/viewmodels.py:136
+msgid "Continue your unfinished order"
+msgstr "Continuez votre commande inachevée"
+
+#: customer_portal/order_list_viewmodels.py:57
 msgid "Place a new order"
 msgstr "Passer une nouvelle commande"
 
-#: customer_portal/order_list_viewmodels.py:101
+#: customer_portal/order_list_viewmodels.py:114
 #: customer_portal/viewmodels.py:187
 msgid "View order →"
 msgstr "Voir la commande →"
 
-#: customer_portal/order_list_viewmodels.py:128
+#: customer_portal/order_list_viewmodels.py:141
 #, python-format
 msgid "%(created_at)s · %(quantity)s"
 msgstr "%(created_at)s · %(quantity)s"
@@ -231,14 +438,6 @@ msgstr "Dernière commande"
 msgid "Most recent order date"
 msgstr "Date de la dernière commande"
 
-#: customer_portal/viewmodels.py:131
-msgid "Continue draft"
-msgstr "Continuer le brouillon"
-
-#: customer_portal/viewmodels.py:136
-msgid "Continue your unfinished order"
-msgstr "Continuez votre commande inachevée"
-
 #: customer_portal/viewmodels.py:138
 msgid "Place a new customer order"
 msgstr "Passer une nouvelle commande client"
@@ -255,10 +454,6 @@ msgstr "Voir votre historique de commandes"
 msgid "No location added"
 msgstr "Aucune localisation ajoutée"
 
-#: customer_portal/viewmodels.py:215
-msgid "Never"
-msgstr "Jamais"
-
 #: customer_portal/views.py:67
 msgid "All"
 msgstr "Toutes"
@@ -269,6 +464,7 @@ msgid "Created"
 msgstr "Créée"
 
 #: customer_portal/views.py:77
+#: templates/accounts/includes/detail_panel_account.html:28
 #: templates/customer_portal/includes/detail_panel_order.html:10
 msgid "Status"
 msgstr "Statut"
@@ -277,36 +473,36 @@ msgstr "Statut"
 msgid "Order filters"
 msgstr "Filtres des commandes"
 
-#: customer_portal/views.py:161
+#: customer_portal/views.py:164
 msgid "No draft order to discard."
 msgstr "Aucune brouillon de commande à supprimer."
 
-#: customer_portal/views.py:172
+#: customer_portal/views.py:175
 msgid "Draft order discarded."
 msgstr "Brouillon de commande supprimé."
 
-#: customer_portal/views.py:202
+#: customer_portal/views.py:205
 msgid "Draft order saved."
 msgstr "Brouillon de commande enregistré."
 
-#: customer_portal/views.py:215
+#: customer_portal/views.py:218
 #, python-format
 msgid "Order #%(order_id)s placed."
 msgstr "Commande n° %(order_id)s passée."
 
-#: customer_portal/views.py:260
+#: customer_portal/views.py:263
 msgid "Customer catalog"
 msgstr "Catalogue"
 
-#: customer_portal/views.py:265
+#: customer_portal/views.py:268
 msgid "My profile"
 msgstr "Mon profil"
 
-#: customer_portal/views.py:270
+#: customer_portal/views.py:273
 msgid "Edit my profile"
 msgstr "Modifier mon profil"
 
-#: customer_portal/views.py:275
+#: customer_portal/views.py:278
 msgid "Contact SwedeSweets"
 msgstr "Contacter SwedeSweets"
 
@@ -457,11 +653,6 @@ msgstr ""
 "Le système n’a pas pu comprendre la requête. Revenez en arrière et "
 "réessayez, ou retournez à votre page d’accueil."
 
-#: templates/400.html:24 templates/403.html:24 templates/404.html:24
-#: templates/500.html:24
-msgid "Back to start"
-msgstr "Retour à l’accueil"
-
 #: templates/403.html:4 templates/403.html:12
 msgid "Access denied"
 msgstr "Accès refusé"
@@ -497,6 +688,62 @@ msgid ""
 msgstr ""
 "Le système a rencontré une erreur inattendue. Réessayez, ou contactez "
 "l’administrateur du système si le problème persiste."
+
+#: templates/accounts/includes/detail_panel_account.html:5
+msgid "Email"
+msgstr "E-mail"
+
+#: templates/accounts/includes/detail_panel_account.html:10
+msgid "Role"
+msgstr "Rôle"
+
+#: templates/accounts/includes/detail_panel_account.html:15
+msgid "Linked identity"
+msgstr "Identité associée"
+
+#: templates/accounts/includes/detail_panel_account.html:33
+msgid "Last login"
+msgstr "Dernière connexion"
+
+#: templates/accounts/includes/detail_panel_account.html:44
+msgid "Joined"
+msgstr "Inscrit le"
+
+#: templates/accounts/includes/detail_panel_activity.html:8
+#: templates/accounts/includes/detail_panel_activity.html:61
+msgid "Time"
+msgstr "Heure"
+
+#: templates/accounts/includes/detail_panel_activity.html:9
+msgid "Event"
+msgstr "Événement"
+
+#: templates/accounts/includes/detail_panel_activity.html:10
+msgid "Target"
+msgstr "Cible"
+
+#: templates/accounts/includes/detail_panel_activity.html:11
+msgid "Context"
+msgstr "Contexte"
+
+#: templates/accounts/includes/detail_panel_activity.html:23
+#: templates/accounts/includes/detail_panel_activity.html:50
+#, python-format
+msgid "Open %(target)s"
+msgstr "Ouvrir %(target)s"
+
+#: templates/accounts/includes/detail_panel_activity.html:41
+msgid "Select an activity row to open the affected record."
+msgstr ""
+"Sélectionnez une ligne d’activité pour ouvrir l’enregistrement concerné."
+
+#: templates/accounts/includes/detail_panel_activity.html:85
+msgid "Open affected record"
+msgstr "Ouvrir l’enregistrement concerné"
+
+#: templates/accounts/includes/detail_panel_activity.html:93
+msgid "This account has no recorded activity yet."
+msgstr "Ce compte n’a encore aucune activité enregistrée."
 
 #: templates/customer_portal/includes/detail_panel_items.html:41
 msgid "No order items found."
@@ -577,17 +824,17 @@ msgstr "n° %(order_id)s"
 msgid "No orders found."
 msgstr "Aucune commande trouvée."
 
-#: templates/customer_portal/place_order.html:15
-msgid "Back home"
-msgstr "Retour à l’accueil"
-
-#: templates/customer_portal/place_order.html:37
+#: templates/customer_portal/place_order.html:32
 msgid "Order products"
 msgstr "Produits de la commande"
 
-#: templates/customer_portal/place_order.html:38
+#: templates/customer_portal/place_order.html:33
 msgid "Add at least one product. Empty products are ignored."
 msgstr "Ajoutez au moins un produit. Les lignes vides sont ignorées."
+
+#: templates/customer_portal/place_order.html:37
+msgid "Back home"
+msgstr "Retour à l’accueil"
 
 #: templates/customer_portal/place_order.html:57
 #: templates/customer_portal/place_order.html:103
@@ -606,14 +853,163 @@ msgstr "Navigation principale"
 msgid "SwedeSweets home"
 msgstr "Accueil SwedeSweets"
 
-#: templates/includes/navbar.html:65
-msgid "My account"
-msgstr "Mon compte"
-
 #: templates/includes/navbar.html:75
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: templates/includes/navbar.html:85
+#: templates/includes/navbar.html:85 templates/registration/login.html:4
+#: templates/registration/login.html:15 templates/registration/login.html:74
 msgid "Login"
 msgstr "Connexion"
+
+#: templates/registration/login.html:12
+msgid "Operations"
+msgstr "Opérations"
+
+#: templates/registration/login.html:19
+msgid "Sign in to access SwedeSweets operations."
+msgstr "Connectez-vous pour accéder aux opérations SwedeSweets."
+
+#: templates/registration/login.html:34
+msgid "Username"
+msgstr "Nom d’utilisateur"
+
+#: templates/registration/login.html:50
+msgid "Password"
+msgstr "Mot de passe"
+
+#: templates/registration/login.html:81
+msgid "Forgot password?"
+msgstr "Mot de passe oublié ?"
+
+#: templates/registration/password_change_done.html:4
+#: templates/registration/password_change_done.html:7
+msgid "Password changed"
+msgstr "Mot de passe modifié"
+
+#: templates/registration/password_change_done.html:8
+msgid "Your password has been updated."
+msgstr "Votre mot de passe a été mis à jour."
+
+#: templates/registration/password_change_done.html:14
+msgid "Your password was changed successfully."
+msgstr "Votre mot de passe a été modifié avec succès."
+
+#: templates/registration/password_change_done.html:22
+msgid "Back to my account"
+msgstr "Retour à mon compte"
+
+#: templates/registration/password_change_form.html:8
+msgid "Update the password for your account."
+msgstr "Mettez à jour le mot de passe de votre compte."
+
+#: templates/registration/password_reset_complete.html:4
+#: templates/registration/password_reset_complete.html:7
+msgid "Password reset complete"
+msgstr "Réinitialisation du mot de passe terminée"
+
+#: templates/registration/password_reset_complete.html:8
+msgid ""
+"Your password has been updated. You can now log in with your new password."
+msgstr ""
+"Votre mot de passe a été mis à jour. Vous pouvez maintenant vous connecter "
+"avec votre nouveau mot de passe."
+
+#: templates/registration/password_reset_complete.html:14
+msgid "Your account password was reset successfully."
+msgstr "Le mot de passe de votre compte a été réinitialisé avec succès."
+
+#: templates/registration/password_reset_complete.html:22
+msgid "Log in"
+msgstr "Se connecter"
+
+#: templates/registration/password_reset_confirm.html:4
+#: templates/registration/password_reset_confirm.html:8
+#: templates/registration/password_reset_confirm.html:14
+msgid "Set new password"
+msgstr "Définir un nouveau mot de passe"
+
+#: templates/registration/password_reset_confirm.html:9
+msgid "Choose a new password for your account."
+msgstr "Choisissez un nouveau mot de passe pour votre compte."
+
+#: templates/registration/password_reset_confirm.html:18
+msgid "Reset link expired"
+msgstr "Lien de réinitialisation expiré"
+
+#: templates/registration/password_reset_confirm.html:19
+msgid "This password reset link is invalid or has already been used."
+msgstr "Ce lien de réinitialisation est invalide ou a déjà été utilisé."
+
+#: templates/registration/password_reset_confirm.html:25
+msgid "Request a new reset link to continue."
+msgstr "Demandez un nouveau lien de réinitialisation pour continuer."
+
+#: templates/registration/password_reset_confirm.html:33
+msgid "Request new link"
+msgstr "Demander un nouveau lien"
+
+#: templates/registration/password_reset_confirm.html:40
+#: templates/registration/password_reset_done.html:25
+msgid "Back to login"
+msgstr "Retour à la connexion"
+
+#: templates/registration/password_reset_done.html:4
+#: templates/registration/password_reset_done.html:7
+msgid "Reset link sent"
+msgstr "Lien de réinitialisation envoyé"
+
+#: templates/registration/password_reset_done.html:8
+msgid ""
+"If an account exists for that email address, a reset link has been sent."
+msgstr ""
+"Si un compte existe pour cette adresse e-mail, un lien de réinitialisation a "
+"été envoyé."
+
+#: templates/registration/password_reset_done.html:14
+msgid ""
+"Check your inbox for a password reset email. The link can be used once and "
+"will expire automatically."
+msgstr ""
+"Vérifiez votre boîte de réception. Le lien de réinitialisation ne peut être "
+"utilisé qu’une seule fois et expirera automatiquement."
+
+#: templates/registration/password_reset_email.html:3
+msgid "Hello,"
+msgstr "Bonjour,"
+
+#: templates/registration/password_reset_email.html:5
+msgid ""
+"We received a request to reset the password for your SwedeSweets account."
+msgstr ""
+"Nous avons reçu une demande de réinitialisation du mot de passe de votre "
+"compte SwedeSweets."
+
+#: templates/registration/password_reset_email.html:9
+msgid "Reset your password:"
+msgstr "Réinitialiser votre mot de passe :"
+
+#: templates/registration/password_reset_email.html:12
+msgid "Your username:"
+msgstr "Votre nom d’utilisateur :"
+
+#: templates/registration/password_reset_email.html:15
+msgid "If you did not request this password reset, you can ignore this email."
+msgstr ""
+"Si vous n’avez pas demandé cette réinitialisation, vous pouvez ignorer cet "
+"e-mail."
+
+#: templates/registration/password_reset_form.html:4
+#: templates/registration/password_reset_form.html:7
+msgid "Reset password"
+msgstr "Réinitialiser le mot de passe"
+
+#: templates/registration/password_reset_form.html:8
+msgid "Enter your account email and we will send you a password reset link."
+msgstr ""
+"Saisissez l’adresse e-mail de votre compte et nous vous enverrons un lien de "
+"réinitialisation."
+
+#: templates/registration/password_reset_form.html:13
+msgid "Send reset link"
+msgstr "Envoyer le lien de réinitialisation"
