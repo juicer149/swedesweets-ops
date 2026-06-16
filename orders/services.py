@@ -23,7 +23,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Iterable
 
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Sum
 
 from customers.models import Customer
@@ -64,6 +64,111 @@ def create_draft_order(
         customer=customer,
         lines=lines,
     )
+
+
+@transaction.atomic
+def get_or_create_customer_draft_order(
+    *,
+    customer: Customer,
+) -> Order:
+    """Return the customer's active draft order, creating one if needed.
+
+    A customer may have at most one active draft. The database constraint owns
+    that invariant; this service provides the application-level workflow.
+    """
+
+    draft = (
+        Order.objects
+        .select_for_update()
+        .filter(
+            customer=customer,
+            status=Order.Status.DRAFT,
+        )
+        .order_by("created_at", "id")
+        .first()
+    )
+
+    if draft is not None:
+        return draft
+
+    order = Order(customer=customer)
+    order.snapshot_customer()
+
+    try:
+        with transaction.atomic():
+            order.save()
+    except IntegrityError:
+        return (
+            Order.objects
+            .select_for_update()
+            .get(
+                customer=customer,
+                status=Order.Status.DRAFT,
+            )
+        )
+
+    return order
+
+
+@transaction.atomic
+def replace_draft_order_lines(
+    *,
+    order: Order,
+    lines: Iterable[OrderLineInput],
+    user=None,
+) -> Order:
+    """Replace all lines on a draft order.
+
+    Draft orders do not reserve stock. Stock is checked and reserved only when
+    the order is placed.
+    """
+
+    order = Order.objects.select_for_update().get(pk=order.pk)
+
+    if order.status != Order.Status.DRAFT:
+        raise InvalidOrderOperation(
+            f"Only draft orders can be edited; current status is {order.status}"
+        )
+
+    normalized_lines = _normalize_order_lines(lines=lines)
+
+    order.lines.all().delete()
+
+    if normalized_lines:
+        _create_order_lines(
+            order=order,
+            normalized_lines=normalized_lines,
+        )
+
+    order.mark_as_edited(user=user)
+
+    return order
+
+
+@transaction.atomic
+def discard_draft_order(
+    *,
+    order: Order,
+) -> None:
+    """Delete an unplaced draft order.
+
+    Draft orders are customer work-in-progress. They do not reserve inventory and
+    are safe to delete as long as they have not entered the real order lifecycle.
+    """
+
+    order = Order.objects.select_for_update().get(pk=order.pk)
+
+    if order.status != Order.Status.DRAFT:
+        raise InvalidOrderOperation(
+            f"Only draft orders can be discarded; current status is {order.status}"
+        )
+
+    if order.allocations.exists():
+        raise InvalidOrderOperation(
+            f"Cannot discard draft order {order.pk}; it has allocations"
+        )
+
+    order.delete()
 
 
 @transaction.atomic

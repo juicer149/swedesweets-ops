@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 15:08+0200\n"
+"POT-Creation-Date: 2026-06-16 17:08+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: accounts/navigation.py:90 customer_portal/viewmodels.py:135
+#: accounts/navigation.py:90 customer_portal/viewmodels.py:159
 msgid "Orders"
 msgstr "Commandes"
 
@@ -44,7 +44,7 @@ msgstr "Commande n° %(order_id)s"
 msgid "Order details"
 msgstr "Détails de la commande"
 
-#: customer_portal/detail_viewmodels.py:118 customer_portal/views.py:68
+#: customer_portal/detail_viewmodels.py:118 customer_portal/views.py:75
 #: templates/customer_portal/includes/detail_panel_order.html:5
 msgid "Order"
 msgstr "Commande"
@@ -66,14 +66,14 @@ msgstr "Reçue"
 msgid "Prepared"
 msgstr "Préparée"
 
-#: customer_portal/detail_viewmodels.py:184 customer_portal/viewmodels.py:103
+#: customer_portal/detail_viewmodels.py:184 customer_portal/viewmodels.py:105
 #: orders/models.py:38
 #: templates/customer_portal/includes/detail_panel_order.html:35
 msgid "Delivered"
 msgstr "Livrée"
 
 #: customer_portal/detail_viewmodels.py:185 orders/models.py:39
-#: orders/models.py:368
+#: orders/models.py:376
 #: templates/customer_portal/includes/detail_panel_order.html:42
 msgid "Cancelled"
 msgstr "Annulée"
@@ -86,71 +86,79 @@ msgid_plural "%(count)s units"
 msgstr[0] "%(count)s unité"
 msgstr[1] "%(count)s unités"
 
-#: customer_portal/form_viewmodels.py:39 customer_portal/form_viewmodels.py:41
+#: customer_portal/form_viewmodels.py:46 customer_portal/form_viewmodels.py:48
 #: customer_portal/order_list_viewmodels.py:42
-#: customer_portal/viewmodels.py:125
+#: customer_portal/viewmodels.py:133
 msgid "Place order"
 msgstr "Passer une commande"
 
-#: customer_portal/form_viewmodels.py:40
+#: customer_portal/form_viewmodels.py:47
 msgid "Choose products and quantities for your next order."
 msgstr ""
 "Choisissez les produits et les quantités pour votre prochaine commande."
 
-#: customer_portal/forms.py:30
+#: customer_portal/form_viewmodels.py:49
+msgid "Save draft"
+msgstr ""
+
+#: customer_portal/form_viewmodels.py:50
+msgid "Discard draft"
+msgstr ""
+
+#: customer_portal/forms.py:31
 #: templates/customer_portal/includes/detail_panel_items.html:8
-#: templates/customer_portal/place_order.html:42
-#: templates/customer_portal/place_order.html:89
+#: templates/customer_portal/place_order.html:48
+#: templates/customer_portal/place_order.html:95
 msgid "Product"
 msgstr "Produit"
 
-#: customer_portal/forms.py:31
+#: customer_portal/forms.py:32
 msgid "Choose product"
 msgstr "Choisir un produit"
 
-#: customer_portal/forms.py:33
+#: customer_portal/forms.py:34
 msgid "Choose a valid available product."
 msgstr "Choisissez un produit disponible valide."
 
-#: customer_portal/forms.py:47 customer_portal/views.py:71
+#: customer_portal/forms.py:48 customer_portal/views.py:78
 #: templates/customer_portal/includes/detail_panel_items.html:9
 msgid "Quantity"
 msgstr "Quantité"
 
-#: customer_portal/forms.py:49
+#: customer_portal/forms.py:50
 msgid "Enter a whole number of units."
 msgstr "Saisissez un nombre entier d’unités."
 
-#: customer_portal/forms.py:50
+#: customer_portal/forms.py:51
 msgid "Quantity must be at least 1."
 msgstr "La quantité doit être d’au moins 1."
 
-#: customer_portal/forms.py:51
+#: customer_portal/forms.py:52
 msgid "Quantity is too large."
 msgstr "La quantité est trop élevée."
 
-#: customer_portal/forms.py:55
+#: customer_portal/forms.py:56
 msgid "e.g. 2"
 msgstr "p. ex. 2"
 
-#: customer_portal/forms.py:101
+#: customer_portal/forms.py:102
 msgid "Choose a product for this line."
 msgstr "Choisissez un produit pour cette ligne."
 
-#: customer_portal/forms.py:107
+#: customer_portal/forms.py:108
 msgid "Enter a quantity for this line."
 msgstr "Saisissez une quantité pour cette ligne."
 
-#: customer_portal/forms.py:160
+#: customer_portal/forms.py:166
 msgid "Add at least one product."
 msgstr "Ajoutez au moins un produit."
 
-#: customer_portal/forms.py:184
+#: customer_portal/forms.py:192
 #, python-format
 msgid "Only %(available)s available for %(product)s."
 msgstr "Seulement %(available)s disponibles pour %(product)s."
 
-#: customer_portal/forms.py:195
+#: customer_portal/forms.py:203
 #, python-format
 msgid "%(product)s is unusually large. Maximum is %(maximum)s per order."
 msgstr ""
@@ -170,7 +178,7 @@ msgid "Place a new order"
 msgstr "Passer une nouvelle commande"
 
 #: customer_portal/order_list_viewmodels.py:101
-#: customer_portal/viewmodels.py:163
+#: customer_portal/viewmodels.py:187
 msgid "View order →"
 msgstr "Voir la commande →"
 
@@ -179,102 +187,126 @@ msgstr "Voir la commande →"
 msgid "%(created_at)s · %(quantity)s"
 msgstr "%(created_at)s · %(quantity)s"
 
-#: customer_portal/viewmodels.py:80
+#: customer_portal/viewmodels.py:82
 #, python-format
 msgid "Welcome back, %(name)s"
 msgstr "Bienvenue, %(name)s"
 
-#: customer_portal/viewmodels.py:82
+#: customer_portal/viewmodels.py:84
 msgid "Customer portal"
 msgstr "Portail client"
 
-#: customer_portal/viewmodels.py:84
+#: customer_portal/viewmodels.py:86
 msgid ""
 "Place new orders, review your order history, and follow recent activity."
 msgstr ""
 "Passez de nouvelles commandes, consultez votre historique et suivez "
 "l’activité récente."
 
-#: customer_portal/viewmodels.py:92
+#: customer_portal/viewmodels.py:94
 msgid "Total orders"
 msgstr "Total des commandes"
 
-#: customer_portal/viewmodels.py:94
+#: customer_portal/viewmodels.py:96
 msgid "All orders placed with SwedeSweets"
 msgstr "Toutes les commandes passées avec SwedeSweets"
 
-#: customer_portal/viewmodels.py:97
+#: customer_portal/viewmodels.py:99
 msgid "In progress"
 msgstr "En cours"
 
-#: customer_portal/viewmodels.py:99
+#: customer_portal/viewmodels.py:101
 msgid "Placed or packed orders"
 msgstr "Commandes passées ou préparées"
 
-#: customer_portal/viewmodels.py:105
+#: customer_portal/viewmodels.py:107
 msgid "Completed deliveries"
 msgstr "Commandes livrées"
 
-#: customer_portal/viewmodels.py:109
+#: customer_portal/viewmodels.py:111
 msgid "Last order"
 msgstr "Dernière commande"
 
-#: customer_portal/viewmodels.py:111
+#: customer_portal/viewmodels.py:113
 msgid "Most recent order date"
 msgstr "Date de la dernière commande"
 
 #: customer_portal/viewmodels.py:131
+msgid "Continue draft"
+msgstr "Continuer le brouillon"
+
+#: customer_portal/viewmodels.py:136
+msgid "Continue your unfinished order"
+msgstr "Continuez votre commande inachevée"
+
+#: customer_portal/viewmodels.py:138
 msgid "Place a new customer order"
-msgstr "Passer une nouvelle commande"
+msgstr "Passer une nouvelle commande client"
 
 #: customer_portal/viewmodels.py:141
+msgid "You have an unfinished order."
+msgstr "Vous avez une commande inachevée."
+
+#: customer_portal/viewmodels.py:165
 msgid "View your order history"
 msgstr "Voir votre historique de commandes"
 
-#: customer_portal/viewmodels.py:186
+#: customer_portal/viewmodels.py:210
 msgid "No location added"
 msgstr "Aucune localisation ajoutée"
 
-#: customer_portal/viewmodels.py:191
+#: customer_portal/viewmodels.py:215
 msgid "Never"
 msgstr "Jamais"
 
-#: customer_portal/views.py:60
+#: customer_portal/views.py:67
 msgid "All"
 msgstr "Toutes"
 
-#: customer_portal/views.py:69
+#: customer_portal/views.py:76
 #: templates/customer_portal/includes/detail_panel_order.html:15
 msgid "Created"
 msgstr "Créée"
 
-#: customer_portal/views.py:70
+#: customer_portal/views.py:77
 #: templates/customer_portal/includes/detail_panel_order.html:10
 msgid "Status"
 msgstr "Statut"
 
-#: customer_portal/views.py:76
+#: customer_portal/views.py:83
 msgid "Order filters"
 msgstr "Filtres des commandes"
 
 #: customer_portal/views.py:161
+msgid "No draft order to discard."
+msgstr "Aucune brouillon de commande à supprimer."
+
+#: customer_portal/views.py:172
+msgid "Draft order discarded."
+msgstr "Brouillon de commande supprimé."
+
+#: customer_portal/views.py:202
+msgid "Draft order saved."
+msgstr "Brouillon de commande enregistré."
+
+#: customer_portal/views.py:215
 #, python-format
 msgid "Order #%(order_id)s placed."
 msgstr "Commande n° %(order_id)s passée."
 
-#: customer_portal/views.py:198
+#: customer_portal/views.py:260
 msgid "Customer catalog"
 msgstr "Catalogue"
 
-#: customer_portal/views.py:203
+#: customer_portal/views.py:265
 msgid "My profile"
 msgstr "Mon profil"
 
-#: customer_portal/views.py:208
+#: customer_portal/views.py:270
 msgid "Edit my profile"
 msgstr "Modifier mon profil"
 
-#: customer_portal/views.py:213
+#: customer_portal/views.py:275
 msgid "Contact SwedeSweets"
 msgstr "Contacter SwedeSweets"
 
@@ -307,23 +339,23 @@ msgstr "Rupture de stock"
 msgid "Other"
 msgstr "Autre"
 
-#: orders/models.py:310
+#: orders/models.py:318
 msgid "Stock unit"
 msgstr "Unité de stock"
 
-#: orders/models.py:311
+#: orders/models.py:319
 msgid "Kg"
 msgstr "kg"
 
-#: orders/models.py:312
+#: orders/models.py:320
 msgid "Grams"
 msgstr "Grammes"
 
-#: orders/models.py:366
+#: orders/models.py:374
 msgid "Reserved"
 msgstr "Réservée"
 
-#: orders/models.py:367
+#: orders/models.py:375
 msgid "Consumed"
 msgstr "Consommée"
 
@@ -422,8 +454,8 @@ msgid ""
 "The request could not be understood by the system. Go back and try again, or "
 "return to your start page."
 msgstr ""
-"Le système n’a pas pu comprendre la requête. Revenez en arrière et réessayez, "
-"ou retournez à votre page d’accueil."
+"Le système n’a pas pu comprendre la requête. Revenez en arrière et "
+"réessayez, ou retournez à votre page d’accueil."
 
 #: templates/400.html:24 templates/403.html:24 templates/404.html:24
 #: templates/500.html:24
@@ -545,26 +577,26 @@ msgstr "n° %(order_id)s"
 msgid "No orders found."
 msgstr "Aucune commande trouvée."
 
-#: templates/customer_portal/place_order.html:31
+#: templates/customer_portal/place_order.html:15
+msgid "Back home"
+msgstr "Retour à l’accueil"
+
+#: templates/customer_portal/place_order.html:37
 msgid "Order products"
 msgstr "Produits de la commande"
 
-#: templates/customer_portal/place_order.html:32
+#: templates/customer_portal/place_order.html:38
 msgid "Add at least one product. Empty products are ignored."
 msgstr "Ajoutez au moins un produit. Les lignes vides sont ignorées."
 
-#: templates/customer_portal/place_order.html:51
-#: templates/customer_portal/place_order.html:97
+#: templates/customer_portal/place_order.html:57
+#: templates/customer_portal/place_order.html:103
 msgid "Remove"
 msgstr "Supprimer"
 
-#: templates/customer_portal/place_order.html:80
+#: templates/customer_portal/place_order.html:86
 msgid "Add product"
 msgstr "Ajouter un produit"
-
-#: templates/customer_portal/place_order.html:114
-msgid "Back"
-msgstr "Retour"
 
 #: templates/includes/navbar.html:7
 msgid "Primary navigation"

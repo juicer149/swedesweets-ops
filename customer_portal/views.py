@@ -21,6 +21,7 @@ from customer_portal.form_viewmodels import (
 )
 from customer_portal.forms import (
     PortalOrderLineFormSet,
+    build_portal_order_line_initial_data,
     build_portal_order_line_inputs,
 )
 from customer_portal.order_list_viewmodels import (
@@ -41,10 +42,16 @@ from orders.models import Order
 from orders.selectors import (
     CUSTOMER_ORDER_SORTS,
     DEFAULT_CUSTOMER_ORDER_SORT,
+    get_active_draft_order_for_customer,
     get_customer_order_summary,
     list_customer_orders,
 )
-from orders.services import create_order
+from orders.services import (
+    discard_draft_order,
+    get_or_create_customer_draft_order,
+    place_order as place_draft_order,
+    replace_draft_order_lines,
+)
 
 
 PORTAL_ORDERS_LIST_ANCHOR = "portal-orders-list"
@@ -82,6 +89,7 @@ PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 @login_required
 def index(request):
     customer = get_portal_customer_for_user(user=request.user)
+    active_draft_order = get_active_draft_order_for_customer(customer=customer)
 
     context = build_portal_home_context(
         customer=customer,
@@ -89,6 +97,7 @@ def index(request):
         recent_orders=tuple(
             list_customer_orders(customer=customer)[:RECENT_PORTAL_ORDER_LIMIT]
         ),
+        active_draft_order=active_draft_order,
     ).as_dict()
 
     return render(request, "customer_portal/index.html", context)
@@ -138,19 +147,64 @@ def orders(request):
 @login_required
 def place_order(request):
     customer = get_portal_customer_for_user(user=request.user)
+    active_draft_order = get_active_draft_order_for_customer(customer=customer)
+    draft_order = active_draft_order
     form_errors: tuple[str, ...] = ()
 
     if request.method == "POST":
+        intent = request.POST.get("intent", "place_order")
+
+        if intent == "discard_draft":
+            if draft_order is None:
+                messages.info(
+                    request,
+                    _("No draft order to discard."),
+                )
+                return redirect("accounts:after_login")
+
+            try:
+                discard_draft_order(order=draft_order)
+            except ORDER_OPERATION_ERRORS as error:
+                form_errors = (str(error),)
+            else:
+                messages.success(
+                    request,
+                    _("Draft order discarded."),
+                )
+                return redirect("accounts:after_login")
+
+        if draft_order is None:
+            draft_order = get_or_create_customer_draft_order(customer=customer)
+
+        require_lines = intent in {
+            "place_order",
+            "save_draft",
+        }
+
         line_formset = PortalOrderLineFormSet(
             request.POST,
             prefix=ORDER_LINE_FORMSET_PREFIX,
+            order=draft_order,
+            require_lines=require_lines,
         )
 
         if line_formset.is_valid():
             try:
-                order = create_order(
-                    customer=customer,
+                draft_order = replace_draft_order_lines(
+                    order=draft_order,
                     lines=build_portal_order_line_inputs(line_formset),
+                    user=request.user,
+                )
+
+                if intent == "save_draft":
+                    messages.success(
+                        request,
+                        _("Draft order saved."),
+                    )
+                    return redirect("accounts:after_login")
+
+                placed_order = place_draft_order(
+                    order=draft_order,
                     user=request.user,
                 )
             except ORDER_OPERATION_ERRORS as error:
@@ -159,21 +213,29 @@ def place_order(request):
                 messages.success(
                     request,
                     _("Order #%(order_id)s placed.") % {
-                        "order_id": order.id,
+                        "order_id": placed_order.id,
                     },
                 )
                 return redirect(
                     "customer_portal:order_detail",
-                    order_id=order.id,
+                    order_id=placed_order.id,
                 )
     else:
+        initial = ()
+
+        if draft_order is not None:
+            initial = build_portal_order_line_initial_data(draft_order)
+
         line_formset = PortalOrderLineFormSet(
+            initial=initial,
             prefix=ORDER_LINE_FORMSET_PREFIX,
+            order=draft_order,
         )
 
     context = build_portal_place_order_context(
         line_formset=line_formset,
         form_errors=form_errors,
+        has_active_draft=draft_order is not None,
     ).as_dict()
 
     return render(request, "customer_portal/place_order.html", context)

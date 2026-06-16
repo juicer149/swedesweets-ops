@@ -173,6 +173,22 @@ def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:
     )
 
 
+def get_active_draft_order_for_customer(
+    *,
+    customer,
+) -> Order | None:
+    return (
+        Order.objects
+        .filter(
+            customer=customer,
+            status=Order.Status.DRAFT,
+        )
+        .prefetch_related("lines")
+        .order_by("created_at", "id")
+        .first()
+    )
+
+
 def list_placed_orders_for_dashboard(
     *,
     limit: int = 3,

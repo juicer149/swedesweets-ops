@@ -301,12 +301,36 @@
    Portal place order
    ============================================================================= */
 
+.portal-place-order-card .order-lines__header--with-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.portal-place-order-card .order-lines__header--with-action .text-link {
+  margin-top: 0.35rem;
+  flex: 0 0 auto;
+}
+
 .portal-place-order-card .order-line__grid {
   grid-template-columns: minmax(0, 1fr);
 }
 
 .portal-place-order-card .form-field--portal-order-quantity {
   max-width: 18rem;
+}
+
+.portal-place-order-card .form-actions--split {
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.portal-place-order-card .form-actions__primary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 /* =============================================================================

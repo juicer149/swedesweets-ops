@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy
 from common.form_layout import set_form_field_layout
 from orders.datatypes import OrderLineInput
 from orders.forms import ProductChoiceField
+from orders.models import Order
 from orders.order_limits import (
     MAX_QUANTITY_PER_PRODUCT_PER_ORDER,
     is_unusually_large_order_line,
@@ -130,9 +131,13 @@ class BasePortalOrderLineFormSet(BaseFormSet):
     def __init__(
         self,
         *args,
+        order: Order | None = None,
+        require_lines: bool = True,
         **kwargs,
     ) -> None:
-        self.product_choice_context = build_product_choice_context()
+        self.order = order
+        self.require_lines = require_lines
+        self.product_choice_context = build_product_choice_context(order=order)
         super().__init__(*args, **kwargs)
 
     def get_form_kwargs(self, index: int | None) -> dict[str, Any]:
@@ -156,9 +161,12 @@ class BasePortalOrderLineFormSet(BaseFormSet):
             return
 
         if not self.order_line_forms:
-            raise forms.ValidationError(
-                _("Add at least one product."),
-            )
+            if self.require_lines:
+                raise forms.ValidationError(
+                    _("Add at least one product."),
+                )
+
+            return
 
         requested_quantity_by_product_id: dict[int, int] = defaultdict(int)
         products_by_id: dict[int, Product] = {}
@@ -224,4 +232,16 @@ def build_portal_order_line_inputs(
     return [
         form.to_order_line_input()
         for form in formset.order_line_forms
+    ]
+
+
+def build_portal_order_line_initial_data(
+    order: Order,
+) -> list[dict[str, object]]:
+    return [
+        {
+            "product": line.product_id,
+            "quantity": line.quantity_in_units,
+        }
+        for line in order.lines.select_related("product").order_by("id")
     ]

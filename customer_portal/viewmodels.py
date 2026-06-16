@@ -18,6 +18,7 @@ class PortalHomeAction:
     css_class: str
     aria_label: str
     icon: str
+    help_text: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,6 +71,7 @@ def build_portal_home_context(
     customer,
     order_summary,
     recent_orders,
+    active_draft_order=None,
 ) -> PortalHomeContext:
     in_progress_orders = (
         order_summary.placed_orders
@@ -86,7 +88,7 @@ def build_portal_home_context(
         ),
         customer_email=customer.email,
         customer_location=_customer_location_label(customer),
-        actions=_build_home_actions(),
+        actions=_build_home_actions(active_draft_order=active_draft_order),
         metrics=(
             PortalMetric(
                 label=_("Total orders"),
@@ -119,17 +121,39 @@ def build_portal_home_context(
     )
 
 
-def _build_home_actions() -> tuple[PortalHomeAction, ...]:
+def _build_home_actions(
+    *,
+    active_draft_order=None,
+) -> tuple[PortalHomeAction, ...]:
+    has_active_draft = active_draft_order is not None
+
+    order_action_label = (
+        _("Continue draft")
+        if has_active_draft
+        else _("Place order")
+    )
+    order_action_aria_label = (
+        _("Continue your unfinished order")
+        if has_active_draft
+        else _("Place a new customer order")
+    )
+    order_action_help_text = (
+        _("You have an unfinished order.")
+        if has_active_draft
+        else ""
+    )
+
     return (
         PortalHomeAction(
-            label=_("Place order"),
+            label=order_action_label,
             href=reverse("customer_portal:place_order"),
             css_class=(
                 "button button--hero-action button--tone-place "
                 "button--with-icon"
             ),
-            aria_label=_("Place a new customer order"),
+            aria_label=order_action_aria_label,
             icon="cart",
+            help_text=order_action_help_text,
         ),
         PortalHomeAction(
             label=_("Orders"),
