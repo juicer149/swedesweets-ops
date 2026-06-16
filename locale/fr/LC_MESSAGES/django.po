@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-16 14:00+0200\n"
-"PO-Revision-Date: 2026-06-16 13:45+0200\n"
+"POT-Creation-Date: 2026-06-16 14:38+0200\n"
+"PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -44,7 +44,7 @@ msgstr "Commande n° %(order_id)s"
 msgid "Order details"
 msgstr "Détails de la commande"
 
-#: customer_portal/detail_viewmodels.py:118 customer_portal/views.py:51
+#: customer_portal/detail_viewmodels.py:118 customer_portal/views.py:68
 #: templates/customer_portal/includes/detail_panel_order.html:5
 msgid "Order"
 msgstr "Commande"
@@ -86,6 +86,75 @@ msgid_plural "%(count)s units"
 msgstr[0] "%(count)s unité"
 msgstr[1] "%(count)s unités"
 
+#: customer_portal/form_viewmodels.py:39 customer_portal/form_viewmodels.py:41
+#: customer_portal/order_list_viewmodels.py:42
+#: customer_portal/viewmodels.py:125
+msgid "Place order"
+msgstr "Passer une commande"
+
+#: customer_portal/form_viewmodels.py:40
+msgid "Choose products and quantities for your next order."
+msgstr ""
+"Choisissez les produits et les quantités pour votre prochaine commande."
+
+#: customer_portal/forms.py:30
+#: templates/customer_portal/includes/detail_panel_items.html:8
+#: templates/customer_portal/place_order.html:42
+#: templates/customer_portal/place_order.html:89
+msgid "Product"
+msgstr "Produit"
+
+#: customer_portal/forms.py:31
+msgid "Choose product"
+msgstr "Choisir un produit"
+
+#: customer_portal/forms.py:33
+msgid "Choose a valid available product."
+msgstr "Choisissez un produit disponible valide."
+
+#: customer_portal/forms.py:47 customer_portal/views.py:71
+#: templates/customer_portal/includes/detail_panel_items.html:9
+msgid "Quantity"
+msgstr "Quantité"
+
+#: customer_portal/forms.py:49
+msgid "Enter a whole number of units."
+msgstr "Saisissez un nombre entier d’unités."
+
+#: customer_portal/forms.py:50
+msgid "Quantity must be at least 1."
+msgstr "La quantité doit être d’au moins 1."
+
+#: customer_portal/forms.py:51
+msgid "Quantity is too large."
+msgstr "La quantité est trop élevée."
+
+#: customer_portal/forms.py:55
+msgid "e.g. 2"
+msgstr "p. ex. 2"
+
+#: customer_portal/forms.py:99
+msgid "Choose a product for this line."
+msgstr "Choisissez un produit pour cette ligne."
+
+#: customer_portal/forms.py:105
+msgid "Enter a quantity for this line."
+msgstr "Saisissez une quantité pour cette ligne."
+
+#: customer_portal/forms.py:158
+msgid "Add at least one product."
+msgstr "Ajoutez au moins un produit." 
+
+#: customer_portal/forms.py:182
+#, python-format
+msgid "Only %(available)s available for %(product)s."
+msgstr "Seulement %(available)s disponibles pour %(product)s."
+
+#: customer_portal/forms.py:193
+#, python-format
+msgid "%(product)s is unusually large. Maximum is %(maximum)s per order."
+msgstr "%(product)s est trop volumineux. Le maximum est de %(maximum)s par commande."
+
 #: customer_portal/order_list_viewmodels.py:38
 #: templates/customer_portal/orders.html:4
 msgid "Order history"
@@ -94,11 +163,6 @@ msgstr "Historique des commandes"
 #: customer_portal/order_list_viewmodels.py:40
 msgid "Review your orders and follow their current status."
 msgstr "Consultez vos commandes et suivez leur statut actuel."
-
-#: customer_portal/order_list_viewmodels.py:42
-#: customer_portal/viewmodels.py:125 customer_portal/views.py:123
-msgid "Place order"
-msgstr "Passer une commande"
 
 #: customer_portal/order_list_viewmodels.py:45
 msgid "Place a new order"
@@ -174,42 +238,42 @@ msgstr "Aucune localisation ajoutée"
 msgid "Never"
 msgstr "Jamais"
 
-#: customer_portal/views.py:43
+#: customer_portal/views.py:60
 msgid "All"
 msgstr "Toutes"
 
-#: customer_portal/views.py:52
+#: customer_portal/views.py:69
 #: templates/customer_portal/includes/detail_panel_order.html:15
 msgid "Created"
 msgstr "Créée"
 
-#: customer_portal/views.py:53
+#: customer_portal/views.py:70
 #: templates/customer_portal/includes/detail_panel_order.html:10
 msgid "Status"
 msgstr "Statut"
 
-#: customer_portal/views.py:54
-#: templates/customer_portal/includes/detail_panel_items.html:9
-msgid "Quantity"
-msgstr "Quantité"
-
-#: customer_portal/views.py:59
+#: customer_portal/views.py:76
 msgid "Order filters"
 msgstr "Filtres des commandes"
 
-#: customer_portal/views.py:142
+#: customer_portal/views.py:161
+#, python-format
+msgid "Order #%(order_id)s placed."
+msgstr "Commande n° %(order_id)s passée."
+
+#: customer_portal/views.py:198
 msgid "Customer catalog"
 msgstr "Catalogue"
 
-#: customer_portal/views.py:147
+#: customer_portal/views.py:203
 msgid "My profile"
 msgstr "Mon profil"
 
-#: customer_portal/views.py:152
+#: customer_portal/views.py:208
 msgid "Edit my profile"
 msgstr "Modifier mon profil"
 
-#: customer_portal/views.py:157
+#: customer_portal/views.py:213
 msgid "Contact SwedeSweets"
 msgstr "Contacter SwedeSweets"
 
@@ -317,8 +381,8 @@ msgstr "%(weight)s g"
 
 #: products/models.py:370
 #, python-format
-msgid "%(weight)s g/%(unit)s"
-msgstr "%(weight)s g/%(unit)s"
+msgid "%(weight)s g / %(unit)s"
+msgstr "%(weight)s g / %(unit)s"
 
 #: products/models.py:400
 #, python-format
@@ -335,20 +399,18 @@ msgstr[0] "%(count)s pièce"
 msgstr[1] "%(count)s pièces"
 
 #: products/models.py:410
+#, python-format
 msgid "%(count)s bag"
 msgid_plural "%(count)s bags"
 msgstr[0] "%(count)s sachet"
 msgstr[1] "%(count)s sachets"
 
 #: products/models.py:415
+#, python-format
 msgid "%(count)s case"
 msgid_plural "%(count)s cases"
 msgstr[0] "%(count)s caisse"
 msgstr[1] "%(count)s caisses"
-
-#: templates/customer_portal/includes/detail_panel_items.html:8
-msgid "Product"
-msgstr "Produit"
 
 #: templates/customer_portal/includes/detail_panel_items.html:41
 msgid "No order items found."
@@ -429,6 +491,27 @@ msgstr "n° %(order_id)s"
 msgid "No orders found."
 msgstr "Aucune commande trouvée."
 
+#: templates/customer_portal/place_order.html:31
+msgid "Order products"
+msgstr "Produits de la commande"
+
+#: templates/customer_portal/place_order.html:32
+msgid "Add at least one product. Empty products are ignored."
+msgstr "Ajoutez au moins un produit. Les lignes vides sont ignorées."
+
+#: templates/customer_portal/place_order.html:51
+#: templates/customer_portal/place_order.html:97
+msgid "Remove"
+msgstr "Supprimer"
+
+#: templates/customer_portal/place_order.html:80
+msgid "Add product"
+msgstr "Ajouter un produit"
+
+#: templates/customer_portal/place_order.html:114
+msgid "Back"
+msgstr "Retour"
+
 #: templates/includes/navbar.html:7
 msgid "Primary navigation"
 msgstr "Navigation principale"
@@ -448,21 +531,3 @@ msgstr "Déconnexion"
 #: templates/includes/navbar.html:85
 msgid "Login"
 msgstr "Connexion"
-
-#~ msgid "Delivery"
-#~ msgstr "Livraison"
-
-#~ msgid "Delivery details"
-#~ msgstr "Détails de livraison"
-
-#~ msgid "Name"
-#~ msgstr "Nom"
-
-#~ msgid "Email"
-#~ msgstr "E-mail"
-
-#~ msgid "Phone"
-#~ msgstr "Téléphone"
-
-#~ msgid "Delivery address"
-#~ msgstr "Adresse de livraison"

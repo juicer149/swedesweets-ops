@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
@@ -14,6 +15,13 @@ from common.table_controls import (
 )
 from customer_portal.detail_viewmodels import (
     build_portal_order_detail_context,
+)
+from customer_portal.form_viewmodels import (
+    build_portal_place_order_context,
+)
+from customer_portal.forms import (
+    PortalOrderLineFormSet,
+    build_portal_order_line_inputs,
 )
 from customer_portal.order_list_viewmodels import (
     build_portal_order_page_rows,
@@ -27,6 +35,8 @@ from customer_portal.viewmodels import (
     RECENT_PORTAL_ORDER_LIMIT,
     build_portal_home_context,
 )
+from inventory.errors import InvalidStockOperation
+from orders.errors import InvalidOrderOperation
 from orders.models import Order
 from orders.selectors import (
     CUSTOMER_ORDER_SORTS,
@@ -34,10 +44,17 @@ from orders.selectors import (
     get_customer_order_summary,
     list_customer_orders,
 )
+from orders.services import create_order
 
 
 PORTAL_ORDERS_LIST_ANCHOR = "portal-orders-list"
 PORTAL_ORDER_FILTER_QUERY_KEY = "status"
+ORDER_LINE_FORMSET_PREFIX = "lines"
+
+ORDER_OPERATION_ERRORS = (
+    InvalidOrderOperation,
+    InvalidStockOperation,
+)
 
 PORTAL_ORDER_FILTERS = [
     TableFilter("", gettext_lazy("All")),
@@ -120,7 +137,46 @@ def orders(request):
 
 @login_required
 def place_order(request):
-    return HttpResponse(_("Place order"))
+    customer = get_portal_customer_for_user(user=request.user)
+    form_errors: tuple[str, ...] = ()
+
+    if request.method == "POST":
+        line_formset = PortalOrderLineFormSet(
+            request.POST,
+            prefix=ORDER_LINE_FORMSET_PREFIX,
+        )
+
+        if line_formset.is_valid():
+            try:
+                order = create_order(
+                    customer=customer,
+                    lines=build_portal_order_line_inputs(line_formset),
+                    user=request.user,
+                )
+            except ORDER_OPERATION_ERRORS as error:
+                form_errors = (str(error),)
+            else:
+                messages.success(
+                    request,
+                    _("Order #%(order_id)s placed.") % {
+                        "order_id": order.id,
+                    },
+                )
+                return redirect(
+                    "customer_portal:order_detail",
+                    order_id=order.id,
+                )
+    else:
+        line_formset = PortalOrderLineFormSet(
+            prefix=ORDER_LINE_FORMSET_PREFIX,
+        )
+
+    context = build_portal_place_order_context(
+        line_formset=line_formset,
+        form_errors=form_errors,
+    ).as_dict()
+
+    return render(request, "customer_portal/place_order.html", context)
 
 
 @login_required
