@@ -360,6 +360,17 @@ class Product(models.Model):
         return self.get_stock_unit_display()
 
     @property
+    def stock_unit_plural(self) -> str:
+        labels = {
+            self.StockUnit.BOX: _("boxes"),
+            self.StockUnit.PIECE: _("pieces"),
+            self.StockUnit.BAG: _("bags"),
+            self.StockUnit.CASE: _("cases"),
+        }
+
+        return labels[self.stock_unit]
+
+    @property
     def weight_label(self) -> str:
         return _("%(weight)s g") % {
             "weight": self.weight_per_unit,

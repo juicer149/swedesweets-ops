@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-17 21:25+0200\n"
+"POT-Creation-Date: 2026-06-18 00:16+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -502,6 +502,10 @@ msgstr "Modifier mon profil"
 msgid "Contact SwedeSweets"
 msgstr "Contacter SwedeSweets"
 
+#: orders/forms.py:85
+msgid "%(product_label)s · %(available_quantity)s left"
+msgstr "%(product_label)s · %(available_quantity)s dispo"
+
 #: orders/models.py:35 orders/presentation.py:79
 msgid "Draft"
 msgstr "Brouillon"
@@ -624,38 +628,54 @@ msgstr "Sachet"
 msgid "Case"
 msgstr "Caisse"
 
-#: products/models.py:364
+#: products/models.py:365
+msgid "boxes"
+msgstr "boîtes"
+
+#: products/models.py:366
+msgid "pieces"
+msgstr "pièces"
+
+#: products/models.py:367
+msgid "bags"
+msgstr "sacs"
+
+#: products/models.py:368
+msgid "cases"
+msgstr "caisses"
+
+#: products/models.py:375
 #, python-format
 msgid "%(weight)s g"
 msgstr "%(weight)s g"
 
-#: products/models.py:370
+#: products/models.py:381
 #, python-format
 msgid "%(weight)s g / %(unit)s"
 msgstr "%(weight)s g / %(unit)s"
 
-#: products/models.py:400
+#: products/models.py:411
 #, python-format
 msgid "%(count)s box"
 msgid_plural "%(count)s boxes"
 msgstr[0] "%(count)s boîte"
 msgstr[1] "%(count)s boîtes"
 
-#: products/models.py:405
+#: products/models.py:416
 #, python-format
 msgid "%(count)s piece"
 msgid_plural "%(count)s pieces"
 msgstr[0] "%(count)s pièce"
 msgstr[1] "%(count)s pièces"
 
-#: products/models.py:410
+#: products/models.py:421
 #, python-format
 msgid "%(count)s bag"
 msgid_plural "%(count)s bags"
 msgstr[0] "%(count)s sachet"
 msgstr[1] "%(count)s sachets"
 
-#: products/models.py:415
+#: products/models.py:426
 #, python-format
 msgid "%(count)s case"
 msgid_plural "%(count)s cases"
@@ -878,8 +898,8 @@ msgid ""
 "Save your draft before leaving this page, or leave without saving your "
 "latest changes."
 msgstr ""
-"Enregistrez votre brouillon avant de quitter cette page, "
-"ou quittez sans enregistrer vos dernières modifications."
+"Enregistrez votre brouillon avant de quitter cette page, ou quittez sans "
+"enregistrer vos dernières modifications."
 
 #: templates/customer_portal/place_order.html:152
 msgid "Leave without saving"

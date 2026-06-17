@@ -6,6 +6,7 @@ from typing import Any
 
 from django import forms
 from django.forms import BaseFormSet, formset_factory
+from django.utils.translation import gettext as _
 
 from common.form_layout import set_form_field_layout
 from customers.models import Customer
@@ -81,12 +82,14 @@ class ProductChoiceField(forms.ModelChoiceField):
         if available_units is None:
             return f"{product.code_label} · {product.display_name}"
 
-        return (
-            f"{product.code_label} · "
-            f"{product.display_name} · "
-            f"{product.unit_weight_label} · "
-            f"{product.stock_quantity_label(available_units)}"
-        )
+        return _("%(product_label)s · %(available_quantity)s left") % {
+            "product_label": (
+                f"{product.code_label} · "
+                f"{product.display_name} · "
+                f"{product.unit_weight_label}"
+            ),
+            "available_quantity": available_units,
+        }
 
     def create_option(
         self,

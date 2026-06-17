@@ -18,8 +18,14 @@ class ProductChoiceContext:
 
 def build_product_choice_context(*, order: Order | None = None) -> ProductChoiceContext:
     available_units = orderable_quantity_by_product_id()
+    existing_product_ids = set()
 
     if order is not None:
+        existing_product_ids = set(
+            order.lines.values_list("product_id", flat=True)
+        )
+
+    if order is not None and order.status != Order.Status.DRAFT:
         for line in order.lines.all():
             available_units[line.product_id] = (
                 available_units.get(line.product_id, 0)
@@ -31,13 +37,6 @@ def build_product_choice_context(*, order: Order | None = None) -> ProductChoice
         for product_id, quantity in available_units.items()
         if quantity > 0
     }
-
-    existing_product_ids = set()
-
-    if order is not None:
-        existing_product_ids = set(
-            order.lines.values_list("product_id", flat=True)
-        )
 
     allowed_product_ids = orderable_product_ids | existing_product_ids
 
