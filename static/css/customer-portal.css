@@ -419,7 +419,7 @@
 
   color: var(--color-primary-950);
   font-family: var(--font-heading);
-  font-size: clamp(var(--font-size-28), 5vw, var(--font-size-40));
+  font-size: clamp(var(--font-size-24), 5vw, var(--font-size-32));
   line-height: 1.05;
 }
 
@@ -456,7 +456,7 @@
   }
 
   .dirty-form-dialog__card h2 {
-    font-size: clamp(var(--font-size-28), 10vw, var(--font-size-40));
+    font-size: clamp(var(--font-size-24), 10vw, var(--font-size-32));
   }
 
   .dirty-form-dialog__actions {
