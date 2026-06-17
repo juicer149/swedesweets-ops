@@ -78,7 +78,7 @@ def build_portal_order_review_context(
         total_quantity_label=quantity_label(total_quantity),
         place_order_label=_("Place order"),
         edit_order_label=_("Edit order"),
-        save_draft_label=_("Save draft"),
+        save_draft_label=_("Save and leave"),
         discard_draft_label=_("Discard draft"),
         edit_order_url=reverse("customer_portal:place_order"),
         cancel_url=reverse("accounts:after_login"),
