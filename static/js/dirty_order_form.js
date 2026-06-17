@@ -108,6 +108,10 @@
       return true;
     }
 
+    if (link.closest("[data-dirty-ignore='true']")) {
+      return true;
+    }
+
     if (link.target && link.target !== "_self") {
       return true;
     }
@@ -153,6 +157,23 @@
   }
 
   resetInitialState();
+
+  document.addEventListener("submit", (event) => {
+    const submittedForm = event.target;
+
+    if (!(submittedForm instanceof HTMLFormElement)) {
+      return;
+    }
+
+    if (submittedForm === form) {
+      return;
+    }
+
+    if (submittedForm.closest("[data-dirty-ignore='true']")) {
+      isSubmitting = true;
+      setDirty(false);
+    }
+  });
 
   form.addEventListener("input", (event) => {
     if (isEditableOrderField(event.target)) {

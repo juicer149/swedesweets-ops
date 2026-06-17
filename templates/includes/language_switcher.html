@@ -5,6 +5,7 @@
   action="{% url 'set_language' %}"
   method="post"
   aria-label="{% trans 'Language' %}"
+  data-dirty-ignore="true"
 >
   {% csrf_token %}
 
