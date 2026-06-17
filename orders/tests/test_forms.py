@@ -154,7 +154,7 @@ def test_order_line_form_rejects_unusually_large_line(apple):
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
         available_units_by_product_id={
-            apple.id: 1000,
+            apple.id: MAX_UNITS_PER_PRODUCT_PER_ORDER + 10,
         },
     )
 
