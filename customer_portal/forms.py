@@ -81,8 +81,7 @@ class PortalOrderLineForm(forms.Form):
 
         set_form_field_layout(
             self,
-            full=("product",),
-            half=("quantity",),
+            half=("product", "quantity",),
         )
 
         self.fields["quantity"].layout_class = "form-field--portal-order-quantity"

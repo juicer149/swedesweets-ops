@@ -314,11 +314,22 @@
 }
 
 .portal-place-order-card .order-line__grid {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(5.5rem, 7rem);
+  align-items: end;
 }
 
 .portal-place-order-card .form-field--portal-order-quantity {
-  max-width: 18rem;
+  max-width: 7rem;
+}
+
+@media (max-width: 900px) {
+  .portal-place-order-card .order-line__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-place-order-card .form-field--portal-order-quantity {
+    max-width: none;
+  }
 }
 
 .portal-place-order-card .form-actions--split {

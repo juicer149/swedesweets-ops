@@ -42,35 +42,7 @@
 
       <div class="order-lines__list" data-order-lines-list>
         {% for line_form in line_formset %}
-          <fieldset class="order-line" data-order-line>
-            <legend class="order-line__legend">
-              <span>
-                {% trans "Product" %} <span data-order-line-number>{{ forloop.counter }}</span>
-              </span>
-
-              <button
-                class="button button--text button--tone-danger"
-                type="button"
-                data-remove-order-line
-                hidden
-              >
-                {% trans "Remove" %}
-              </button>
-            </legend>
-
-            {% if line_form.non_field_errors %}
-              <div class="form-errors" role="alert">
-                {% for error in line_form.non_field_errors %}
-                  <p>{{ error }}</p>
-                {% endfor %}
-              </div>
-            {% endif %}
-
-            <div class="order-line__grid">
-              {% include "includes/ui/form_field.html" with field=line_form.product only %}
-              {% include "includes/ui/form_field.html" with field=line_form.quantity only %}
-            </div>
-          </fieldset>
+          {% include "orders/includes/order_line_form.html" with line_form=line_form line_number=forloop.counter remove_hidden=True only %}
         {% endfor %}
       </div>
 
@@ -89,26 +61,7 @@
     </section>
 
     <template id="order-line-empty-form-template">
-      <fieldset class="order-line" data-order-line>
-        <legend class="order-line__legend">
-          <span>
-            {% trans "Product" %} <span data-order-line-number>__line_number__</span>
-          </span>
-
-          <button
-            class="button button--text button--tone-danger"
-            type="button"
-            data-remove-order-line
-          >
-            {% trans "Remove" %}
-          </button>
-        </legend>
-
-        <div class="order-line__grid">
-          {% include "includes/ui/form_field.html" with field=line_formset.empty_form.product only %}
-          {% include "includes/ui/form_field.html" with field=line_formset.empty_form.quantity only %}
-        </div>
-      </fieldset>
+      {% include "orders/includes/order_line_form.html" with line_form=line_formset.empty_form line_number="__line_number__" remove_hidden=False only %}
     </template>
 
     <div class="form-actions form-actions--split">
@@ -117,7 +70,7 @@
           class="button button--md button--solid button--tone-place"
           type="submit"
           name="intent"
-          value="place_order"
+          value="review_order"
         >
           {{ submit_label }}
         </button>

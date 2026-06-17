@@ -63,9 +63,26 @@
 
 .order-line__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem);
+  align-items: end;
   gap: var(--space-4);
+}
+
+.order-line__grid--with-unit {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(8rem, 12rem)
+    minmax(7rem, 10rem);
+}
+
+.form-field--portal-order-quantity,
+.order-line__grid .form-field:has(input[name$="-quantity"]) {
+  max-width: 10rem;
+}
+
+.form-field--portal-order-quantity input,
+.order-line__grid .form-field:has(input[name$="-quantity"]) input {
+  width: 100%;
 }
 
 .order-lines__controls {
@@ -321,7 +338,7 @@
    Mobile / touch
    ============================================================================= */
 
-@media (max-width: 900px), (pointer: coarse) {
+@media (max-width: 900px) {
   .order-line__grid {
     grid-template-columns: 1fr;
   }

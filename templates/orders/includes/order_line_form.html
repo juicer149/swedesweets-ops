@@ -1,0 +1,37 @@
+{# templates/orders/includes/order_line_form.html #}
+{% load i18n %}
+
+<fieldset class="order-line" data-order-line>
+  <legend class="order-line__legend">
+    <span>
+      {% trans "Product" %} <span data-order-line-number>{{ line_number }}</span>
+    </span>
+
+    <button
+      class="button button--text button--tone-danger"
+      type="button"
+      data-remove-order-line
+      {% if remove_hidden %}hidden{% endif %}
+    >
+      {% trans "Remove" %}
+    </button>
+  </legend>
+
+  {% if line_form.non_field_errors %}
+    <div class="form-errors" role="alert">
+      {% for error in line_form.non_field_errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="order-line__grid{% if line_form.unit %} order-line__grid--with-unit{% endif %}">
+    {% include "includes/ui/form_field.html" with field=line_form.product only %}
+
+    {% if line_form.unit %}
+      {% include "includes/ui/form_field.html" with field=line_form.unit only %}
+    {% endif %}
+
+    {% include "includes/ui/form_field.html" with field=line_form.quantity only %}
+  </div>
+</fieldset>

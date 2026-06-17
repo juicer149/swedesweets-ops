@@ -41,11 +41,12 @@ def build_portal_place_order_context(
     form_errors: tuple[str, ...] = (),
     has_active_draft: bool = False,
 ) -> PortalPlaceOrderContext:
+    title = _("Continue draft") if has_active_draft else _("Place order")
     return PortalPlaceOrderContext(
         line_formset=line_formset,
-        title=_("Place order"),
+        title=title,
         description=_("Choose products and quantities for your next order."),
-        submit_label=_("Place order"),
+        submit_label=_("Review order"),
         save_draft_label=_("Save draft"),
         discard_draft_label=_("Discard draft"),
         cancel_url=reverse("accounts:after_login"),
