@@ -14,12 +14,12 @@
         {% for line in content_lines %}
           <tr>
             <th scope="row">
-              {{ line.product.display_name }}
-
               {% if line.catalog_label %}
                 <span class="table-cell-subtext">
                   {{ line.catalog_label }}
                 </span>
+              {% else %}
+                {{ line.product.display_label }}
               {% endif %}
             </th>
 
