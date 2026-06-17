@@ -64,7 +64,7 @@
 .order-line__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem);
-  align-items: end;
+  align-items: start;
   gap: var(--space-4);
 }
 

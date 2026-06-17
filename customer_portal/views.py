@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
@@ -171,13 +172,8 @@ def place_order(request):
             )
             return redirect("customer_portal:place_order")
 
-        # Discard does not use the order line formset.
         if intent == "discard_draft":
             if draft_order is None:
-                messages.info(
-                    request,
-                    _("No draft order to discard."),
-                )
                 return redirect("accounts:after_login")
 
             try:
@@ -192,22 +188,47 @@ def place_order(request):
             )
             return redirect("accounts:after_login")
 
-        # Review/save share the same draft line replacement pipeline.
-        if draft_order is None:
-            draft_order = get_or_create_customer_draft_order(customer=customer)
+        require_lines = intent == "review_order"
 
         line_formset = PortalOrderLineFormSet(
             request.POST,
             prefix=ORDER_LINE_FORMSET_PREFIX,
             order=draft_order,
-            require_lines=True,
+            require_lines=require_lines,
         )
 
         if line_formset.is_valid():
+            line_inputs = build_portal_order_line_inputs(line_formset)
+
+            if not line_inputs:
+                if draft_order is not None:
+                    try:
+                        discard_draft_order(order=draft_order)
+                    except ORDER_OPERATION_ERRORS as error:
+                        form_errors = (str(error),)
+                    else:
+                        draft_order = None
+                        messages.success(
+                            request,
+                            _("Draft order saved."),
+                        )
+                        return redirect(
+                            _safe_next_url(request) or "accounts:after_login"
+                        )
+                else:
+                    messages.success(
+                        request,
+                        _("Draft order saved."),
+                    )
+                    return redirect(_safe_next_url(request) or "accounts:after_login")
+
+            if draft_order is None:
+                draft_order = get_or_create_customer_draft_order(customer=customer)
+
             try:
                 draft_order = replace_draft_order_lines(
                     order=draft_order,
-                    lines=build_portal_order_line_inputs(line_formset),
+                    lines=line_inputs,
                     user=request.user,
                 )
             except ORDER_OPERATION_ERRORS as error:
@@ -218,9 +239,10 @@ def place_order(request):
                         request,
                         _("Draft order saved."),
                     )
-                    return redirect("accounts:after_login")
+                    return redirect(_safe_next_url(request) or "accounts:after_login")
 
                 return redirect("customer_portal:review_order")
+
     else:
         initial = ()
 
@@ -347,3 +369,18 @@ def edit_profile(request):
 @login_required
 def contact(request):
     return HttpResponse(_("Contact SwedeSweets"))
+
+
+def _safe_next_url(request) -> str | None:
+    next_url = request.POST.get("next", "").strip()
+    if not next_url:
+        return None
+
+    if url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+
+    return None

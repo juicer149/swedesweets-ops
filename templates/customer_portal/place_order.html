@@ -7,8 +7,27 @@
 {% include "includes/ui/page_header.html" with title_id="portal-place-order-title" title=title description=description %}
 
 <section class="form-section form-section--wide" aria-labelledby="portal-place-order-title">
-  <form method="post" class="form-card form-card--wide portal-place-order-card" novalidate>
+  <form
+    id="portal-place-order-form"
+    method="post"
+    class="form-card form-card--wide portal-place-order-card"
+    data-dirty-order-form
+    novalidate
+  >
     {% csrf_token %}
+    <input type="hidden" name="next" value="" data-dirty-next-url>
+
+    <button
+      class="visually-hidden"
+      type="submit"
+      name="intent"
+      value="save_draft"
+      data-dirty-save-submit
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      {% trans "Save and continue" %}
+    </button>
 
     {% if form_errors %}
       <div class="form-errors" role="alert">
@@ -33,9 +52,14 @@
           <p>{% trans "Add at least one product. Empty products are ignored." %}</p>
         </div>
 
-        <a class="text-link" href="{{ cancel_url }}">
-          {% trans "Back home" %}
-        </a>
+        <button
+          class="button button--text button--tone-neutral"
+          type="submit"
+          name="intent"
+          value="save_draft"
+        >
+          {{ save_draft_label }}
+        </button>
       </div>
 
       {{ line_formset.management_form }}
@@ -74,34 +98,67 @@
         >
           {{ submit_label }}
         </button>
-
-        <button
-          class="button button--md button--ghost button--tone-neutral"
-          type="submit"
-          name="intent"
-          value="save_draft"
-        >
-          {{ save_draft_label }}
-        </button>
       </div>
 
-      {% if has_active_draft %}
-        <button
-          class="button button--md button--ghost button--tone-danger"
-          type="submit"
-          name="intent"
-          value="discard_draft"
-          formnovalidate
-        >
-          {{ discard_draft_label }}
-        </button>
-      {% endif %}
+      <button
+        class="button button--md button--ghost button--tone-danger"
+        type="submit"
+        name="intent"
+        value="discard_draft"
+        formnovalidate
+      >
+        {{ discard_draft_label }}
+      </button>
     </div>
   </form>
+
+  <dialog
+    class="dirty-form-dialog"
+    data-dirty-dialog
+    aria-labelledby="dirty-form-dialog-title"
+  >
+    <form method="dialog" class="dirty-form-dialog__card">
+      <button
+        class="dirty-form-dialog__close"
+        type="button"
+        data-dirty-stay
+        aria-label="{% trans 'Stay on this page' %}"
+      >
+        {% include "includes/ui/icon.html" with name="x" only %}
+      </button>
+
+      <h2 id="dirty-form-dialog-title">
+        {% trans "You have unsaved changes" %}
+      </h2>
+
+      <p>
+        {% trans "Save your draft before leaving this page, or leave without saving your latest changes." %}
+      </p>
+
+      <div class="dirty-form-dialog__actions">
+        <button
+          class="button button--md button--solid button--tone-place"
+          type="button"
+          data-dirty-save-continue
+        >
+          {% trans "Save and continue" %}
+        </button>
+
+        <button
+          class="button button--md button--ghost button--tone-danger"
+          type="button"
+          data-dirty-leave
+        >
+          {% trans "Leave without saving" %}
+        </button>
+      </div>
+    </form>
+  </dialog>
 </section>
 {% endblock %}
 
 {% block scripts %}
   {{ block.super }}
   <script src="{% static 'js/order_lines.js' %}" defer></script>
+  <script src="{% static 'js/dirty_order_form.js' %}" defer></script>
 {% endblock %}

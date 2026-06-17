@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-17 17:47+0200\n"
+"POT-Creation-Date: 2026-06-17 21:25+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -241,7 +241,7 @@ msgstr "Personnel interne · %(access_level)s"
 msgid "Order details"
 msgstr "Détails de la commande"
 
-#: customer_portal/detail_viewmodels.py:119 customer_portal/views.py:78
+#: customer_portal/detail_viewmodels.py:119 customer_portal/views.py:79
 #: templates/customer_portal/includes/detail_panel_order.html:5
 msgid "Order"
 msgstr "Commande"
@@ -298,7 +298,7 @@ msgstr "Choisir un produit"
 msgid "Choose a valid available product."
 msgstr "Choisissez un produit disponible valide."
 
-#: customer_portal/forms.py:48 customer_portal/views.py:81
+#: customer_portal/forms.py:48 customer_portal/views.py:82
 #: templates/customer_portal/includes/detail_panel_items.html:9
 #: templates/customer_portal/review_order.html:29
 msgid "Quantity"
@@ -445,65 +445,60 @@ msgstr "Voir votre historique de commandes"
 msgid "No location added"
 msgstr "Aucune localisation ajoutée"
 
-#: customer_portal/views.py:70
+#: customer_portal/views.py:71
 msgid "All"
 msgstr "Toutes"
 
-#: customer_portal/views.py:79
+#: customer_portal/views.py:80
 #: templates/customer_portal/includes/detail_panel_order.html:15
 msgid "Created"
 msgstr "Créée"
 
-#: customer_portal/views.py:80
+#: customer_portal/views.py:81
 #: templates/accounts/includes/detail_panel_account.html:28
 #: templates/customer_portal/includes/detail_panel_order.html:10
 msgid "Status"
 msgstr "Statut"
 
-#: customer_portal/views.py:86
+#: customer_portal/views.py:87
 msgid "Order filters"
 msgstr "Filtres des commandes"
 
-#: customer_portal/views.py:170 customer_portal/views.py:267
+#: customer_portal/views.py:171 customer_portal/views.py:289
 msgid "Unknown order action."
 msgstr "Action non reconnue pour cette commande."
 
-#: customer_portal/views.py:179
-msgid "No draft order to discard."
-msgstr "Aucune brouillon de commande à vérifier."
-
-#: customer_portal/views.py:191 customer_portal/views.py:287
+#: customer_portal/views.py:187 customer_portal/views.py:309
 msgid "Draft order discarded."
 msgstr "Brouillon de commande supprimé."
 
-#: customer_portal/views.py:219 customer_portal/views.py:274
+#: customer_portal/views.py:213 customer_portal/views.py:221
+#: customer_portal/views.py:240 customer_portal/views.py:296
 msgid "Draft order saved."
 msgstr "Brouillon de commande enregistré."
 
-#: customer_portal/views.py:253
-#, fuzzy
-#| msgid "No draft order to discard."
+#: customer_portal/views.py:275
 msgid "No draft order to review."
-msgstr "Aucune brouillon de commande à supprimer."
+msgstr "Aucun brouillon de commande à vérifier."
 
-#: customer_portal/views.py:302
+#: customer_portal/views.py:324
 #, python-format
 msgid "Order #%(order_id)s placed."
 msgstr "Commande n° %(order_id)s passée."
 
-#: customer_portal/views.py:334
+#: customer_portal/views.py:356
 msgid "Customer catalog"
 msgstr "Catalogue"
 
-#: customer_portal/views.py:339
+#: customer_portal/views.py:361
 msgid "My profile"
 msgstr "Mon profil"
 
-#: customer_portal/views.py:344
+#: customer_portal/views.py:366
 msgid "Edit my profile"
 msgstr "Modifier mon profil"
 
-#: customer_portal/views.py:349
+#: customer_portal/views.py:371
 msgid "Contact SwedeSweets"
 msgstr "Contacter SwedeSweets"
 
@@ -850,24 +845,45 @@ msgstr "n° %(order_id)s"
 msgid "No orders found."
 msgstr "Aucune commande trouvée."
 
-#: templates/customer_portal/place_order.html:32
+#: templates/customer_portal/place_order.html:29
+#: templates/customer_portal/place_order.html:144
+msgid "Save and continue"
+msgstr "Enregistrer et continuer"
+
+#: templates/customer_portal/place_order.html:51
 #: templates/orders/order_form.html:46
 msgid "Order products"
 msgstr "Produits de la commande"
 
-#: templates/customer_portal/place_order.html:33
+#: templates/customer_portal/place_order.html:52
 #: templates/orders/order_form.html:47
 msgid "Add at least one product. Empty products are ignored."
 msgstr "Ajoutez au moins un produit. Les lignes vides sont ignorées."
 
-#: templates/customer_portal/place_order.html:37
-msgid "Back home"
-msgstr "Retour à l’accueil"
-
-#: templates/customer_portal/place_order.html:58
+#: templates/customer_portal/place_order.html:82
 #: templates/orders/order_form.html:67
 msgid "Add product"
 msgstr "Ajouter un produit"
+
+#: templates/customer_portal/place_order.html:125
+msgid "Stay on this page"
+msgstr "Rester sur cette page"
+
+#: templates/customer_portal/place_order.html:131
+msgid "You have unsaved changes"
+msgstr "Vous avez des modifications non enregistrées"
+
+#: templates/customer_portal/place_order.html:135
+msgid ""
+"Save your draft before leaving this page, or leave without saving your "
+"latest changes."
+msgstr ""
+"Enregistrez votre brouillon avant de quitter cette page, "
+"ou quittez sans enregistrer vos dernières modifications."
+
+#: templates/customer_portal/place_order.html:152
+msgid "Leave without saving"
+msgstr "Quitter sans enregistrer"
 
 #: templates/includes/language_switcher.html:7
 msgid "Language"
@@ -1061,3 +1077,9 @@ msgstr ""
 #: templates/registration/password_reset_form.html:13
 msgid "Send reset link"
 msgstr "Envoyer le lien de réinitialisation"
+
+#~ msgid "No draft order to discard."
+#~ msgstr "Aucune brouillon de commande à vérifier."
+
+#~ msgid "Back home"
+#~ msgstr "Retour à l’accueil"
