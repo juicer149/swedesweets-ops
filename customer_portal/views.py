@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
@@ -36,6 +38,13 @@ from customer_portal.selectors import (
     get_portal_customer_for_user,
     get_portal_order_for_user,
 )
+from customer_portal.services import (
+    DRAFT_CLEARED,
+    DRAFT_SAVED,
+    DRAFT_UNCHANGED,
+    discard_portal_draft_order,
+    save_or_clear_portal_draft_order,
+)
 from customer_portal.viewmodels import (
     RECENT_PORTAL_ORDER_LIMIT,
     build_portal_home_context,
@@ -50,12 +59,7 @@ from orders.selectors import (
     get_customer_order_summary,
     list_customer_orders,
 )
-from orders.services import (
-    discard_draft_order,
-    get_or_create_customer_draft_order,
-    place_order as place_draft_order,
-    replace_draft_order_lines,
-)
+from orders.services import place_order as place_draft_order
 
 
 PORTAL_ORDERS_LIST_ANCHOR = "portal-orders-list"
@@ -88,6 +92,83 @@ PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
     sort_title_id="portal-orders-sort-title",
     sort_select_id="mobile-portal-orders-sort",
 )
+
+
+@dataclass(frozen=True, slots=True)
+class PortalDraftFormResult:
+    line_formset: object
+    draft_order: object | None
+    form_errors: tuple[str, ...]
+    succeeded: bool
+    status: str
+
+
+def _handle_portal_draft_form_post(
+    *,
+    request,
+    customer,
+    draft_order,
+    require_lines: bool,
+) -> PortalDraftFormResult:
+    line_formset = PortalOrderLineFormSet(
+        request.POST,
+        prefix=ORDER_LINE_FORMSET_PREFIX,
+        order=draft_order,
+        require_lines=require_lines,
+    )
+
+    if not line_formset.is_valid():
+        return PortalDraftFormResult(
+            line_formset=line_formset,
+            draft_order=draft_order,
+            form_errors=(),
+            succeeded=False,
+            status=DRAFT_UNCHANGED,
+        )
+
+    line_inputs = build_portal_order_line_inputs(line_formset)
+
+    result = save_or_clear_portal_draft_order(
+        customer=customer,
+        draft_order=draft_order,
+        line_inputs=line_inputs,
+        user=request.user,
+    )
+
+    return PortalDraftFormResult(
+        line_formset=line_formset,
+        draft_order=result.draft_order,
+        form_errors=result.errors,
+        succeeded=result.succeeded,
+        status=result.status,
+    )
+
+
+def _add_service_errors(request, errors: tuple[str, ...]) -> None:
+    for error in errors:
+        messages.error(request, error)
+
+
+def _add_draft_save_message(request, status: str) -> None:
+    if status == DRAFT_SAVED:
+        messages.success(
+            request,
+            _("Draft order saved."),
+        )
+        return
+
+    if status == DRAFT_CLEARED:
+        messages.success(
+            request,
+            _("Draft cleared."),
+        )
+        return
+
+    if status == DRAFT_UNCHANGED:
+        messages.info(
+            request,
+            _("Nothing to save."),
+        )
 
 
 @login_required
@@ -154,8 +235,7 @@ def orders(request):
 @login_required
 def place_order(request):
     customer = get_portal_customer_for_user(user=request.user)
-    active_draft_order = get_active_draft_order_for_customer(customer=customer)
-    draft_order = active_draft_order
+    draft_order = get_active_draft_order_for_customer(customer=customer)
     form_errors: tuple[str, ...] = ()
 
     if request.method == "POST":
@@ -173,75 +253,55 @@ def place_order(request):
             return redirect("customer_portal:place_order")
 
         if intent == "discard_draft":
-            if draft_order is None:
-                return redirect("accounts:after_login")
+            result = discard_portal_draft_order(
+                customer=customer,
+                draft_order=draft_order,
+            )
 
-            try:
-                discard_draft_order(order=draft_order)
-            except ORDER_OPERATION_ERRORS as error:
-                messages.error(request, str(error))
+            if not result.succeeded:
+                _add_service_errors(request, result.errors)
                 return redirect("customer_portal:place_order")
 
-            messages.success(
-                request,
-                _("Draft order discarded."),
-            )
+            if result.status == DRAFT_CLEARED:
+                messages.success(
+                    request,
+                    _("Draft order discarded."),
+                )
+
             return redirect("accounts:after_login")
 
-        require_lines = intent == "review_order"
+        if intent == "review_order":
+            result = _handle_portal_draft_form_post(
+                request=request,
+                customer=customer,
+                draft_order=draft_order,
+                require_lines=True,
+            )
 
-        line_formset = PortalOrderLineFormSet(
-            request.POST,
-            prefix=ORDER_LINE_FORMSET_PREFIX,
-            order=draft_order,
-            require_lines=require_lines,
-        )
+            line_formset = result.line_formset
+            draft_order = result.draft_order
+            form_errors = result.form_errors
 
-        if line_formset.is_valid():
-            line_inputs = build_portal_order_line_inputs(line_formset)
-
-            if not line_inputs:
-                if draft_order is not None:
-                    try:
-                        discard_draft_order(order=draft_order)
-                    except ORDER_OPERATION_ERRORS as error:
-                        form_errors = (str(error),)
-                    else:
-                        draft_order = None
-                        messages.success(
-                            request,
-                            _("Draft order saved."),
-                        )
-                        return redirect(
-                            _safe_next_url(request) or "accounts:after_login"
-                        )
-                else:
-                    messages.success(
-                        request,
-                        _("Draft order saved."),
-                    )
-                    return redirect(_safe_next_url(request) or "accounts:after_login")
-
-            if draft_order is None:
-                draft_order = get_or_create_customer_draft_order(customer=customer)
-
-            try:
-                draft_order = replace_draft_order_lines(
-                    order=draft_order,
-                    lines=line_inputs,
-                    user=request.user,
-                )
-            except ORDER_OPERATION_ERRORS as error:
-                form_errors = (str(error),)
-            else:
-                if intent == "save_draft":
-                    messages.success(
-                        request,
-                        _("Draft order saved."),
-                    )
-                    return redirect(_safe_next_url(request) or "accounts:after_login")
-
+            if result.succeeded:
                 return redirect("customer_portal:review_order")
+
+        elif intent == "save_draft":
+            result = _handle_portal_draft_form_post(
+                request=request,
+                customer=customer,
+                draft_order=draft_order,
+                require_lines=False,
+            )
+
+            line_formset = result.line_formset
+            draft_order = result.draft_order
+            form_errors = result.form_errors
+
+            if result.succeeded:
+                _add_draft_save_message(request, result.status)
+                return redirect(
+                    _safe_next_url(request) or "accounts:after_login"
+                )
 
     else:
         initial = ()
@@ -291,44 +351,52 @@ def review_order(request):
             return redirect("customer_portal:review_order")
 
         if intent == "save_draft":
+            # The review page has no editable line form. Reaching this page means
+            # the draft has already been persisted by place_order.
             messages.success(
                 request,
                 _("Draft order saved."),
             )
-            return redirect("accounts:after_login")
+            return redirect(_safe_next_url(request) or "accounts:after_login")
 
         if intent == "discard_draft":
+            result = discard_portal_draft_order(
+                customer=customer,
+                draft_order=draft_order,
+            )
+
+            if not result.succeeded:
+                _add_service_errors(request, result.errors)
+                return redirect("customer_portal:review_order")
+
+            if result.status == DRAFT_CLEARED:
+                messages.success(
+                    request,
+                    _("Draft order discarded."),
+                )
+
+            return redirect("accounts:after_login")
+
+        if intent == "place_order":
             try:
-                discard_draft_order(order=draft_order)
+                placed_order = place_draft_order(
+                    order=draft_order,
+                    user=request.user,
+                )
             except ORDER_OPERATION_ERRORS as error:
                 messages.error(request, str(error))
                 return redirect("customer_portal:review_order")
 
             messages.success(
                 request,
-                _("Draft order discarded."),
+                _("Order #%(order_id)s placed.") % {
+                    "order_id": placed_order.id,
+                },
             )
-            return redirect("accounts:after_login")
-
-        try:
-            placed_order = place_draft_order(
-                order=draft_order,
-                user=request.user,
+            return redirect(
+                "customer_portal:order_detail",
+                order_id=placed_order.id,
             )
-        except ORDER_OPERATION_ERRORS as error:
-            messages.error(request, str(error))
-            return redirect("customer_portal:review_order")
-
-        messages.success(
-            request,
-            _("Order #%(order_id)s placed.") % {
-                "order_id": placed_order.id,
-            },
-        )
-        return redirect(
-            "customer_portal:order_detail",
-            order_id=placed_order.id,
-        )
 
     context = build_portal_order_review_context(
         order=draft_order,
