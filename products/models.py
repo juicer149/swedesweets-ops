@@ -498,6 +498,45 @@ class ProductProfile(models.Model):
         return self.product.sku
 
 
+class ProductTranslation(models.Model):
+    """Customer-facing translated product catalog text."""
+
+    product = models.ForeignKey(
+        Product,
+        related_name="translations",
+        on_delete=models.CASCADE,
+    )
+    language_code = models.CharField(
+        max_length=10,
+        choices=settings.LANGUAGES,
+        help_text="Language shown to customers.",
+    )
+    name = models.CharField(
+        max_length=MAX_NAME_LENGTH,
+        verbose_name="Customer-facing name",
+        help_text=(
+            "Full product name shown to customers in this language. "
+            "Example: Tutti Frutti Acidulé."
+        ),
+    )
+
+    class Meta:
+        ordering = [
+            "product__brand",
+            "product__name",
+            "language_code",
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "language_code"],
+                name="unique_product_translation_per_language",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.product.sku} [{self.language_code}]"
+
+
 def _normalize_update_fields(
     update_fields: Iterable[str] | None,
 ) -> set[str] | None:

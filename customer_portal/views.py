@@ -115,6 +115,7 @@ def _handle_portal_draft_form_post(
         prefix=ORDER_LINE_FORMSET_PREFIX,
         order=draft_order,
         require_lines=require_lines,
+        language_code=request.LANGUAGE_CODE,
     )
 
     if not line_formset.is_valid():
@@ -313,6 +314,7 @@ def place_order(request):
             initial=initial,
             prefix=ORDER_LINE_FORMSET_PREFIX,
             order=draft_order,
+            language_code=request.LANGUAGE_CODE,
         )
 
     context = build_portal_place_order_context(
@@ -400,6 +402,7 @@ def review_order(request):
 
     context = build_portal_order_review_context(
         order=draft_order,
+        language_code=request.LANGUAGE_CODE,
     ).as_dict()
 
     return render(request, "customer_portal/review_order.html", context)
@@ -414,6 +417,7 @@ def order_detail(request, order_id: int):
 
     context = build_portal_order_detail_context(
         order=order,
+        language_code=request.LANGUAGE_CODE,
     ).as_dict()
 
     return render(request, "customer_portal/order_detail.html", context)

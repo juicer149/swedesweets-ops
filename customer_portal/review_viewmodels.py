@@ -12,6 +12,7 @@ from orders.presentation import (
     quantity_label,
 )
 from products.models import Product
+from products.presentation import translated_product_catalog_label
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,10 +58,14 @@ class PortalOrderReviewContext:
 def build_portal_order_review_context(
     *,
     order: Order,
+    language_code: str,
 ) -> PortalOrderReviewContext:
     order_lines = tuple(order.lines.select_related("product").order_by("id"))
     lines = tuple(
-        _build_review_line(line)
+        _build_review_line(
+            line,
+            language_code=language_code,
+        )
         for line in order_lines
     )
     product_count = len(lines)
@@ -85,7 +90,11 @@ def build_portal_order_review_context(
     )
 
 
-def _build_review_line(line: OrderLine) -> PortalOrderReviewLine:
+def _build_review_line(
+    line: OrderLine,
+    *,
+    language_code: str,
+) -> PortalOrderReviewLine:
     product = line.product
     line_quantity_label = quantity_label(line.quantity_in_units)
 
@@ -93,5 +102,8 @@ def _build_review_line(line: OrderLine) -> PortalOrderReviewLine:
         product=product,
         quantity=line.quantity_in_units,
         quantity_label=line_quantity_label,
-        catalog_label=product.catalog_label,
+        catalog_label=translated_product_catalog_label(
+            product,
+            language_code=language_code,
+        ),
     )

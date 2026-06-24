@@ -18,6 +18,10 @@ from orders.order_limits import (
 )
 from orders.product_choices import build_product_choice_context
 from products.models import Product
+from products.presentation import (
+    translated_product_catalog_label,
+    translated_product_name,
+)
 from products.units import quantity_to_units
 
 
@@ -71,23 +75,24 @@ class ProductChoiceField(forms.ModelChoiceField):
         self,
         *args,
         available_units_by_product_id: dict[int, int] | None = None,
+        language_code: str | None = None,
+        show_available_units: bool = True,
         **kwargs,
     ) -> None:
         self.available_units_by_product_id = available_units_by_product_id or {}
+        self.language_code = language_code
+        self.show_available_units = show_available_units
         super().__init__(*args, **kwargs)
 
     def label_from_instance(self, product: Product) -> str:
         available_units = self.available_units_by_product_id.get(product.id)
+        product_label = self._product_label(product)
 
-        if available_units is None:
-            return f"{product.code_label} · {product.display_name}"
+        if available_units is None or not self.show_available_units:
+            return product_label
 
         return _("%(product_label)s · %(available_quantity)s left") % {
-            "product_label": (
-                f"{product.code_label} · "
-                f"{product.display_name} · "
-                f"{product.unit_weight_label}"
-            ),
+            "product_label": product_label,
             "available_quantity": available_units,
         }
 
@@ -116,12 +121,14 @@ class ProductChoiceField(forms.ModelChoiceField):
 
         product = value.instance
         available_units = self.available_units_by_product_id.get(product.id, 0)
+        product_name = self._product_name(product)
+        product_label = self._product_label(product)
 
         option["attrs"].update(
             {
                 "data-code": product.code_label,
                 "data-brand": product.brand,
-                "data-name": product.display_name,
+                "data-name": product_name,
                 "data-weight": product.unit_weight_label,
                 "data-available-units": str(available_units),
                 "data-available-quantity": str(available_units),
@@ -131,12 +138,36 @@ class ProductChoiceField(forms.ModelChoiceField):
                     f"{product.brand} "
                     f"{product.name} "
                     f"{product.display_name} "
+                    f"{product_name} "
+                    f"{product_label} "
                     f"{product.sku}"
                 ),
             }
         )
 
         return option
+
+    def _product_label(self, product: Product) -> str:
+        if self.language_code:
+            return translated_product_catalog_label(
+                product,
+                language_code=self.language_code,
+            )
+
+        return (
+            f"{product.code_label} · "
+            f"{product.display_name} · "
+            f"{product.unit_weight_label}"
+        )
+
+    def _product_name(self, product: Product) -> str:
+        if self.language_code:
+            return translated_product_name(
+                product,
+                language_code=self.language_code,
+            )
+
+        return product.display_name
 
 
 class OrderCreateForm(forms.Form):

@@ -46,7 +46,7 @@ def build_portal_place_order_context(
         line_formset=line_formset,
         title=title,
         description=_("Choose products and quantities for your next order."),
-        submit_label=_("Review order"),
+        submit_label=_("Next"),
         save_draft_label=_("Save and leave"),
         discard_draft_label=_("Discard draft"),
         cancel_url=reverse("accounts:after_login"),

@@ -5,7 +5,7 @@ from urllib.parse import quote_plus
 
 from django.utils import timezone
 from django.utils.timesince import timesince
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
 from common.ui import (

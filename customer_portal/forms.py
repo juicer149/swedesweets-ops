@@ -18,6 +18,7 @@ from orders.order_limits import (
 )
 from orders.product_choices import build_product_choice_context
 from products.models import Product
+from products.presentation import translated_product_name
 
 
 DEFAULT_PORTAL_ORDER_LINE_COUNT = 1
@@ -65,9 +66,11 @@ class PortalOrderLineForm(forms.Form):
         *args,
         product_queryset=None,
         available_units_by_product_id: dict[int, int] | None = None,
+        language_code: str | None = None,
         **kwargs,
     ) -> None:
         self.available_units_by_product_id = available_units_by_product_id or {}
+        self.language_code = language_code
 
         super().__init__(*args, **kwargs)
 
@@ -78,6 +81,8 @@ class PortalOrderLineForm(forms.Form):
             product_field.available_units_by_product_id = (
                 self.available_units_by_product_id
             )
+            product_field.language_code = self.language_code
+            product_field.show_available_units = False
 
         set_form_field_layout(
             self,
@@ -132,10 +137,12 @@ class BasePortalOrderLineFormSet(BaseFormSet):
         *args,
         order: Order | None = None,
         require_lines: bool = True,
+        language_code: str | None = None,
         **kwargs,
     ) -> None:
         self.order = order
         self.require_lines = require_lines
+        self.language_code = language_code
         self.product_choice_context = build_product_choice_context(order=order)
         super().__init__(*args, **kwargs)
 
@@ -148,6 +155,7 @@ class BasePortalOrderLineFormSet(BaseFormSet):
                 "available_units_by_product_id": (
                     self.product_choice_context.available_units_by_product_id
                 ),
+                "language_code": self.language_code,
             }
         )
 
@@ -192,7 +200,9 @@ class BasePortalOrderLineFormSet(BaseFormSet):
                         "available": product.stock_quantity_label(
                             available_quantity
                         ),
-                        "product": product.display_name,
+                        "product": _portal_product_name(
+                            product, language_code=self.language_code
+                        ),
                     }
                 )
 
@@ -202,7 +212,9 @@ class BasePortalOrderLineFormSet(BaseFormSet):
                         "%(product)s is unusually large. "
                         "Maximum is %(maximum)s per order."
                     ) % {
-                        "product": product.display_name,
+                        "product": _portal_product_name( 
+                            product, language_code=self.language_code
+                        ),
                         "maximum": product.stock_quantity_label(
                             MAX_QUANTITY_PER_PRODUCT_PER_ORDER
                         ),
@@ -244,3 +256,17 @@ def build_portal_order_line_initial_data(
         }
         for line in order.lines.select_related("product").order_by("id")
     ]
+
+
+def _portal_product_name(
+    product: Product,
+    *,
+    language_code: str | None,
+) -> str:
+    if not language_code:
+        return product.display_name
+
+    return translated_product_name(
+        product,
+        language_code=language_code,
+    )
