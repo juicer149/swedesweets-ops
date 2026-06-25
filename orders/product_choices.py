@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 
 from inventory.selectors import orderable_quantity_by_product_id
 from orders.models import Order
-from products.models import Product
+from products.models import Product, ProductTranslation
 
 
 @dataclass(frozen=True)
@@ -49,6 +49,13 @@ def build_product_choice_context(*, order: Order | None = None) -> ProductChoice
                 Q(active=True)
                 | Q(id__in=existing_product_ids),
                 id__in=allowed_product_ids,
+            )
+            .prefetch_related(
+                Prefetch(
+                    "translations",
+                    queryset=ProductTranslation.objects.all(),
+                    to_attr="prefetched_translations",
+                )
             )
             .order_by(
                 "internal_number",
