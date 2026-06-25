@@ -25,7 +25,10 @@ from products.catalog import (
     validate_weight_per_unit,
 )
 from products.errors import InvalidProductData
-from products.models import Product, ProductProfile
+from products.models import Product, ProductProfile, ProductTranslation
+
+
+CUSTOMER_FACING_LANGUAGE_CODE = "fr"
 
 
 @transaction.atomic
@@ -38,6 +41,7 @@ def create_product(
     internal_number: int | None = None,
     manufacturer: str = "",
     vegan: bool = False,
+    customer_facing_name_fr: str = "",
     user=None,
 ) -> ServiceResult[Product]:
     """Create product or return existing product.
@@ -109,6 +113,12 @@ def create_product(
     product.mark_as_created(user=user)
     ProductProfile.objects.get_or_create(product=product)
 
+    set_product_translation(
+        product=product,
+        language_code=CUSTOMER_FACING_LANGUAGE_CODE,
+        name=customer_facing_name_fr,
+    )
+
     return ServiceResult(
         item=product,
         message="Product added to the catalog.",
@@ -126,6 +136,7 @@ def update_product(
     name: str,
     active: bool,
     vegan: bool,
+    customer_facing_name_fr: str = "",
     description: str = "",
     ingredients: str = "",
     image_url: str = "",
@@ -159,9 +170,18 @@ def update_product(
             )
 
     product.internal_number = internal_number
-    product.manufacturer = manufacturer
-    product.brand = brand
-    product.name = name
+    product.manufacturer = normalize_optional_text(
+        manufacturer,
+        field_name="manufacturer",
+    )
+    product.brand = normalize_required_text(
+        brand,
+        field_name="brand",
+    )
+    product.name = normalize_required_text(
+        name,
+        field_name="name",
+    )
     product.active = active
     product.vegan = vegan
 
@@ -201,6 +221,12 @@ def update_product(
         ]
     )
 
+    set_product_translation(
+        product=product,
+        language_code=CUSTOMER_FACING_LANGUAGE_CODE,
+        name=customer_facing_name_fr,
+    )
+
     return product
 
 
@@ -228,6 +254,35 @@ def update_product_active(
     )
 
     return product
+
+
+def set_product_translation(
+    *,
+    product: Product,
+    language_code: str,
+    name: str,
+) -> ProductTranslation | None:
+    normalized_name = normalize_optional_text(
+        name,
+        field_name="customer-facing name",
+    )
+
+    if not normalized_name:
+        ProductTranslation.objects.filter(
+            product=product,
+            language_code=language_code,
+        ).delete()
+        return None
+
+    translation, _created = ProductTranslation.objects.update_or_create(
+        product=product,
+        language_code=language_code,
+        defaults={
+            "name": normalized_name,
+        },
+    )
+
+    return translation
 
 
 def _validate_stock_unit(stock_unit: str) -> None:

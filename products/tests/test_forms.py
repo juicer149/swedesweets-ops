@@ -19,6 +19,7 @@ def valid_product_form_data(**overrides):
         "manufacturer": "Fazer",
         "brand": "Fazer",
         "name": "Tyrkisk Peber",
+        "customer_facing_name_fr": "",
         "stock_unit": Product.StockUnit.BOX,
         "weight_per_unit": "3000",
         "vegan": "on",
@@ -33,6 +34,7 @@ def valid_product_edit_form_data(**overrides):
         "manufacturer": "Fazer",
         "brand": "Fazer",
         "name": "Tyrkisk Peber",
+        "customer_facing_name_fr": "",
         "active": PRODUCT_STATUS_ACTIVE,
         "vegan": "on",
         "description": "Classic candy.",
@@ -52,9 +54,21 @@ def test_product_form_accepts_valid_data():
     assert form.cleaned_data["manufacturer"] == "Fazer"
     assert form.cleaned_data["brand"] == "Fazer"
     assert form.cleaned_data["name"] == "Tyrkisk Peber"
+    assert form.cleaned_data["customer_facing_name_fr"] == ""
     assert form.cleaned_data["stock_unit"] == Product.StockUnit.BOX
     assert form.cleaned_data["weight_per_unit"] == 3000
     assert form.cleaned_data["vegan"] is True
+
+
+def test_product_form_accepts_customer_facing_french_name():
+    form = ProductForm(
+        data=valid_product_form_data(
+            customer_facing_name_fr="Bonbon français",
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["customer_facing_name_fr"] == "Bonbon français"
 
 
 def test_product_form_accepts_piece_stock_unit():
@@ -107,7 +121,19 @@ def test_product_edit_form_accepts_valid_data():
     assert form.is_valid(), form.errors
 
     assert form.cleaned_data["internal_number"] == 23
+    assert form.cleaned_data["customer_facing_name_fr"] == ""
     assert form.active_value is True
+
+
+def test_product_edit_form_accepts_customer_facing_french_name():
+    form = ProductEditForm(
+        data=valid_product_edit_form_data(
+            customer_facing_name_fr="Bonbon français",
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["customer_facing_name_fr"] == "Bonbon français"
 
 
 def test_product_edit_form_maps_inactive_choice_to_false():
@@ -148,6 +174,7 @@ def test_build_product_edit_initial_data_without_profile():
         "manufacturer": "Fazer",
         "brand": "Fazer",
         "name": "Tyrkisk Peber",
+        "customer_facing_name_fr": "",
         "active": PRODUCT_STATUS_ACTIVE,
         "vegan": True,
         "description": "",
@@ -179,3 +206,25 @@ def test_build_product_edit_initial_data_with_profile():
     assert initial["description"] == "Classic candy."
     assert initial["ingredients"] == "Sugar."
     assert initial["image_url"] == "https://example.com/product.jpg"
+    assert initial["customer_facing_name_fr"] == ""
+
+
+@pytest.mark.django_db
+def test_build_product_edit_initial_data_includes_customer_facing_french_name():
+    product = product_factory(
+        internal_number=23,
+        manufacturer="Fazer",
+        brand="Fazer",
+        name="Tyrkisk Peber",
+        weight_per_unit=3000,
+        stock_unit=Product.StockUnit.BOX,
+    )
+
+    product.translations.create(
+        language_code="fr",
+        name="Bonbon français",
+    )
+
+    initial = build_product_edit_initial_data(product)
+
+    assert initial["customer_facing_name_fr"] == "Bonbon français"

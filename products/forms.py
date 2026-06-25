@@ -15,6 +15,8 @@ from products.models import Product
 PRODUCT_STATUS_ACTIVE = "active"
 PRODUCT_STATUS_INACTIVE = "inactive"
 
+CUSTOMER_FACING_LANGUAGE_CODE = "fr"
+
 
 def _configure_vegan_toggle(form: forms.BaseForm) -> None:
     field = form.fields["vegan"]
@@ -22,6 +24,28 @@ def _configure_vegan_toggle(form: forms.BaseForm) -> None:
     field.tag_toggle_label = "Vegan"
     field.tag_toggle_icon = "leaf"
     field.tag_toggle_class = "product-tag-toggle product-tag-toggle--vegan"
+
+
+def _customer_facing_name_fr_field() -> forms.CharField:
+    return forms.CharField(
+        required=False,
+        max_length=MAX_NAME_LENGTH,
+        label="Customer-facing French name",
+        help_text=(
+            "Optional. Used in the customer portal when French is selected."
+        ),
+        error_messages={
+            "max_length": (
+                f"Customer-facing French name cannot exceed "
+                f"{MAX_NAME_LENGTH} characters."
+            ),
+        },
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "e.g. Tutti Frutti Acidulé",
+            }
+        ),
+    )
 
 
 class ProductForm(forms.Form):
@@ -97,6 +121,8 @@ class ProductForm(forms.Form):
         ),
     )
 
+    customer_facing_name_fr = _customer_facing_name_fr_field()
+
     stock_unit = forms.ChoiceField(
         choices=Product.StockUnit.choices,
         initial=Product.StockUnit.BOX,
@@ -157,11 +183,15 @@ class ProductForm(forms.Form):
 
         set_form_field_layout(
             self,
-            full=("name", "vegan"),
+            full=(
+                "customer_facing_name_fr",
+                "vegan",
+            ),
             half=(
                 "internal_number",
                 "manufacturer",
                 "brand",
+                "name",
                 "stock_unit",
                 "weight_per_unit",
             ),
@@ -242,6 +272,8 @@ class ProductEditForm(forms.Form):
         ),
     )
 
+    customer_facing_name_fr = _customer_facing_name_fr_field()
+
     active = forms.ChoiceField(
         choices=(
             (PRODUCT_STATUS_ACTIVE, "Active"),
@@ -318,9 +350,7 @@ class ProductEditForm(forms.Form):
         set_form_field_layout(
             self,
             full=(
-                "name",
-                "active",
-                "vegan",
+                "customer_facing_name_fr",
                 "description",
                 "ingredients",
                 "image_url",
@@ -329,6 +359,9 @@ class ProductEditForm(forms.Form):
                 "internal_number",
                 "manufacturer",
                 "brand",
+                "name",
+                "active",
+                "vegan",
             ),
         )
 
@@ -345,6 +378,10 @@ def build_product_edit_initial_data(product: Product) -> dict[str, object]:
         "manufacturer": product.manufacturer,
         "brand": product.brand,
         "name": product.name,
+        "customer_facing_name_fr": _product_translation_name(
+            product,
+            language_code=CUSTOMER_FACING_LANGUAGE_CODE,
+        ),
         "active": (
             PRODUCT_STATUS_ACTIVE
             if product.active
@@ -355,3 +392,20 @@ def build_product_edit_initial_data(product: Product) -> dict[str, object]:
         "ingredients": profile.ingredients if profile is not None else "",
         "image_url": profile.image_url if profile is not None else "",
     }
+
+
+def _product_translation_name(
+    product: Product,
+    *,
+    language_code: str,
+) -> str:
+    translation = (
+        product.translations
+        .filter(language_code=language_code)
+        .first()
+    )
+
+    if translation is None:
+        return ""
+
+    return translation.name

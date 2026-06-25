@@ -97,10 +97,12 @@ def index(request):
     context = {
         "page_header": build_products_page_header(role_spec=request.role_spec),
         "product_rows": product_rows,
-        "quick_jump_search": build_product_quick_jump_search(product_rows), 
-        "filters": controls.build_filter_links(PRODUCT_FILTERS), 
-        "table_sorts": controls.build_table_sort_links(PRODUCT_TABLE_SORTS), 
-        "mobile_sort_fields": controls.build_mobile_sort_fields(PRODUCT_TABLE_SORTS), 
+        "quick_jump_search": build_product_quick_jump_search(product_rows),
+        "filters": controls.build_filter_links(PRODUCT_FILTERS),
+        "table_sorts": controls.build_table_sort_links(PRODUCT_TABLE_SORTS),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(
+            PRODUCT_TABLE_SORTS
+        ),
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": PRODUCT_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": ["number", "weight"],
@@ -147,6 +149,9 @@ def edit(request, product_pk: int):
                     name=form.cleaned_data["name"],
                     active=form.active_value,
                     vegan=form.cleaned_data["vegan"],
+                    customer_facing_name_fr=(
+                        form.cleaned_data["customer_facing_name_fr"]
+                    ),
                     description=form.cleaned_data["description"],
                     ingredients=form.cleaned_data["ingredients"],
                     image_url=form.cleaned_data["image_url"],
