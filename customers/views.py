@@ -10,15 +10,15 @@ from common.table_controls import (
     TableControlsTemplate,
     TableSortField,
 )
-from customers.errors import InvalidCustomerData
-from customers.forms import (
-    CustomerForm,
-    build_customer_edit_initial_data,
-)
 from customers.detail_viewmodels import build_customer_detail_context
+from customers.errors import InvalidCustomerData
 from customers.form_viewmodels import (
     build_create_customer_form_context,
     build_edit_customer_form_context,
+)
+from customers.forms import (
+    CustomerForm,
+    build_customer_edit_initial_data,
 )
 from customers.list_viewmodels import (
     build_customer_page_rows,
@@ -33,9 +33,10 @@ from customers.selectors import (
 from customers.services import create_customer, update_customer
 from orders.selectors import (
     get_customer_order_summary,
+)
+from orders.selectors import (
     list_customer_orders as list_orders_for_customer,
 )
-
 
 CUSTOMERS_LIST_ANCHOR = "customers-list"
 
@@ -89,9 +90,7 @@ def index(request):
 @login_required
 def detail(request, customer_pk: int):
     customer = _get_customer_or_404(customer_pk)
-    orders = list(
-        list_orders_for_customer(customer=customer)
-    )
+    orders = list(list_orders_for_customer(customer=customer))
 
     context = build_customer_detail_context(
         customer=customer,
@@ -166,7 +165,7 @@ def create(request):
         form = CustomerForm()
 
     context = build_create_customer_form_context(
-        form= form,
+        form=form,
     ).as_dict()
 
     return render(request, "customers/customer_form.html", context)

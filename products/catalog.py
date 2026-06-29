@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from products.errors import InvalidProductData
 
-
 MAX_NAME_LENGTH = 160
 MAX_SKU_LENGTH = 180
 MAX_IMAGE_URL_LENGTH = 500
@@ -99,8 +98,4 @@ def make_sku(
     if internal_number is not None:
         return f"{SKU_PREFIX}-{internal_number:0{SKU_INTERNAL_NUMBER_WIDTH}d}"
 
-    return (
-        f"{slugify_sku_part(brand)}-"
-        f"{slugify_sku_part(name)}-"
-        f"{weight_per_unit}"
-    )
+    return f"{slugify_sku_part(brand)}-{slugify_sku_part(name)}-{weight_per_unit}"

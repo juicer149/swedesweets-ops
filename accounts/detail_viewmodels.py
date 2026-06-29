@@ -21,7 +21,6 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 
-
 # -----------------------------------------------------------------------------
 # Account detail page context
 

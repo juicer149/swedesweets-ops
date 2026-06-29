@@ -21,8 +21,7 @@ from decimal import Decimal
 from products.errors import InvalidProductData, UnsupportedOrderUnit
 from products.models import Product
 
-
-#TODO: consider have a strenum to keep all of these in one place
+# TODO: consider have a strenum to keep all of these in one place
 ORDER_UNIT_STOCK = "stock_unit"
 ORDER_UNIT_KG = "kg"
 ORDER_UNIT_GRAMS = "grams"
@@ -62,9 +61,7 @@ def quantity_to_units(
 
     if unit == ORDER_UNIT_STOCK:
         if quantity != quantity.to_integral_value():
-            raise InvalidProductData(
-                "stock unit orders must use a whole number"
-            )
+            raise InvalidProductData("stock unit orders must use a whole number")
 
         return int(quantity)
 

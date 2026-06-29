@@ -17,7 +17,9 @@ from products.errors import InvalidProductData
 
 
 def test_normalize_required_text_strips_and_collapses_whitespace():
-    assert normalize_required_text("  Grill   Chips  ", field_name="name") == "Grill Chips"
+    assert (
+        normalize_required_text("  Grill   Chips  ", field_name="name") == "Grill Chips"
+    )
 
 
 def test_normalize_required_text_rejects_empty_text():
@@ -28,7 +30,9 @@ def test_normalize_required_text_rejects_empty_text():
 def test_normalize_required_text_rejects_too_long_text():
     value = "x" * (MAX_NAME_LENGTH + 1)
 
-    with pytest.raises(InvalidProductData, match=f"name must be at most {MAX_NAME_LENGTH}"):
+    with pytest.raises(
+        InvalidProductData, match=f"name must be at most {MAX_NAME_LENGTH}"
+    ):
         normalize_required_text(value, field_name="name")
 
 

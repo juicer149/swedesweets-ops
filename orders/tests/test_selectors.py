@@ -36,8 +36,7 @@ def test_packaging_list_comes_from_reserved_allocations(
     pick_lines = get_packaging_list(order=order)
 
     assert [
-        (line.sku, line.batch_id, line.location, line.quantity)
-        for line in pick_lines
+        (line.sku, line.batch_id, line.location, line.quantity) for line in pick_lines
     ] == [
         ("SS-001", "A-001", "Shelf A1", 100),
         ("SS-001", "A-002", "Shelf A2", 20),
@@ -64,8 +63,7 @@ def test_packed_lines_come_from_consumed_allocations(
     pick_lines = get_packed_lines(order=order)
 
     assert [
-        (line.sku, line.batch_id, line.location, line.quantity)
-        for line in pick_lines
+        (line.sku, line.batch_id, line.location, line.quantity) for line in pick_lines
     ] == [
         ("SS-001", "A-001", "Shelf A1", 100),
         ("SS-001", "A-002", "Shelf A2", 20),
@@ -74,7 +72,9 @@ def test_packed_lines_come_from_consumed_allocations(
 
 
 @pytest.mark.django_db
-def test_list_orders_filters_by_status(customer, other_customer, apple, stocked_inventory):
+def test_list_orders_filters_by_status(
+    customer, other_customer, apple, stocked_inventory
+):
     placed = create_order(
         customer=customer,
         lines=[
@@ -224,7 +224,9 @@ def test_list_packed_orders_for_dashboard_returns_only_packed_orders(
 
 
 @pytest.mark.django_db
-def test_count_placed_and_packed_orders(customer, other_customer, apple, stocked_inventory):
+def test_count_placed_and_packed_orders(
+    customer, other_customer, apple, stocked_inventory
+):
     create_order(
         customer=customer,
         lines=[

@@ -12,7 +12,6 @@ from customers.models import (
     Customer,
 )
 
-
 CUSTOMER_COUNTRY_CHOICES = list(CUSTOMER_COUNTRY_LABELS.items())
 
 
@@ -23,8 +22,7 @@ class CustomerForm(forms.Form):
         error_messages={
             "required": "Enter the customer name.",
             "max_length": (
-                f"Customer name must be at most "
-                f"{MAX_CUSTOMER_NAME_LENGTH} characters."
+                f"Customer name must be at most {MAX_CUSTOMER_NAME_LENGTH} characters."
             ),
         },
         widget=forms.TextInput(
@@ -57,8 +55,7 @@ class CustomerForm(forms.Form):
         error_messages={
             "required": "Enter a phone number.",
             "max_length": (
-                f"Phone number must be at most "
-                f"{MAX_CUSTOMER_PHONE_LENGTH} characters."
+                f"Phone number must be at most {MAX_CUSTOMER_PHONE_LENGTH} characters."
             ),
         },
         widget=forms.TextInput(
@@ -93,8 +90,7 @@ class CustomerForm(forms.Form):
         error_messages={
             "required": "Enter a city.",
             "max_length": (
-                f"City must be at most "
-                f"{MAX_CUSTOMER_CITY_LENGTH} characters."
+                f"City must be at most {MAX_CUSTOMER_CITY_LENGTH} characters."
             ),
         },
         widget=forms.TextInput(

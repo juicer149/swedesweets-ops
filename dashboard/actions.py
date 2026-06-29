@@ -9,7 +9,6 @@ from accounts.roles import AccountRole, Capability, RoleSpec
 from dashboard.viewmodels import DashboardAction
 from orders.models import Order
 
-
 MAX_DASHBOARD_ACTIONS = 3
 
 
@@ -30,10 +29,7 @@ class DashboardActionSpec:
         return DashboardAction(
             label=self.label,
             href=self.build_href(),
-            css_class=(
-                "button button--hero-action "
-                f"{self.css_tone} button--with-icon"
-            ),
+            css_class=(f"button button--hero-action {self.css_tone} button--with-icon"),
             aria_label=self.aria_label,
             icon=self.icon,
         )
@@ -48,17 +44,11 @@ def _place_order_href() -> str:
 
 
 def _pack_orders_href() -> str:
-    return (
-        f"{reverse('orders:index')}"
-        f"?status={Order.Status.PLACED}#orders-list"
-    )
+    return f"{reverse('orders:index')}?status={Order.Status.PLACED}#orders-list"
 
 
 def _deliver_orders_href() -> str:
-    return (
-        f"{reverse('orders:index')}"
-        f"?status={Order.Status.PACKED}#orders-list"
-    )
+    return f"{reverse('orders:index')}?status={Order.Status.PACKED}#orders-list"
 
 
 def _add_batch_href() -> str:

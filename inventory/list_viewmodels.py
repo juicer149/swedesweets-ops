@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from django.urls import reverse
 
 from accounts.roles import RoleSpec
-from inventory.access import can_create_batch
 from common.page_header import PageHeader, PageHeaderAction
 from common.table_controls import QuickJumpOption, QuickJumpSearch
 from common.ui import (
@@ -16,6 +15,7 @@ from common.ui import (
     UiText,
     build_quantity_info,
 )
+from inventory.access import can_create_batch
 from inventory.low_stock import LOW_STOCK_THRESHOLD
 from inventory.models import InventoryBatch
 from inventory.presentation import (
@@ -108,10 +108,7 @@ def build_inventory_view_links(
 
 
 def build_batch_page_rows(rows: list[BatchListRow]) -> list[BatchPageRow]:
-    return [
-        _build_batch_page_row(row)
-        for row in rows
-    ]
+    return [_build_batch_page_row(row) for row in rows]
 
 
 def _build_batch_page_row(row: BatchListRow) -> BatchPageRow:
@@ -142,10 +139,7 @@ def _build_batch_page_row(row: BatchListRow) -> BatchPageRow:
 def build_product_stock_page_rows(
     rows: list[AvailableStockRow],
 ) -> list[ProductStockPageRow]:
-    return [
-        _build_product_stock_page_row(row)
-        for row in rows
-    ]
+    return [_build_product_stock_page_row(row) for row in rows]
 
 
 def _build_product_stock_page_row(row: AvailableStockRow) -> ProductStockPageRow:
@@ -248,11 +242,7 @@ def _product_stock_quick_jump_label(row: ProductStockPageRow) -> str:
 
 
 def _product_stock_product_label(row: AvailableStockRow) -> str:
-    return (
-        f"{row.code_label} · "
-        f"{row.product.display_name} · "
-        f"{row.product.weight_label}"
-    )
+    return f"{row.code_label} · {row.product.display_name} · {row.product.weight_label}"
 
 
 def _batch_card(
@@ -323,15 +313,9 @@ def _product_stock_card(
     product_href: str,
     available_quantity_info: QuantityInfo,
 ) -> UiCard:
-    physical_quantity_label = row.product.stock_quantity_label(
-        row.physical_quantity
-    )
-    reserved_quantity_label = row.product.stock_quantity_label(
-        row.reserved_quantity
-    )
-    available_quantity_label = row.product.stock_quantity_label(
-        row.available_quantity
-    )
+    physical_quantity_label = row.product.stock_quantity_label(row.physical_quantity)
+    reserved_quantity_label = row.product.stock_quantity_label(row.reserved_quantity)
+    available_quantity_label = row.product.stock_quantity_label(row.available_quantity)
 
     return UiCard(
         tone=status.tone,

@@ -8,21 +8,20 @@ contain presentation/UI logic.
 
 from __future__ import annotations
 
+import unicodedata
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable
-import unicodedata
 
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from inventory.expiry import orderable_best_before_cutoff
 from inventory.errors import InsufficientStockError, InvalidStockOperation
+from inventory.expiry import orderable_best_before_cutoff
 from inventory.models import InventoryBatch, normalize_batch_id
 from orders.models import Allocation, Order
 from products.models import Product
-
 
 BATCH_ID_SEQUENCE_WIDTH = 3
 BATCH_ID_GENERATION_ATTEMPTS = 3
@@ -128,8 +127,7 @@ def update_batch(
     """
 
     batch = (
-        InventoryBatch.objects
-        .select_for_update()
+        InventoryBatch.objects.select_for_update()
         .select_related("product")
         .get(pk=batch.pk)
     )
@@ -164,8 +162,7 @@ def close_batch(
     """Close a batch so it is no longer orderable."""
 
     batch = (
-        InventoryBatch.objects
-        .select_for_update()
+        InventoryBatch.objects.select_for_update()
         .select_related("product")
         .get(pk=batch.pk)
     )
@@ -185,15 +182,11 @@ def close_batch(
 def reserved_quantity_for_batch(*, batch: InventoryBatch) -> int:
     """Return quantity reserved from this batch by placed orders."""
 
-    result = (
-        Allocation.objects
-        .filter(
-            batch=batch,
-            status=Allocation.Status.RESERVED,
-            order__status=Order.Status.PLACED,
-        )
-        .aggregate(total=Sum("quantity"))
-    )
+    result = Allocation.objects.filter(
+        batch=batch,
+        status=Allocation.Status.RESERVED,
+        order__status=Order.Status.PLACED,
+    ).aggregate(total=Sum("quantity"))
 
     return result["total"] or 0
 
@@ -263,8 +256,7 @@ def _generate_batch_id(*, product: Product) -> str:
     prefix = _batch_id_prefix(product)
 
     latest_batch = (
-        InventoryBatch.objects
-        .filter(batch_id__startswith=f"{prefix}-")
+        InventoryBatch.objects.filter(batch_id__startswith=f"{prefix}-")
         .order_by("-batch_id")
         .first()
     )
@@ -299,11 +291,7 @@ def _batch_text_part(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
 
-    characters = [
-        character
-        for character in ascii_value.upper()
-        if character.isalnum()
-    ]
+    characters = [character for character in ascii_value.upper() if character.isalnum()]
 
     if not characters:
         return "XXX"
@@ -323,8 +311,7 @@ def _list_candidate_batches_for_picking(
     cutoff_date = orderable_best_before_cutoff(today=timezone.localdate())
 
     return list(
-        InventoryBatch.objects
-        .select_for_update()
+        InventoryBatch.objects.select_for_update()
         .filter(
             product=product,
             status=InventoryBatch.Status.ACTIVE,

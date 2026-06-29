@@ -93,7 +93,9 @@ def test_update_customer_allows_keeping_same_email(customer):
 
 
 @pytest.mark.django_db
-def test_update_customer_rejects_email_used_by_another_customer(customer, other_customer):
+def test_update_customer_rejects_email_used_by_another_customer(
+    customer, other_customer
+):
     with pytest.raises(
         InvalidCustomerData,
         match="Customer with email orders@example.ch already exists",

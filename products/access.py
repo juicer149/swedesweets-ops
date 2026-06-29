@@ -3,7 +3,6 @@ from __future__ import annotations
 from accounts.roles import Capability, RoleSpec
 from products.models import Product
 
-
 CAPABILITIES = frozenset(
     {
         Capability.VIEW_OPS_PRODUCTS,

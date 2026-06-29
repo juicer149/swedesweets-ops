@@ -10,7 +10,6 @@ from common.table_tools import normalize_sort
 from orders.models import Order, OrderLine
 from products.models import Product
 
-
 PRODUCT_FILTER_ALL = ""
 PRODUCT_FILTER_ACTIVE = "active"
 PRODUCT_FILTER_INACTIVE = "inactive"
@@ -86,19 +85,15 @@ def get_product_delivered_demand_summary(
     *,
     product: Product,
 ) -> ProductDeliveredDemandSummary:
-    stats = (
-        OrderLine.objects
-        .filter(
-            product=product,
-            order__status=Order.Status.DELIVERED,
-        )
-        .aggregate(
-            delivered_order_count=Count("order_id", distinct=True),
-            # Orders have not been refactored yet. Until then this is the
-            # product stock-unit quantity stored by the order layer.
-            delivered_quantity=Sum("quantity_in_units"),
-            last_delivered_at=Max("order__delivered_at"),
-        )
+    stats = OrderLine.objects.filter(
+        product=product,
+        order__status=Order.Status.DELIVERED,
+    ).aggregate(
+        delivered_order_count=Count("order_id", distinct=True),
+        # Orders have not been refactored yet. Until then this is the
+        # product stock-unit quantity stored by the order layer.
+        delivered_quantity=Sum("quantity_in_units"),
+        last_delivered_at=Max("order__delivered_at"),
     )
 
     delivered_order_count = stats["delivered_order_count"] or 0

@@ -20,7 +20,6 @@ from orders.product_choices import build_product_choice_context
 from products.models import Product
 from products.presentation import translated_product_name
 
-
 DEFAULT_PORTAL_ORDER_LINE_COUNT = 1
 MIN_PORTAL_ORDER_QUANTITY = 1
 
@@ -86,7 +85,10 @@ class PortalOrderLineForm(forms.Form):
 
         set_form_field_layout(
             self,
-            half=("product", "quantity",),
+            half=(
+                "product",
+                "quantity",
+            ),
         )
 
         self.fields["quantity"].layout_class = "form-field--portal-order-quantity"
@@ -196,10 +198,9 @@ class BasePortalOrderLineFormSet(BaseFormSet):
 
             if requested_quantity > available_quantity:
                 raise forms.ValidationError(
-                    _("Only %(available)s available for %(product)s.") % {
-                        "available": product.stock_quantity_label(
-                            available_quantity
-                        ),
+                    _("Only %(available)s available for %(product)s.")
+                    % {
+                        "available": product.stock_quantity_label(available_quantity),
                         "product": _portal_product_name(
                             product, language_code=self.language_code
                         ),
@@ -211,8 +212,9 @@ class BasePortalOrderLineFormSet(BaseFormSet):
                     _(
                         "%(product)s is unusually large. "
                         "Maximum is %(maximum)s per order."
-                    ) % {
-                        "product": _portal_product_name( 
+                    )
+                    % {
+                        "product": _portal_product_name(
                             product, language_code=self.language_code
                         ),
                         "maximum": product.stock_quantity_label(
@@ -223,11 +225,7 @@ class BasePortalOrderLineFormSet(BaseFormSet):
 
     @property
     def order_line_forms(self) -> list[PortalOrderLineForm]:
-        return [
-            form
-            for form in self.forms
-            if form.has_line_data
-        ]
+        return [form for form in self.forms if form.has_line_data]
 
 
 PortalOrderLineFormSet = formset_factory(
@@ -240,10 +238,7 @@ PortalOrderLineFormSet = formset_factory(
 def build_portal_order_line_inputs(
     formset: BasePortalOrderLineFormSet,
 ) -> list[OrderLineInput]:
-    return [
-        form.to_order_line_input()
-        for form in formset.order_line_forms
-    ]
+    return [form.to_order_line_input() for form in formset.order_line_forms]
 
 
 def build_portal_order_line_initial_data(

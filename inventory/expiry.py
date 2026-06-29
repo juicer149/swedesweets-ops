@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import StrEnum
 
-
 # Ops policy:
 # A batch is considered critical when best_before is this many days away.
 EXPIRY_CRITICAL_DAYS = 60

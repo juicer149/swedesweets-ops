@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from customers.models import Customer
 from inventory.errors import InvalidStockOperation
@@ -13,7 +13,6 @@ from orders.services import (
     get_or_create_customer_draft_order,
     replace_draft_order_lines,
 )
-
 
 DRAFT_SAVED = "saved"
 DRAFT_CLEARED = "cleared"

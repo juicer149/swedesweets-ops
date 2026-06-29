@@ -16,7 +16,6 @@ from common.ui import (
     UiText,
 )
 
-
 ACCOUNT_VIEW_INTERNAL = "internal"
 ACCOUNT_VIEW_CUSTOMER = "customer"
 ACCOUNT_VIEW_UNLINKED = "unlinked"
@@ -83,10 +82,7 @@ def build_account_view_links(
 def build_account_page_rows(
     rows: tuple[AccountListRow, ...],
 ) -> tuple[AccountPageRow, ...]:
-    return tuple(
-        _build_account_page_row(row)
-        for row in rows
-    )
+    return tuple(_build_account_page_row(row) for row in rows)
 
 
 def _build_account_page_row(row: AccountListRow) -> AccountPageRow:

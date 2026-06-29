@@ -27,7 +27,6 @@ from products.catalog import (
 from products.errors import InvalidProductData
 from products.models import Product, ProductProfile, ProductTranslation
 
-
 CUSTOMER_FACING_LANGUAGE_CODE = "fr"
 
 
@@ -147,27 +146,20 @@ def update_product(
     SKU, weight_per_unit and stock_unit are intentionally not editable here.
     """
 
-    product = (
-        Product.objects
-        .select_for_update()
-        .get(pk=product.pk)
-    )
+    product = Product.objects.select_for_update().get(pk=product.pk)
     old_active = product.active
 
     validate_internal_number(internal_number)
 
     if internal_number is not None:
         number_is_taken = (
-            Product.objects
-            .filter(internal_number=internal_number)
+            Product.objects.filter(internal_number=internal_number)
             .exclude(pk=product.pk)
             .exists()
         )
 
         if number_is_taken:
-            raise InvalidProductData(
-                f"Product number {internal_number} already exists"
-            )
+            raise InvalidProductData(f"Product number {internal_number} already exists")
 
     product.internal_number = internal_number
     product.manufacturer = normalize_optional_text(

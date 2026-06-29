@@ -20,10 +20,10 @@ Allocation directly.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
-from django.db import transaction, IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
@@ -79,8 +79,7 @@ def get_or_create_customer_draft_order(
     """
 
     draft = (
-        Order.objects
-        .select_for_update()
+        Order.objects.select_for_update()
         .filter(
             customer=customer,
             status=Order.Status.DRAFT,
@@ -99,13 +98,9 @@ def get_or_create_customer_draft_order(
         with transaction.atomic():
             order.save()
     except IntegrityError:
-        return (
-            Order.objects
-            .select_for_update()
-            .get(
-                customer=customer,
-                status=Order.Status.DRAFT,
-            )
+        return Order.objects.select_for_update().get(
+            customer=customer,
+            status=Order.Status.DRAFT,
         )
 
     return order
@@ -251,8 +246,7 @@ def pack_order(*, order: Order, user=None) -> Order:
         )
 
     allocations = list(
-        order.allocations
-        .select_related("batch")
+        order.allocations.select_related("batch")
         .select_for_update()
         .filter(status=Allocation.Status.RESERVED)
         .order_by("batch__best_before", "batch__batch_id", "id")
@@ -269,8 +263,7 @@ def pack_order(*, order: Order, user=None) -> Order:
     locked_batches = {
         batch.id: batch
         for batch in (
-            InventoryBatch.objects
-            .select_for_update()
+            InventoryBatch.objects.select_for_update()
             .filter(id__in=quantity_by_batch_id.keys())
             .order_by("id")
         )
@@ -425,11 +418,7 @@ def _place_order(*, order: Order, user=None) -> Order:
 
 
 def _reserve_order(*, order: Order) -> None:
-    lines = list(
-        order.lines
-        .select_related("product")
-        .order_by("id")
-    )
+    lines = list(order.lines.select_related("product").order_by("id"))
 
     if not lines:
         raise InvalidOrderOperation("order must contain at least one line")
@@ -474,8 +463,7 @@ def _load_existing_reservations_for_line(
     """
 
     candidate_batch_ids = list(
-        InventoryBatch.objects
-        .select_for_update()
+        InventoryBatch.objects.select_for_update()
         .filter(
             product=line.product,
             status=InventoryBatch.Status.ACTIVE,
@@ -515,23 +503,14 @@ def _reserved_quantity_by_batch_id(
 
         query = query.filter(batch_id__in=batch_ids)
 
-    rows = (
-        query
-        .values("batch_id")
-        .annotate(total=Sum("quantity"))
-    )
+    rows = query.values("batch_id").annotate(total=Sum("quantity"))
 
-    return {
-        row["batch_id"]: row["total"] or 0
-        for row in rows
-    }
+    return {row["batch_id"]: row["total"] or 0 for row in rows}
 
 
 def _cancel_reserved_allocations(*, order: Order) -> None:
     allocations = list(
-        order.allocations
-        .select_for_update()
-        .filter(status=Allocation.Status.RESERVED)
+        order.allocations.select_for_update().filter(status=Allocation.Status.RESERVED)
     )
 
     for allocation in allocations:

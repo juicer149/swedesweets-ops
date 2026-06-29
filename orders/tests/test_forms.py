@@ -253,10 +253,7 @@ def test_order_line_formset_rejects_more_than_available_stock(apple, stocked_inv
     )
 
     assert not formset.is_valid()
-    assert (
-        "Only 150 boxes available for Generic — Apple."
-        in formset.non_form_errors()
-    )
+    assert "Only 150 boxes available for Generic — Apple." in formset.non_form_errors()
 
 
 @pytest.mark.django_db

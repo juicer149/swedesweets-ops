@@ -59,7 +59,6 @@ from orders.services import (
     update_placed_order,
 )
 
-
 ORDER_FILTERS = [
     TableFilter("", "All"),
     TableFilter(Order.Status.PLACED, "Placed"),
@@ -224,7 +223,7 @@ def edit(request, order_id: int):
 def cancel(request, order_id: int):
     order = _get_order_or_404(order_id)
 
-    if not can_cancel_order(order=order, role_spec=request.role_spec): 
+    if not can_cancel_order(order=order, role_spec=request.role_spec):
         messages.error(
             request,
             f"Order #{order.id} cannot be cancelled because it is {order.status}.",
@@ -267,7 +266,7 @@ def cancel(request, order_id: int):
 def pack(request, order_id: int):
     order = _get_order_or_404(order_id)
 
-    if not can_pack_order(order=order, role_spec=request.role_spec): 
+    if not can_pack_order(order=order, role_spec=request.role_spec):
         messages.error(
             request,
             f"Order #{order.id} cannot be packed because it is {order.status}.",
@@ -316,7 +315,7 @@ def pack(request, order_id: int):
 def deliver(request, order_id: int):
     order = _get_order_or_404(order_id)
 
-    if not can_deliver_order(order=order, role_spec=request.role_spec): 
+    if not can_deliver_order(order=order, role_spec=request.role_spec):
         messages.error(
             request,
             f"Order #{order.id} cannot be delivered because it is {order.status}.",
@@ -377,15 +376,13 @@ def detail(request, order_id: int):
 
 def _get_order_or_404(order_id: int) -> Order:
     return get_object_or_404(
-        Order.objects
-        .select_related(
+        Order.objects.select_related(
             "customer",
             "edited_by",
             "placed_by",
             "packed_by",
             "delivered_by",
             "cancelled_by",
-        )
-        .prefetch_related("lines__product"),
+        ).prefetch_related("lines__product"),
         pk=order_id,
     )

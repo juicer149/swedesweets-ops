@@ -12,7 +12,6 @@ from orders.presentation import (
     order_status_tone,
 )
 
-
 RECENT_PORTAL_ORDER_LIMIT = 5
 
 
@@ -78,18 +77,14 @@ def build_portal_home_context(
     recent_orders,
     active_draft_order=None,
 ) -> PortalHomeContext:
-    in_progress_orders = (
-        order_summary.placed_orders
-        + order_summary.packed_orders
-    )
+    in_progress_orders = order_summary.placed_orders + order_summary.packed_orders
 
     return PortalHomeContext(
         title=_("Welcome back, %(name)s") % {"name": customer.name},
         title_id="customer-portal-title",
         eyebrow=_("Customer portal"),
         description=_(
-            "Place new orders, review your order history, "
-            "and follow recent activity."
+            "Place new orders, review your order history, and follow recent activity."
         ),
         customer_email=customer.email,
         customer_location=_customer_location_label(customer),
@@ -119,10 +114,7 @@ def build_portal_home_context(
                 tone="muted",
             ),
         ),
-        recent_orders=tuple(
-            _recent_order_row(order)
-            for order in recent_orders
-        ),
+        recent_orders=tuple(_recent_order_row(order) for order in recent_orders),
     )
 
 
@@ -132,20 +124,14 @@ def _build_home_actions(
 ) -> tuple[PortalHomeAction, ...]:
     has_active_draft = active_draft_order is not None
 
-    order_action_label = (
-        _("Continue draft")
-        if has_active_draft
-        else _("Place order")
-    )
+    order_action_label = _("Continue draft") if has_active_draft else _("Place order")
     order_action_aria_label = (
         _("Continue your unfinished order")
         if has_active_draft
         else _("Place a new customer order")
     )
     order_action_help_text = (
-        _("You have an unfinished order.")
-        if has_active_draft
-        else ""
+        _("You have an unfinished order.") if has_active_draft else ""
     )
 
     return (
@@ -153,8 +139,7 @@ def _build_home_actions(
             label=order_action_label,
             href=reverse("customer_portal:place_order"),
             css_class=(
-                "button button--hero-action button--tone-place "
-                "button--with-icon"
+                "button button--hero-action button--tone-place button--with-icon"
             ),
             aria_label=order_action_aria_label,
             icon="cart",
@@ -164,8 +149,7 @@ def _build_home_actions(
             label=_("Orders"),
             href=reverse("customer_portal:orders"),
             css_class=(
-                "button button--hero-action button--tone-pack "
-                "button--with-icon"
+                "button button--hero-action button--tone-pack button--with-icon"
             ),
             aria_label=_("View your order history"),
             icon="packed",
@@ -183,8 +167,7 @@ def _recent_order_row(order) -> PortalRecentOrderRow:
             kwargs={"order_id": order.pk},
         ),
         card_class=(
-            "mobile-card mobile-card--clickable "
-            f"mobile-card--{tone} portal-order-item"
+            f"mobile-card mobile-card--clickable mobile-card--{tone} portal-order-item"
         ),
         status_label=customer_order_status_label(order.status),
         status_class=f"status-text status-text--{order.status}",
@@ -195,9 +178,7 @@ def _recent_order_row(order) -> PortalRecentOrderRow:
 
 def _customer_location_label(customer) -> str:
     location = ", ".join(
-        part
-        for part in (customer.city, customer.country_name)
-        if part
+        part for part in (customer.city, customer.country_name) if part
     )
 
     if location:

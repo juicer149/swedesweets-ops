@@ -72,9 +72,7 @@ def test_product_form_accepts_customer_facing_french_name():
 
 
 def test_product_form_accepts_piece_stock_unit():
-    form = ProductForm(
-        data=valid_product_form_data(stock_unit=Product.StockUnit.PIECE)
-    )
+    form = ProductForm(data=valid_product_form_data(stock_unit=Product.StockUnit.PIECE))
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["stock_unit"] == Product.StockUnit.PIECE

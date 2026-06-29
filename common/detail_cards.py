@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 ACTION_METHOD_GET = "get"
 ACTION_METHOD_POST = "post"
 
@@ -65,6 +64,7 @@ def build_secondary_get_action(
         method=ACTION_METHOD_GET,
         tone=ACTION_TONE_SECONDARY,
     )
+
 
 def build_danger_get_action(
     *,

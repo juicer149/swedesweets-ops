@@ -17,14 +17,14 @@ from inventory.selectors import (
 )
 from products.detail_viewmodels import build_product_detail_context
 from products.errors import InvalidProductData
+from products.form_viewmodels import (
+    build_create_product_form_context,
+    build_edit_product_form_context,
+)
 from products.forms import (
     ProductEditForm,
     ProductForm,
     build_product_edit_initial_data,
-)
-from products.form_viewmodels import (
-    build_create_product_form_context,
-    build_edit_product_form_context,
 )
 from products.list_viewmodels import (
     build_product_page_rows,
@@ -42,7 +42,6 @@ from products.selectors import (
     list_products,
 )
 from products.services import create_product, update_product
-
 
 PRODUCT_FILTERS = [
     TableFilter(PRODUCT_FILTER_ALL, "All"),
@@ -100,9 +99,7 @@ def index(request):
         "quick_jump_search": build_product_quick_jump_search(product_rows),
         "filters": controls.build_filter_links(PRODUCT_FILTERS),
         "table_sorts": controls.build_table_sort_links(PRODUCT_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(
-            PRODUCT_TABLE_SORTS
-        ),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(PRODUCT_TABLE_SORTS),
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": PRODUCT_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": ["number", "weight"],
@@ -118,9 +115,7 @@ def detail(request, product_pk: int):
     context = build_product_detail_context(
         product=product,
         stock_row=_get_stock_row_for_product(product),
-        active_batches=list(
-            list_available_batches_for_product(product=product)
-        ),
+        active_batches=list(list_available_batches_for_product(product=product)),
         demand_summary=get_product_delivered_demand_summary(product=product),
         role_spec=request.role_spec,
         cancel_url=reverse("products:index"),

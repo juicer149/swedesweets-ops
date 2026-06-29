@@ -44,11 +44,7 @@ def build_portal_orders_page_header(
         title_id="portal-orders-title",
         description=_("Review your orders and follow their current status."),
         action=PageHeaderAction(
-            label=(
-                _("Continue draft")
-                if has_active_draft
-                else _("Place order")
-            ),
+            label=(_("Continue draft") if has_active_draft else _("Place order")),
             href=reverse("customer_portal:place_order"),
             icon="cart",
             aria_label=(
@@ -64,10 +60,7 @@ def build_portal_order_page_rows(
     *,
     orders: list[Order],
 ) -> list[PortalOrderPageRow]:
-    return [
-        _build_portal_order_page_row(order)
-        for order in orders
-    ]
+    return [_build_portal_order_page_row(order) for order in orders]
 
 
 def _build_portal_order_page_row(order: Order) -> PortalOrderPageRow:
@@ -114,8 +107,7 @@ def _build_order_card(
             text=_("View order →"),
             href=detail_href,
             css_class=(
-                f"{order_action_link_class(order.status)} "
-                "portal-history-card__action"
+                f"{order_action_link_class(order.status)} portal-history-card__action"
             ),
         ),
     )
@@ -138,7 +130,8 @@ def _build_meta_row(
 ) -> UiCardRow:
     return UiCardRow(
         left=UiText(
-            text=_("%(created_at)s · %(quantity)s") % {
+            text=_("%(created_at)s · %(quantity)s")
+            % {
                 "created_at": created_at_label,
                 "quantity": quantity_label(total_quantity),
             },

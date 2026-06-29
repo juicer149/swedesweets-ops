@@ -23,8 +23,8 @@ product identity.
 
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_CEILING
-from typing import Iterable
+from collections.abc import Iterable
+from decimal import ROUND_CEILING, Decimal
 
 from django.conf import settings
 from django.db import models
@@ -45,7 +45,6 @@ from products.catalog import (
     validate_weight_per_unit,
 )
 from products.errors import InvalidProductData
-
 
 IMMUTABLE_PRODUCT_IDENTITY_FIELDS = frozenset(
     {
@@ -267,8 +266,8 @@ class Product(models.Model):
 
     def _raise_if_immutable_identity_changed(self) -> None:
         persisted = (
-            type(self).objects
-            .only("weight_per_unit", "stock_unit", "sku")
+            type(self)
+            .objects.only("weight_per_unit", "stock_unit", "sku")
             .get(pk=self.pk)
         )
 
@@ -283,9 +282,7 @@ class Product(models.Model):
             )
 
         if self.sku != persisted.sku:
-            raise InvalidProductData(
-                "sku cannot be changed after product creation"
-            )
+            raise InvalidProductData("sku cannot be changed after product creation")
 
     def mark_as_created(self, *, user=None) -> None:
         now = timezone.now()
@@ -386,11 +383,7 @@ class Product(models.Model):
     @property
     def catalog_label(self) -> str:
         """Full operational label for searchable selects."""
-        return (
-            f"{self.code_label} · "
-            f"{self.display_name} · "
-            f"{self.unit_weight_label}"
-        )
+        return f"{self.code_label} · {self.display_name} · {self.unit_weight_label}"
 
     @property
     def catalog_sort_key(self) -> tuple[int, str, str, int, str]:
@@ -445,9 +438,7 @@ class Product(models.Model):
         if kg <= 0:
             raise InvalidProductData("kg must be positive")
 
-        grams = (kg * Decimal("1000")).to_integral_value(
-            rounding=ROUND_CEILING
-        )
+        grams = (kg * Decimal("1000")).to_integral_value(rounding=ROUND_CEILING)
 
         return self.grams_to_units(grams=int(grams))
 

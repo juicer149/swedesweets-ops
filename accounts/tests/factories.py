@@ -6,7 +6,6 @@ from accounts.models import CustomerMembership, StaffAccount
 from accounts.roles import StaffAccessLevel
 from customers.models import Customer
 
-
 User = get_user_model()
 
 

@@ -34,7 +34,6 @@ from orders.selectors import (
     list_placed_orders_for_dashboard,
 )
 
-
 QUEUE_PREVIEW_LIMIT = 4
 
 
@@ -93,10 +92,7 @@ class DashboardQueueSpec:
             key=self.key,
             title=self.panel_title,
             description=self.panel_description,
-            items=tuple(
-                self.build_item(item)
-                for item in self.list_items()
-            ),
+            items=tuple(self.build_item(item) for item in self.list_items()),
             view_all_href=self.build_view_all_href(),
             view_all_label=self.view_all_label,
         )
@@ -137,17 +133,11 @@ def _list_low_stock_products() -> Iterable[object]:
 
 
 def _placed_orders_view_all_href() -> str:
-    return (
-        f"{reverse('orders:index')}"
-        f"?status={Order.Status.PLACED}#orders-list"
-    )
+    return f"{reverse('orders:index')}?status={Order.Status.PLACED}#orders-list"
 
 
 def _packed_orders_view_all_href() -> str:
-    return (
-        f"{reverse('orders:index')}"
-        f"?status={Order.Status.PACKED}#orders-list"
-    )
+    return f"{reverse('orders:index')}?status={Order.Status.PACKED}#orders-list"
 
 
 def _expiring_batches_view_all_href() -> str:
@@ -155,10 +145,7 @@ def _expiring_batches_view_all_href() -> str:
 
 
 def _low_stock_products_view_all_href() -> str:
-    return (
-        f"{reverse('inventory:index')}"
-        f"?view=products&sort=available#inventory-list"
-    )
+    return f"{reverse('inventory:index')}?view=products&sort=available#inventory-list"
 
 
 # -----------------------------------------------------------------------------
@@ -337,10 +324,7 @@ def build_dashboard_queue_context(
         requested_queue=requested_queue,
         tabs=tabs,
     )
-    active_tabs = tuple(
-        replace(tab, is_active=tab.key == active_queue)
-        for tab in tabs
-    )
+    active_tabs = tuple(replace(tab, is_active=tab.key == active_queue) for tab in tabs)
 
     return DashboardQueueContext(
         tabs=active_tabs,

@@ -24,7 +24,6 @@ from inventory.models import InventoryBatch
 from orders.models import Order
 from products.models import Product
 
-
 User = get_user_model()
 
 
@@ -354,28 +353,18 @@ def _list_account_rows_for_roles(
     roles: frozenset[AccountRole],
     sort: str,
 ) -> tuple[AccountListRow, ...]:
-    rows = tuple(
-        row
-        for row in _list_all_account_rows()
-        if row.account_role in roles
-    )
+    rows = tuple(row for row in _list_all_account_rows() if row.account_role in roles)
 
     return _sort_account_rows(rows=rows, sort=sort)
 
 
 def _list_all_account_rows() -> tuple[AccountListRow, ...]:
-    users = (
-        User.objects.select_related(
-            "staff_account",
-            "customer_membership__customer",
-        )
-        .order_by("email", "username")
-    )
+    users = User.objects.select_related(
+        "staff_account",
+        "customer_membership__customer",
+    ).order_by("email", "username")
 
-    return tuple(
-        _build_account_row(user)
-        for user in users
-    )
+    return tuple(_build_account_row(user) for user in users)
 
 
 def _build_account_row(user) -> AccountListRow:
@@ -410,10 +399,11 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
 
         return ResolvedAccountIdentity(
             account_role=account_role,
-            role_label=_("Invalid identity"), 
-            linked_identity=_("Staff and customer · %(customer)s") % {
+            role_label=_("Invalid identity"),
+            linked_identity=_("Staff and customer · %(customer)s")
+            % {
                 "customer": customer.name,
-            }, 
+            },
             linked_identity_href=_customer_detail_href(customer),
         )
 
@@ -424,9 +414,7 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
         return ResolvedAccountIdentity(
             account_role=account_role,
             role_label=get_role_label(account_role),
-            linked_identity=_staff_identity_label(
-                user.staff_account.access_level
-            ),
+            linked_identity=_staff_identity_label(user.staff_account.access_level),
         )
 
     if account_role == AccountRole.CUSTOMER:
@@ -588,9 +576,9 @@ def _activity_rows_from_specs(
         if spec.select_related:
             queryset = queryset.select_related(*spec.select_related)
 
-        queryset = queryset.order_by(
-            f"-{spec.occurred_at_field}"
-        )[:ACCOUNT_ACTIVITY_LIMIT]
+        queryset = queryset.order_by(f"-{spec.occurred_at_field}")[
+            :ACCOUNT_ACTIVITY_LIMIT
+        ]
 
         rows.extend(
             _activity_row_from_spec(

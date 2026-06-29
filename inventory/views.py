@@ -16,15 +16,15 @@ from inventory.detail_viewmodels import (
     build_batch_detail_context,
 )
 from inventory.errors import InvalidStockOperation
-from inventory.forms import (
-    BatchEditForm,
-    BatchForm,
-    build_batch_edit_initial_data,
-)
 from inventory.form_viewmodels import (
     build_close_batch_form_context,
     build_create_batch_form_context,
     build_edit_batch_form_context,
+)
+from inventory.forms import (
+    BatchEditForm,
+    BatchForm,
+    build_batch_edit_initial_data,
 )
 from inventory.list_viewmodels import (
     build_batch_page_rows,
@@ -46,7 +46,6 @@ from inventory.selectors import (
     sort_available_stock_rows,
 )
 from inventory.services import close_batch, create_batch, update_batch
-
 
 INVENTORY_VIEW_BATCHES = "batches"
 INVENTORY_VIEW_PRODUCTS = "products"
@@ -95,9 +94,7 @@ INVENTORY_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 
 @login_required
 def index(request):
-    active_view = _active_inventory_view(
-        request.GET.get(INVENTORY_VIEW_QUERY_KEY, "")
-    )
+    active_view = _active_inventory_view(request.GET.get(INVENTORY_VIEW_QUERY_KEY, ""))
 
     if active_view == INVENTORY_VIEW_PRODUCTS:
         context = _build_products_index_context(request)

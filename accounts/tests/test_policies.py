@@ -6,10 +6,7 @@ from django.urls import URLPattern, URLResolver, get_resolver
 from accounts.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from accounts.roles import Capability
 
-
-EXEMPT_VIEW_NAME_PREFIXES = (
-    "admin:",
-)
+EXEMPT_VIEW_NAME_PREFIXES = ("admin:",)
 
 
 def _iter_named_view_names(

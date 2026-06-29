@@ -46,11 +46,14 @@ def test_normalize_order_unit_rejects_unsupported_unit(raw_unit):
 def test_quantity_to_units_accepts_whole_stock_units():
     product = product_factory(weight_per_unit=5000)
 
-    assert quantity_to_units(
-        product=product,
-        quantity=Decimal("3"),
-        unit="stock_unit",
-    ) == 3
+    assert (
+        quantity_to_units(
+            product=product,
+            quantity=Decimal("3"),
+            unit="stock_unit",
+        )
+        == 3
+    )
 
 
 @pytest.mark.django_db
@@ -72,11 +75,14 @@ def test_quantity_to_units_rejects_fractional_stock_units():
 def test_quantity_to_units_converts_grams_rounding_up():
     product = product_factory(weight_per_unit=5000)
 
-    assert quantity_to_units(
-        product=product,
-        quantity=Decimal("5001"),
-        unit="grams",
-    ) == 2
+    assert (
+        quantity_to_units(
+            product=product,
+            quantity=Decimal("5001"),
+            unit="grams",
+        )
+        == 2
+    )
 
 
 @pytest.mark.django_db
@@ -95,11 +101,14 @@ def test_quantity_to_units_rejects_fractional_grams():
 def test_quantity_to_units_converts_kg_rounding_up():
     product = product_factory(weight_per_unit=5000)
 
-    assert quantity_to_units(
-        product=product,
-        quantity=Decimal("5.001"),
-        unit="kg",
-    ) == 2
+    assert (
+        quantity_to_units(
+            product=product,
+            quantity=Decimal("5.001"),
+            unit="kg",
+        )
+        == 2
+    )
 
 
 @pytest.mark.django_db
@@ -121,8 +130,11 @@ def test_quantity_to_units_uses_product_stock_unit_independently_of_label():
         stock_unit=Product.StockUnit.PIECE,
     )
 
-    assert quantity_to_units(
-        product=product,
-        quantity=Decimal("3"),
-        unit="stock_unit",
-    ) == 3
+    assert (
+        quantity_to_units(
+            product=product,
+            quantity=Decimal("3"),
+            unit="stock_unit",
+        )
+        == 3
+    )

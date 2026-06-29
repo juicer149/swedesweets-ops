@@ -12,7 +12,6 @@ from inventory.forms import (
 )
 from inventory.tests.conftest import TODAY
 
-
 FUTURE_BEST_BEFORE = TODAY + timedelta(days=60)
 FUTURE_BEST_BEFORE_INPUT = f"{FUTURE_BEST_BEFORE:%Y-%m-%d}"
 

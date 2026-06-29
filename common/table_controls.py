@@ -59,6 +59,7 @@ class TableSortLink:
     is_active: bool
     direction: str
 
+
 @dataclass(frozen=True)
 class QuickJumpOption:
     label: str
@@ -77,6 +78,7 @@ class QuickJumpSearch:
     placeholder: str
     aria_label: str
     options: list[QuickJumpOption]
+
 
 @dataclass(frozen=True)
 class MobileSortDirection:
@@ -218,23 +220,11 @@ class TableControls:
 
         active_field = sort_field(self.active_sort)
         active_direction = sort_direction(self.active_sort)
-        next_direction = (
-            "desc"
-            if active_direction == "asc"
-            else "asc"
-        )
+        next_direction = "desc" if active_direction == "asc" else "asc"
 
         return MobileSortDirection(
-            label=(
-                "Descending"
-                if active_direction == "asc"
-                else "Ascending"
-            ),
-            symbol=(
-                "↓"
-                if active_direction == "asc"
-                else "↑"
-            ),
+            label=("Descending" if active_direction == "asc" else "Ascending"),
+            symbol=("↓" if active_direction == "asc" else "↑"),
             url=self._build_url(
                 filter_value=self.active_filter,
                 sort=sort_value(
@@ -250,7 +240,7 @@ class TableControls:
         filter_value: str,
         sort: str,
     ) -> str:
-        params: dict[str, str] = dict(self.extra_query_params or {}) 
+        params: dict[str, str] = dict(self.extra_query_params or {})
 
         if filter_value and self.filter_query_key:
             params[self.filter_query_key] = filter_value
@@ -275,10 +265,7 @@ def _normalize_filter(
     if not filters:
         return ""
 
-    allowed_values = {
-        filter_.value
-        for filter_ in filters
-    }
+    allowed_values = {filter_.value for filter_ in filters}
 
     if requested_filter in allowed_values:
         return requested_filter

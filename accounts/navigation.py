@@ -188,8 +188,4 @@ def _filter_nav_items(
     candidates: tuple[NavItem, ...],
     role_spec: RoleSpec,
 ) -> tuple[NavItem, ...]:
-    return tuple(
-        item
-        for item in candidates
-        if role_spec.allows(item.capability)
-    )
+    return tuple(item for item in candidates if role_spec.allows(item.capability))

@@ -75,9 +75,7 @@ class ViewCapabilityMiddleware:
         resolver_match = getattr(request, "resolver_match", None)
 
         if resolver_match is None:
-            raise PermissionDenied(
-                "Could not resolve access policy for this request."
-            )
+            raise PermissionDenied("Could not resolve access policy for this request.")
 
         view_name = resolver_match.view_name
 
@@ -87,9 +85,7 @@ class ViewCapabilityMiddleware:
         required_capability = VIEW_CAPABILITIES.get(view_name)
 
         if required_capability is None:
-            raise PermissionDenied(
-                "This view does not declare an access policy."
-            )
+            raise PermissionDenied("This view does not declare an access policy.")
 
         if not request.user.is_authenticated:
             return redirect_to_login(
@@ -103,8 +99,6 @@ class ViewCapabilityMiddleware:
             raise PermissionDenied("Account role context is missing.")
 
         if not role_spec.allows(required_capability):
-            raise PermissionDenied(
-                "You do not have permission to access this page."
-            )
+            raise PermissionDenied("You do not have permission to access this page.")
 
         return None

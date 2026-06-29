@@ -11,7 +11,6 @@ from inventory.tests.factories import batch_factory as make_batch
 from products.models import Product
 from products.tests.factories import product_factory
 
-
 TODAY = timezone.localdate()
 
 STOCK_EARLY_BEST_BEFORE = TODAY + timedelta(days=60)

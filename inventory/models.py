@@ -175,11 +175,7 @@ class InventoryBatch(models.Model):
         if self.status == self.Status.CLOSED:
             return
 
-        next_status = (
-            self.Status.ACTIVE
-            if self.quantity > 0
-            else self.Status.DEPLETED
-        )
+        next_status = self.Status.ACTIVE if self.quantity > 0 else self.Status.DEPLETED
 
         self._transition_to(next_status)
 
@@ -187,12 +183,7 @@ class InventoryBatch(models.Model):
         if self.pk is None:
             return
 
-        persisted_status = (
-            type(self).objects
-            .only("status")
-            .get(pk=self.pk)
-            .status
-        )
+        persisted_status = type(self).objects.only("status").get(pk=self.pk).status
 
         if persisted_status == self.status:
             return

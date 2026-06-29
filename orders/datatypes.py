@@ -31,7 +31,6 @@ from orders.errors import InvalidOrderOperation
 from products.models import Product
 from products.units import ORDER_UNIT_GRAMS, ORDER_UNIT_KG, ORDER_UNIT_STOCK
 
-
 Quantity = Decimal | int | float | str
 
 

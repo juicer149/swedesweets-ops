@@ -9,16 +9,15 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
 from common.ui import (
-    StatusPresentation,
     TONE_DANGER,
     TONE_INFO,
     TONE_MUTED,
     TONE_SUCCESS,
     TONE_WARNING,
+    StatusPresentation,
     UiText,
 )
 from orders.models import Order
-
 
 ORDER_CARD_BASE_CLASS = "mobile-card mobile-card--order"
 

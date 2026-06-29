@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from urllib.parse import urlencode
 
-
 ASCENDING_DIRECTION = "asc"
 DESCENDING_DIRECTION = "desc"
 
@@ -68,13 +67,7 @@ def build_query_url(
     params: dict[str, str],
     anchor: str = "",
 ) -> str:
-    query_string = urlencode(
-        {
-            key: value
-            for key, value in params.items()
-            if value
-        }
-    )
+    query_string = urlencode({key: value for key, value in params.items() if value})
 
     url = base_path
 

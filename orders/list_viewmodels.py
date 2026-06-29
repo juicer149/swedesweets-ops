@@ -183,9 +183,7 @@ def _build_action(
             text="Pack order",
             href=_pack_order_href(order),
             css_class=(
-                "button button--card-action "
-                "button--tone-pack "
-                "button--with-icon"
+                "button button--card-action button--tone-pack button--with-icon"
             ),
             icon="box",
             icon_class="button__icon",
@@ -196,9 +194,7 @@ def _build_action(
             text="Mark delivered",
             href=_deliver_order_href(order),
             css_class=(
-                "button button--card-action "
-                "button--tone-deliver "
-                "button--with-icon"
+                "button button--card-action button--tone-deliver button--with-icon"
             ),
             icon="truck",
             icon_class="button__icon",
@@ -226,7 +222,7 @@ def _order_detail_href(
     if can_deliver_order(order=order, role_spec=role_spec):
         return _deliver_order_href(order)
 
-    return _order_detail_base_href(order) 
+    return _order_detail_base_href(order)
 
 
 def _create_order_href() -> str:

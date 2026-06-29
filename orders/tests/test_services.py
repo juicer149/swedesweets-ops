@@ -167,7 +167,9 @@ def test_create_draft_order_merges_duplicate_product_lines(customer, apple):
 
 @pytest.mark.django_db
 def test_create_draft_order_rejects_empty_order(customer):
-    with pytest.raises(InvalidOrderOperation, match="order must contain at least one line"):
+    with pytest.raises(
+        InvalidOrderOperation, match="order must contain at least one line"
+    ):
         create_draft_order(
             customer=customer,
             lines=[],
@@ -221,9 +223,9 @@ def test_create_order_places_order_and_creates_fefo_allocations(
     assert order.status == Order.Status.PLACED
 
     allocations = list(
-        Allocation.objects
-        .select_related("batch", "order_line__product")
-        .order_by("batch__batch_id")
+        Allocation.objects.select_related("batch", "order_line__product").order_by(
+            "batch__batch_id"
+        )
     )
 
     assert [
@@ -299,7 +301,9 @@ def test_order_cannot_reserve_expired_stock(customer, apple):
 
 
 @pytest.mark.django_db
-def test_two_placed_orders_do_not_reserve_same_quantity(customer, other_customer, apple):
+def test_two_placed_orders_do_not_reserve_same_quantity(
+    customer, other_customer, apple
+):
     create_batch(
         batch_id="A-001",
         product=apple,
@@ -354,15 +358,12 @@ def test_pack_order_consumes_allocations_and_reduces_physical_stock(
     assert order.status == Order.Status.PACKED
     assert order.packed_at is not None
 
-    assert set(
-        Allocation.objects.values_list("status", flat=True)
-    ) == {
+    assert set(Allocation.objects.values_list("status", flat=True)) == {
         Allocation.Status.CONSUMED,
     }
 
     batches = {
-        batch.batch_id: batch
-        for batch in InventoryBatch.objects.order_by("batch_id")
+        batch.batch_id: batch for batch in InventoryBatch.objects.order_by("batch_id")
     }
 
     assert batches["A-001"].quantity == 0
@@ -389,7 +390,9 @@ def test_pack_order_rejects_non_placed_order(customer, apple, stocked_inventory)
 
 
 @pytest.mark.django_db
-def test_cancel_placed_order_releases_reserved_allocations(customer, apple, stocked_inventory):
+def test_cancel_placed_order_releases_reserved_allocations(
+    customer, apple, stocked_inventory
+):
     order = create_order(
         customer=customer,
         lines=[
@@ -409,9 +412,7 @@ def test_cancel_placed_order_releases_reserved_allocations(customer, apple, stoc
     assert order.cancel_reason == Order.CancelReason.CUSTOMER_REQUEST
     assert order.cancel_note == "Customer cancelled."
 
-    assert set(
-        order.allocations.values_list("status", flat=True)
-    ) == {
+    assert set(order.allocations.values_list("status", flat=True)) == {
         Allocation.Status.CANCELLED,
     }
 
@@ -431,7 +432,9 @@ def test_cancel_order_rejects_packed_order(customer, apple, stocked_inventory):
 
 
 @pytest.mark.django_db
-def test_deliver_order_moves_packed_order_to_delivered(customer, apple, stocked_inventory):
+def test_deliver_order_moves_packed_order_to_delivered(
+    customer, apple, stocked_inventory
+):
     order = create_order(
         customer=customer,
         lines=[

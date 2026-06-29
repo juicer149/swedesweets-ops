@@ -98,8 +98,7 @@ def build_portal_order_detail_context(
                 total_quantity=total_quantity,
             ),
             content_card_class=(
-                "portal-order-detail-card "
-                f"{order_detail_card_class(order.status)}"
+                f"portal-order-detail-card {order_detail_card_class(order.status)}"
             ),
         ),
         title=_("Order #%(order_id)s") % {"order_id": order.pk},

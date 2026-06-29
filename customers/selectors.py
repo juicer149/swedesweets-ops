@@ -9,7 +9,6 @@ from django.db.models import QuerySet
 from common.table_tools import normalize_sort
 from customers.models import Customer
 
-
 DEFAULT_CUSTOMER_SORT = "customer"
 
 CUSTOMER_SORTS: dict[str, tuple[str, ...]] = {

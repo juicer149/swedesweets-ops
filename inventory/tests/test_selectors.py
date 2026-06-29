@@ -182,7 +182,9 @@ def test_available_quantity_by_product_matches_physical_stock_without_reservatio
 
 
 @pytest.mark.django_db
-def test_available_quantity_by_product_id_returns_mapping(stocked_inventory, apple, banana):
+def test_available_quantity_by_product_id_returns_mapping(
+    stocked_inventory, apple, banana
+):
     available = available_quantity_by_product_id()
 
     assert available == {

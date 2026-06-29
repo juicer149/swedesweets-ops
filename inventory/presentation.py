@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from common.ui import (
-    StatusPresentation,
     TONE_DANGER,
     TONE_MUTED,
     TONE_SUCCESS,
     TONE_WARNING,
+    StatusPresentation,
     UiText,
 )
 from inventory.models import InventoryBatch

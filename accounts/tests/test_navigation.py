@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from accounts.navigation import build_primary_nav_items
 from accounts.roles import (
-    AccountRole,
     FULL_STAFF_SPEC,
     OWNER_SPEC,
     RESTRICTED_STAFF_SPEC,
     UNKNOWN_SPEC,
+    AccountRole,
 )
 
 

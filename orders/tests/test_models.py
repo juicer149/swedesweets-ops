@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from django.db import IntegrityError, transaction
+
 import pytest
+from django.db import IntegrityError, transaction
 
 from inventory.services import create_batch
 from orders.errors import (
@@ -11,7 +12,6 @@ from orders.errors import (
 )
 from orders.models import Allocation, Order, OrderLine
 from orders.tests.conftest import TODAY
-
 
 FUTURE_BEST_BEFORE = TODAY + timedelta(days=60)
 
@@ -29,9 +29,8 @@ def test_new_order_starts_as_draft(customer):
 def test_customer_can_have_only_one_active_draft_order(customer):
     Order.objects.create(customer=customer)
 
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            Order.objects.create(customer=customer)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        Order.objects.create(customer=customer)
 
 
 @pytest.mark.django_db

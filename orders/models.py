@@ -32,18 +32,18 @@ from orders.errors import (
 
 class Order(models.Model):
     class Status(models.TextChoices):
-        DRAFT = "draft", _("Draft") 
+        DRAFT = "draft", _("Draft")
         PLACED = "placed", _("Placed")
-        PACKED = "packed", _("Packed") 
-        DELIVERED = "delivered", _("Delivered") 
-        CANCELLED = "cancelled", _("Cancelled") 
+        PACKED = "packed", _("Packed")
+        DELIVERED = "delivered", _("Delivered")
+        CANCELLED = "cancelled", _("Cancelled")
 
     class CancelReason(models.TextChoices):
         CUSTOMER_REQUEST = "customer_request", _("Customer request")
-        ORDER_ENTRY_ERROR = "order_entry_error", _("Order entry error") 
-        DUPLICATE_ORDER = "duplicate_order", _("Duplicate order") 
-        OUT_OF_STOCK = "out_of_stock", _("Out of stock") 
-        OTHER = "other", _("Other") 
+        ORDER_ENTRY_ERROR = "order_entry_error", _("Order entry error")
+        DUPLICATE_ORDER = "duplicate_order", _("Duplicate order")
+        OUT_OF_STOCK = "out_of_stock", _("Out of stock")
+        OTHER = "other", _("Other")
 
     ALLOWED_TRANSITIONS = {
         Status.DRAFT: {Status.PLACED, Status.CANCELLED},
@@ -230,8 +230,7 @@ class Order(models.Model):
 
         if target not in allowed_targets:
             raise InvalidOrderStatusTransition(
-                f"Cannot transition order {self.pk} "
-                f"from {self.status!r} to {target!r}"
+                f"Cannot transition order {self.pk} from {self.status!r} to {target!r}"
             )
 
         self.status = target
@@ -316,7 +315,7 @@ class Order(models.Model):
 class OrderLine(models.Model):
     class Unit(models.TextChoices):
         STOCK_UNIT = "stock_unit", _("Stock unit")
-        KG = "kg", _("Kg") 
+        KG = "kg", _("Kg")
         GRAMS = "grams", _("Grams")
 
     order = models.ForeignKey(
@@ -371,9 +370,9 @@ class Allocation(models.Model):
     """
 
     class Status(models.TextChoices):
-        RESERVED = "reserved", _("Reserved") 
-        CONSUMED = "consumed", _("Consumed") 
-        CANCELLED = "cancelled", _("Cancelled") 
+        RESERVED = "reserved", _("Reserved")
+        CONSUMED = "consumed", _("Consumed")
+        CANCELLED = "cancelled", _("Cancelled")
 
     ALLOWED_TRANSITIONS = {
         Status.RESERVED: {

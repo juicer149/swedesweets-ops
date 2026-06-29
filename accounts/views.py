@@ -47,6 +47,8 @@ from accounts.selectors import (
 )
 from accounts.services import (
     create_customer_account as create_customer_login_account,
+)
+from accounts.services import (
     create_internal_account,
     set_customer_account_active_status,
     update_internal_account,
@@ -56,7 +58,6 @@ from common.table_controls import (
     TableControlsTemplate,
     TableSortField,
 )
-
 
 ACCOUNT_DEFAULT_VIEW = ACCOUNT_VIEW_INTERNAL
 ACCOUNT_ALLOWED_VIEWS = {
@@ -119,9 +120,7 @@ def after_login(request):
 
 @login_required
 def index(request):
-    active_view = _active_account_view(
-        request.GET.get(ACCOUNT_VIEW_QUERY_KEY, "")
-    )
+    active_view = _active_account_view(request.GET.get(ACCOUNT_VIEW_QUERY_KEY, ""))
 
     controls = TableControls.from_request_values(
         base_path=request.path,
@@ -147,9 +146,7 @@ def index(request):
         "account_rows": build_account_page_rows(account_rows),
         "filters": [],
         "table_sorts": controls.build_table_sort_links(ACCOUNT_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(
-            ACCOUNT_TABLE_SORTS
-        ),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(ACCOUNT_TABLE_SORTS),
         "mobile_sort_direction": controls.build_mobile_sort_direction(),
         "table_controls_template": ACCOUNT_TABLE_CONTROLS_TEMPLATE,
         "numeric_table_fields": [],
@@ -421,21 +418,12 @@ def _accounts_url_for_account(account) -> str:
 
 
 def _accounts_internal_url() -> str:
-    return (
-        f"{reverse('accounts:index')}"
-        f"?view={ACCOUNT_VIEW_INTERNAL}#accounts-list"
-    )
+    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_INTERNAL}#accounts-list"
 
 
 def _accounts_customer_url() -> str:
-    return (
-        f"{reverse('accounts:index')}"
-        f"?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
-    )
+    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
 
 
 def _accounts_unlinked_url() -> str:
-    return (
-        f"{reverse('accounts:index')}"
-        f"?view={ACCOUNT_VIEW_UNLINKED}#accounts-list"
-    )
+    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_UNLINKED}#accounts-list"

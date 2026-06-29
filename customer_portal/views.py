@@ -61,7 +61,6 @@ from orders.selectors import (
 )
 from orders.services import place_order as place_draft_order
 
-
 PORTAL_ORDERS_LIST_ANCHOR = "portal-orders-list"
 PORTAL_ORDER_FILTER_QUERY_KEY = "status"
 ORDER_LINE_FORMSET_PREFIX = "lines"
@@ -300,9 +299,7 @@ def place_order(request):
 
             if result.succeeded:
                 _add_draft_save_message(request, result.status)
-                return redirect(
-                    _safe_next_url(request) or "accounts:after_login"
-                )
+                return redirect(_safe_next_url(request) or "accounts:after_login")
 
     else:
         initial = ()
@@ -391,7 +388,8 @@ def review_order(request):
 
             messages.success(
                 request,
-                _("Order #%(order_id)s placed.") % {
+                _("Order #%(order_id)s placed.")
+                % {
                     "order_id": placed_order.id,
                 },
             )

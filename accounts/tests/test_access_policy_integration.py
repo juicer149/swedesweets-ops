@@ -5,12 +5,12 @@ from django.urls import reverse
 
 from accounts.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from accounts.roles import (
-    AccountRole,
     CUSTOMER_SPEC,
     FULL_STAFF_SPEC,
     OWNER_SPEC,
     RESTRICTED_STAFF_SPEC,
     UNKNOWN_SPEC,
+    AccountRole,
 )
 from accounts.tests.factories import (
     customer_membership_factory,
@@ -20,7 +20,6 @@ from accounts.tests.factories import (
     user_factory,
 )
 from customers.tests.factories import customer_factory
-
 
 MISSING_OBJECT_ID = 999999
 
@@ -35,23 +34,18 @@ VIEW_KWARGS = {
     "accounts:edit_internal": ACCOUNT_USER_KWARGS,
     "accounts:activate_customer_account": ACCOUNT_USER_KWARGS,
     "accounts:deactivate_customer_account": ACCOUNT_USER_KWARGS,
-
     "orders:detail": ORDER_KWARGS,
     "orders:edit": ORDER_KWARGS,
     "orders:cancel": ORDER_KWARGS,
     "orders:pack": ORDER_KWARGS,
     "orders:deliver": ORDER_KWARGS,
-
     "inventory:detail": BATCH_KWARGS,
     "inventory:edit": BATCH_KWARGS,
     "inventory:close": BATCH_KWARGS,
-
     "products:detail": PRODUCT_KWARGS,
     "products:edit": PRODUCT_KWARGS,
-
     "customers:detail": CUSTOMER_KWARGS,
     "customers:edit": CUSTOMER_KWARGS,
-
     "customer_portal:order_detail": ORDER_KWARGS,
 }
 

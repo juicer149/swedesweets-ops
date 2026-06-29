@@ -7,26 +7,25 @@ create objects, or perform business workflows.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Callable, TypeAlias
+from typing import TypeAlias
 
 from django.db.models import Case, Count, IntegerField, QuerySet, Sum, Value, When
 from django.utils import timezone
 
 from common.table_tools import normalize_sort
 from inventory.expiry import (
-    EXPIRY_SOON_DAYS, 
-    ExpiryInfo, 
+    EXPIRY_SOON_DAYS,
+    ExpiryInfo,
     build_expiry_info,
     orderable_best_before_cutoff,
 )
-
 from inventory.low_stock import LOW_STOCK_THRESHOLD, is_low_stock
 from inventory.models import InventoryBatch
 from orders.models import Allocation, Order
 from products.models import Product
-
 
 DEFAULT_BATCH_SORT = "status"
 
@@ -189,10 +188,8 @@ def list_batches(
         default_sort=DEFAULT_BATCH_SORT,
     )
 
-    batches = (
-        InventoryBatch.objects
-        .select_related("product")
-        .annotate(status_rank=_batch_status_rank_expression())
+    batches = InventoryBatch.objects.select_related("product").annotate(
+        status_rank=_batch_status_rank_expression()
     )
 
     if status in InventoryBatch.Status.values:
@@ -276,8 +273,7 @@ def list_available_batches_for_product(
     product: Product,
 ) -> QuerySet[InventoryBatch]:
     return (
-        InventoryBatch.objects
-        .filter(
+        InventoryBatch.objects.filter(
             product=product,
             status=InventoryBatch.Status.ACTIVE,
             quantity__gt=0,
@@ -289,8 +285,7 @@ def list_available_batches_for_product(
 
 def list_available_batches() -> QuerySet[InventoryBatch]:
     return (
-        InventoryBatch.objects
-        .filter(
+        InventoryBatch.objects.filter(
             status=InventoryBatch.Status.ACTIVE,
             quantity__gt=0,
         )
@@ -307,8 +302,7 @@ def list_available_batches() -> QuerySet[InventoryBatch]:
 
 def list_depleted_batches() -> QuerySet[InventoryBatch]:
     return (
-        InventoryBatch.objects
-        .filter(status=InventoryBatch.Status.DEPLETED)
+        InventoryBatch.objects.filter(status=InventoryBatch.Status.DEPLETED)
         .select_related("product")
         .order_by(
             "product__internal_number",
@@ -340,8 +334,7 @@ def list_expiring_batch_rows(
     cutoff_date = today + timedelta(days=days)
 
     batches = (
-        InventoryBatch.objects
-        .filter(
+        InventoryBatch.objects.filter(
             status=InventoryBatch.Status.ACTIVE,
             quantity__gt=0,
             best_before__gte=today,
@@ -365,16 +358,12 @@ def count_expiring_batches(
     today = today or timezone.localdate()
     cutoff_date = today + timedelta(days=days)
 
-    return (
-        InventoryBatch.objects
-        .filter(
-            status=InventoryBatch.Status.ACTIVE,
-            quantity__gt=0,
-            best_before__gte=today,
-            best_before__lte=cutoff_date,
-        )
-        .count()
-    )
+    return InventoryBatch.objects.filter(
+        status=InventoryBatch.Status.ACTIVE,
+        quantity__gt=0,
+        best_before__gte=today,
+        best_before__lte=cutoff_date,
+    ).count()
 
 
 def list_low_stock_products(
@@ -422,8 +411,7 @@ def list_batch_allocations(*, batch: InventoryBatch) -> list[Allocation]:
     """
 
     return list(
-        Allocation.objects
-        .filter(batch=batch)
+        Allocation.objects.filter(batch=batch)
         .select_related(
             "order",
             "order__customer",
@@ -462,8 +450,7 @@ def _orderable_physical_quantity_by_product_id(
     cutoff_date: date,
 ) -> dict[int, int]:
     rows = (
-        InventoryBatch.objects
-        .filter(
+        InventoryBatch.objects.filter(
             status=InventoryBatch.Status.ACTIVE,
             quantity__gt=0,
             best_before__gt=cutoff_date,
@@ -472,10 +459,7 @@ def _orderable_physical_quantity_by_product_id(
         .annotate(total_quantity=Sum("quantity"))
     )
 
-    return {
-        row["product_id"]: row["total_quantity"] or 0
-        for row in rows
-    }
+    return {row["product_id"]: row["total_quantity"] or 0 for row in rows}
 
 
 def _orderable_reserved_quantity_by_product_id(
@@ -483,8 +467,7 @@ def _orderable_reserved_quantity_by_product_id(
     cutoff_date: date,
 ) -> dict[int, int]:
     rows = (
-        Allocation.objects
-        .filter(
+        Allocation.objects.filter(
             status=Allocation.Status.RESERVED,
             order__status=Order.Status.PLACED,
             batch__status=InventoryBatch.Status.ACTIVE,
@@ -495,10 +478,8 @@ def _orderable_reserved_quantity_by_product_id(
         .annotate(total_reserved=Sum("quantity"))
     )
 
-    return {
-        row["batch__product_id"]: row["total_reserved"] or 0
-        for row in rows
-    }
+    return {row["batch__product_id"]: row["total_reserved"] or 0 for row in rows}
+
 
 def _build_batch_rows(
     *,
@@ -529,8 +510,7 @@ def _batch_status_rank_expression() -> Case:
 
 def _physical_stock_totals_by_product_id() -> dict[int, _PhysicalStockTotals]:
     rows = (
-        InventoryBatch.objects
-        .filter(
+        InventoryBatch.objects.filter(
             status=InventoryBatch.Status.ACTIVE,
             quantity__gt=0,
         )
@@ -553,16 +533,12 @@ def _physical_stock_totals_by_product_id() -> dict[int, _PhysicalStockTotals]:
 def _products_by_id(product_ids) -> dict[int, Product]:
     products = Product.objects.filter(id__in=product_ids)
 
-    return {
-        product.id: product
-        for product in products
-    }
+    return {product.id: product for product in products}
 
 
 def _reserved_quantity_by_product_id() -> dict[int, int]:
     rows = (
-        Allocation.objects
-        .filter(
+        Allocation.objects.filter(
             status=Allocation.Status.RESERVED,
             order__status=Order.Status.PLACED,
         )
@@ -570,10 +546,7 @@ def _reserved_quantity_by_product_id() -> dict[int, int]:
         .annotate(total_reserved=Sum("quantity"))
     )
 
-    return {
-        row["batch__product_id"]: row["total_reserved"] or 0
-        for row in rows
-    }
+    return {row["batch__product_id"]: row["total_reserved"] or 0 for row in rows}
 
 
 def _product_stock_sort_key_functions() -> dict[str, ProductStockSortKey]:

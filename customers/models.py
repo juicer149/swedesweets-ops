@@ -13,7 +13,6 @@ from django.utils import timezone
 
 from customers.errors import InvalidCustomerData
 
-
 MAX_CUSTOMER_NAME_LENGTH = 120
 MAX_CUSTOMER_COUNTRY_LENGTH = 80
 MAX_CUSTOMER_CITY_LENGTH = 120
@@ -64,8 +63,7 @@ def normalize_customer_country(value: str) -> str:
 
     if len(value) > MAX_CUSTOMER_COUNTRY_LENGTH:
         raise InvalidCustomerData(
-            f"customer country must be at most "
-            f"{MAX_CUSTOMER_COUNTRY_LENGTH} characters"
+            f"customer country must be at most {MAX_CUSTOMER_COUNTRY_LENGTH} characters"
         )
 
     if value not in CUSTOMER_COUNTRY_CODES:
@@ -199,8 +197,7 @@ class Customer(models.Model):
         should_handle_country = should_save_all_fields or "country" in update_fields
         should_handle_city = should_save_all_fields or "city" in update_fields
         should_handle_address_line = (
-            should_save_all_fields
-            or "address_line" in update_fields
+            should_save_all_fields or "address_line" in update_fields
         )
 
         if should_handle_name:

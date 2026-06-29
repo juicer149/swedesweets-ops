@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from customers.forms import CUSTOMER_COUNTRY_CHOICES, CustomerForm, build_customer_edit_initial_data
+from customers.forms import (
+    CUSTOMER_COUNTRY_CHOICES,
+    CustomerForm,
+    build_customer_edit_initial_data,
+)
 
 
 def valid_customer_form_data(**overrides):

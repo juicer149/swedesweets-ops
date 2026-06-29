@@ -4,15 +4,15 @@ from dataclasses import dataclass
 
 from django.urls import reverse
 
+from accounts.roles import RoleSpec
+from common.page_header import PageHeader, PageHeaderAction
+from common.table_controls import QuickJumpOption, QuickJumpSearch
 from common.ui import (
     StatusPresentation,
     UiCard,
     UiCardRow,
     UiText,
 )
-from accounts.roles import RoleSpec
-from common.page_header import PageHeader, PageHeaderAction
-from common.table_controls import QuickJumpOption, QuickJumpSearch
 from products.access import can_create_product
 from products.models import Product
 from products.presentation import (
@@ -56,10 +56,7 @@ def _build_add_product_header_action(
 
 
 def build_product_page_rows(products: list[Product]) -> list[ProductPageRow]:
-    return [
-        _build_product_page_row(product)
-        for product in products
-    ]
+    return [_build_product_page_row(product) for product in products]
 
 
 def _build_product_page_row(product: Product) -> ProductPageRow:

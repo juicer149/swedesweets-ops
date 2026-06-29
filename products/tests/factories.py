@@ -24,4 +24,3 @@ def product_factory(
         vegan=vegan,
     )
     return result.item
-

@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from common.ui import (
-    StatusPresentation,
     TONE_MUTED,
     TONE_SUCCESS,
+    StatusPresentation,
     UiText,
 )
 from products.models import Product
@@ -113,11 +113,7 @@ def translated_product_name(
 
         return product.display_name
 
-    translation = (
-        product.translations
-        .filter(language_code=language_code)
-        .first()
-    )
+    translation = product.translations.filter(language_code=language_code).first()
 
     if translation is None:
         return product.display_name

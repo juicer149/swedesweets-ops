@@ -27,7 +27,6 @@ from customers.models import Customer
 from orders.datatypes import PickLine
 from orders.models import Allocation, Order
 
-
 ORDER_HISTORY_STATUSES = (
     Order.Status.PLACED,
     Order.Status.PACKED,
@@ -95,13 +94,9 @@ def list_orders(
         default_sort=DEFAULT_ORDER_SORT,
     )
 
-    orders = (
-        Order.objects
-        .select_related("customer")
-        .annotate(
-            **_order_summary_annotations(),
-            status_rank=_status_rank_expression(),
-        )
+    orders = Order.objects.select_related("customer").annotate(
+        **_order_summary_annotations(),
+        status_rank=_status_rank_expression(),
     )
 
     orders = _apply_order_history_status_filter(
@@ -137,8 +132,7 @@ def list_customer_orders(
     )
 
     orders = (
-        Order.objects
-        .select_related("customer")
+        Order.objects.select_related("customer")
         .filter(customer=customer)
         .annotate(
             **_order_summary_annotations(),
@@ -170,11 +164,7 @@ def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:
 
     orders_by_status = {
         row["status"]: row["count"]
-        for row in (
-            orders
-            .values("status")
-            .annotate(count=Count("id"))
-        )
+        for row in (orders.values("status").annotate(count=Count("id")))
     }
 
     return CustomerOrderSummary(
@@ -194,8 +184,7 @@ def get_active_draft_order_for_customer(
     """Return the customer's active draft order, if one exists."""
 
     return (
-        Order.objects
-        .filter(
+        Order.objects.filter(
             customer=customer,
             status=Order.Status.DRAFT,
         )
@@ -245,30 +234,22 @@ def count_packed_orders() -> int:
 
 def get_packaging_list(*, order: Order) -> list[PickLine]:
     allocations = (
-        order.allocations
-        .filter(status=Allocation.Status.RESERVED)
+        order.allocations.filter(status=Allocation.Status.RESERVED)
         .select_related("batch", "batch__product")
         .order_by("order_line_id", "batch__best_before", "batch__batch_id")
     )
 
-    return [
-        _build_pick_line(allocation)
-        for allocation in allocations
-    ]
+    return [_build_pick_line(allocation) for allocation in allocations]
 
 
 def get_packed_lines(*, order: Order) -> list[PickLine]:
     allocations = (
-        order.allocations
-        .filter(status=Allocation.Status.CONSUMED)
+        order.allocations.filter(status=Allocation.Status.CONSUMED)
         .select_related("batch", "batch__product")
         .order_by("order_line_id", "batch__best_before", "batch__batch_id")
     )
 
-    return [
-        _build_pick_line(allocation)
-        for allocation in allocations
-    ]
+    return [_build_pick_line(allocation) for allocation in allocations]
 
 
 def _build_pick_line(allocation: Allocation) -> PickLine:
@@ -343,8 +324,7 @@ def _list_orders_for_dashboard(
     limit: int,
 ) -> QuerySet[Order]:
     return (
-        Order.objects
-        .filter(status=status)
+        Order.objects.filter(status=status)
         .select_related("customer")
         .annotate(**_order_summary_annotations())
         .order_by("created_at", "id")[:limit]

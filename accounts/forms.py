@@ -9,7 +9,6 @@ from accounts.roles import StaffAccessLevel
 from common.form_layout import set_form_field_layout
 from customers.models import Customer
 
-
 INTERNAL_ACCOUNT_ACCESS_LEVEL_CHOICES = (
     (StaffAccessLevel.RESTRICTED.value, "Restricted staff"),
     (StaffAccessLevel.FULL.value, "Full staff"),
@@ -278,9 +277,7 @@ class InternalAccountEditForm(forms.Form):
     is_active = forms.BooleanField(
         required=False,
         label="Account status",
-        help_text=(
-            "Inactive users cannot log in. Existing audit history is kept."
-        ),
+        help_text=("Inactive users cannot log in. Existing audit history is kept."),
         widget=forms.CheckboxInput(
             attrs={
                 "class": "product-tag-toggle__input",

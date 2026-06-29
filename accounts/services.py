@@ -10,7 +10,6 @@ from accounts.models import CustomerMembership, StaffAccount
 from accounts.roles import StaffAccessLevel
 from customers.models import Customer
 
-
 User = get_user_model()
 
 
@@ -137,9 +136,7 @@ def create_customer_account(
             customer=customer,
         )
     except IntegrityError as error:
-        raise AccountCreationError(
-            "Could not create customer account."
-        ) from error
+        raise AccountCreationError("Could not create customer account.") from error
 
     return CreatedAccount(user=user)
 
@@ -155,10 +152,7 @@ def set_customer_account_active_status(
         raise AccountCreationError("You cannot deactivate your own account.")
 
     membership_exists = (
-        CustomerMembership.objects
-        .select_for_update()
-        .filter(user=user)
-        .exists()
+        CustomerMembership.objects.select_for_update().filter(user=user).exists()
     )
 
     if not membership_exists:
@@ -189,9 +183,7 @@ def _create_staff_account(
             access_level=access_level,
         )
     except IntegrityError as error:
-        raise AccountCreationError(
-            "Could not create staff account."
-        ) from error
+        raise AccountCreationError("Could not create staff account.") from error
 
     return CreatedAccount(user=user)
 

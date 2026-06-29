@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # =============================================================================
 # Environment helpers
 # =============================================================================
+
 
 def env_bool(name: str, *, default: bool = False) -> bool:
     value = os.environ.get(name)
@@ -31,11 +31,7 @@ def env_list(name: str, *, default: list[str] | None = None) -> list[str]:
     if value is None:
         return default or []
 
-    return [
-        item.strip()
-        for item in value.split(",")
-        if item.strip()
-    ]
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 # =============================================================================
@@ -81,9 +77,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "django_extensions",
-
     # Local apps
     "config",
     "dashboard",
@@ -103,20 +97,16 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-
     # Require login for all app pages except explicitly exempt paths.
     "common.middleware.LoginRequiredMiddleware",
-
     # Custom middleware to set request.account and check view permissions.
     "accounts.middleware.AccountContextMiddleware",
     "accounts.middleware.ViewCapabilityMiddleware",
-
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -206,7 +196,9 @@ LOGOUT_REDIRECT_URL = "login"
 
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL",
-    "SwedeSweets <no-reply@swedesweets.local>" if DEBUG else "SwedeSweets <no-reply@swedesweets.com>",
+    "SwedeSweets <no-reply@swedesweets.local>"
+    if DEBUG
+    else "SwedeSweets <no-reply@swedesweets.com>",
 )
 
 SERVER_EMAIL = os.environ.get(

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from django import forms
 
-
 FORM_FIELD_FULL = "form-field--full"
 FORM_FIELD_HALF = "form-field--half"
 FORM_FIELD_THIRD = "form-field--third"
@@ -13,7 +12,7 @@ def set_form_field_layout(
     *,
     full: tuple[str, ...] = (),
     half: tuple[str, ...] = (),
-    #TODO: might add a flexible/fit option in the future?
+    # TODO: might add a flexible/fit option in the future?
     third: tuple[str, ...] = (),
 ) -> None:
     """Attach layout metadata to Django form fields.

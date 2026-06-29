@@ -5,11 +5,11 @@ import pytest
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role, resolve_role_spec
 from accounts.roles import (
-    AccountRole,
-    Capability,
     CUSTOMER_CAPABILITIES,
     RESTRICTED_STAFF_CAPABILITIES,
     STAFF_CAPABILITIES,
+    AccountRole,
+    Capability,
     StaffAccessLevel,
 )
 from accounts.tests.factories import (

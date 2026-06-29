@@ -49,10 +49,7 @@ def _build_add_customer_header_action(
 
 
 def build_customer_page_rows(customers: list[Customer]) -> list[CustomerPageRow]:
-    return [
-        _build_customer_page_row(customer)
-        for customer in customers
-    ]
+    return [_build_customer_page_row(customer) for customer in customers]
 
 
 def _build_customer_page_row(customer: Customer) -> CustomerPageRow:

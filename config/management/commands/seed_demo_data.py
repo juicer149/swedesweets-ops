@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
@@ -20,7 +21,6 @@ from orders.models import Allocation, Order, OrderLine
 from orders.services import create_order, deliver_order, pack_order
 from products.models import Product
 from products.services import create_product
-
 
 DEMO_USER_USERNAME = "demo_ops"
 DEMO_USER_EMAIL = "demo.ops@example.com"
@@ -77,9 +77,7 @@ class Command(BaseCommand):
                 user=seed_user,
             )
 
-        self.stdout.write(
-            self.style.SUCCESS("Demo data seeded successfully.")
-        )
+        self.stdout.write(self.style.SUCCESS("Demo data seeded successfully."))
 
     # ==========================================================================
     # reset
@@ -118,10 +116,7 @@ class Command(BaseCommand):
         User = get_user_model()
 
         existing_superuser = (
-            User.objects
-            .filter(is_superuser=True)
-            .order_by("id")
-            .first()
+            User.objects.filter(is_superuser=True).order_by("id").first()
         )
 
         if existing_superuser is not None:
@@ -152,9 +147,7 @@ class Command(BaseCommand):
             product = self._create_product(item)
 
             if product.internal_number is None:
-                raise CommandError(
-                    f"Product {product!s} is missing internal_number."
-                )
+                raise CommandError(f"Product {product!s} is missing internal_number.")
 
             products[product.internal_number] = product
 
@@ -231,8 +224,7 @@ class Command(BaseCommand):
         if internal_number not in products:
             source_name = str(item.get("invoice_name", "unknown source line"))
             raise CommandError(
-                f"Batch references unknown product #{internal_number}: "
-                f"{source_name}"
+                f"Batch references unknown product #{internal_number}: {source_name}"
             )
 
         product = products[internal_number]
@@ -272,9 +264,7 @@ class Command(BaseCommand):
             if _should_skip_order(order_data):
                 skipped_count += 1
                 self.stdout.write(
-                    self.style.WARNING(
-                        f"Skipped order {_order_seed_label(order_data)}"
-                    )
+                    self.style.WARNING(f"Skipped order {_order_seed_label(order_data)}")
                 )
                 continue
 
@@ -325,8 +315,7 @@ class Command(BaseCommand):
                 )
             except Exception as error:
                 raise CommandError(
-                    f"Could not seed order {_order_seed_label(order_data)}: "
-                    f"{error}"
+                    f"Could not seed order {_order_seed_label(order_data)}: {error}"
                 ) from error
 
             created_count += 1
@@ -363,9 +352,7 @@ class Command(BaseCommand):
 
         for index, item in enumerate(unmapped_items, start=1):
             self.stdout.write(
-                self.style.WARNING(
-                    f"  - #{index}: {_format_unmapped_item(item)}"
-                )
+                self.style.WARNING(f"  - #{index}: {_format_unmapped_item(item)}")
             )
 
 
@@ -391,10 +378,7 @@ def _reset_database_sequences(*models) -> None:
 
 
 def _reset_sqlite_sequences(models: list[type]) -> None:
-    table_names = [
-        model._meta.db_table
-        for model in models
-    ]
+    table_names = [model._meta.db_table for model in models]
 
     if not table_names:
         return
@@ -488,14 +472,10 @@ def _load_json_object(path: Path) -> dict[str, Any]:
 
 def _load_batch_items(directory: Path) -> Iterator[dict[str, Any]]:
     if not directory.exists():
-        raise CommandError(
-            f"Batch catalog directory does not exist: {directory}"
-        )
+        raise CommandError(f"Batch catalog directory does not exist: {directory}")
 
     if not directory.is_dir():
-        raise CommandError(
-            f"Batch catalog path is not a directory: {directory}"
-        )
+        raise CommandError(f"Batch catalog path is not a directory: {directory}")
 
     batch_files = sorted(directory.glob("*.json"))
 
@@ -522,9 +502,7 @@ def _load_batch_items_from_file(path: Path) -> Iterator[dict[str, Any]]:
     receipts = document.get("receipts")
 
     if not isinstance(receipts, list):
-        raise CommandError(
-            f"{path.name} must contain a 'receipts' list."
-        )
+        raise CommandError(f"{path.name} must contain a 'receipts' list.")
 
     for receipt_index, receipt in enumerate(receipts, start=1):
         if not isinstance(receipt, dict):
@@ -549,8 +527,7 @@ def _load_batch_items_from_receipt(
 
     if not isinstance(source, dict):
         raise CommandError(
-            f"{path.name} receipt #{receipt_index} must contain "
-            "a 'source' object."
+            f"{path.name} receipt #{receipt_index} must contain a 'source' object."
         )
 
     supplier = receipt.get("supplier", {})
@@ -565,8 +542,7 @@ def _load_batch_items_from_receipt(
 
     if not isinstance(items, list):
         raise CommandError(
-            f"{path.name} receipt #{receipt_index} must contain "
-            "an 'items' list."
+            f"{path.name} receipt #{receipt_index} must contain an 'items' list."
         )
 
     received_date = _required_source_field(
@@ -630,9 +606,7 @@ def _load_order_records(directory: Path) -> Iterator[dict[str, Any]]:
         return
 
     if not directory.is_dir():
-        raise CommandError(
-            f"Order catalog path is not a directory: {directory}"
-        )
+        raise CommandError(f"Order catalog path is not a directory: {directory}")
 
     for path in sorted(directory.glob("*.json")):
         yield from _load_order_records_from_file(path)

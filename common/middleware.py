@@ -61,10 +61,7 @@ class LoginRequiredMiddleware:
             "/favicon.ico",
         )
 
-        return any(
-            prefix and path.startswith(prefix)
-            for prefix in exempt_prefixes
-        )
+        return any(prefix and path.startswith(prefix) for prefix in exempt_prefixes)
 
     @staticmethod
     def _is_auth_exempt_view(path: str) -> bool:

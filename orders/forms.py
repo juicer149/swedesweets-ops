@@ -24,7 +24,6 @@ from products.presentation import (
 )
 from products.units import quantity_to_units
 
-
 DEFAULT_ORDER_LINE_COUNT = 1
 MIN_ORDER_QUANTITY = Decimal("0.001")
 
@@ -304,12 +303,11 @@ class OrderLineForm(forms.Form):
 
         available_units = self.available_units_by_product_id.get(product.id)
 
-        if (
-            is_unusually_large_order_line(quantity=quantity_in_units)
-            and not _is_stock_shortage(
-                requested_quantity=quantity_in_units,
-                available_quantity=available_units,
-            )
+        if is_unusually_large_order_line(
+            quantity=quantity_in_units
+        ) and not _is_stock_shortage(
+            requested_quantity=quantity_in_units,
+            available_quantity=available_units,
         ):
             self.add_error(
                 "quantity",
@@ -400,30 +398,22 @@ class BaseOrderLineFormSet(BaseFormSet):
                 product_name = product_names_by_id[product_id]
 
                 raise forms.ValidationError(
-                    (
-                        f"Only {product.stock_quantity_label(available_quantity)} "
-                        f"available for {product_name}."
-                    )
+                    f"Only {product.stock_quantity_label(available_quantity)} "
+                    f"available for {product_name}."
                 )
 
             if is_unusually_large_order_line(quantity=requested_quantity):
                 product_name = product_names_by_id[product_id]
 
                 raise forms.ValidationError(
-                    (
-                        f"{product_name} is unusually large. "
-                        f"Maximum is {product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
-                        "per order."
-                    )
+                    f"{product_name} is unusually large. "
+                    f"Maximum is {product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
+                    "per order."
                 )
 
     @property
     def order_line_forms(self) -> list[OrderLineForm]:
-        return [
-            form
-            for form in self.forms
-            if form.has_line_data
-        ]
+        return [form for form in self.forms if form.has_line_data]
 
 
 OrderLineFormSet = formset_factory(
@@ -459,10 +449,7 @@ class OrderCancelForm(forms.Form):
 def build_order_line_inputs(
     formset: BaseFormSet,
 ) -> list[OrderLineInput]:
-    return [
-        form.to_order_line_input()
-        for form in formset.order_line_forms
-    ]
+    return [form.to_order_line_input() for form in formset.order_line_forms]
 
 
 def build_order_line_initial_data(order: Order) -> list[dict[str, object]]:

@@ -13,7 +13,6 @@ from django.db import IntegrityError, transaction
 from customers.errors import InvalidCustomerData
 from customers.models import Customer, normalize_customer_email
 
-
 CUSTOMER_EMAIL_EXISTS_MESSAGE = "Customer with email {email} already exists"
 
 
@@ -28,9 +27,7 @@ def _ensure_customer_email_is_available(
         customers = customers.exclude(pk=exclude_customer.pk)
 
     if customers.exists():
-        raise InvalidCustomerData(
-            CUSTOMER_EMAIL_EXISTS_MESSAGE.format(email=email)
-        )
+        raise InvalidCustomerData(CUSTOMER_EMAIL_EXISTS_MESSAGE.format(email=email))
 
 
 @transaction.atomic
