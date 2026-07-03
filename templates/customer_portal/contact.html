@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Contact SwedeSweets" %} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="customer-contact-title" title=_("Contact SwedeSweets") description=_("Need help with an order, delivery, or your account? Contact us directly.") %}
+
+<section
+  class="list-section portal-contact-section"
+  aria-labelledby="customer-contact-title"
+>
+<article class="content-card portal-contact-card">
+    <div class="content-card__body">
+      <div class="detail-list">
+        <div class="detail-list__item">
+          {% include "includes/ui/icon_block.html" with name="mail" size="sm" class_name="detail-list__icon" only %}
+
+          <div>
+            <p class="detail-list__label">{% trans "Email" %}</p>
+            <a class="detail-list__value detail-list__link" href="mailto:info@swedesweets.se">
+              info@swedesweets.se
+            </a>
+          </div>
+        </div>
+
+        <div class="detail-list__item">
+          {% include "includes/ui/icon_block.html" with name="phone" size="sm" class_name="detail-list__icon" only %}
+
+          <div>
+            <p class="detail-list__label">{% trans "Phone" %}</p>
+            <a class="detail-list__value detail-list__link" href="tel:+46739756195">
+              +46 (73) 975 61 95
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+{% endblock %}

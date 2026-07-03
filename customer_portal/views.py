@@ -438,7 +438,7 @@ def edit_profile(request):
 
 @login_required
 def contact(request):
-    return HttpResponse(_("Contact SwedeSweets"))
+    return render(request, "customer_portal/contact.html")
 
 
 def _safe_next_url(request) -> str | None:
