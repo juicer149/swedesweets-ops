@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-03 16:33+0200\n"
+"POT-Creation-Date: 2026-07-05 16:22+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -241,7 +241,7 @@ msgstr "Personnel interne · %(access_level)s"
 msgid "Order details"
 msgstr "Détails de la commande"
 
-#: customer_portal/detail_viewmodels.py:129 customer_portal/views.py:82
+#: customer_portal/detail_viewmodels.py:129 customer_portal/views.py:89
 #: templates/customer_portal/includes/detail_panel_order.html:5
 msgid "Order"
 msgstr "Commande"
@@ -301,7 +301,7 @@ msgstr "Choisir un produit"
 msgid "Choose a valid available product."
 msgstr "Choisissez un produit disponible valide."
 
-#: customer_portal/forms.py:48 customer_portal/views.py:85
+#: customer_portal/forms.py:48 customer_portal/views.py:92
 #: templates/customer_portal/includes/detail_panel_items.html:9
 #: templates/customer_portal/review_order.html:29
 msgid "Quantity"
@@ -452,63 +452,64 @@ msgstr "Voir votre historique de commandes"
 msgid "No location added"
 msgstr "Aucune localisation ajoutée"
 
-#: customer_portal/views.py:74
+#: customer_portal/views.py:81
 msgid "All"
 msgstr "Toutes"
 
-#: customer_portal/views.py:83
+#: customer_portal/views.py:90
 #: templates/customer_portal/includes/detail_panel_order.html:15
 msgid "Created"
 msgstr "Créée"
 
-#: customer_portal/views.py:84
+#: customer_portal/views.py:91
 #: templates/accounts/includes/detail_panel_account.html:28
 #: templates/customer_portal/includes/detail_panel_order.html:10
 msgid "Status"
 msgstr "Statut"
 
-#: customer_portal/views.py:90
+#: customer_portal/views.py:97
 msgid "Order filters"
 msgstr "Filtres des commandes"
 
-#: customer_portal/views.py:156 customer_portal/views.py:357
+#: customer_portal/views.py:162 customer_portal/views.py:326
 msgid "Draft order saved."
 msgstr "Brouillon de commande enregistré."
 
-#: customer_portal/views.py:163
+#: customer_portal/views.py:164
 msgid "Draft cleared."
 msgstr "Brouillon de commande effacé."
 
-#: customer_portal/views.py:170
+#: customer_portal/views.py:166
 msgid "Nothing to save."
 msgstr "Rien à enregistrer."
 
-#: customer_portal/views.py:251 customer_portal/views.py:348
+#: customer_portal/views.py:242 customer_portal/views.py:281
+#: customer_portal/views.py:321 customer_portal/views.py:367
 msgid "Unknown order action."
 msgstr "Action non reconnue pour cette commande."
 
-#: customer_portal/views.py:268 customer_portal/views.py:374
+#: customer_portal/views.py:257 customer_portal/views.py:340
 msgid "Draft order discarded."
 msgstr "Brouillon de commande supprimé."
 
-#: customer_portal/views.py:334
+#: customer_portal/views.py:312
 msgid "No draft order to review."
 msgstr "Aucun brouillon de commande à vérifier."
 
-#: customer_portal/views.py:391
+#: customer_portal/views.py:356
 #, python-format
 msgid "Order #%(order_id)s placed."
 msgstr "Commande n° %(order_id)s passée."
 
-#: customer_portal/views.py:426
+#: customer_portal/views.py:395
 msgid "Customer catalog"
 msgstr "Catalogue"
 
-#: customer_portal/views.py:431
+#: customer_portal/views.py:400
 msgid "My profile"
 msgstr "Mon profil"
 
-#: customer_portal/views.py:436
+#: customer_portal/views.py:405
 msgid "Edit my profile"
 msgstr "Modifier mon profil"
 
@@ -807,8 +808,8 @@ msgstr "Contacter SwedeSweets"
 msgid ""
 "Need help with an order, delivery, or your account? Contact us directly."
 msgstr ""
-"Besoin d’aide pour une commande, une livraison ou votre compte ? "
-"Contactez-nous directement."
+"Besoin d’aide pour une commande, une livraison ou votre compte ? Contactez-"
+"nous directement."
 
 #: templates/customer_portal/contact.html:31
 msgid "Phone"
@@ -950,7 +951,7 @@ msgid "Logout"
 msgstr "Déconnexion"
 
 #: templates/includes/navbar.html:91 templates/registration/login.html:4
-#: templates/registration/login.html:15 templates/registration/login.html:74
+#: templates/registration/login.html:15 templates/registration/login.html:70
 msgid "Login"
 msgstr "Connexion"
 
@@ -975,12 +976,12 @@ msgid "Back"
 msgstr "Retour"
 
 #: templates/registration/login.html:12
-msgid "Operations"
-msgstr "Opérations"
+msgid "SwedeSweets"
+msgstr "SwedeSweets"
 
 #: templates/registration/login.html:19
-msgid "Sign in to access SwedeSweets operations."
-msgstr "Connectez-vous pour accéder aux opérations SwedeSweets."
+msgid "Sign in to access your SwedeSweets account."
+msgstr "Connectez-vous pour accéder à votre compte SwedeSweets."
 
 #: templates/registration/login.html:34
 msgid "Username"
@@ -990,7 +991,7 @@ msgstr "Nom d’utilisateur"
 msgid "Password"
 msgstr "Mot de passe"
 
-#: templates/registration/login.html:81
+#: templates/registration/login.html:77
 msgid "Forgot password?"
 msgstr "Mot de passe oublié ?"
 
@@ -1125,6 +1126,9 @@ msgstr ""
 #: templates/registration/password_reset_form.html:13
 msgid "Send reset link"
 msgstr "Envoyer le lien de réinitialisation"
+
+#~ msgid "Operations"
+#~ msgstr "Opérations"
 
 #~ msgid "No draft order to discard."
 #~ msgstr "Aucune brouillon de commande à vérifier."

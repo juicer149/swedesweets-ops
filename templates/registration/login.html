@@ -5,18 +5,18 @@
 
 {% block content %}
 <section class="auth-page" aria-labelledby="login-title">
-  <form class="auth-card" method="post">
+  <form class="auth-card" method="post" action="{% url 'login' %}">
     {% csrf_token %}
 
     <header class="auth-card__header">
-      <p class="auth-card__eyebrow">{% trans "Operations" %}</p>
+      <p class="auth-card__eyebrow">{% trans "SwedeSweets" %}</p>
 
       <h1 id="login-title" class="auth-card__title">
         {% trans "Login" %}
       </h1>
 
       <p class="auth-card__description">
-        {% trans "Sign in to access SwedeSweets operations." %}
+        {% trans "Sign in to access your SwedeSweets account." %}
       </p>
     </header>
 
@@ -61,10 +61,6 @@
         {% endif %}
       </div>
     </div>
-
-    {% if next %}
-      <input type="hidden" name="next" value="{{ next }}">
-    {% endif %}
 
     <div class="form-actions auth-card__actions">
       <button
