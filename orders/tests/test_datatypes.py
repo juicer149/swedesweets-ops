@@ -6,7 +6,7 @@ import pytest
 
 from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
-from products.units import ORDER_UNIT_GRAMS, ORDER_UNIT_KG, ORDER_UNIT_STOCK
+from products.units import OrderUnit
 
 
 @pytest.mark.django_db
@@ -72,7 +72,7 @@ def test_order_line_input_normalizes_quantity_and_unit(apple):
     )
 
     assert line.quantity == Decimal("25.0")
-    assert line.unit == ORDER_UNIT_KG
+    assert line.unit == OrderUnit.KG 
     assert line.resolve_product_id() == apple.id
 
 
@@ -96,13 +96,13 @@ def test_order_line_input_factories_normalize_quantity_and_unit(apple):
     )
 
     assert units.quantity == Decimal("10")
-    assert units.unit == ORDER_UNIT_STOCK
+    assert units.unit == OrderUnit.STOCK
 
     assert stock_units.quantity == Decimal("11")
-    assert stock_units.unit == ORDER_UNIT_STOCK
+    assert stock_units.unit == OrderUnit.STOCK
 
     assert kg.quantity == Decimal("25.0")
-    assert kg.unit == ORDER_UNIT_KG
+    assert kg.unit == OrderUnit.KG
 
     assert grams.quantity == Decimal("25000")
-    assert grams.unit == ORDER_UNIT_GRAMS
+    assert grams.unit == OrderUnit.GRAMS

@@ -75,13 +75,13 @@ PRODUCT_STOCK_STATUS_OUT = StatusPresentation(
 
 
 def batch_status_presentation(batch: InventoryBatch) -> StatusPresentation:
-    if batch.status == InventoryBatch.Status.ACTIVE:
-        return INVENTORY_STATUS_ACTIVE
-
-    if batch.status == InventoryBatch.Status.DEPLETED:
-        return INVENTORY_STATUS_DEPLETED
-
-    return INVENTORY_STATUS_CLOSED
+    match batch.status:
+        case InventoryBatch.Status.ACTIVE:
+            return INVENTORY_STATUS_ACTIVE
+        case InventoryBatch.Status.DEPLETED:
+            return INVENTORY_STATUS_DEPLETED
+        case _:
+            return INVENTORY_STATUS_CLOSED
 
 
 def product_stock_status_presentation(
@@ -101,26 +101,25 @@ def batch_detail_status_class(batch: InventoryBatch) -> str:
 
 
 def batch_status_icon(batch: InventoryBatch) -> str:
-    if batch.status == InventoryBatch.Status.ACTIVE:
-        return "box"
-
-    if batch.status == InventoryBatch.Status.DEPLETED:
-        return "packed"
-
-    return "x"
+    match batch.status:
+        case InventoryBatch.Status.ACTIVE:
+            return "box"
+        case InventoryBatch.Status.DEPLETED:
+            return "packed"
+        case _:
+            return "x"
 
 
 def batch_detail_card_class(batch: InventoryBatch) -> str:
-    if batch.status == InventoryBatch.Status.ACTIVE:
-        return "content-card--deliver"
-
-    if batch.status == InventoryBatch.Status.DEPLETED:
-        return "content-card--pack"
-
-    if batch.status == InventoryBatch.Status.CLOSED:
-        return "content-card--muted"
-
-    return ""
+    match batch.status:
+        case InventoryBatch.Status.ACTIVE:
+            return "content-card--deliver"
+        case InventoryBatch.Status.DEPLETED:
+            return "content-card--pack"
+        case InventoryBatch.Status.CLOSED:
+            return "content-card--muted"
+        case _:
+            return ""
 
 
 def batch_quantity_label(batch: InventoryBatch) -> str:

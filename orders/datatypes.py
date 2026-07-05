@@ -29,7 +29,7 @@ from typing import Self
 
 from orders.errors import InvalidOrderOperation
 from products.models import Product
-from products.units import ORDER_UNIT_GRAMS, ORDER_UNIT_KG, ORDER_UNIT_STOCK
+from products.units import OrderUnit, normalize_order_unit
 
 Quantity = Decimal | int | float | str
 
@@ -44,13 +44,13 @@ def to_decimal(value: Quantity) -> Decimal:
 @dataclass(frozen=True)
 class OrderLineInput:
     quantity: Decimal
-    unit: str
+    unit: OrderUnit
     product_id: int | None = None
     product: Product | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "quantity", to_decimal(self.quantity))
-        object.__setattr__(self, "unit", self.unit.strip().lower())
+        object.__setattr__(self, "unit", normalize_order_unit(self.unit))
 
     @classmethod
     def units(
@@ -64,7 +64,7 @@ class OrderLineInput:
             product=product,
             product_id=product_id,
             quantity=Decimal(quantity),
-            unit=ORDER_UNIT_STOCK,
+            unit=OrderUnit.STOCK,
         )
 
     @classmethod
@@ -93,7 +93,7 @@ class OrderLineInput:
             product=product,
             product_id=product_id,
             quantity=Decimal(str(kg)),
-            unit=ORDER_UNIT_KG,
+            unit=OrderUnit.KG,
         )
 
     @classmethod
@@ -108,7 +108,7 @@ class OrderLineInput:
             product=product,
             product_id=product_id,
             quantity=Decimal(grams),
-            unit=ORDER_UNIT_GRAMS,
+            unit=OrderUnit.GRAMS,
         )
 
     def resolve_product_id(self) -> int:

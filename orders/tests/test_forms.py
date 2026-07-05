@@ -21,7 +21,7 @@ from orders.models import Order, OrderLine
 from orders.product_choices import build_product_choice_context
 from orders.services import create_order
 from orders.tests.conftest import TODAY
-from products.units import ORDER_UNIT_GRAMS, ORDER_UNIT_KG, ORDER_UNIT_STOCK
+from products.units import OrderUnit
 
 
 @pytest.mark.django_db
@@ -63,7 +63,7 @@ def test_order_line_form_accepts_valid_line(apple):
     form = OrderLineForm(
         data={
             "product": str(apple.pk),
-            "unit": ORDER_UNIT_STOCK,
+            "unit": OrderUnit.STOCK,
             "quantity": "10",
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
@@ -76,7 +76,7 @@ def test_order_line_form_accepts_valid_line(apple):
 
     assert form.cleaned_data["product"] == apple
     assert form.cleaned_data["quantity"] == Decimal("10")
-    assert form.cleaned_data["unit"] == ORDER_UNIT_STOCK
+    assert form.cleaned_data["unit"] == OrderUnit.STOCK
     assert form.cleaned_data["quantity_in_units"] == 10
     assert form.has_line_data is True
 
@@ -101,7 +101,7 @@ def test_order_line_form_requires_product_when_quantity_is_present(apple):
     form = OrderLineForm(
         data={
             "product": "",
-            "unit": ORDER_UNIT_STOCK,
+            "unit": OrderUnit.STOCK,
             "quantity": "10",
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
@@ -116,7 +116,7 @@ def test_order_line_form_requires_quantity_when_product_is_present(apple):
     form = OrderLineForm(
         data={
             "product": str(apple.pk),
-            "unit": ORDER_UNIT_STOCK,
+            "unit": OrderUnit.STOCK,
             "quantity": "",
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
@@ -141,7 +141,7 @@ def test_order_line_form_defaults_missing_unit_to_stock_unit(apple):
     )
 
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["unit"] == ORDER_UNIT_STOCK
+    assert form.cleaned_data["unit"] == OrderUnit.STOCK
 
 
 @pytest.mark.django_db
@@ -149,7 +149,7 @@ def test_order_line_form_accepts_kg_quantity(apple):
     form = OrderLineForm(
         data={
             "product": str(apple.pk),
-            "unit": ORDER_UNIT_KG,
+            "unit": OrderUnit.KG,
             "quantity": "12.5",
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
@@ -160,7 +160,7 @@ def test_order_line_form_accepts_kg_quantity(apple):
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["quantity"] == Decimal("12.5")
-    assert form.cleaned_data["unit"] == ORDER_UNIT_KG
+    assert form.cleaned_data["unit"] == OrderUnit.KG
     assert form.cleaned_data["quantity_in_units"] == 3
 
 
@@ -169,7 +169,7 @@ def test_order_line_form_accepts_grams_quantity(apple):
     form = OrderLineForm(
         data={
             "product": str(apple.pk),
-            "unit": ORDER_UNIT_GRAMS,
+            "unit": OrderUnit.GRAMS,
             "quantity": "12000",
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
@@ -180,7 +180,7 @@ def test_order_line_form_accepts_grams_quantity(apple):
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["quantity"] == Decimal("12000")
-    assert form.cleaned_data["unit"] == ORDER_UNIT_GRAMS
+    assert form.cleaned_data["unit"] == OrderUnit.GRAMS
     assert form.cleaned_data["quantity_in_units"] == 3
 
 
@@ -189,7 +189,7 @@ def test_order_line_form_accepts_line_before_formset_stock_validation(apple):
     form = OrderLineForm(
         data={
             "product": str(apple.pk),
-            "unit": ORDER_UNIT_STOCK,
+            "unit": OrderUnit.STOCK,
             "quantity": "11",
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
@@ -207,7 +207,7 @@ def test_order_line_form_rejects_unusually_large_line(apple):
     form = OrderLineForm(
         data={
             "product": str(apple.pk),
-            "unit": ORDER_UNIT_STOCK,
+            "unit": OrderUnit.STOCK,
             "quantity": str(MAX_UNITS_PER_PRODUCT_PER_ORDER + 1),
         },
         product_queryset=type(apple).objects.filter(pk=apple.pk),
@@ -247,7 +247,7 @@ def test_order_line_formset_rejects_more_than_available_stock(apple, stocked_inv
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
             "form-0-product": str(apple.pk),
-            "form-0-unit": ORDER_UNIT_STOCK,
+            "form-0-unit": OrderUnit.STOCK,
             "form-0-quantity": "151",
         },
     )
@@ -265,7 +265,7 @@ def test_order_line_formset_accepts_available_stock(apple, stocked_inventory):
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
             "form-0-product": str(apple.pk),
-            "form-0-unit": ORDER_UNIT_STOCK,
+            "form-0-unit": OrderUnit.STOCK,
             "form-0-quantity": "150",
         },
     )
@@ -277,7 +277,7 @@ def test_order_line_formset_accepts_available_stock(apple, stocked_inventory):
     assert len(inputs) == 1
     assert inputs[0].product == apple
     assert inputs[0].quantity == Decimal("150")
-    assert inputs[0].unit == ORDER_UNIT_STOCK
+    assert inputs[0].unit == OrderUnit.STOCK
 
 
 @pytest.mark.django_db
@@ -405,7 +405,7 @@ def test_build_order_line_initial_data(customer, apple, stocked_inventory):
     assert build_order_line_initial_data(order) == [
         {
             "product": apple.id,
-            "unit": ORDER_UNIT_STOCK,
+            "unit": OrderUnit.STOCK,
             "quantity": Decimal("10.000"),
         }
     ]
