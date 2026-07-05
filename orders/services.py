@@ -363,23 +363,29 @@ def _normalize_order_lines(
     *,
     lines: Iterable[OrderLineInput],
 ) -> list[NormalizedOrderLine]:
-    """Normalize input lines to stock units and merge duplicate products.
-
-    The database should contain one OrderLine per product per order. This function
-    enforces that rule in the service layer before the unique database constraint
-    acts as the final safety net.
-    """
-
     line_inputs = list(lines)
 
     if not line_inputs:
         return []
 
-    quantity_by_product_id: dict[int, int] = defaultdict(int)
-    products_by_id: dict[int, Product] = {}
+    resolved_inputs = [
+        (line_input, line_input.resolve_product_id()) for line_input in line_inputs
+    ]
 
-    for line_input in line_inputs:
-        product = Product.objects.get(pk=line_input.resolve_product_id())
+    products_by_id = Product.objects.in_bulk(
+        product_id for _, product_id in resolved_inputs
+    )
+
+    quantity_by_product_id: dict[int, int] = defaultdict(int)
+
+    for line_input, product_id in resolved_inputs:
+        try:
+            product = products_by_id[product_id]
+        except KeyError as exc:
+            raise InvalidOrderOperation(
+                f"Product {product_id} does not exist"
+            ) from exc
+
         unit = normalize_order_unit(str(line_input.unit))
 
         quantity = quantity_to_units(
@@ -391,8 +397,7 @@ def _normalize_order_lines(
         if quantity <= 0:
             raise InvalidOrderOperation("order line quantity must be positive")
 
-        quantity_by_product_id[product.id] += quantity
-        products_by_id[product.id] = product
+        quantity_by_product_id[product_id] += quantity
 
     return [
         NormalizedOrderLine(
