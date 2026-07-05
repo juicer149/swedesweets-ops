@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+from enum import StrEnum
 
 from customers.models import Customer
 from inventory.errors import InvalidStockOperation
@@ -14,9 +15,11 @@ from orders.services import (
     replace_draft_order_lines,
 )
 
-DRAFT_SAVED = "saved"
-DRAFT_CLEARED = "cleared"
-DRAFT_UNCHANGED = "unchanged"
+
+class DraftStatus(StrEnum):
+    SAVED = "saved"
+    CLEARED = "cleared"
+    UNCHANGED = "unchanged"
 
 
 PORTAL_DRAFT_OPERATION_ERRORS = (
@@ -29,7 +32,7 @@ PORTAL_DRAFT_OPERATION_ERRORS = (
 class PortalDraftMutationResult:
     draft_order: Order | None
     succeeded: bool
-    status: str
+    status: DraftStatus
     errors: tuple[str, ...] = ()
 
 
@@ -94,7 +97,7 @@ def save_or_clear_portal_draft_order(
 
     return _succeeded(
         draft_order=draft_order,
-        status=DRAFT_SAVED,
+        status=DraftStatus.SAVED
     )
 
 
@@ -124,7 +127,7 @@ def discard_portal_draft_order(
     if draft_order is None:
         return _succeeded(
             draft_order=None,
-            status=DRAFT_UNCHANGED,
+            status=DraftStatus.UNCHANGED,
         )
 
     try:
@@ -135,7 +138,7 @@ def discard_portal_draft_order(
             errors=(str(error),),
         )
 
-    status = DRAFT_CLEARED if empty_save else DRAFT_CLEARED
+    status = DraftStatus.CLEARED
 
     return _succeeded(
         draft_order=None,
@@ -160,7 +163,7 @@ def _validate_optional_order_customer_scope(
 def _succeeded(
     *,
     draft_order: Order | None,
-    status: str,
+    status: DraftStatus,
 ) -> PortalDraftMutationResult:
     return PortalDraftMutationResult(
         draft_order=draft_order,
@@ -178,6 +181,6 @@ def _failed(
     return PortalDraftMutationResult(
         draft_order=draft_order,
         succeeded=False,
-        status=DRAFT_UNCHANGED,
+        status=DraftStatus.UNCHANGED,
         errors=errors,
     )
