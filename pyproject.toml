@@ -26,6 +26,7 @@ testpaths = [
     "orders",
     "customers",
     "accounts",
+    "customer_portal",
 ]
 addopts = [
     "-ra",
