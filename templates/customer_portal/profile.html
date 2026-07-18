@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans "My profile" %} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% trans "My profile" as profile_title %}
+{% trans "Update your store contact and delivery details." as profile_description %}
+{% include "includes/ui/page_header.html" with title_id="customer-profile-title" title=profile_title description=profile_description %}
+
+<section
+  class="list-section portal-profile-section"
+  aria-labelledby="customer-profile-title"
+>
+  <form class="content-card content-card--wide portal-profile-card" method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="content-card__body">
+      <p class="form-help">
+        {% trans "Changes apply to future orders. Existing orders keep the delivery details that were saved when the order was placed." %}
+      </p>
+
+      {% if form.non_field_errors %}
+        <div class="form-errors" role="alert">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="form-grid">
+        {% for field in form %}
+          <div class="form-field {{ field.field.layout_class }}{% if field.errors %} form-field--error{% endif %}">
+            <label class="form-label" for="{{ field.id_for_label }}">
+              {{ field.label }}
+            </label>
+
+            {{ field }}
+
+            {% if field.help_text %}
+              <p class="form-help">{{ field.help_text }}</p>
+            {% endif %}
+
+            {% if field.errors %}
+              <div class="form-field__errors" role="alert">
+                {% for error in field.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <footer class="form-actions content-card__footer">
+      <button
+        class="button button--lg button--solid button--tone-place"
+        type="submit"
+      >
+        {% trans "Save profile" %}
+      </button>
+
+      <a
+        class="button button--md button--ghost button--tone-neutral"
+        href="{% url 'customer_portal:index' %}"
+      >
+        {% trans "Cancel" %}
+      </a>
+    </footer>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/enhanced_selects.js' %}" defer></script>
+{% endblock %}

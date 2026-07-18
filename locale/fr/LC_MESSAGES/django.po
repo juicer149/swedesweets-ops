@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-05 16:22+0200\n"
+"POT-Creation-Date: 2026-07-18 15:34+0200\n"
 "PO-Revision-Date: 2026-06-16 14:30+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -126,8 +126,8 @@ msgid "Catalog"
 msgstr "Catalogue"
 
 #: accounts/navigation.py:108
-msgid "Profile"
-msgstr "Profil"
+msgid "Store profile"
+msgstr "Profil du magasin"
 
 #: accounts/navigation.py:117
 msgid "Contact"
@@ -241,7 +241,7 @@ msgstr "Personnel interne · %(access_level)s"
 msgid "Order details"
 msgstr "Détails de la commande"
 
-#: customer_portal/detail_viewmodels.py:129 customer_portal/views.py:89
+#: customer_portal/detail_viewmodels.py:129 customer_portal/views.py:93
 #: templates/customer_portal/includes/detail_panel_order.html:5
 msgid "Order"
 msgstr "Commande"
@@ -286,65 +286,143 @@ msgstr "Enregistrer et quitter"
 msgid "Discard draft"
 msgstr "Abandonner"
 
-#: customer_portal/forms.py:31
+#: customer_portal/forms.py:39
 #: templates/customer_portal/includes/detail_panel_items.html:8
 #: templates/customer_portal/review_order.html:27
 #: templates/orders/includes/order_line_form.html:7
 msgid "Product"
 msgstr "Produit"
 
-#: customer_portal/forms.py:32
+#: customer_portal/forms.py:40
 msgid "Choose product"
 msgstr "Choisir un produit"
 
-#: customer_portal/forms.py:34
+#: customer_portal/forms.py:42
 msgid "Choose a valid available product."
 msgstr "Choisissez un produit disponible valide."
 
-#: customer_portal/forms.py:48 customer_portal/views.py:92
+#: customer_portal/forms.py:56 customer_portal/views.py:96
 #: templates/customer_portal/includes/detail_panel_items.html:9
 #: templates/customer_portal/review_order.html:29
 msgid "Quantity"
 msgstr "Quantité"
 
-#: customer_portal/forms.py:50
+#: customer_portal/forms.py:58
 msgid "Enter a whole number of units."
 msgstr "Saisissez un nombre entier d’unités."
 
-#: customer_portal/forms.py:51
+#: customer_portal/forms.py:59
 msgid "Quantity must be at least 1."
 msgstr "La quantité doit être d’au moins 1."
 
-#: customer_portal/forms.py:52
+#: customer_portal/forms.py:60
 msgid "Quantity is too large."
 msgstr "La quantité est trop élevée."
 
-#: customer_portal/forms.py:56
+#: customer_portal/forms.py:64
 msgid "e.g. 2"
 msgstr "p. ex. 2"
 
-#: customer_portal/forms.py:108
+#: customer_portal/forms.py:116
 msgid "Choose a product for this line."
 msgstr "Choisissez un produit pour cette ligne."
 
-#: customer_portal/forms.py:114
+#: customer_portal/forms.py:122
 msgid "Enter a quantity for this line."
 msgstr "Saisissez une quantité pour cette ligne."
 
-#: customer_portal/forms.py:175
+#: customer_portal/forms.py:183
 msgid "Add at least one product."
 msgstr "Ajoutez au moins un produit."
 
-#: customer_portal/forms.py:201
+#: customer_portal/forms.py:209
 #, python-format
 msgid "Only %(available)s available for %(product)s."
 msgstr "Seulement %(available)s disponibles pour %(product)s."
 
-#: customer_portal/forms.py:213
+#: customer_portal/forms.py:221
 #, python-format
 msgid "%(product)s is unusually large. Maximum is %(maximum)s per order."
 msgstr ""
 "%(product)s est trop volumineux. Le maximum est de %(maximum)s par commande."
+
+#: customer_portal/forms.py:258
+msgid "Store name"
+msgstr "Nom du magasin"
+
+#: customer_portal/forms.py:260
+msgid "Enter the store name."
+msgstr "Saisissez le nom du magasin."
+
+#: customer_portal/forms.py:261
+msgid "Store name is too long."
+msgstr "Le nom du magasin est trop long."
+
+#: customer_portal/forms.py:272
+#: templates/accounts/includes/detail_panel_account.html:5
+#: templates/customer_portal/contact.html:20
+msgid "Email"
+msgstr "E-mail"
+
+#: customer_portal/forms.py:274
+msgid "Enter an email address."
+msgstr "Saisissez une adresse e-mail."
+
+#: customer_portal/forms.py:275
+msgid "Enter a valid email address."
+msgstr "Saisissez une adresse e-mail valide."
+
+#: customer_portal/forms.py:276
+msgid "Email address is too long."
+msgstr "L’adresse e-mail est trop longue."
+
+#: customer_portal/forms.py:287
+msgid "Phone number"
+msgstr "Numéro de téléphone"
+
+#: customer_portal/forms.py:289
+msgid "Enter a phone number."
+msgstr "Saisissez un nomero de téléphone."
+
+#: customer_portal/forms.py:290
+msgid "Phone number is too long."
+msgstr "Le numéro de téléphone est trop long."
+
+#: customer_portal/forms.py:301
+msgid "Country"
+msgstr "Pays"
+
+#: customer_portal/forms.py:303
+msgid "Choose a country."
+msgstr "Choisissez un pays."
+
+#: customer_portal/forms.py:304
+msgid "Choose a valid country."
+msgstr "Choisissez un pays valide."
+
+#: customer_portal/forms.py:317
+msgid "City"
+msgstr "Ville"
+
+#: customer_portal/forms.py:319
+msgid "Enter a city."
+msgstr "Saisissez une ville."
+
+#: customer_portal/forms.py:320
+msgid "City is too long."
+msgstr "La ville est trop longue."
+
+#: customer_portal/forms.py:331
+msgid "Address"
+msgstr "Adresse"
+
+#: customer_portal/forms.py:333
+msgid "Enter a street address."
+msgstr "Saisissez une adresse."
+
+#: customer_portal/forms.py:334
+msgid "Address is too long."
+msgstr "L’adresse est trop longue."
 
 #: customer_portal/order_list_viewmodels.py:43
 #: templates/customer_portal/orders.html:4
@@ -452,66 +530,62 @@ msgstr "Voir votre historique de commandes"
 msgid "No location added"
 msgstr "Aucune localisation ajoutée"
 
-#: customer_portal/views.py:81
+#: customer_portal/views.py:85
 msgid "All"
 msgstr "Toutes"
 
-#: customer_portal/views.py:90
+#: customer_portal/views.py:94
 #: templates/customer_portal/includes/detail_panel_order.html:15
 msgid "Created"
 msgstr "Créée"
 
-#: customer_portal/views.py:91
+#: customer_portal/views.py:95
 #: templates/accounts/includes/detail_panel_account.html:28
 #: templates/customer_portal/includes/detail_panel_order.html:10
 msgid "Status"
 msgstr "Statut"
 
-#: customer_portal/views.py:97
+#: customer_portal/views.py:101
 msgid "Order filters"
 msgstr "Filtres des commandes"
 
-#: customer_portal/views.py:162 customer_portal/views.py:326
+#: customer_portal/views.py:166 customer_portal/views.py:330
 msgid "Draft order saved."
 msgstr "Brouillon de commande enregistré."
 
-#: customer_portal/views.py:164
+#: customer_portal/views.py:168
 msgid "Draft cleared."
 msgstr "Brouillon de commande effacé."
 
-#: customer_portal/views.py:166
+#: customer_portal/views.py:170
 msgid "Nothing to save."
 msgstr "Rien à enregistrer."
 
-#: customer_portal/views.py:242 customer_portal/views.py:281
-#: customer_portal/views.py:321 customer_portal/views.py:367
+#: customer_portal/views.py:246 customer_portal/views.py:285
+#: customer_portal/views.py:325 customer_portal/views.py:371
 msgid "Unknown order action."
 msgstr "Action non reconnue pour cette commande."
 
-#: customer_portal/views.py:257 customer_portal/views.py:340
+#: customer_portal/views.py:261 customer_portal/views.py:344
 msgid "Draft order discarded."
 msgstr "Brouillon de commande supprimé."
 
-#: customer_portal/views.py:312
+#: customer_portal/views.py:316
 msgid "No draft order to review."
 msgstr "Aucun brouillon de commande à vérifier."
 
-#: customer_portal/views.py:356
+#: customer_portal/views.py:360
 #, python-format
 msgid "Order #%(order_id)s placed."
 msgstr "Commande n° %(order_id)s passée."
 
-#: customer_portal/views.py:395
+#: customer_portal/views.py:399
 msgid "Customer catalog"
 msgstr "Catalogue"
 
-#: customer_portal/views.py:400
-msgid "My profile"
-msgstr "Mon profil"
-
-#: customer_portal/views.py:405
-msgid "Edit my profile"
-msgstr "Modifier mon profil"
+#: customer_portal/views.py:422
+msgid "Profile updated."
+msgstr "Profil mis à jour."
 
 #: orders/forms.py:93
 #, python-format
@@ -742,11 +816,6 @@ msgstr ""
 "Le système a rencontré une erreur inattendue. Réessayez, ou contactez "
 "l’administrateur du système si le problème persiste."
 
-#: templates/accounts/includes/detail_panel_account.html:5
-#: templates/customer_portal/contact.html:20
-msgid "Email"
-msgstr "E-mail"
-
 #: templates/accounts/includes/detail_panel_account.html:10
 msgid "Role"
 msgstr "Rôle"
@@ -934,6 +1003,31 @@ msgstr ""
 msgid "Leave without saving"
 msgstr "Quitter sans enregistrer"
 
+#: templates/customer_portal/profile.html:4
+#: templates/customer_portal/profile.html:7
+msgid "My profile"
+msgstr "Mon profil"
+
+#: templates/customer_portal/profile.html:8
+msgid "Update your store contact and delivery details."
+msgstr "Mettez à jour les coordonnées et les informations de livraison de votre magasin."
+
+#: templates/customer_portal/profile.html:20
+msgid ""
+"Changes apply to future orders. Existing orders keep the delivery details "
+"that were saved when the order was placed."
+msgstr ""
+"Les modifications s’appliquent aux futures commandes. Les commandes existantes "
+"conservent les informations de livraison enregistrées au moment de la commande."
+
+#: templates/customer_portal/profile.html:61
+msgid "Save profile"
+msgstr "Enregister le profil"
+
+#: templates/customer_portal/profile.html:68 templates/includes/ui/form.html:35
+msgid "Cancel"
+msgstr "Annulée"
+
 #: templates/includes/language_switcher.html:7
 msgid "Language"
 msgstr "Langue"
@@ -958,10 +1052,6 @@ msgstr "Connexion"
 #: templates/includes/ui/form.html:29
 msgid "Save"
 msgstr "Enregistrer"
-
-#: templates/includes/ui/form.html:35
-msgid "Cancel"
-msgstr "Annulée"
 
 #: templates/orders/includes/order_line_form.html:16
 msgid "Remove"
@@ -1126,6 +1216,9 @@ msgstr ""
 #: templates/registration/password_reset_form.html:13
 msgid "Send reset link"
 msgstr "Envoyer le lien de réinitialisation"
+
+#~ msgid "Edit my profile"
+#~ msgstr "Modifier mon profil"
 
 #~ msgid "Operations"
 #~ msgstr "Opérations"

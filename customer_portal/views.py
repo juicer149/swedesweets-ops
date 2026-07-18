@@ -17,6 +17,7 @@ from common.table_controls import (
     TableFilter,
     TableSortField,
 )
+from customers.errors import InvalidCustomerData
 from customer_portal.detail_viewmodels import (
     build_portal_order_detail_context,
 )
@@ -24,7 +25,9 @@ from customer_portal.form_viewmodels import (
     build_portal_place_order_context,
 )
 from customer_portal.forms import (
+    CustomerProfileForm,
     PortalOrderLineFormSet,
+    build_customer_profile_initial_data,
     build_portal_order_line_initial_data,
     build_portal_order_line_inputs,
 )
@@ -43,6 +46,7 @@ from customer_portal.services import (
     DraftStatus,
     discard_portal_draft_order,
     save_or_clear_portal_draft_order,
+    update_portal_customer_profile,
 )
 from customer_portal.viewmodels import (
     RECENT_PORTAL_ORDER_LIMIT,
@@ -397,12 +401,46 @@ def catalog(request):
 
 @login_required
 def profile(request):
-    return HttpResponse(_("My profile"))
+    customer = get_portal_customer_for_user(user=request.user)
+
+    if request.method == "POST":
+        form = CustomerProfileForm(
+            request.POST,
+            customer=customer,
+        )
+
+        if form.is_valid():
+            try:
+                update_portal_customer_profile(
+                    customer=customer,
+                    user=request.user,
+                    **form.cleaned_data,
+                )
+            except InvalidCustomerData as error:
+                form.add_error(None, str(error))
+            else:
+                messages.success(request, _("Profile updated."))
+                return redirect("customer_portal:profile")
+    else:
+        form = CustomerProfileForm(
+            initial=build_customer_profile_initial_data(customer),
+            customer=customer,
+        )
+
+    return render(
+        request,
+        "customer_portal/profile.html",
+        {
+            "form": form,
+            "customer": customer,
+        },
+    )
 
 
+# It just redirects for now to the profile page
 @login_required
 def edit_profile(request):
-    return HttpResponse(_("Edit my profile"))
+    return redirect("customer_portal:profile")
 
 
 @login_required

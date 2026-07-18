@@ -58,6 +58,7 @@ ALLOWED_GET_STATUS_CODES = {
 REDIRECT_VIEW_NAMES = {
     "accounts:after_login",
     "customer_portal:review_order",
+    "customer_portal:edit_profile",
 }
 
 DENIED_STATUS_CODE = 403

@@ -105,7 +105,7 @@ CUSTOMER_PORTAL_CATALOG_NAV_ITEM = NavItem(
 )
 
 CUSTOMER_PORTAL_PROFILE_NAV_ITEM = NavItem(
-    label=_("Profile"),
+    label=_("Store profile"),
     route_name="customer_portal:profile",
     namespace="customer_portal",
     icon="users",
@@ -147,8 +147,8 @@ CUSTOMER_NAV_ITEMS = (
     CUSTOMER_PORTAL_ORDERS_NAV_ITEM,
     # TODO: Add these back in when the customer portal is implemented.
     # CUSTOMER_PORTAL_CATALOG_NAV_ITEM, # NOT IMPLEMENTED YET
-    CUSTOMER_PORTAL_PROFILE_NAV_ITEM, # NOT IMPLEMENTED YET
-    CUSTOMER_PORTAL_CONTACT_NAV_ITEM, # NOT IMPLEMENTED YET
+    CUSTOMER_PORTAL_PROFILE_NAV_ITEM,
+    CUSTOMER_PORTAL_CONTACT_NAV_ITEM,
 )
 
 
