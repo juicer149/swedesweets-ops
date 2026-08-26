@@ -12,6 +12,7 @@ from retail.rules import (
     MAX_RETAIL_ORDER_TOTAL,
     MIN_RETAIL_LINE_QUANTITY,
     is_retail_batch_sellable,
+    is_retail_product_sellable,
     is_supported_retail_destination,
     is_valid_retail_line_quantity,
     is_valid_retail_order_total,
@@ -19,6 +20,7 @@ from retail.rules import (
 from retail.tests.factories import (
     retail_batch_offer_factory,
     retail_postal_area_factory,
+    retail_product_offer_factory,
 )
 
 
@@ -82,11 +84,7 @@ def test_disabled_destination_is_not_supported():
 
 @pytest.mark.django_db
 def test_destination_matching_ignores_country_and_city_case():
-    retail_postal_area_factory(
-        country_code="FR",
-        postal_code="74000",
-        city="Annecy",
-    )
+    retail_postal_area_factory()
 
     assert is_supported_retail_destination(
         country_code="fr",
@@ -97,11 +95,7 @@ def test_destination_matching_ignores_country_and_city_case():
 
 @pytest.mark.django_db
 def test_destination_matching_ignores_surrounding_whitespace():
-    retail_postal_area_factory(
-        country_code="FR",
-        postal_code="74000",
-        city="Annecy",
-    )
+    retail_postal_area_factory()
 
     assert is_supported_retail_destination(
         country_code=" FR ",
@@ -137,7 +131,40 @@ def test_blank_destination_component_is_rejected(
 
 
 @pytest.mark.django_db
-def test_enabled_offer_with_active_stock_and_future_best_before_is_sellable():
+def test_enabled_product_offer_with_price_is_sellable():
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    assert is_retail_product_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_disabled_product_offer_is_not_sellable():
+    offer = retail_product_offer_factory(
+        enabled=False,
+        price=Decimal("12.50"),
+    )
+
+    assert not is_retail_product_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_inactive_product_offer_is_not_sellable():
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    offer.product.active = False
+    offer.product.save(update_fields=["active"])
+
+    assert not is_retail_product_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_enabled_batch_offer_with_active_stock_and_future_best_before_is_sellable():
     offer = retail_batch_offer_factory(
         enabled=True,
         price=Decimal("4.90"),
@@ -152,6 +179,19 @@ def test_disabled_batch_offer_is_not_sellable():
         enabled=False,
         price=Decimal("4.90"),
     )
+
+    assert not is_retail_batch_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_batch_offer_for_inactive_product_is_not_sellable():
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    offer.batch.product.active = False
+    offer.batch.product.save(update_fields=["active"])
 
     assert not is_retail_batch_sellable(offer)
 
@@ -219,7 +259,7 @@ def test_batch_with_best_before_today_is_not_sellable():
 
 
 @pytest.mark.django_db
-def test_future_best_before_is_sellable_even_when_close_to_expiry():
+def test_future_batch_is_sellable_even_when_close_to_expiry():
     today = timezone.localdate()
 
     offer = retail_batch_offer_factory(

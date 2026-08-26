@@ -7,13 +7,18 @@ from django.db import transaction
 from django.utils import timezone
 
 from products.models import Product
-from retail.models import RetailOrder, RetailOrderLine, RetailPrice
+from retail.models import (
+    RetailOrder,
+    RetailOrderLine,
+    RetailProductOffer,
+)
 from retail.rules import (
     MAX_RETAIL_LINE_QUANTITY,
     MAX_RETAIL_ORDER_LINES,
     MAX_RETAIL_ORDER_TOTAL,
     MIN_RETAIL_LINE_QUANTITY,
     RETAIL_PAYMENT_WINDOW,
+    is_retail_product_sellable,
     is_supported_retail_destination,
 )
 
@@ -46,6 +51,15 @@ def create_pending_retail_order(
     buyer: AnonymousBuyerInput,
     lines: list[RetailOrderLineInput],
 ) -> RetailOrder:
+    """Create a pending retail order using current product-level offers.
+
+    Prices are always resolved server-side from enabled RetailProductOffer
+    records and snapshotted onto the resulting order lines.
+
+    Batch-specific offer resolution and inventory reservation are deliberately
+    handled by a later workflow.
+    """
+
     _validate_buyer_destination(buyer)
     _validate_lines(lines)
 
@@ -65,44 +79,61 @@ def create_pending_retail_order(
 
     for line_input in lines:
         product = _get_product(line_input.product_id)
-        price = _get_retail_price(product)
+        offer = _get_retail_product_offer(product)
 
-        line_total = price.amount * line_input.quantity
+        line_total = offer.price * line_input.quantity
 
         RetailOrderLine.objects.create(
             order=order,
             product=product,
             quantity=line_input.quantity,
-            unit_price_snapshot=price.amount,
+            unit_price_snapshot=offer.price,
             line_total=line_total,
         )
 
         total += line_total
 
     if total > MAX_RETAIL_ORDER_TOTAL:
-        raise InvalidRetailOrder("order total exceeds maximum allowed amount")
+        raise InvalidRetailOrder(
+            "order total exceeds maximum allowed amount"
+        )
 
     order.total = total
-    order.save(update_fields=["total", "updated_at"])
+    order.save(
+        update_fields=[
+            "total",
+            "updated_at",
+        ]
+    )
 
     return order
 
 
-def _validate_buyer_destination(buyer: AnonymousBuyerInput) -> None:
+def _validate_buyer_destination(
+    buyer: AnonymousBuyerInput,
+) -> None:
     if not is_supported_retail_destination(
         country_code=buyer.country,
         postal_code=buyer.postal_code,
         city=buyer.city,
     ):
-        raise InvalidRetailOrder("unsupported retail destination")
+        raise InvalidRetailOrder(
+            "unsupported retail destination"
+        )
 
 
-def _validate_lines(lines: list[RetailOrderLineInput]) -> None:
+def _validate_lines(
+    lines: list[RetailOrderLineInput],
+) -> None:
     if not lines:
-        raise InvalidRetailOrder("order must contain at least one line")
+        raise InvalidRetailOrder(
+            "order must contain at least one line"
+        )
 
     if len(lines) > MAX_RETAIL_ORDER_LINES:
-        raise InvalidRetailOrder("order contains too many lines")
+        raise InvalidRetailOrder(
+            "order contains too many lines"
+        )
 
     for line in lines:
         if not (
@@ -110,18 +141,35 @@ def _validate_lines(lines: list[RetailOrderLineInput]) -> None:
             <= line.quantity
             <= MAX_RETAIL_LINE_QUANTITY
         ):
-            raise InvalidRetailOrder("invalid retail line quantity")
+            raise InvalidRetailOrder(
+                "invalid retail line quantity"
+            )
 
 
 def _get_product(product_id: int) -> Product:
     try:
         return Product.objects.get(pk=product_id)
     except Product.DoesNotExist as exc:
-        raise InvalidRetailOrder("product does not exist") from exc
+        raise InvalidRetailOrder(
+            "product does not exist"
+        ) from exc
 
 
-def _get_retail_price(product: Product) -> RetailPrice:
+def _get_retail_product_offer(
+    product: Product,
+) -> RetailProductOffer:
     try:
-        return product.retail_price
-    except RetailPrice.DoesNotExist as exc:
-        raise InvalidRetailOrder("product has no retail price") from exc
+        offer = product.retail_offer
+    except RetailProductOffer.DoesNotExist as exc:
+        raise InvalidRetailOrder(
+            "product has no retail offer"
+        ) from exc
+
+    if not is_retail_product_sellable(offer):
+        raise InvalidRetailOrder(
+            "product is not enabled for retail"
+        )
+
+    assert offer.price is not None
+
+    return offer

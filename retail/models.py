@@ -80,50 +80,63 @@ class RetailPostalArea(models.Model):
         return f"{self.postal_code} {self.city}, {self.country_code}"
 
 
-class RetailPrice(models.Model):
-    """Current default retail price for a product.
+class RetailProductOffer(models.Model):
+    """Retail configuration for one product SKU.
 
-    Batch-specific clearance pricing belongs to RetailBatchOffer.
+    An enabled product offer makes the product generally available through the
+    retail channel. Physical inventory availability is evaluated separately.
+
+    A batch-specific RetailBatchOffer may later override this offer for one
+    physical batch.
     """
 
     product = models.OneToOneField(
         "products.Product",
         on_delete=models.PROTECT,
-        related_name="retail_price",
+        related_name="retail_offer",
     )
-    amount = models.DecimalField(
+    enabled = models.BooleanField(default=False)
+    price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-    )
-    currency = models.CharField(
-        max_length=3,
-        default="EUR",
+        null=True,
+        blank=True,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        indexes = [
+            models.Index(fields=["enabled"]),
+        ]
         constraints = [
             models.CheckConstraint(
-                condition=Q(amount__gt=Decimal("0.00")),
-                name="retail_price_amount_positive",
+                condition=Q(price__isnull=True) | Q(price__gt=Decimal("0.00")),
+                name="retail_product_offer_price_positive_or_null",
+            ),
+            models.CheckConstraint(
+                condition=Q(enabled=False) | Q(price__isnull=False),
+                name="retail_product_offer_enabled_requires_price",
             ),
         ]
 
     def __str__(self) -> str:
-        return f"{self.product}: {self.amount} {self.currency}"
+        state = "enabled" if self.enabled else "disabled"
+        return f"{self.product}: retail {state}"
 
 
 class RetailBatchOffer(models.Model):
     """Retail configuration for one physical inventory batch.
 
     The inventory batch owns physical truth: quantity, expiry and lifecycle.
-    This model only describes whether that batch has deliberately been offered
-    through the retail sales channel and at what price.
 
-    `enabled` expresses operator intent. Actual sellability is derived from this
-    configuration together with current inventory state.
+    This model expresses operator intent for the retail sales channel. An
+    enabled batch offer can expose a batch even when the product does not have a
+    general retail offer.
+
+    When both a product offer and a batch offer apply, the batch offer is the
+    more specific offer and will take precedence when offer resolution is added.
     """
 
     batch = models.OneToOneField(

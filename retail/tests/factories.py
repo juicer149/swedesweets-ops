@@ -10,7 +10,11 @@ from inventory.models import InventoryBatch
 from inventory.tests.factories import batch_factory
 from products.models import Product
 from products.tests.factories import product_factory
-from retail.models import RetailBatchOffer, RetailPostalArea
+from retail.models import (
+    RetailBatchOffer,
+    RetailPostalArea,
+    RetailProductOffer,
+)
 
 
 @dataclass(frozen=True)
@@ -55,6 +59,21 @@ def retail_product_factory(**overrides) -> Product:
     }
 
     return product_factory(**(defaults | overrides))
+
+
+def retail_product_offer_factory(
+    *,
+    product: Product | None = None,
+    enabled: bool = False,
+    price: Decimal | None = None,
+) -> RetailProductOffer:
+    product = product or retail_product_factory()
+
+    return RetailProductOffer.objects.create(
+        product=product,
+        enabled=enabled,
+        price=price,
+    )
 
 
 def retail_inventory_batch_factory(

@@ -10,7 +10,7 @@ from retail.models import (
     RetailBatchOffer,
     RetailOrder,
     RetailOrderLine,
-    RetailPrice,
+    RetailProductOffer,
 )
 from retail.rules import RETAIL_PAYMENT_WINDOW
 from retail.tests.factories import (
@@ -18,6 +18,7 @@ from retail.tests.factories import (
     retail_buyer_data,
     retail_postal_area_factory,
     retail_product_factory,
+    retail_product_offer_factory,
 )
 
 
@@ -82,50 +83,87 @@ def test_same_postal_code_can_represent_different_cities():
 
 
 @pytest.mark.django_db
-def test_retail_price_belongs_to_product():
-    product = retail_product_factory()
+def test_retail_product_offer_belongs_to_product():
+    offer = retail_product_offer_factory()
 
-    price = RetailPrice.objects.create(
-        product=product,
-        amount=Decimal("12.50"),
-        currency="EUR",
-    )
-
-    assert price.product == product
-    assert price.amount == Decimal("12.50")
-    assert price.currency == "EUR"
+    assert offer.product is not None
 
 
 @pytest.mark.django_db
-def test_retail_price_must_be_positive():
-    product = retail_product_factory()
+def test_retail_product_offer_is_disabled_by_default():
+    offer = retail_product_offer_factory()
+
+    assert offer.enabled is False
+
+
+@pytest.mark.django_db
+def test_disabled_retail_product_offer_may_have_no_price():
+    offer = retail_product_offer_factory(
+        enabled=False,
+        price=None,
+    )
+
+    assert offer.price is None
+
+
+@pytest.mark.django_db
+def test_disabled_retail_product_offer_may_have_price():
+    offer = retail_product_offer_factory(
+        enabled=False,
+        price=Decimal("12.50"),
+    )
+
+    assert offer.price == Decimal("12.50")
+
+
+@pytest.mark.django_db
+def test_product_can_have_only_one_retail_offer():
+    offer = retail_product_offer_factory()
 
     with pytest.raises(IntegrityError):
         with transaction.atomic():
-            RetailPrice.objects.create(
-                product=product,
-                amount=Decimal("0.00"),
-                currency="EUR",
+            RetailProductOffer.objects.create(
+                product=offer.product,
+                enabled=False,
             )
 
 
 @pytest.mark.django_db
-def test_product_has_only_one_current_retail_price():
-    product = retail_product_factory()
-
-    RetailPrice.objects.create(
-        product=product,
-        amount=Decimal("12.50"),
-        currency="EUR",
-    )
-
+@pytest.mark.parametrize(
+    "price",
+    [
+        Decimal("0.00"),
+        Decimal("-0.01"),
+    ],
+)
+def test_retail_product_offer_price_must_be_positive_when_present(price):
     with pytest.raises(IntegrityError):
         with transaction.atomic():
-            RetailPrice.objects.create(
-                product=product,
-                amount=Decimal("15.00"),
-                currency="EUR",
+            retail_product_offer_factory(
+                enabled=False,
+                price=price,
             )
+
+
+@pytest.mark.django_db
+def test_enabled_retail_product_offer_requires_price():
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            retail_product_offer_factory(
+                enabled=True,
+                price=None,
+            )
+
+
+@pytest.mark.django_db
+def test_enabled_retail_product_offer_accepts_positive_price():
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    assert offer.enabled is True
+    assert offer.price == Decimal("12.50")
 
 
 @pytest.mark.django_db

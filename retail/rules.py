@@ -6,7 +6,11 @@ from decimal import Decimal
 from django.utils import timezone
 
 from inventory.models import InventoryBatch
-from retail.models import RetailBatchOffer, RetailPostalArea
+from retail.models import (
+    RetailBatchOffer,
+    RetailPostalArea,
+    RetailProductOffer,
+)
 
 
 MIN_RETAIL_LINE_QUANTITY = 1
@@ -46,22 +50,34 @@ def is_supported_retail_destination(
     ).exists()
 
 
+def is_retail_product_sellable(
+    offer: RetailProductOffer,
+) -> bool:
+    """Return whether a product is commercially enabled for retail.
+
+    Physical stock is deliberately not evaluated here. Product offers describe
+    general retail eligibility; inventory availability belongs to the stock and
+    reservation layer.
+    """
+
+    return (
+        offer.enabled
+        and offer.price is not None
+        and offer.price > Decimal("0.00")
+        and offer.product.active
+    )
+
+
 def is_retail_batch_sellable(
     offer: RetailBatchOffer,
     *,
     today: date | None = None,
 ) -> bool:
-    """Return whether an explicitly configured batch can be sold in retail.
+    """Return whether one explicitly configured batch can be sold in retail.
 
-    `offer.enabled` expresses operator intent.
+    Operator intent is combined with current physical batch state.
 
-    Physical eligibility remains derived from the inventory batch:
-    - the batch must be active,
-    - physical stock must remain,
-    - best-before must still be in the future.
-
-    Reservation availability is deliberately not checked here. That belongs to
-    the reservation/use-case layer.
+    Reservation availability is deliberately not checked here.
     """
 
     today = today or timezone.localdate()
@@ -71,6 +87,7 @@ def is_retail_batch_sellable(
         offer.enabled
         and offer.price is not None
         and offer.price > Decimal("0.00")
+        and batch.product.active
         and batch.status == InventoryBatch.Status.ACTIVE
         and batch.quantity > 0
         and batch.best_before > today
