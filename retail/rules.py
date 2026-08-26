@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.utils import timezone
 
 from inventory.models import InventoryBatch
+from inventory.expiry import is_orderable_best_before
 from retail.models import (
     RetailBatchOffer,
     RetailPostalArea,
@@ -90,9 +91,11 @@ def is_retail_batch_sellable(
         and batch.product.active
         and batch.status == InventoryBatch.Status.ACTIVE
         and batch.quantity > 0
-        and batch.best_before > today
+        and is_orderable_best_before(
+            best_before=batch.best_before,
+            today=today,
+        )
     )
-
 
 def is_valid_retail_line_quantity(quantity: int) -> bool:
     return MIN_RETAIL_LINE_QUANTITY <= quantity <= MAX_RETAIL_LINE_QUANTITY
