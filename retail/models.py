@@ -81,6 +81,11 @@ class RetailPostalArea(models.Model):
 
 
 class RetailPrice(models.Model):
+    """Current default retail price for a product.
+
+    Batch-specific clearance pricing belongs to RetailBatchOffer.
+    """
+
     product = models.OneToOneField(
         "products.Product",
         on_delete=models.PROTECT,
@@ -108,6 +113,53 @@ class RetailPrice(models.Model):
 
     def __str__(self) -> str:
         return f"{self.product}: {self.amount} {self.currency}"
+
+
+class RetailBatchOffer(models.Model):
+    """Retail configuration for one physical inventory batch.
+
+    The inventory batch owns physical truth: quantity, expiry and lifecycle.
+    This model only describes whether that batch has deliberately been offered
+    through the retail sales channel and at what price.
+
+    `enabled` expresses operator intent. Actual sellability is derived from this
+    configuration together with current inventory state.
+    """
+
+    batch = models.OneToOneField(
+        "inventory.InventoryBatch",
+        on_delete=models.CASCADE,
+        related_name="retail_offer",
+    )
+    enabled = models.BooleanField(default=False)
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["enabled"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(price__isnull=True) | Q(price__gt=Decimal("0.00")),
+                name="retail_batch_offer_price_positive_or_null",
+            ),
+            models.CheckConstraint(
+                condition=Q(enabled=False) | Q(price__isnull=False),
+                name="retail_batch_offer_enabled_requires_price",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        state = "enabled" if self.enabled else "disabled"
+        return f"{self.batch.batch_id}: retail {state}"
 
 
 class RetailOrder(models.Model):

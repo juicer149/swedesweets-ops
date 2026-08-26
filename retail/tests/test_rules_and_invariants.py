@@ -1,18 +1,25 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
+from django.utils import timezone
 
+from inventory.models import InventoryBatch
 from retail.rules import (
     MAX_RETAIL_LINE_QUANTITY,
     MAX_RETAIL_ORDER_TOTAL,
     MIN_RETAIL_LINE_QUANTITY,
+    is_retail_batch_sellable,
     is_supported_retail_destination,
     is_valid_retail_line_quantity,
     is_valid_retail_order_total,
 )
-from retail.tests.factories import retail_postal_area_factory
+from retail.tests.factories import (
+    retail_batch_offer_factory,
+    retail_postal_area_factory,
+)
 
 
 @pytest.mark.django_db
@@ -126,6 +133,106 @@ def test_blank_destination_component_is_rejected(
         country_code=country_code,
         postal_code=postal_code,
         city=city,
+    )
+
+
+@pytest.mark.django_db
+def test_enabled_offer_with_active_stock_and_future_best_before_is_sellable():
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    assert is_retail_batch_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_disabled_batch_offer_is_not_sellable():
+    offer = retail_batch_offer_factory(
+        enabled=False,
+        price=Decimal("4.90"),
+    )
+
+    assert not is_retail_batch_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_depleted_batch_offer_is_not_sellable():
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    offer.batch.adjust_quantity(quantity=0)
+
+    assert offer.batch.status == InventoryBatch.Status.DEPLETED
+    assert not is_retail_batch_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_closed_batch_offer_is_not_sellable():
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    offer.batch.close()
+
+    assert offer.batch.status == InventoryBatch.Status.CLOSED
+    assert not is_retail_batch_sellable(offer)
+
+
+@pytest.mark.django_db
+def test_expired_batch_offer_is_not_sellable():
+    today = timezone.localdate()
+
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    offer.batch.best_before = today - timedelta(days=1)
+    offer.batch.save(update_fields=["best_before", "updated_at"])
+
+    assert not is_retail_batch_sellable(
+        offer,
+        today=today,
+    )
+
+
+@pytest.mark.django_db
+def test_batch_with_best_before_today_is_not_sellable():
+    today = timezone.localdate()
+
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    offer.batch.best_before = today
+    offer.batch.save(update_fields=["best_before", "updated_at"])
+
+    assert not is_retail_batch_sellable(
+        offer,
+        today=today,
+    )
+
+
+@pytest.mark.django_db
+def test_future_best_before_is_sellable_even_when_close_to_expiry():
+    today = timezone.localdate()
+
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    offer.batch.best_before = today + timedelta(days=1)
+    offer.batch.save(update_fields=["best_before", "updated_at"])
+
+    assert is_retail_batch_sellable(
+        offer,
+        today=today,
     )
 
 
