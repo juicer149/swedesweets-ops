@@ -23,10 +23,13 @@ python_files = ["tests.py", "test_*.py", "*_tests.py"]
 testpaths = [
     "products",
     "inventory",
-    "orders",
-    "customers",
     "accounts",
+    # B2B customer and order management
+    "customers",
     "customer_portal",
+    "orders",
+    # B2C customer and order management
+    "retail",
 ]
 addopts = [
     "-ra",
