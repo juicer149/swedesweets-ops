@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from decimal import Decimal
 
+from products.models import Product
+from products.tests.factories import product_factory
 from retail.models import RetailPostalArea
 
 
@@ -40,3 +43,11 @@ def retail_postal_area_factory(
         city=city,
         enabled=enabled,
     )
+
+
+def retail_product_factory(**overrides) -> Product:
+    defaults = {
+        "name": "Retail Test Product",
+    }
+
+    return product_factory(**(defaults | overrides))
