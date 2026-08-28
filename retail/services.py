@@ -6,10 +6,11 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
+from orders.datatypes import BuyerInput
+from orders.models import Order, OrderLine
 from products.models import Product
 from retail.models import (
-    RetailOrder,
-    RetailOrderLine,
+    RetailCheckoutSession,
     RetailProductOffer,
 )
 from retail.rules import (
@@ -24,10 +25,10 @@ from retail.rules import (
 
 
 class InvalidRetailOrder(ValueError):
-    """Raised when a retail order violates a business invariant."""
+    """Raised when a retail checkout violates a business invariant."""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class AnonymousBuyerInput:
     first_name: str
     last_name: str
@@ -39,10 +40,43 @@ class AnonymousBuyerInput:
     address_line: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class RetailOrderLineInput:
     product_id: int
     quantity: int
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedRetailOrderLine:
+    """Validated retail line with its server-side price snapshot."""
+
+    product: Product
+    quantity: int
+    unit_price: Decimal
+
+    @property
+    def line_total(self) -> Decimal:
+        return self.unit_price * self.quantity
+
+
+def buyer_from_anonymous_retail_input(
+    *,
+    buyer: AnonymousBuyerInput,
+) -> BuyerInput:
+    """Adapt anonymous retail input to the channel-agnostic buyer contract."""
+
+    first_name = " ".join(buyer.first_name.strip().split())
+    last_name = " ".join(buyer.last_name.strip().split())
+
+    return BuyerInput(
+        name=" ".join(part for part in (first_name, last_name) if part),
+        email=buyer.email.strip(),
+        phone_number=buyer.phone_number.strip(),
+        country=buyer.country.strip().upper(),
+        postal_code=buyer.postal_code.strip(),
+        city=" ".join(buyer.city.strip().split()),
+        address_line=" ".join(buyer.address_line.strip().split()),
+    )
 
 
 @transaction.atomic
@@ -50,63 +84,59 @@ def create_pending_retail_order(
     *,
     buyer: AnonymousBuyerInput,
     lines: list[RetailOrderLineInput],
-) -> RetailOrder:
-    """Create a pending retail order using current product-level offers.
+) -> RetailCheckoutSession:
+    """Start an anonymous retail checkout.
 
-    Prices are always resolved server-side from enabled RetailProductOffer
-    records and snapshotted onto the resulting order lines.
+    Retail policy resolves products and prices before persistence.
 
-    Batch-specific offer resolution and inventory reservation are deliberately
-    handled by a later workflow.
+    The channel-agnostic Order owns the durable buyer snapshot, order lines,
+    currency and fulfillment lifecycle. RetailCheckoutSession owns only the
+    short-lived checkout lifetime.
+
+    Inventory reservation and payment are deliberately handled by later
+    workflow slices.
     """
 
     _validate_buyer_destination(buyer)
     _validate_lines(lines)
 
-    order = RetailOrder.objects.create(
-        first_name=buyer.first_name.strip(),
-        last_name=buyer.last_name.strip(),
-        email=buyer.email.strip(),
-        phone_number=buyer.phone_number.strip(),
-        country=buyer.country.strip().upper(),
-        postal_code=buyer.postal_code.strip(),
-        city=" ".join(buyer.city.strip().split()),
-        address_line=" ".join(buyer.address_line.strip().split()),
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
-    )
-
-    total = Decimal("0.00")
-
-    for line_input in lines:
-        product = _get_product(line_input.product_id)
-        offer = _get_retail_product_offer(product)
-
-        line_total = offer.price * line_input.quantity
-
-        RetailOrderLine.objects.create(
-            order=order,
-            product=product,
-            quantity=line_input.quantity,
-            unit_price_snapshot=offer.price,
-            line_total=line_total,
-        )
-
-        total += line_total
+    resolved_lines = _resolve_retail_lines(lines=lines)
+    total = _calculate_order_total(lines=resolved_lines)
 
     if total > MAX_RETAIL_ORDER_TOTAL:
         raise InvalidRetailOrder(
             "order total exceeds maximum allowed amount"
         )
 
-    order.total = total
-    order.save(
-        update_fields=[
-            "total",
-            "updated_at",
+    order = Order(
+        channel=Order.Channel.RETAIL,
+        currency=Order.Currency.EUR,
+        customer=None,
+        status=Order.Status.DRAFT,
+    )
+    order.snapshot_buyer(
+        buyer=buyer_from_anonymous_retail_input(buyer=buyer),
+    )
+    order.save()
+
+    OrderLine.objects.bulk_create(
+        [
+            OrderLine(
+                order=order,
+                product=line.product,
+                quantity=line.quantity,
+                unit=OrderLine.Unit.STOCK_UNIT,
+                quantity_in_units=line.quantity,
+                unit_price_snapshot=line.unit_price,
+            )
+            for line in resolved_lines
         ]
     )
 
-    return order
+    return RetailCheckoutSession.objects.create(
+        order=order,
+        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+    )
 
 
 def _validate_buyer_destination(
@@ -135,6 +165,8 @@ def _validate_lines(
             "order contains too many lines"
         )
 
+    product_ids: set[int] = set()
+
     for line in lines:
         if not (
             MIN_RETAIL_LINE_QUANTITY
@@ -144,6 +176,49 @@ def _validate_lines(
             raise InvalidRetailOrder(
                 "invalid retail line quantity"
             )
+
+        if line.product_id in product_ids:
+            raise InvalidRetailOrder(
+                "duplicate retail product lines are not allowed"
+            )
+
+        product_ids.add(line.product_id)
+
+
+def _resolve_retail_lines(
+    *,
+    lines: list[RetailOrderLineInput],
+) -> list[ResolvedRetailOrderLine]:
+    return [
+        _resolve_retail_line(line=line)
+        for line in lines
+    ]
+
+
+def _resolve_retail_line(
+    *,
+    line: RetailOrderLineInput,
+) -> ResolvedRetailOrderLine:
+    product = _get_product(line.product_id)
+    offer = _get_retail_product_offer(product)
+
+    assert offer.price is not None
+
+    return ResolvedRetailOrderLine(
+        product=product,
+        quantity=line.quantity,
+        unit_price=offer.price,
+    )
+
+
+def _calculate_order_total(
+    *,
+    lines: list[ResolvedRetailOrderLine],
+) -> Decimal:
+    return sum(
+        (line.line_total for line in lines),
+        start=Decimal("0.00"),
+    )
 
 
 def _get_product(product_id: int) -> Product:
