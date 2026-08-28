@@ -1,9 +1,9 @@
 """
 Order application services.
 
-These functions coordinate order use-cases. This module is allowed to orchestrate
-customers, products and inventory, but it should not duplicate customer, product
-or inventory rules.
+These functions coordinate order use-cases. They may orchestrate customers,
+products and inventory, but should not duplicate customer, product or inventory
+rules.
 
 The service layer owns use-case transactions:
     - create draft order
@@ -30,7 +30,7 @@ from django.utils import timezone
 from customers.models import Customer
 from inventory.models import InventoryBatch
 from inventory.services import plan_batch_picks
-from orders.datatypes import OrderLineInput
+from orders.datatypes import BuyerInput, OrderLineInput
 from orders.errors import InvalidOrderOperation
 from orders.models import Allocation, Order, OrderLine
 from products.models import Product
@@ -49,6 +49,20 @@ class NormalizedOrderLine:
     quantity: int
 
 
+def buyer_from_customer(*, customer: Customer) -> BuyerInput:
+    """Adapt a persisted customer to the buyer contract required by orders."""
+
+    return BuyerInput(
+        name=customer.name,
+        email=customer.email,
+        phone_number=customer.phone_number,
+        country=customer.country,
+        city=customer.city,
+        address_line=customer.address_line,
+        postal_code="",
+    )
+
+
 @transaction.atomic
 def create_draft_order(
     *,
@@ -63,6 +77,7 @@ def create_draft_order(
 
     return _create_draft_order(
         customer=customer,
+        buyer=buyer_from_customer(customer=customer),
         lines=lines,
     )
 
@@ -92,7 +107,9 @@ def get_or_create_customer_draft_order(
         return draft
 
     order = Order(customer=customer)
-    order.snapshot_customer()
+    order.snapshot_buyer(
+        buyer=buyer_from_customer(customer=customer),
+    )
 
     try:
         with transaction.atomic():
@@ -179,6 +196,7 @@ def create_order(
 
     order = _create_draft_order(
         customer=customer,
+        buyer=buyer_from_customer(customer=customer),
         lines=lines,
     )
 
@@ -321,6 +339,7 @@ def deliver_order(*, order: Order, user=None) -> Order:
 def _create_draft_order(
     *,
     customer: Customer,
+    buyer: BuyerInput,
     lines: Iterable[OrderLineInput],
 ) -> Order:
     normalized_lines = _normalize_order_lines(lines=lines)
@@ -329,7 +348,7 @@ def _create_draft_order(
         raise InvalidOrderOperation("order must contain at least one line")
 
     order = Order(customer=customer)
-    order.snapshot_customer()
+    order.snapshot_buyer(buyer=buyer)
     order.save()
 
     _create_order_lines(
@@ -369,11 +388,13 @@ def _normalize_order_lines(
         return []
 
     resolved_inputs = [
-        (line_input, line_input.resolve_product_id()) for line_input in line_inputs
+        (line_input, line_input.resolve_product_id())
+        for line_input in line_inputs
     ]
 
     products_by_id = Product.objects.in_bulk(
-        product_id for _, product_id in resolved_inputs
+        product_id
+        for _, product_id in resolved_inputs
     )
 
     quantity_by_product_id: dict[int, int] = defaultdict(int)
@@ -423,7 +444,9 @@ def _place_order(*, order: Order, user=None) -> Order:
 
 
 def _reserve_order(*, order: Order) -> None:
-    lines = list(order.lines.select_related("product").order_by("id"))
+    lines = list(
+        order.lines.select_related("product").order_by("id")
+    )
 
     if not lines:
         raise InvalidOrderOperation("order must contain at least one line")
@@ -487,7 +510,9 @@ def _load_existing_reservations_for_line(
         return
 
     reserved_quantity_by_batch_id.update(
-        _reserved_quantity_by_batch_id(batch_ids=missing_batch_ids)
+        _reserved_quantity_by_batch_id(
+            batch_ids=missing_batch_ids,
+        )
     )
 
 
@@ -508,14 +533,21 @@ def _reserved_quantity_by_batch_id(
 
         query = query.filter(batch_id__in=batch_ids)
 
-    rows = query.values("batch_id").annotate(total=Sum("quantity"))
+    rows = query.values("batch_id").annotate(
+        total=Sum("quantity"),
+    )
 
-    return {row["batch_id"]: row["total"] or 0 for row in rows}
+    return {
+        row["batch_id"]: row["total"] or 0
+        for row in rows
+    }
 
 
 def _cancel_reserved_allocations(*, order: Order) -> None:
     allocations = list(
-        order.allocations.select_for_update().filter(status=Allocation.Status.RESERVED)
+        order.allocations.select_for_update().filter(
+            status=Allocation.Status.RESERVED,
+        )
     )
 
     for allocation in allocations:

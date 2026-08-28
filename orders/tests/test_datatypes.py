@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from orders.datatypes import OrderLineInput
+from orders.datatypes import OrderLineInput, BuyerInput
 from orders.errors import InvalidOrderOperation
 from products.units import OrderUnit
 
@@ -106,3 +106,22 @@ def test_order_line_input_factories_normalize_quantity_and_unit(apple):
 
     assert grams.quantity == Decimal("25000")
     assert grams.unit == OrderUnit.GRAMS
+
+
+def test_buyer_input_represents_buyer_without_customer_model():
+    buyer = BuyerInput(
+        name="Marie Dupont",
+        email="marie@example.fr",
+        phone_number="+33612345678",
+        country="FR",
+        city="Annecy",
+        address_line="10 Rue du Lac",
+    )
+
+    assert buyer.name == "Marie Dupont"
+    assert buyer.email == "marie@example.fr"
+    assert buyer.phone_number == "+33612345678"
+    assert buyer.country == "FR"
+    assert buyer.city == "Annecy"
+    assert buyer.address_line == "10 Rue du Lac"
+    assert buyer.postal_code == ""

@@ -6,6 +6,7 @@ import pytest
 from django.db import IntegrityError, transaction
 
 from inventory.services import create_batch
+from orders.datatypes import BuyerInput
 from orders.errors import (
     InvalidAllocationStatusTransition,
     InvalidOrderStatusTransition,
@@ -255,3 +256,26 @@ def test_allocation_string_contains_order_batch_and_quantity(customer, apple):
     )
 
     assert str(allocation) == f"{order.id} -> {batch.id}: 10"
+
+
+@pytest.mark.django_db
+def test_order_snapshots_buyer_without_reading_customer_details(customer):
+    buyer = BuyerInput(
+        name="Marie Dupont",
+        email="marie@example.fr",
+        phone_number="+33612345678",
+        country="FR",
+        city="Annecy",
+        address_line="10 Rue du Lac",
+        postal_code="74000",
+    )
+
+    order = Order(customer=customer)
+    order.snapshot_buyer(buyer=buyer)
+
+    assert order.customer_name_snapshot == buyer.name
+    assert order.customer_email_snapshot == buyer.email
+    assert order.customer_phone_snapshot == buyer.phone_number
+    assert order.customer_country_snapshot == buyer.country
+    assert order.customer_city_snapshot == buyer.city
+    assert order.customer_address_line_snapshot == buyer.address_line

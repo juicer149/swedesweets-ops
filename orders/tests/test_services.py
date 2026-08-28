@@ -12,6 +12,7 @@ from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
 from orders.models import Allocation, Order, OrderLine
 from orders.services import (
+    buyer_from_customer,
     cancel_order,
     create_draft_order,
     create_order,
@@ -517,3 +518,16 @@ def test_update_placed_order_rejects_packed_order(customer, apple, stocked_inven
                 OrderLineInput.units(product=apple, quantity=5),
             ],
         )
+
+
+@pytest.mark.django_db
+def test_buyer_from_customer_builds_order_buyer(customer):
+    buyer = buyer_from_customer(customer=customer)
+
+    assert buyer.name == customer.name
+    assert buyer.email == customer.email
+    assert buyer.phone_number == customer.phone_number
+    assert buyer.country == customer.country
+    assert buyer.city == customer.city
+    assert buyer.address_line == customer.address_line
+    assert buyer.postal_code == ""

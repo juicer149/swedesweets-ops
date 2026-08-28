@@ -12,6 +12,8 @@ Allocation owns batch-level reservations for placed orders.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -28,6 +30,9 @@ from orders.errors import (
     InvalidAllocationStatusTransition,
     InvalidOrderStatusTransition,
 )
+
+if TYPE_CHECKING:
+    from orders.datatypes import BuyerInput
 
 
 class Order(models.Model):
@@ -214,13 +219,15 @@ class Order(models.Model):
 
         return self.customer.address
 
-    def snapshot_customer(self) -> None:
-        self.customer_name_snapshot = self.customer.name
-        self.customer_email_snapshot = self.customer.email
-        self.customer_phone_snapshot = self.customer.phone_number
-        self.customer_country_snapshot = self.customer.country
-        self.customer_city_snapshot = self.customer.city
-        self.customer_address_line_snapshot = self.customer.address_line
+    def snapshot_buyer(self, *, buyer: BuyerInput) -> None:
+        """Copy buyer data into the order's historical snapshot fields."""
+
+        self.customer_name_snapshot = buyer.name
+        self.customer_email_snapshot = buyer.email
+        self.customer_phone_snapshot = buyer.phone_number
+        self.customer_country_snapshot = buyer.country
+        self.customer_city_snapshot = buyer.city
+        self.customer_address_line_snapshot = buyer.address_line
 
     def _transition_to(self, target: str) -> None:
         if self.status == target:

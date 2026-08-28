@@ -5,8 +5,10 @@ public API:
     to_decimal(value: Quantity) -> Decimal
         -> Convert external numeric input into Decimal.
 
-    OrderLineInput.units(...)
-        -> Build an order-line input in product stock units.
+    BuyerInput
+        -> Buyer data required by the order domain, independent of Customer storage.
+        OrderLineInput.units(...)
+            -> Build an order-line input in product stock units.
 
     OrderLineInput.kg(...)
         -> Build an order-line input in kilograms.
@@ -39,6 +41,24 @@ def to_decimal(value: Quantity) -> Decimal:
         return value
 
     return Decimal(str(value))
+
+
+@dataclass(frozen=True, slots=True)
+class BuyerInput:
+    """Buyer data required to snapshot who an order is for.
+
+    A buyer does not need to be a persisted Customer. The same contract can
+    represent a business customer, a logged-in retail customer, or an
+    anonymous retail buyer.
+    """
+
+    name: str
+    email: str
+    phone_number: str
+    country: str
+    city: str
+    address_line: str
+    postal_code: str = ""
 
 
 @dataclass(frozen=True)
