@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.db import IntegrityError, transaction
+from django.db.models import ProtectedError
 
 from inventory.services import create_batch
 from orders.datatypes import BuyerInput
@@ -18,10 +20,11 @@ FUTURE_BEST_BEFORE = TODAY + timedelta(days=60)
 
 
 @pytest.mark.django_db
-def test_new_order_starts_as_business_draft(customer):
+def test_new_order_starts_as_business_draft_in_euro(customer):
     order = Order.objects.create(customer=customer)
 
     assert order.channel == Order.Channel.BUSINESS
+    assert order.currency == Order.Currency.EUR
     assert order.status == Order.Status.DRAFT
     assert order.can_be_edited is False
     assert order.can_be_cancelled is True
@@ -292,8 +295,6 @@ def test_customer_with_order_is_protected_from_delete_but_buyer_snapshot_remains
     original_city = buyer.city
     original_address_line = buyer.address_line
 
-    from django.db.models import ProtectedError
-
     with pytest.raises(ProtectedError):
         customer.delete()
 
@@ -306,6 +307,106 @@ def test_customer_with_order_is_protected_from_delete_but_buyer_snapshot_remains
     assert order.buyer_country == original_country
     assert order.buyer_city == original_city
     assert order.buyer_address_line == original_address_line
+
+
+@pytest.mark.django_db
+def test_order_line_without_price_has_no_commercial_total(customer, apple):
+    order = Order.objects.create(customer=customer)
+    line = OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=3,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=3,
+    )
+
+    assert line.unit_price_snapshot is None
+    assert line.line_total is None
+    assert order.total is None
+
+
+@pytest.mark.django_db
+def test_order_line_total_is_unit_price_times_normalized_quantity(customer, apple):
+    order = Order.objects.create(customer=customer)
+    line = OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=3,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=3,
+        unit_price_snapshot=Decimal("8.50"),
+    )
+
+    assert line.line_total == Decimal("25.50")
+
+
+@pytest.mark.django_db
+def test_order_total_is_sum_of_priced_lines(customer, apple, banana):
+    order = Order.objects.create(customer=customer)
+
+    OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=3,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=3,
+        unit_price_snapshot=Decimal("8.50"),
+    )
+    OrderLine.objects.create(
+        order=order,
+        product=banana,
+        quantity=2,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=2,
+        unit_price_snapshot=Decimal("4.25"),
+    )
+
+    assert order.total == Decimal("34.00")
+
+
+@pytest.mark.django_db
+def test_order_total_is_none_when_any_line_is_unpriced(customer, apple, banana):
+    order = Order.objects.create(customer=customer)
+
+    OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=3,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=3,
+        unit_price_snapshot=Decimal("8.50"),
+    )
+    OrderLine.objects.create(
+        order=order,
+        product=banana,
+        quantity=2,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=2,
+    )
+
+    assert order.total is None
+
+
+@pytest.mark.django_db
+def test_order_with_no_lines_has_zero_total(customer):
+    order = Order.objects.create(customer=customer)
+
+    assert order.total == Decimal("0.00")
+
+
+@pytest.mark.django_db
+def test_order_line_price_must_be_positive_when_present(customer, apple):
+    order = Order.objects.create(customer=customer)
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        OrderLine.objects.create(
+            order=order,
+            product=apple,
+            quantity=1,
+            unit=OrderLine.Unit.STOCK_UNIT,
+            quantity_in_units=1,
+            unit_price_snapshot=Decimal("0.00"),
+        )
 
 
 @pytest.mark.django_db

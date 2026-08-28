@@ -1,17 +1,18 @@
 """
 Order domain model.
 
-Order owns the order lifecycle.
+Order owns the order lifecycle and the commercial snapshot of the purchase.
 
-OrderLine owns the product quantity requested by the order. For operational
-simplicity, services normalize input quantities to whole product stock units and
-store one order line per product per order.
+OrderLine owns the product quantity requested by the order. External input may
+currently use different units, but services normalize fulfillment to whole
+product stock units.
 
-Allocation owns batch-level reservations for placed orders.
+Allocation owns batch-level reservations for orders.
 """
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -43,6 +44,9 @@ class Order(models.Model):
         BUSINESS = "business", _("Business")
         RETAIL = "retail", _("Retail")
 
+    class Currency(models.TextChoices):
+        EUR = "EUR", _("Euro")
+
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
         PLACED = "placed", _("Placed")
@@ -69,6 +73,12 @@ class Order(models.Model):
         max_length=20,
         choices=Channel.choices,
         default=Channel.BUSINESS,
+    )
+
+    currency = models.CharField(
+        max_length=3,
+        choices=Currency.choices,
+        default=Currency.EUR,
     )
 
     customer = models.ForeignKey(
@@ -209,6 +219,26 @@ class Order(models.Model):
         }
 
     @property
+    def total(self) -> Decimal | None:
+        """Return the commercial total when every line has a price snapshot.
+
+        An order containing any unpriced line is considered commercially
+        incomplete, so returning a partial total would be misleading.
+        """
+
+        total = Decimal("0.00")
+
+        for line in self.lines.all():
+            line_total = line.line_total
+
+            if line_total is None:
+                return None
+
+            total += line_total
+
+        return total
+
+    @property
     def buyer_snapshot_address(self) -> str:
         parts = [
             self.buyer_address_line_snapshot,
@@ -343,7 +373,8 @@ class Order(models.Model):
 
         if target not in allowed_targets:
             raise InvalidOrderStatusTransition(
-                f"Cannot transition order {self.pk} from {self.status!r} to {target!r}"
+                f"Cannot transition order {self.pk} "
+                f"from {self.status!r} to {target!r}"
             )
 
         self.status = target
@@ -441,9 +472,23 @@ class OrderLine(models.Model):
         on_delete=models.PROTECT,
         related_name="order_lines",
     )
-    quantity = models.DecimalField(max_digits=12, decimal_places=3)
-    unit = models.CharField(max_length=20, choices=Unit.choices)
+
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+    )
+    unit = models.CharField(
+        max_length=20,
+        choices=Unit.choices,
+    )
     quantity_in_units = models.PositiveIntegerField()
+
+    unit_price_snapshot = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         indexes = [
@@ -463,7 +508,23 @@ class OrderLine(models.Model):
                 condition=models.Q(quantity_in_units__gt=0),
                 name="orderline_quantity_in_units_gt_0",
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(unit_price_snapshot__isnull=True)
+                    | models.Q(unit_price_snapshot__gt=Decimal("0.00"))
+                ),
+                name="orderline_unit_price_positive_or_null",
+            ),
         ]
+
+    @property
+    def line_total(self) -> Decimal | None:
+        """Return price for the normalized stock quantity on this line."""
+
+        if self.unit_price_snapshot is None:
+            return None
+
+        return self.unit_price_snapshot * self.quantity_in_units
 
     def __str__(self) -> str:
         return f"{self.product.sku}: {self.quantity} {self.unit}"
@@ -473,7 +534,7 @@ class Allocation(models.Model):
     """Batch-level reservation.
 
     RESERVED:
-        Stock is reserved for a placed order.
+        Stock is reserved for an order.
 
     CONSUMED:
         Order was packed and physical stock was reduced.
