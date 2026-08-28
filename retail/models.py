@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from decimal import Decimal
 
 from django.db import models
@@ -173,6 +174,42 @@ class RetailBatchOffer(models.Model):
     def __str__(self) -> str:
         state = "enabled" if self.enabled else "disabled"
         return f"{self.batch.batch_id}: retail {state}"
+
+
+class RetailCheckoutSession(models.Model):
+    """Short-lived ownership of a retail checkout.
+
+    The related Order owns buyer snapshot, order lines, commercial price
+    snapshots and fulfillment lifecycle.
+
+    This model owns only checkout-specific state that should not become part of
+    the channel-agnostic order model.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    order = models.OneToOneField(
+        "orders.Order",
+        on_delete=models.CASCADE,
+        related_name="retail_checkout",
+    )
+
+    expires_at = models.DateTimeField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["expires_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Retail checkout {self.pk}"
 
 
 class RetailOrder(models.Model):

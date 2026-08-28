@@ -6,8 +6,10 @@ import pytest
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from orders.models import Order
 from retail.models import (
     RetailBatchOffer,
+    RetailCheckoutSession,
     RetailOrder,
     RetailOrderLine,
     RetailProductOffer,
@@ -164,6 +166,94 @@ def test_enabled_retail_product_offer_accepts_positive_price():
 
     assert offer.enabled is True
     assert offer.price == Decimal("12.50")
+
+
+@pytest.mark.django_db
+def test_retail_checkout_session_owns_retail_order():
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+
+    checkout = RetailCheckoutSession.objects.create(
+        order=order,
+        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+    )
+
+    assert checkout.order == order
+    assert order.retail_checkout == checkout
+
+
+@pytest.mark.django_db
+def test_retail_checkout_session_uses_uuid_primary_key():
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+
+    checkout = RetailCheckoutSession.objects.create(
+        order=order,
+        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+    )
+
+    assert checkout.pk is not None
+    assert checkout.pk.version == 4
+
+
+@pytest.mark.django_db
+def test_order_can_have_only_one_retail_checkout_session():
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+
+    RetailCheckoutSession.objects.create(
+        order=order,
+        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailCheckoutSession.objects.create(
+                order=order,
+                expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+            )
+
+
+@pytest.mark.django_db
+def test_retail_checkout_session_tracks_expiry():
+    before = timezone.now()
+
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+
+    checkout = RetailCheckoutSession.objects.create(
+        order=order,
+        expires_at=before + RETAIL_PAYMENT_WINDOW,
+    )
+
+    assert checkout.expires_at == before + RETAIL_PAYMENT_WINDOW
+
+
+@pytest.mark.django_db
+def test_deleting_order_deletes_retail_checkout_session():
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+
+    checkout = RetailCheckoutSession.objects.create(
+        order=order,
+        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+    )
+
+    checkout_id = checkout.pk
+
+    order.delete()
+
+    assert not RetailCheckoutSession.objects.filter(pk=checkout_id).exists()
 
 
 @pytest.mark.django_db
