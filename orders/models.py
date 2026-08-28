@@ -36,6 +36,10 @@ if TYPE_CHECKING:
 
 
 class Order(models.Model):
+    class Channel(models.TextChoices):
+        BUSINESS = "business", _("Business")
+        RETAIL = "retail", _("Retail")
+
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
         PLACED = "placed", _("Placed")
@@ -58,8 +62,16 @@ class Order(models.Model):
         Status.CANCELLED: set(),
     }
 
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.choices,
+        default=Channel.BUSINESS,
+    )
+
     customer = models.ForeignKey(
         "customers.Customer",
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="orders",
     )
@@ -163,8 +175,18 @@ class Order(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["customer"],
-                condition=models.Q(status="draft"),
-                name="unique_draft_order_per_customer",
+                condition=models.Q(
+                    channel="business",
+                    status="draft",
+                ),
+                name="unique_business_draft_order_per_customer",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(channel="retail")
+                    | models.Q(customer__isnull=False)
+                ),
+                name="business_order_requires_customer",
             ),
         ]
 
@@ -190,32 +212,71 @@ class Order(models.Model):
 
     @property
     def customer_name(self) -> str:
-        return self.customer_name_snapshot or self.customer.name
+        if self.customer_name_snapshot:
+            return self.customer_name_snapshot
+
+        if self.customer_id is None:
+            return ""
+
+        return self.customer.name
 
     @property
     def customer_email(self) -> str:
-        return self.customer_email_snapshot or self.customer.email
+        if self.customer_email_snapshot:
+            return self.customer_email_snapshot
+
+        if self.customer_id is None:
+            return ""
+
+        return self.customer.email
 
     @property
     def customer_phone_number(self) -> str:
-        return self.customer_phone_snapshot or self.customer.phone_number
+        if self.customer_phone_snapshot:
+            return self.customer_phone_snapshot
+
+        if self.customer_id is None:
+            return ""
+
+        return self.customer.phone_number
 
     @property
     def customer_country(self) -> str:
-        return self.customer_country_snapshot or self.customer.country
+        if self.customer_country_snapshot:
+            return self.customer_country_snapshot
+
+        if self.customer_id is None:
+            return ""
+
+        return self.customer.country
 
     @property
     def customer_city(self) -> str:
-        return self.customer_city_snapshot or self.customer.city
+        if self.customer_city_snapshot:
+            return self.customer_city_snapshot
+
+        if self.customer_id is None:
+            return ""
+
+        return self.customer.city
 
     @property
     def customer_address_line(self) -> str:
-        return self.customer_address_line_snapshot or self.customer.address_line
+        if self.customer_address_line_snapshot:
+            return self.customer_address_line_snapshot
+
+        if self.customer_id is None:
+            return ""
+
+        return self.customer.address_line
 
     @property
     def customer_address(self) -> str:
         if self.customer_address_line_snapshot:
             return self.customer_snapshot_address
+
+        if self.customer_id is None:
+            return ""
 
         return self.customer.address
 
