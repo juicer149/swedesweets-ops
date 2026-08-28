@@ -24,7 +24,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from django.db import IntegrityError, transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from customers.models import Customer
@@ -520,9 +520,22 @@ def _reserved_quantity_by_batch_id(
     *,
     batch_ids: Iterable[int] | None = None,
 ) -> dict[int, int]:
+    """Return quantity claimed by reservations that are active right now.
+
+    Reservation activity belongs to the reservation itself, not to the order
+    lifecycle.
+
+    A reservation is active when it is RESERVED and either has no expiry or
+    its expiry is still in the future.
+    """
+
+    now = timezone.now()
+
     query = Allocation.objects.filter(
         status=Allocation.Status.RESERVED,
-        order__status=Order.Status.PLACED,
+    ).filter(
+        Q(reserved_until__isnull=True)
+        | Q(reserved_until__gt=now)
     )
 
     if batch_ids is not None:

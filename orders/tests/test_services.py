@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 from django.db.models import ProtectedError
+from django.utils import timezone
 
 from inventory.errors import InsufficientStockError
 from inventory.models import InventoryBatch
@@ -355,6 +356,181 @@ def test_two_placed_orders_do_not_reserve_same_quantity(
                 OrderLineInput.units(product=apple, quantity=1),
             ],
         )
+
+
+@pytest.mark.django_db
+def test_unexpired_draft_reservation_reduces_available_stock(
+    other_customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    retail_order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    retail_line = OrderLine.objects.create(
+        order=retail_order,
+        product=apple,
+        quantity=7,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=7,
+    )
+
+    Allocation.objects.create(
+        order=retail_order,
+        order_line=retail_line,
+        batch=batch,
+        quantity=7,
+        reserved_until=timezone.now() + timedelta(minutes=35),
+    )
+
+    with pytest.raises(InsufficientStockError) as error:
+        create_order(
+            customer=other_customer,
+            lines=[
+                OrderLineInput.units(
+                    product=apple,
+                    quantity=4,
+                ),
+            ],
+        )
+
+    assert error.value.requested_quantity == 4
+    assert error.value.available_quantity == 3
+    assert error.value.missing_quantity == 1
+
+
+@pytest.mark.django_db
+def test_expired_draft_reservation_does_not_reduce_available_stock(
+    customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    retail_order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    retail_line = OrderLine.objects.create(
+        order=retail_order,
+        product=apple,
+        quantity=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
+    )
+
+    Allocation.objects.create(
+        order=retail_order,
+        order_line=retail_line,
+        batch=batch,
+        quantity=10,
+        reserved_until=timezone.now() - timedelta(seconds=1),
+    )
+
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=10,
+            ),
+        ],
+    )
+
+    assert order.allocations.get().quantity == 10
+
+
+@pytest.mark.django_db
+def test_cancelled_temporary_reservation_does_not_reduce_available_stock(
+    customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    retail_order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    retail_line = OrderLine.objects.create(
+        order=retail_order,
+        product=apple,
+        quantity=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
+    )
+
+    allocation = Allocation.objects.create(
+        order=retail_order,
+        order_line=retail_line,
+        batch=batch,
+        quantity=10,
+        reserved_until=timezone.now() + timedelta(minutes=35),
+    )
+    allocation.cancel()
+
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=10,
+            ),
+        ],
+    )
+
+    assert order.allocations.get().quantity == 10
+
+
+@pytest.mark.django_db
+def test_placed_business_reservation_has_no_expiry(
+    customer,
+    apple,
+):
+    create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=5,
+            ),
+        ],
+    )
+
+    allocation = order.allocations.get()
+
+    assert allocation.status == Allocation.Status.RESERVED
+    assert allocation.reserved_until is None
 
 
 @pytest.mark.django_db

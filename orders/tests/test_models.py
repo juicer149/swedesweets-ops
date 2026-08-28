@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
+from django.utils import timezone
 
 from inventory.services import create_batch
 from orders.datatypes import BuyerInput
@@ -500,6 +501,44 @@ def test_order_line_string_uses_product_sku_quantity_and_unit(customer, apple):
     )
 
     assert str(line) == "SS-001: 10 stock_unit"
+
+
+@pytest.mark.django_db
+def test_allocation_may_have_temporary_expiry(apple):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=FUTURE_BEST_BEFORE,
+        location="Shelf A1",
+        today=TODAY,
+    )
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    line = OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=5,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=5,
+    )
+
+    reserved_until = timezone.now() + timedelta(minutes=35)
+
+    allocation = Allocation.objects.create(
+        order=order,
+        order_line=line,
+        batch=batch,
+        quantity=5,
+        reserved_until=reserved_until,
+    )
+
+    allocation.refresh_from_db()
+
+    assert allocation.status == Allocation.Status.RESERVED
+    assert allocation.reserved_until == reserved_until
 
 
 @pytest.mark.django_db

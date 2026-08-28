@@ -531,16 +531,25 @@ class OrderLine(models.Model):
 
 
 class Allocation(models.Model):
-    """Batch-level reservation.
+    """Batch-level stock reservation.
 
     RESERVED:
-        Stock is reserved for an order.
+        Stock is claimed by an order.
+
+        ``reserved_until=None`` represents a reservation without automatic
+        expiry, used by the normal placed-order workflow.
+
+        A future ``reserved_until`` represents a temporary reservation, such
+        as stock held while a retail payment attempt is in progress.
+
+        Once ``reserved_until`` has passed, the reservation no longer reduces
+        availability even if cleanup has not yet changed its status.
 
     CONSUMED:
-        Order was packed and physical stock was reduced.
+        The order was packed and physical stock was reduced.
 
     CANCELLED:
-        Reservation was released.
+        The reservation was explicitly released.
     """
 
     class Status(models.TextChoices):
@@ -577,6 +586,10 @@ class Allocation(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.RESERVED,
+    )
+    reserved_until = models.DateTimeField(
+        null=True,
+        blank=True,
     )
 
     class Meta:
