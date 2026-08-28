@@ -43,7 +43,7 @@ def test_create_draft_order_creates_lines_but_does_not_reserve_stock(
 
 
 @pytest.mark.django_db
-def test_create_draft_order_snapshots_customer_details(customer, apple):
+def test_create_draft_order_snapshots_buyer_details(customer, apple):
     order = create_draft_order(
         customer=customer,
         lines=[
@@ -51,26 +51,28 @@ def test_create_draft_order_snapshots_customer_details(customer, apple):
         ],
     )
 
-    assert order.customer_name_snapshot == customer.name
-    assert order.customer_email_snapshot == customer.email
-    assert order.customer_phone_snapshot == customer.phone_number
-    assert order.customer_country_snapshot == customer.country
-    assert order.customer_city_snapshot == customer.city
-    assert order.customer_address_line_snapshot == customer.address_line
+    assert order.buyer_name_snapshot == customer.name
+    assert order.buyer_email_snapshot == customer.email
+    assert order.buyer_phone_snapshot == customer.phone_number
+    assert order.buyer_country_snapshot == customer.country
+    assert order.buyer_postal_code_snapshot == ""
+    assert order.buyer_city_snapshot == customer.city
+    assert order.buyer_address_line_snapshot == customer.address_line
 
-    assert order.customer_name == customer.name
-    assert order.customer_email == customer.email
-    assert order.customer_phone_number == customer.phone_number
-    assert order.customer_country == customer.country
-    assert order.customer_city == customer.city
-    assert order.customer_address_line == customer.address_line
+    assert order.buyer_name == customer.name
+    assert order.buyer_email == customer.email
+    assert order.buyer_phone_number == customer.phone_number
+    assert order.buyer_country == customer.country
+    assert order.buyer_postal_code == ""
+    assert order.buyer_city == customer.city
+    assert order.buyer_address_line == customer.address_line
 
-    assert customer.address_line in order.customer_address
-    assert customer.city in order.customer_address
+    assert customer.address_line in order.buyer_address
+    assert customer.city in order.buyer_address
 
 
 @pytest.mark.django_db
-def test_order_customer_display_uses_snapshot_after_customer_changes(customer, apple):
+def test_order_buyer_display_uses_snapshot_after_customer_changes(customer, apple):
     original_name = customer.name
     original_email = customer.email
     original_phone_number = customer.phone_number
@@ -102,21 +104,21 @@ def test_order_customer_display_uses_snapshot_after_customer_changes(customer, a
     assert order.customer.city == "Zürich"
     assert order.customer.address_line == "Bahnhofstrasse 1"
 
-    assert order.customer_name == original_name
-    assert order.customer_email == original_email
-    assert order.customer_phone_number == original_phone_number
-    assert order.customer_country == original_country
-    assert order.customer_city == original_city
-    assert order.customer_address_line == original_address_line
+    assert order.buyer_name == original_name
+    assert order.buyer_email == original_email
+    assert order.buyer_phone_number == original_phone_number
+    assert order.buyer_country == original_country
+    assert order.buyer_city == original_city
+    assert order.buyer_address_line == original_address_line
 
-    assert original_address_line in order.customer_address
-    assert original_city in order.customer_address
-    assert "Bahnhofstrasse" not in order.customer_address
-    assert "Zürich" not in order.customer_address
+    assert original_address_line in order.buyer_address
+    assert original_city in order.buyer_address
+    assert "Bahnhofstrasse" not in order.buyer_address
+    assert "Zürich" not in order.buyer_address
 
 
 @pytest.mark.django_db
-def test_customer_with_order_is_protected_from_delete_but_order_snapshot_remains(
+def test_customer_with_order_is_protected_from_delete_but_buyer_snapshot_remains(
     customer,
     apple,
 ):
@@ -140,12 +142,12 @@ def test_customer_with_order_is_protected_from_delete_but_order_snapshot_remains
     order.refresh_from_db()
 
     assert order.customer_id == customer.id
-    assert order.customer_name == original_name
-    assert order.customer_email == original_email
-    assert order.customer_phone_number == original_phone_number
-    assert order.customer_country == original_country
-    assert order.customer_city == original_city
-    assert order.customer_address_line == original_address_line
+    assert order.buyer_name == original_name
+    assert order.buyer_email == original_email
+    assert order.buyer_phone_number == original_phone_number
+    assert order.buyer_country == original_country
+    assert order.buyer_city == original_city
+    assert order.buyer_address_line == original_address_line
 
 
 @pytest.mark.django_db
@@ -169,7 +171,8 @@ def test_create_draft_order_merges_duplicate_product_lines(customer, apple):
 @pytest.mark.django_db
 def test_create_draft_order_rejects_empty_order(customer):
     with pytest.raises(
-        InvalidOrderOperation, match="order must contain at least one line"
+        InvalidOrderOperation,
+        match="order must contain at least one line",
     ):
         create_draft_order(
             customer=customer,
@@ -178,7 +181,11 @@ def test_create_draft_order_rejects_empty_order(customer):
 
 
 @pytest.mark.django_db
-def test_place_order_places_existing_draft_order(customer, apple, stocked_inventory):
+def test_place_order_places_existing_draft_order(
+    customer,
+    apple,
+    stocked_inventory,
+):
     order = create_draft_order(
         customer=customer,
         lines=[
@@ -194,7 +201,11 @@ def test_place_order_places_existing_draft_order(customer, apple, stocked_invent
 
 
 @pytest.mark.django_db
-def test_place_order_rejects_non_draft_order(customer, apple, stocked_inventory):
+def test_place_order_rejects_non_draft_order(
+    customer,
+    apple,
+    stocked_inventory,
+):
     order = create_order(
         customer=customer,
         lines=[
@@ -202,7 +213,10 @@ def test_place_order_rejects_non_draft_order(customer, apple, stocked_inventory)
         ],
     )
 
-    with pytest.raises(InvalidOrderOperation, match="Only draft orders can be placed"):
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Only draft orders can be placed",
+    ):
         place_order(order=order)
 
 
@@ -224,9 +238,10 @@ def test_create_order_places_order_and_creates_fefo_allocations(
     assert order.status == Order.Status.PLACED
 
     allocations = list(
-        Allocation.objects.select_related("batch", "order_line__product").order_by(
-            "batch__batch_id"
-        )
+        Allocation.objects.select_related(
+            "batch",
+            "order_line__product",
+        ).order_by("batch__batch_id")
     )
 
     assert [
@@ -303,7 +318,9 @@ def test_order_cannot_reserve_expired_stock(customer, apple):
 
 @pytest.mark.django_db
 def test_two_placed_orders_do_not_reserve_same_quantity(
-    customer, other_customer, apple
+    customer,
+    other_customer,
+    apple,
 ):
     create_batch(
         batch_id="A-001",
@@ -320,6 +337,7 @@ def test_two_placed_orders_do_not_reserve_same_quantity(
             OrderLineInput.units(product=apple, quantity=70),
         ],
     )
+
     second = create_order(
         customer=other_customer,
         lines=[
@@ -364,7 +382,8 @@ def test_pack_order_consumes_allocations_and_reduces_physical_stock(
     }
 
     batches = {
-        batch.batch_id: batch for batch in InventoryBatch.objects.order_by("batch_id")
+        batch.batch_id: batch
+        for batch in InventoryBatch.objects.order_by("batch_id")
     }
 
     assert batches["A-001"].quantity == 0
@@ -378,7 +397,11 @@ def test_pack_order_consumes_allocations_and_reduces_physical_stock(
 
 
 @pytest.mark.django_db
-def test_pack_order_rejects_non_placed_order(customer, apple, stocked_inventory):
+def test_pack_order_rejects_non_placed_order(
+    customer,
+    apple,
+    stocked_inventory,
+):
     order = create_draft_order(
         customer=customer,
         lines=[
@@ -386,13 +409,18 @@ def test_pack_order_rejects_non_placed_order(customer, apple, stocked_inventory)
         ],
     )
 
-    with pytest.raises(InvalidOrderOperation, match="Cannot pack order"):
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Cannot pack order",
+    ):
         pack_order(order=order)
 
 
 @pytest.mark.django_db
 def test_cancel_placed_order_releases_reserved_allocations(
-    customer, apple, stocked_inventory
+    customer,
+    apple,
+    stocked_inventory,
 ):
     order = create_order(
         customer=customer,
@@ -419,22 +447,10 @@ def test_cancel_placed_order_releases_reserved_allocations(
 
 
 @pytest.mark.django_db
-def test_cancel_order_rejects_packed_order(customer, apple, stocked_inventory):
-    order = create_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
-    )
-    order = pack_order(order=order)
-
-    with pytest.raises(InvalidOrderOperation, match="Cannot cancel order"):
-        cancel_order(order=order)
-
-
-@pytest.mark.django_db
-def test_deliver_order_moves_packed_order_to_delivered(
-    customer, apple, stocked_inventory
+def test_cancel_order_rejects_packed_order(
+    customer,
+    apple,
+    stocked_inventory,
 ):
     order = create_order(
         customer=customer,
@@ -442,6 +458,29 @@ def test_deliver_order_moves_packed_order_to_delivered(
             OrderLineInput.units(product=apple, quantity=10),
         ],
     )
+
+    order = pack_order(order=order)
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Cannot cancel order",
+    ):
+        cancel_order(order=order)
+
+
+@pytest.mark.django_db
+def test_deliver_order_moves_packed_order_to_delivered(
+    customer,
+    apple,
+    stocked_inventory,
+):
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(product=apple, quantity=10),
+        ],
+    )
+
     order = pack_order(order=order)
 
     order = deliver_order(order=order)
@@ -452,7 +491,11 @@ def test_deliver_order_moves_packed_order_to_delivered(
 
 
 @pytest.mark.django_db
-def test_deliver_order_rejects_placed_order(customer, apple, stocked_inventory):
+def test_deliver_order_rejects_placed_order(
+    customer,
+    apple,
+    stocked_inventory,
+):
     order = create_order(
         customer=customer,
         lines=[
@@ -478,7 +521,12 @@ def test_update_placed_order_rebuilds_lines_and_reservations(
         ],
     )
 
-    old_allocation_ids = set(order.allocations.values_list("id", flat=True))
+    old_allocation_ids = set(
+        order.allocations.values_list(
+            "id",
+            flat=True,
+        )
+    )
 
     order = update_placed_order(
         order=order,
@@ -491,27 +539,49 @@ def test_update_placed_order_rebuilds_lines_and_reservations(
 
     assert order.status == Order.Status.PLACED
     assert order.edited_at is not None
-    assert list(order.lines.values_list("product_id", "quantity_in_units")) == [
+
+    assert list(
+        order.lines.values_list(
+            "product_id",
+            "quantity_in_units",
+        )
+    ) == [
         (banana.id, 20),
     ]
 
-    assert not Allocation.objects.filter(id__in=old_allocation_ids).exists()
-    assert list(order.allocations.values_list("batch__batch_id", "quantity")) == [
+    assert not Allocation.objects.filter(
+        id__in=old_allocation_ids,
+    ).exists()
+
+    assert list(
+        order.allocations.values_list(
+            "batch__batch_id",
+            "quantity",
+        )
+    ) == [
         ("B-001", 20),
     ]
 
 
 @pytest.mark.django_db
-def test_update_placed_order_rejects_packed_order(customer, apple, stocked_inventory):
+def test_update_placed_order_rejects_packed_order(
+    customer,
+    apple,
+    stocked_inventory,
+):
     order = create_order(
         customer=customer,
         lines=[
             OrderLineInput.units(product=apple, quantity=10),
         ],
     )
+
     order = pack_order(order=order)
 
-    with pytest.raises(InvalidOrderOperation, match="Only placed orders can be edited"):
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Only placed orders can be edited",
+    ):
         update_placed_order(
             order=order,
             lines=[
@@ -528,6 +598,6 @@ def test_buyer_from_customer_builds_order_buyer(customer):
     assert buyer.email == customer.email
     assert buyer.phone_number == customer.phone_number
     assert buyer.country == customer.country
+    assert buyer.postal_code == ""
     assert buyer.city == customer.city
     assert buyer.address_line == customer.address_line
-    assert buyer.postal_code == ""

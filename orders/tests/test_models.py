@@ -59,31 +59,32 @@ def test_retail_order_can_reference_persisted_customer(customer):
 
 
 @pytest.mark.django_db
-def test_anonymous_retail_order_display_properties_use_empty_fallbacks():
+def test_anonymous_retail_order_buyer_properties_use_empty_fallbacks():
     order = Order.objects.create(
         channel=Order.Channel.RETAIL,
         customer=None,
     )
 
-    assert order.customer_name == ""
-    assert order.customer_email == ""
-    assert order.customer_phone_number == ""
-    assert order.customer_country == ""
-    assert order.customer_city == ""
-    assert order.customer_address_line == ""
-    assert order.customer_address == ""
+    assert order.buyer_name == ""
+    assert order.buyer_email == ""
+    assert order.buyer_phone_number == ""
+    assert order.buyer_country == ""
+    assert order.buyer_postal_code == ""
+    assert order.buyer_city == ""
+    assert order.buyer_address_line == ""
+    assert order.buyer_address == ""
 
 
 @pytest.mark.django_db
-def test_anonymous_retail_order_display_properties_use_buyer_snapshot():
+def test_anonymous_retail_order_buyer_properties_use_snapshot():
     buyer = BuyerInput(
         name="Marie Dupont",
         email="marie@example.fr",
         phone_number="+33612345678",
         country="FR",
+        postal_code="74000",
         city="Annecy",
         address_line="10 Rue du Lac",
-        postal_code="74000",
     )
 
     order = Order(
@@ -93,14 +94,55 @@ def test_anonymous_retail_order_display_properties_use_buyer_snapshot():
     order.snapshot_buyer(buyer=buyer)
     order.save()
 
-    assert order.customer_name == buyer.name
-    assert order.customer_email == buyer.email
-    assert order.customer_phone_number == buyer.phone_number
-    assert order.customer_country == buyer.country
-    assert order.customer_city == buyer.city
-    assert order.customer_address_line == buyer.address_line
-    assert buyer.address_line in order.customer_address
-    assert buyer.city in order.customer_address
+    assert order.buyer_name_snapshot == buyer.name
+    assert order.buyer_email_snapshot == buyer.email
+    assert order.buyer_phone_snapshot == buyer.phone_number
+    assert order.buyer_country_snapshot == buyer.country
+    assert order.buyer_postal_code_snapshot == buyer.postal_code
+    assert order.buyer_city_snapshot == buyer.city
+    assert order.buyer_address_line_snapshot == buyer.address_line
+
+    assert order.buyer_name == buyer.name
+    assert order.buyer_email == buyer.email
+    assert order.buyer_phone_number == buyer.phone_number
+    assert order.buyer_country == buyer.country
+    assert order.buyer_postal_code == buyer.postal_code
+    assert order.buyer_city == buyer.city
+    assert order.buyer_address_line == buyer.address_line
+
+    assert buyer.address_line in order.buyer_address
+    assert buyer.postal_code in order.buyer_address
+    assert buyer.city in order.buyer_address
+    assert buyer.country in order.buyer_address
+
+
+@pytest.mark.django_db
+def test_customer_compatibility_properties_delegate_to_buyer_properties():
+    buyer = BuyerInput(
+        name="Marie Dupont",
+        email="marie@example.fr",
+        phone_number="+33612345678",
+        country="FR",
+        postal_code="74000",
+        city="Annecy",
+        address_line="10 Rue du Lac",
+    )
+
+    order = Order(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    order.snapshot_buyer(buyer=buyer)
+    order.save()
+
+    assert order.customer_name == order.buyer_name
+    assert order.customer_email == order.buyer_email
+    assert order.customer_phone_number == order.buyer_phone_number
+    assert order.customer_country == order.buyer_country
+    assert order.customer_city == order.buyer_city
+    assert order.customer_address_line == order.buyer_address_line
+    assert order.customer_address == order.buyer_address
+    assert order.customer_snapshot_address == order.buyer_snapshot_address
 
 
 @pytest.mark.django_db
@@ -133,11 +175,17 @@ def test_retail_draft_does_not_conflict_with_business_draft(customer):
 
 
 @pytest.mark.django_db
-def test_customer_can_create_new_draft_after_previous_draft_is_cancelled(customer):
-    draft = Order.objects.create(customer=customer)
+def test_customer_can_create_new_business_draft_after_previous_is_cancelled(customer):
+    draft = Order.objects.create(
+        customer=customer,
+        channel=Order.Channel.BUSINESS,
+    )
     draft.cancel(reason=Order.CancelReason.CUSTOMER_REQUEST)
 
-    new_draft = Order.objects.create(customer=customer)
+    new_draft = Order.objects.create(
+        customer=customer,
+        channel=Order.Channel.BUSINESS,
+    )
 
     assert new_draft.status == Order.Status.DRAFT
 
@@ -149,20 +197,115 @@ def test_order_snapshots_buyer_without_reading_customer_details(customer):
         email="marie@example.fr",
         phone_number="+33612345678",
         country="FR",
+        postal_code="74000",
         city="Annecy",
         address_line="10 Rue du Lac",
-        postal_code="74000",
     )
 
     order = Order(customer=customer)
     order.snapshot_buyer(buyer=buyer)
 
-    assert order.customer_name_snapshot == buyer.name
-    assert order.customer_email_snapshot == buyer.email
-    assert order.customer_phone_snapshot == buyer.phone_number
-    assert order.customer_country_snapshot == buyer.country
-    assert order.customer_city_snapshot == buyer.city
-    assert order.customer_address_line_snapshot == buyer.address_line
+    assert order.buyer_name_snapshot == buyer.name
+    assert order.buyer_email_snapshot == buyer.email
+    assert order.buyer_phone_snapshot == buyer.phone_number
+    assert order.buyer_country_snapshot == buyer.country
+    assert order.buyer_postal_code_snapshot == buyer.postal_code
+    assert order.buyer_city_snapshot == buyer.city
+    assert order.buyer_address_line_snapshot == buyer.address_line
+
+
+@pytest.mark.django_db
+def test_buyer_display_uses_snapshot_after_customer_changes(customer):
+    original_name = customer.name
+    original_email = customer.email
+    original_phone_number = customer.phone_number
+    original_country = customer.country
+    original_city = customer.city
+    original_address_line = customer.address_line
+
+    buyer = BuyerInput(
+        name=customer.name,
+        email=customer.email,
+        phone_number=customer.phone_number,
+        country=customer.country,
+        postal_code="",
+        city=customer.city,
+        address_line=customer.address_line,
+    )
+
+    order = Order(customer=customer)
+    order.snapshot_buyer(buyer=buyer)
+    order.save()
+
+    customer.name = "Updated Customer"
+    customer.email = "updated@example.fr"
+    customer.phone_number = "+33 1 11 22 33 44"
+    customer.country = "CH"
+    customer.city = "Zürich"
+    customer.address_line = "Bahnhofstrasse 1"
+    customer.save()
+
+    order.refresh_from_db()
+
+    assert order.customer.name == "Updated Customer"
+    assert order.customer.email == "updated@example.fr"
+    assert order.customer.phone_number == "+33111223344"
+    assert order.customer.country == "CH"
+    assert order.customer.city == "Zürich"
+    assert order.customer.address_line == "Bahnhofstrasse 1"
+
+    assert order.buyer_name == original_name
+    assert order.buyer_email == original_email
+    assert order.buyer_phone_number == original_phone_number
+    assert order.buyer_country == original_country
+    assert order.buyer_city == original_city
+    assert order.buyer_address_line == original_address_line
+
+    assert original_address_line in order.buyer_address
+    assert original_city in order.buyer_address
+    assert "Bahnhofstrasse" not in order.buyer_address
+    assert "Zürich" not in order.buyer_address
+
+
+@pytest.mark.django_db
+def test_customer_with_order_is_protected_from_delete_but_buyer_snapshot_remains(
+    customer,
+):
+    buyer = BuyerInput(
+        name=customer.name,
+        email=customer.email,
+        phone_number=customer.phone_number,
+        country=customer.country,
+        postal_code="",
+        city=customer.city,
+        address_line=customer.address_line,
+    )
+
+    order = Order(customer=customer)
+    order.snapshot_buyer(buyer=buyer)
+    order.save()
+
+    original_name = buyer.name
+    original_email = buyer.email
+    original_phone_number = buyer.phone_number
+    original_country = buyer.country
+    original_city = buyer.city
+    original_address_line = buyer.address_line
+
+    from django.db.models import ProtectedError
+
+    with pytest.raises(ProtectedError):
+        customer.delete()
+
+    order.refresh_from_db()
+
+    assert order.customer_id == customer.id
+    assert order.buyer_name == original_name
+    assert order.buyer_email == original_email
+    assert order.buyer_phone_number == original_phone_number
+    assert order.buyer_country == original_country
+    assert order.buyer_city == original_city
+    assert order.buyer_address_line == original_address_line
 
 
 @pytest.mark.django_db

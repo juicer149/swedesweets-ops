@@ -35,6 +35,9 @@ if TYPE_CHECKING:
     from orders.datatypes import BuyerInput
 
 
+MAX_BUYER_POSTAL_CODE_LENGTH = 20
+
+
 class Order(models.Model):
     class Channel(models.TextChoices):
         BUSINESS = "business", _("Business")
@@ -76,27 +79,31 @@ class Order(models.Model):
         related_name="orders",
     )
 
-    customer_name_snapshot = models.CharField(
+    buyer_name_snapshot = models.CharField(
         max_length=MAX_CUSTOMER_NAME_LENGTH,
         blank=True,
     )
-    customer_email_snapshot = models.EmailField(
+    buyer_email_snapshot = models.EmailField(
         max_length=254,
         blank=True,
     )
-    customer_phone_snapshot = models.CharField(
+    buyer_phone_snapshot = models.CharField(
         max_length=MAX_CUSTOMER_PHONE_LENGTH,
         blank=True,
     )
-    customer_country_snapshot = models.CharField(
+    buyer_country_snapshot = models.CharField(
         max_length=MAX_CUSTOMER_COUNTRY_LENGTH,
         blank=True,
     )
-    customer_city_snapshot = models.CharField(
+    buyer_postal_code_snapshot = models.CharField(
+        max_length=MAX_BUYER_POSTAL_CODE_LENGTH,
+        blank=True,
+    )
+    buyer_city_snapshot = models.CharField(
         max_length=MAX_CUSTOMER_CITY_LENGTH,
         blank=True,
     )
-    customer_address_line_snapshot = models.CharField(
+    buyer_address_line_snapshot = models.CharField(
         max_length=MAX_CUSTOMER_ADDRESS_LINE_LENGTH,
         blank=True,
     )
@@ -202,18 +209,19 @@ class Order(models.Model):
         }
 
     @property
-    def customer_snapshot_address(self) -> str:
+    def buyer_snapshot_address(self) -> str:
         parts = [
-            self.customer_address_line_snapshot,
-            self.customer_city_snapshot,
-            self.customer_country_snapshot,
+            self.buyer_address_line_snapshot,
+            self.buyer_postal_code_snapshot,
+            self.buyer_city_snapshot,
+            self.buyer_country_snapshot,
         ]
         return ", ".join(part for part in parts if part)
 
     @property
-    def customer_name(self) -> str:
-        if self.customer_name_snapshot:
-            return self.customer_name_snapshot
+    def buyer_name(self) -> str:
+        if self.buyer_name_snapshot:
+            return self.buyer_name_snapshot
 
         if self.customer_id is None:
             return ""
@@ -221,9 +229,9 @@ class Order(models.Model):
         return self.customer.name
 
     @property
-    def customer_email(self) -> str:
-        if self.customer_email_snapshot:
-            return self.customer_email_snapshot
+    def buyer_email(self) -> str:
+        if self.buyer_email_snapshot:
+            return self.buyer_email_snapshot
 
         if self.customer_id is None:
             return ""
@@ -231,9 +239,9 @@ class Order(models.Model):
         return self.customer.email
 
     @property
-    def customer_phone_number(self) -> str:
-        if self.customer_phone_snapshot:
-            return self.customer_phone_snapshot
+    def buyer_phone_number(self) -> str:
+        if self.buyer_phone_snapshot:
+            return self.buyer_phone_snapshot
 
         if self.customer_id is None:
             return ""
@@ -241,9 +249,9 @@ class Order(models.Model):
         return self.customer.phone_number
 
     @property
-    def customer_country(self) -> str:
-        if self.customer_country_snapshot:
-            return self.customer_country_snapshot
+    def buyer_country(self) -> str:
+        if self.buyer_country_snapshot:
+            return self.buyer_country_snapshot
 
         if self.customer_id is None:
             return ""
@@ -251,9 +259,13 @@ class Order(models.Model):
         return self.customer.country
 
     @property
-    def customer_city(self) -> str:
-        if self.customer_city_snapshot:
-            return self.customer_city_snapshot
+    def buyer_postal_code(self) -> str:
+        return self.buyer_postal_code_snapshot
+
+    @property
+    def buyer_city(self) -> str:
+        if self.buyer_city_snapshot:
+            return self.buyer_city_snapshot
 
         if self.customer_id is None:
             return ""
@@ -261,9 +273,9 @@ class Order(models.Model):
         return self.customer.city
 
     @property
-    def customer_address_line(self) -> str:
-        if self.customer_address_line_snapshot:
-            return self.customer_address_line_snapshot
+    def buyer_address_line(self) -> str:
+        if self.buyer_address_line_snapshot:
+            return self.buyer_address_line_snapshot
 
         if self.customer_id is None:
             return ""
@@ -271,24 +283,57 @@ class Order(models.Model):
         return self.customer.address_line
 
     @property
-    def customer_address(self) -> str:
-        if self.customer_address_line_snapshot:
-            return self.customer_snapshot_address
+    def buyer_address(self) -> str:
+        if self.buyer_address_line_snapshot:
+            return self.buyer_snapshot_address
 
         if self.customer_id is None:
             return ""
 
         return self.customer.address
 
+    @property
+    def customer_snapshot_address(self) -> str:
+        return self.buyer_snapshot_address
+
+    @property
+    def customer_name(self) -> str:
+        return self.buyer_name
+
+    @property
+    def customer_email(self) -> str:
+        return self.buyer_email
+
+    @property
+    def customer_phone_number(self) -> str:
+        return self.buyer_phone_number
+
+    @property
+    def customer_country(self) -> str:
+        return self.buyer_country
+
+    @property
+    def customer_city(self) -> str:
+        return self.buyer_city
+
+    @property
+    def customer_address_line(self) -> str:
+        return self.buyer_address_line
+
+    @property
+    def customer_address(self) -> str:
+        return self.buyer_address
+
     def snapshot_buyer(self, *, buyer: BuyerInput) -> None:
         """Copy buyer data into the order's historical snapshot fields."""
 
-        self.customer_name_snapshot = buyer.name
-        self.customer_email_snapshot = buyer.email
-        self.customer_phone_snapshot = buyer.phone_number
-        self.customer_country_snapshot = buyer.country
-        self.customer_city_snapshot = buyer.city
-        self.customer_address_line_snapshot = buyer.address_line
+        self.buyer_name_snapshot = buyer.name
+        self.buyer_email_snapshot = buyer.email
+        self.buyer_phone_snapshot = buyer.phone_number
+        self.buyer_country_snapshot = buyer.country
+        self.buyer_postal_code_snapshot = buyer.postal_code
+        self.buyer_city_snapshot = buyer.city
+        self.buyer_address_line_snapshot = buyer.address_line
 
     def _transition_to(self, target: str) -> None:
         if self.status == target:
