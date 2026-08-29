@@ -24,6 +24,7 @@ testpaths = [
     "products",
     "inventory",
     "accounts",
+    "reservations",
     # B2B customer and order management
     "customers",
     "customer_portal",
