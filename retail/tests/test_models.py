@@ -6,10 +6,11 @@ import pytest
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from orders.models import Order
+from orders.models import Order, OrderLine
 from retail.models import (
     RetailBatchOffer,
     RetailCheckoutSession,
+    RetailOfferSelection,
     RetailOrder,
     RetailOrderLine,
     RetailProductOffer,
@@ -254,6 +255,125 @@ def test_deleting_order_deletes_retail_checkout_session():
     order.delete()
 
     assert not RetailCheckoutSession.objects.filter(pk=checkout_id).exists()
+
+
+@pytest.mark.django_db
+def test_retail_offer_selection_can_reference_product_offer():
+    product = retail_product_factory()
+    offer = retail_product_offer_factory(
+        product=product,
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    line = OrderLine.objects.create(
+        order=order,
+        product=product,
+        quantity=2,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=2,
+        unit_price_snapshot=Decimal("12.50"),
+    )
+
+    selection = RetailOfferSelection.objects.create(
+        order_line=line,
+        product_offer=offer,
+    )
+
+    assert selection.order_line == line
+    assert selection.product_offer == offer
+    assert selection.batch_offer is None
+    assert line.retail_offer_selection == selection
+
+
+@pytest.mark.django_db
+def test_retail_offer_selection_can_reference_batch_offer():
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+    product = offer.batch.product
+
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    line = OrderLine.objects.create(
+        order=order,
+        product=product,
+        quantity=2,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=2,
+        unit_price_snapshot=Decimal("4.90"),
+    )
+
+    selection = RetailOfferSelection.objects.create(
+        order_line=line,
+        batch_offer=offer,
+    )
+
+    assert selection.order_line == line
+    assert selection.product_offer is None
+    assert selection.batch_offer == offer
+
+
+@pytest.mark.django_db
+def test_retail_offer_selection_requires_an_offer():
+    product = retail_product_factory()
+
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    line = OrderLine.objects.create(
+        order=order,
+        product=product,
+        quantity=1,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=1,
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailOfferSelection.objects.create(
+                order_line=line,
+            )
+
+
+@pytest.mark.django_db
+def test_retail_offer_selection_rejects_two_offers():
+    product_offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+    batch_offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+    )
+    line = OrderLine.objects.create(
+        order=order,
+        product=product_offer.product,
+        quantity=1,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=1,
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailOfferSelection.objects.create(
+                order_line=line,
+                product_offer=product_offer,
+                batch_offer=batch_offer,
+            )
 
 
 @pytest.mark.django_db

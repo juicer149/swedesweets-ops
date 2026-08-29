@@ -10,7 +10,9 @@ from orders.datatypes import BuyerInput
 from orders.models import Order, OrderLine
 from products.models import Product
 from retail.models import (
+    RetailBatchOffer,
     RetailCheckoutSession,
+    RetailOfferSelection,
     RetailProductOffer,
 )
 from retail.rules import (
@@ -19,6 +21,7 @@ from retail.rules import (
     MAX_RETAIL_ORDER_TOTAL,
     MIN_RETAIL_LINE_QUANTITY,
     RETAIL_PAYMENT_WINDOW,
+    is_retail_batch_sellable,
     is_retail_product_sellable,
     is_supported_retail_destination,
 )
@@ -42,17 +45,20 @@ class AnonymousBuyerInput:
 
 @dataclass(frozen=True, slots=True)
 class RetailOrderLineInput:
-    product_id: int
     quantity: int
+    product_offer_id: int | None = None
+    batch_offer_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class ResolvedRetailOrderLine:
-    """Validated retail line with its server-side price snapshot."""
+    """Validated retail line with commercial origin resolved server-side."""
 
     product: Product
     quantity: int
     unit_price: Decimal
+    product_offer: RetailProductOffer | None = None
+    batch_offer: RetailBatchOffer | None = None
 
     @property
     def line_total(self) -> Decimal:
@@ -87,20 +93,21 @@ def create_pending_retail_order(
 ) -> RetailCheckoutSession:
     """Start an anonymous retail checkout.
 
-    Retail policy resolves products and prices before persistence.
+    Every retail line references exactly one commercial offer.
 
-    The channel-agnostic Order owns the durable buyer snapshot, order lines,
-    currency and fulfillment lifecycle. RetailCheckoutSession owns only the
-    short-lived checkout lifetime.
+    The offer is resolved server-side into product and price. The generic
+    OrderLine stores the durable product, quantity and price snapshot, while
+    RetailOfferSelection preserves the retail-specific stock-pool identity.
 
-    Inventory reservation and payment are deliberately handled by later
-    workflow slices.
+    Inventory reservation and payment are handled by later workflow slices.
     """
 
     _validate_buyer_destination(buyer)
     _validate_lines(lines)
 
     resolved_lines = _resolve_retail_lines(lines=lines)
+    _validate_unique_products(lines=resolved_lines)
+
     total = _calculate_order_total(lines=resolved_lines)
 
     if total > MAX_RETAIL_ORDER_TOTAL:
@@ -119,19 +126,21 @@ def create_pending_retail_order(
     )
     order.save()
 
-    OrderLine.objects.bulk_create(
-        [
-            OrderLine(
-                order=order,
-                product=line.product,
-                quantity=line.quantity,
-                unit=OrderLine.Unit.STOCK_UNIT,
-                quantity_in_units=line.quantity,
-                unit_price_snapshot=line.unit_price,
-            )
-            for line in resolved_lines
-        ]
-    )
+    for resolved_line in resolved_lines:
+        order_line = OrderLine.objects.create(
+            order=order,
+            product=resolved_line.product,
+            quantity=resolved_line.quantity,
+            unit=OrderLine.Unit.STOCK_UNIT,
+            quantity_in_units=resolved_line.quantity,
+            unit_price_snapshot=resolved_line.unit_price,
+        )
+
+        RetailOfferSelection.objects.create(
+            order_line=order_line,
+            product_offer=resolved_line.product_offer,
+            batch_offer=resolved_line.batch_offer,
+        )
 
     return RetailCheckoutSession.objects.create(
         order=order,
@@ -165,8 +174,6 @@ def _validate_lines(
             "order contains too many lines"
         )
 
-    product_ids: set[int] = set()
-
     for line in lines:
         if not (
             MIN_RETAIL_LINE_QUANTITY
@@ -177,12 +184,13 @@ def _validate_lines(
                 "invalid retail line quantity"
             )
 
-        if line.product_id in product_ids:
-            raise InvalidRetailOrder(
-                "duplicate retail product lines are not allowed"
-            )
+        has_product_offer = line.product_offer_id is not None
+        has_batch_offer = line.batch_offer_id is not None
 
-        product_ids.add(line.product_id)
+        if has_product_offer == has_batch_offer:
+            raise InvalidRetailOrder(
+                "retail line must reference exactly one offer"
+            )
 
 
 def _resolve_retail_lines(
@@ -199,16 +207,57 @@ def _resolve_retail_line(
     *,
     line: RetailOrderLineInput,
 ) -> ResolvedRetailOrderLine:
-    product = _get_product(line.product_id)
-    offer = _get_retail_product_offer(product)
+    if line.product_offer_id is not None:
+        offer = _get_retail_product_offer(
+            offer_id=line.product_offer_id,
+        )
+
+        assert offer.price is not None
+
+        return ResolvedRetailOrderLine(
+            product=offer.product,
+            quantity=line.quantity,
+            unit_price=offer.price,
+            product_offer=offer,
+        )
+
+    assert line.batch_offer_id is not None
+
+    offer = _get_retail_batch_offer(
+        offer_id=line.batch_offer_id,
+    )
 
     assert offer.price is not None
 
     return ResolvedRetailOrderLine(
-        product=product,
+        product=offer.batch.product,
         quantity=line.quantity,
         unit_price=offer.price,
+        batch_offer=offer,
     )
+
+
+def _validate_unique_products(
+    *,
+    lines: list[ResolvedRetailOrderLine],
+) -> None:
+    """Protect the current generic OrderLine product uniqueness invariant.
+
+    Retail may later need multiple lines for the same product when different
+    commercial offers are bought together. The current shared OrderLine schema
+    cannot represent that yet, so reject it explicitly rather than leaking a
+    database IntegrityError.
+    """
+
+    product_ids: set[int] = set()
+
+    for line in lines:
+        if line.product.pk in product_ids:
+            raise InvalidRetailOrder(
+                "duplicate retail product lines are not allowed"
+            )
+
+        product_ids.add(line.product.pk)
 
 
 def _calculate_order_total(
@@ -221,28 +270,49 @@ def _calculate_order_total(
     )
 
 
-def _get_product(product_id: int) -> Product:
-    try:
-        return Product.objects.get(pk=product_id)
-    except Product.DoesNotExist as exc:
-        raise InvalidRetailOrder(
-            "product does not exist"
-        ) from exc
-
-
 def _get_retail_product_offer(
-    product: Product,
+    *,
+    offer_id: int,
 ) -> RetailProductOffer:
     try:
-        offer = product.retail_offer
+        offer = (
+            RetailProductOffer.objects
+            .select_related("product")
+            .get(pk=offer_id)
+        )
     except RetailProductOffer.DoesNotExist as exc:
         raise InvalidRetailOrder(
-            "product has no retail offer"
+            "product retail offer does not exist"
         ) from exc
 
     if not is_retail_product_sellable(offer):
         raise InvalidRetailOrder(
             "product is not enabled for retail"
+        )
+
+    assert offer.price is not None
+
+    return offer
+
+
+def _get_retail_batch_offer(
+    *,
+    offer_id: int,
+) -> RetailBatchOffer:
+    try:
+        offer = (
+            RetailBatchOffer.objects
+            .select_related("batch__product")
+            .get(pk=offer_id)
+        )
+    except RetailBatchOffer.DoesNotExist as exc:
+        raise InvalidRetailOrder(
+            "batch retail offer does not exist"
+        ) from exc
+
+    if not is_retail_batch_sellable(offer):
+        raise InvalidRetailOrder(
+            "batch is not enabled for retail"
         )
 
     assert offer.price is not None

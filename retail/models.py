@@ -82,13 +82,13 @@ class RetailPostalArea(models.Model):
 
 
 class RetailProductOffer(models.Model):
-    """Retail configuration for one product SKU.
+    """General retail offer for one product SKU.
 
-    An enabled product offer makes the product generally available through the
-    retail channel. Physical inventory availability is evaluated separately.
+    The offer owns commercial eligibility and price for the ordinary retail
+    product pool.
 
-    A batch-specific RetailBatchOffer may later override this offer for one
-    physical batch.
+    Physical batches with an enabled RetailBatchOffer form separate commercial
+    offers and are excluded from this offer's stock pool.
     """
 
     product = models.OneToOneField(
@@ -128,16 +128,10 @@ class RetailProductOffer(models.Model):
 
 
 class RetailBatchOffer(models.Model):
-    """Retail configuration for one physical inventory batch.
+    """Retail offer for one exact physical inventory batch.
 
-    The inventory batch owns physical truth: quantity, expiry and lifecycle.
-
-    This model expresses operator intent for the retail sales channel. An
-    enabled batch offer can expose a batch even when the product does not have a
-    general retail offer.
-
-    When both a product offer and a batch offer apply, the batch offer is the
-    more specific offer and will take precedence when offer resolution is added.
+    A batch offer is a separate commercial offer, not an override of a product
+    offer. Its stock pool consists only of the configured physical batch.
     """
 
     batch = models.OneToOneField(
@@ -210,6 +204,69 @@ class RetailCheckoutSession(models.Model):
 
     def __str__(self) -> str:
         return f"Retail checkout {self.pk}"
+
+
+class RetailOfferSelection(models.Model):
+    """Retail commercial origin for one generic order line.
+
+    OrderLine owns durable product, quantity and price snapshot.
+
+    RetailOfferSelection owns only the retail-specific information needed to
+    determine which stock pool may satisfy that line.
+
+    Exactly one of product_offer and batch_offer must be present.
+    """
+
+    order_line = models.OneToOneField(
+        "orders.OrderLine",
+        on_delete=models.CASCADE,
+        related_name="retail_offer_selection",
+    )
+
+    product_offer = models.ForeignKey(
+        RetailProductOffer,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="order_line_selections",
+    )
+
+    batch_offer = models.ForeignKey(
+        RetailBatchOffer,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="order_line_selections",
+    )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        product_offer__isnull=False,
+                        batch_offer__isnull=True,
+                    )
+                    | Q(
+                        product_offer__isnull=True,
+                        batch_offer__isnull=False,
+                    )
+                ),
+                name="retail_offer_selection_exactly_one_offer",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.product_offer_id is not None:
+            return (
+                f"Order line {self.order_line_id} "
+                f"-> product offer {self.product_offer_id}"
+            )
+
+        return (
+            f"Order line {self.order_line_id} "
+            f"-> batch offer {self.batch_offer_id}"
+        )
 
 
 class RetailOrder(models.Model):
