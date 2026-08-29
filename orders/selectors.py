@@ -25,7 +25,12 @@ from django.db.models.functions import Coalesce
 from common.table_tools import normalize_sort
 from customers.models import Customer
 from orders.datatypes import PickLine
-from orders.models import Allocation, Order
+from orders.models import Order
+from reservations.datatypes import ReservationPick
+from reservations.selectors import (
+    list_consumed_picks_for_order,
+    list_reserved_picks_for_order,
+)
 
 ORDER_HISTORY_STATUSES = (
     Order.Status.PLACED,
@@ -39,26 +44,67 @@ DEFAULT_ORDER_SORT = "status"
 ORDER_SORTS: dict[str, tuple[str, ...]] = {
     "order": ("id",),
     "-order": ("-id",),
-    "customer": ("customer__name", "id"),
-    "-customer": ("-customer__name", "id"),
-    "created": ("created_at", "id"),
-    "-created": ("-created_at", "-id"),
-    "status": ("status_rank", "-id"),
-    "-status": ("-status_rank", "-id"),
-    "quantity": ("total_quantity", "id"),
-    "-quantity": ("-total_quantity", "id"),
+    "customer": (
+        "customer__name",
+        "id",
+    ),
+    "-customer": (
+        "-customer__name",
+        "id",
+    ),
+    "created": (
+        "created_at",
+        "id",
+    ),
+    "-created": (
+        "-created_at",
+        "-id",
+    ),
+    "status": (
+        "status_rank",
+        "-id",
+    ),
+    "-status": (
+        "-status_rank",
+        "-id",
+    ),
+    "quantity": (
+        "total_quantity",
+        "id",
+    ),
+    "-quantity": (
+        "-total_quantity",
+        "id",
+    ),
 }
-
 
 CUSTOMER_ORDER_SORTS: dict[str, tuple[str, ...]] = {
     "order": ("id",),
     "-order": ("-id",),
-    "created": ("created_at", "id"),
-    "-created": ("-created_at", "-id"),
-    "status": ("status_rank", "-id"),
-    "-status": ("-status_rank", "-id"),
-    "quantity": ("total_quantity", "id"),
-    "-quantity": ("-total_quantity", "id"),
+    "created": (
+        "created_at",
+        "id",
+    ),
+    "-created": (
+        "-created_at",
+        "-id",
+    ),
+    "status": (
+        "status_rank",
+        "-id",
+    ),
+    "-status": (
+        "-status_rank",
+        "-id",
+    ),
+    "quantity": (
+        "total_quantity",
+        "id",
+    ),
+    "-quantity": (
+        "-total_quantity",
+        "id",
+    ),
 }
 
 DEFAULT_CUSTOMER_ORDER_SORT = DEFAULT_ORDER_SORT
@@ -79,13 +125,11 @@ def list_orders(
     status: str | None = None,
     sort: str | None = None,
 ) -> QuerySet[Order]:
-    """Return orders for the orders list page.
+    """Return orders for the operational order list.
 
-    Invalid querystring values are ignored deliberately, so bad user input falls
-    back to the default operational ordering instead of crashing the page.
+    Invalid querystring values fall back to the default ordering.
 
-    Drafts are customer work-in-progress and are excluded from the default
-    operational order history.
+    Drafts are work-in-progress and are excluded from default history.
     """
 
     normalized_sort = normalize_sort(
@@ -94,46 +138,9 @@ def list_orders(
         default_sort=DEFAULT_ORDER_SORT,
     )
 
-    orders = Order.objects.select_related("customer").annotate(
-        **_order_summary_annotations(),
-        status_rank=_status_rank_expression(),
-    )
-
-    orders = _apply_order_history_status_filter(
-        orders,
-        status=status,
-    )
-
-    return orders.order_by(*ORDER_SORTS[normalized_sort])
-
-
-def list_customer_orders(
-    *,
-    customer,
-    status: str | None = None,
-    sort: str | None = None,
-) -> QuerySet[Order]:
-    """Return orders scoped to one customer.
-
-    This is used by customer-facing views and customer detail pages.
-
-    The database query owns filtering and sorting. The caller must provide the
-    already-authorized customer object; customer portal views should get that
-    customer from the authenticated user's customer membership.
-
-    Drafts are shown through the dedicated "continue draft" flow, not in order
-    history.
-    """
-
-    normalized_sort = normalize_sort(
-        sort,
-        allowed_sorts=CUSTOMER_ORDER_SORTS,
-        default_sort=DEFAULT_CUSTOMER_ORDER_SORT,
-    )
-
     orders = (
-        Order.objects.select_related("customer")
-        .filter(customer=customer)
+        Order.objects
+        .select_related("customer")
         .annotate(
             **_order_summary_annotations(),
             status_rank=_status_rank_expression(),
@@ -145,17 +152,56 @@ def list_customer_orders(
         status=status,
     )
 
-    return orders.order_by(*CUSTOMER_ORDER_SORTS[normalized_sort])
+    return orders.order_by(
+        *ORDER_SORTS[normalized_sort]
+    )
 
 
-def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:
-    """Return order counts and latest order timestamp for a customer.
+def list_customer_orders(
+    *,
+    customer,
+    status: str | None = None,
+    sort: str | None = None,
+) -> QuerySet[Order]:
+    """Return order history scoped to one customer."""
 
-    Drafts are excluded because they are unfinished work-in-progress, not placed
-    order history.
-    """
+    normalized_sort = normalize_sort(
+        sort,
+        allowed_sorts=CUSTOMER_ORDER_SORTS,
+        default_sort=DEFAULT_CUSTOMER_ORDER_SORT,
+    )
 
-    orders = _order_history_queryset().filter(customer=customer)
+    orders = (
+        Order.objects
+        .select_related("customer")
+        .filter(
+            customer=customer,
+        )
+        .annotate(
+            **_order_summary_annotations(),
+            status_rank=_status_rank_expression(),
+        )
+    )
+
+    orders = _apply_order_history_status_filter(
+        orders,
+        status=status,
+    )
+
+    return orders.order_by(
+        *CUSTOMER_ORDER_SORTS[normalized_sort]
+    )
+
+
+def get_customer_order_summary(
+    *,
+    customer: Customer,
+) -> CustomerOrderSummary:
+    """Return order counts and latest order timestamp for a customer."""
+
+    orders = _order_history_queryset().filter(
+        customer=customer,
+    )
 
     stats = orders.aggregate(
         total_orders=Count("id"),
@@ -164,15 +210,33 @@ def get_customer_order_summary(*, customer: Customer) -> CustomerOrderSummary:
 
     orders_by_status = {
         row["status"]: row["count"]
-        for row in (orders.values("status").annotate(count=Count("id")))
+        for row in (
+            orders
+            .values("status")
+            .annotate(
+                count=Count("id"),
+            )
+        )
     }
 
     return CustomerOrderSummary(
         total_orders=stats["total_orders"] or 0,
-        placed_orders=orders_by_status.get(Order.Status.PLACED, 0),
-        packed_orders=orders_by_status.get(Order.Status.PACKED, 0),
-        delivered_orders=orders_by_status.get(Order.Status.DELIVERED, 0),
-        cancelled_orders=orders_by_status.get(Order.Status.CANCELLED, 0),
+        placed_orders=orders_by_status.get(
+            Order.Status.PLACED,
+            0,
+        ),
+        packed_orders=orders_by_status.get(
+            Order.Status.PACKED,
+            0,
+        ),
+        delivered_orders=orders_by_status.get(
+            Order.Status.DELIVERED,
+            0,
+        ),
+        cancelled_orders=orders_by_status.get(
+            Order.Status.CANCELLED,
+            0,
+        ),
         last_ordered_at=stats["last_ordered_at"],
     )
 
@@ -181,15 +245,20 @@ def get_active_draft_order_for_customer(
     *,
     customer,
 ) -> Order | None:
-    """Return the customer's active draft order, if one exists."""
+    """Return the customer's active business draft, if one exists."""
 
     return (
-        Order.objects.filter(
+        Order.objects
+        .filter(
+            channel=Order.Channel.BUSINESS,
             customer=customer,
             status=Order.Status.DRAFT,
         )
         .prefetch_related("lines")
-        .order_by("created_at", "id")
+        .order_by(
+            "created_at",
+            "id",
+        )
         .first()
     )
 
@@ -198,10 +267,7 @@ def list_placed_orders_for_dashboard(
     *,
     limit: int = 3,
 ) -> QuerySet[Order]:
-    """Return placed orders for the dashboard overview.
-
-    Oldest first because these orders have waited longest to be packed.
-    """
+    """Return oldest placed orders for operational handling."""
 
     return _list_orders_for_dashboard(
         status=Order.Status.PLACED,
@@ -213,10 +279,7 @@ def list_packed_orders_for_dashboard(
     *,
     limit: int = 3,
 ) -> QuerySet[Order]:
-    """Return packed orders for the dashboard overview.
-
-    Oldest first because these orders have waited longest to be delivered.
-    """
+    """Return oldest packed orders for operational handling."""
 
     return _list_orders_for_dashboard(
         status=Order.Status.PACKED,
@@ -225,53 +288,69 @@ def list_packed_orders_for_dashboard(
 
 
 def count_placed_orders() -> int:
-    return Order.objects.filter(status=Order.Status.PLACED).count()
+    return Order.objects.filter(
+        status=Order.Status.PLACED,
+    ).count()
 
 
 def count_packed_orders() -> int:
-    return Order.objects.filter(status=Order.Status.PACKED).count()
+    return Order.objects.filter(
+        status=Order.Status.PACKED,
+    ).count()
 
 
-def get_packaging_list(*, order: Order) -> list[PickLine]:
-    allocations = (
-        order.allocations.filter(status=Allocation.Status.RESERVED)
-        .select_related("batch", "batch__product")
-        .order_by("order_line_id", "batch__best_before", "batch__batch_id")
+def get_packaging_list(
+    *,
+    order: Order,
+) -> list[PickLine]:
+    picks = list_reserved_picks_for_order(
+        order=order,
     )
 
-    return [_build_pick_line(allocation) for allocation in allocations]
+    return [
+        _build_pick_line(
+            pick=pick,
+        )
+        for pick in picks
+    ]
 
 
-def get_packed_lines(*, order: Order) -> list[PickLine]:
-    allocations = (
-        order.allocations.filter(status=Allocation.Status.CONSUMED)
-        .select_related("batch", "batch__product")
-        .order_by("order_line_id", "batch__best_before", "batch__batch_id")
+def get_packed_lines(
+    *,
+    order: Order,
+) -> list[PickLine]:
+    picks = list_consumed_picks_for_order(
+        order=order,
     )
 
-    return [_build_pick_line(allocation) for allocation in allocations]
+    return [
+        _build_pick_line(
+            pick=pick,
+        )
+        for pick in picks
+    ]
 
 
-def _build_pick_line(allocation: Allocation) -> PickLine:
-    product = allocation.batch.product
-
+def _build_pick_line(
+    *,
+    pick: ReservationPick,
+) -> PickLine:
     return PickLine(
-        sku=product.sku,
-        product_name=product.catalog_label,
-        batch_id=allocation.batch.batch_id,
-        location=allocation.batch.location,
-        quantity=allocation.quantity,
-        quantity_label=product.stock_quantity_label(allocation.quantity),
+        sku=pick.sku,
+        product_name=pick.product_name,
+        batch_id=pick.batch_code,
+        location=pick.location,
+        quantity=pick.quantity,
+        quantity_label=pick.quantity_label,
     )
 
 
 def _order_history_queryset() -> QuerySet[Order]:
-    """Return orders that belong to order history.
+    """Return completed or operational order history, excluding drafts."""
 
-    Drafts are excluded because they are unfinished customer work-in-progress.
-    """
-
-    return Order.objects.exclude(status=Order.Status.DRAFT)
+    return Order.objects.exclude(
+        status=Order.Status.DRAFT,
+    )
 
 
 def _apply_order_history_status_filter(
@@ -279,22 +358,25 @@ def _apply_order_history_status_filter(
     *,
     status: str | None,
 ) -> QuerySet[Order]:
-    """Apply optional status filtering for order history queries.
-
-    A valid explicit status is respected. Without a valid explicit status, draft
-    orders are excluded from history views.
-    """
+    """Apply optional status filtering to order history."""
 
     if status in Order.Status.values:
-        return orders.filter(status=status)
+        return orders.filter(
+            status=status,
+        )
 
-    return orders.exclude(status=Order.Status.DRAFT)
+    return orders.exclude(
+        status=Order.Status.DRAFT,
+    )
 
 
 def _order_summary_annotations() -> dict[str, object]:
     return {
         "product_count": Coalesce(
-            Count("lines", distinct=True),
+            Count(
+                "lines",
+                distinct=True,
+            ),
             Value(0),
             output_field=IntegerField(),
         ),
@@ -308,11 +390,26 @@ def _order_summary_annotations() -> dict[str, object]:
 
 def _status_rank_expression() -> Case:
     return Case(
-        When(status=Order.Status.PLACED, then=Value(1)),
-        When(status=Order.Status.PACKED, then=Value(2)),
-        When(status=Order.Status.DELIVERED, then=Value(3)),
-        When(status=Order.Status.CANCELLED, then=Value(4)),
-        When(status=Order.Status.DRAFT, then=Value(5)),
+        When(
+            status=Order.Status.PLACED,
+            then=Value(1),
+        ),
+        When(
+            status=Order.Status.PACKED,
+            then=Value(2),
+        ),
+        When(
+            status=Order.Status.DELIVERED,
+            then=Value(3),
+        ),
+        When(
+            status=Order.Status.CANCELLED,
+            then=Value(4),
+        ),
+        When(
+            status=Order.Status.DRAFT,
+            then=Value(5),
+        ),
         default=Value(99),
         output_field=IntegerField(),
     )
@@ -324,8 +421,16 @@ def _list_orders_for_dashboard(
     limit: int,
 ) -> QuerySet[Order]:
     return (
-        Order.objects.filter(status=status)
+        Order.objects
+        .filter(
+            status=status,
+        )
         .select_related("customer")
-        .annotate(**_order_summary_annotations())
-        .order_by("created_at", "id")[:limit]
+        .annotate(
+            **_order_summary_annotations()
+        )
+        .order_by(
+            "created_at",
+            "id",
+        )[:limit]
     )

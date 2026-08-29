@@ -1,20 +1,12 @@
 """
 Order application services.
 
-These functions coordinate order use-cases. They may orchestrate customers,
-products and inventory, but should not duplicate customer, product or inventory
-rules.
+This module owns generic order lifecycle operations and the existing business
+order workflow.
 
-The service layer owns use-case transactions:
-    - create draft order
-    - place order / reserve inventory
-    - update placed order / rebuild reservations
-    - pack order / consume reservations and pick physical stock
-    - cancel order / release reservations
-    - deliver order
-
-UI/HTTP code should call this module instead of mutating Order, OrderLine or
-Allocation directly.
+Reservation mechanics belong to reservations. Inventory eligibility policy for
+the current business workflow is selected here, but locking, reservation
+accounting, allocation persistence and consumption are delegated.
 """
 
 from __future__ import annotations
@@ -28,7 +20,6 @@ from django.utils import timezone
 
 from customers.models import Customer
 from inventory.errors import InsufficientStockError
-from inventory.models import InventoryBatch
 from inventory.selectors import (
     list_orderable_batches_for_product,
 )
@@ -38,7 +29,6 @@ from orders.datatypes import (
 )
 from orders.errors import InvalidOrderOperation
 from orders.models import (
-    Allocation,
     Order,
     OrderLine,
 )
@@ -50,7 +40,14 @@ from products.units import (
 from reservations.planning import (
     InsufficientReservationCapacity,
 )
+from reservations.selectors import (
+    has_reservations_for_order,
+)
 from reservations.services import (
+    MissingReservations,
+    cancel_reservations_for_order,
+    consume_reservations_for_order,
+    delete_reservations_for_order,
     reserve_order_line_from_pool,
 )
 
@@ -90,7 +87,7 @@ def create_draft_order(
     customer: Customer,
     lines: Iterable[OrderLineInput],
 ) -> Order:
-    """Create an order in DRAFT status.
+    """Create a business order in DRAFT status.
 
     Multiple input lines for the same product are normalized to stock units and
     merged into one OrderLine.
@@ -110,12 +107,13 @@ def get_or_create_customer_draft_order(
     *,
     customer: Customer,
 ) -> Order:
-    """Return the customer's active draft order, creating one if needed."""
+    """Return the customer's active business draft, creating one if needed."""
 
     draft = (
         Order.objects
         .select_for_update()
         .filter(
+            channel=Order.Channel.BUSINESS,
             customer=customer,
             status=Order.Status.DRAFT,
         )
@@ -130,6 +128,7 @@ def get_or_create_customer_draft_order(
         return draft
 
     order = Order(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
     )
     order.snapshot_buyer(
@@ -146,6 +145,7 @@ def get_or_create_customer_draft_order(
             Order.objects
             .select_for_update()
             .get(
+                channel=Order.Channel.BUSINESS,
                 customer=customer,
                 status=Order.Status.DRAFT,
             )
@@ -161,7 +161,7 @@ def replace_draft_order_lines(
     lines: Iterable[OrderLineInput],
     user=None,
 ) -> Order:
-    """Replace all lines on a draft order.
+    """Replace all lines on a business draft order.
 
     Draft business orders do not reserve stock. Stock is checked and reserved
     only when the order is placed.
@@ -218,7 +218,9 @@ def discard_draft_order(
             f"current status is {order.status}"
         )
 
-    if order.allocations.exists():
+    if has_reservations_for_order(
+        order=order,
+    ):
         raise InvalidOrderOperation(
             f"Cannot discard draft order {order.pk}; "
             "it has allocations"
@@ -234,7 +236,7 @@ def create_order(
     lines: Iterable[OrderLineInput],
     user=None,
 ) -> Order:
-    """Create a draft order and immediately place it."""
+    """Create a business draft order and immediately place it."""
 
     order = _create_draft_order(
         customer=customer,
@@ -256,7 +258,7 @@ def place_order(
     order: Order,
     user=None,
 ) -> Order:
-    """Reserve inventory batches and move order to PLACED."""
+    """Reserve inventory and move a draft order to PLACED."""
 
     return _place_order(
         order=order,
@@ -271,7 +273,7 @@ def update_placed_order(
     lines: Iterable[OrderLineInput],
     user=None,
 ) -> Order:
-    """Replace lines for a PLACED order and rebuild reservations."""
+    """Replace lines for a PLACED business order and rebuild reservations."""
 
     order = (
         Order.objects
@@ -294,7 +296,7 @@ def update_placed_order(
             "order must contain at least one line"
         )
 
-    _delete_reserved_allocations(
+    delete_reservations_for_order(
         order=order,
     )
     order.lines.all().delete()
@@ -319,7 +321,7 @@ def pack_order(
     order: Order,
     user=None,
 ) -> Order:
-    """Pick physical inventory and move order to PACKED."""
+    """Consume reserved stock and move the order to PACKED."""
 
     order = (
         Order.objects
@@ -333,58 +335,14 @@ def pack_order(
             f"current status is {order.status}"
         )
 
-    allocations = list(
-        order.allocations
-        .select_related("batch")
-        .select_for_update()
-        .filter(
-            status=Allocation.Status.RESERVED,
+    try:
+        consume_reservations_for_order(
+            order=order,
         )
-        .order_by(
-            "batch__best_before",
-            "batch__batch_id",
-            "id",
-        )
-    )
-
-    if not allocations:
+    except MissingReservations as exc:
         raise InvalidOrderOperation(
             f"Order {order.pk} has no reserved allocations"
-        )
-
-    quantity_by_batch_id: dict[int, int] = (
-        defaultdict(int)
-    )
-
-    for allocation in allocations:
-        quantity_by_batch_id[
-            allocation.batch_id
-        ] += allocation.quantity
-
-    locked_batches = {
-        batch.id: batch
-        for batch in (
-            InventoryBatch.objects
-            .select_for_update()
-            .filter(
-                id__in=quantity_by_batch_id.keys(),
-            )
-            .order_by("id")
-        )
-    }
-
-    for batch_id, quantity_to_pick in (
-        quantity_by_batch_id.items()
-    ):
-        batch = locked_batches[
-            batch_id
-        ]
-        batch.pick(
-            quantity=quantity_to_pick,
-        )
-
-    for allocation in allocations:
-        allocation.consume()
+        ) from exc
 
     order.mark_as_packed(
         user=user,
@@ -401,7 +359,7 @@ def cancel_order(
     reason: str = "",
     note: str = "",
 ) -> Order:
-    """Cancel order and release reserved allocations."""
+    """Cancel an order and release active reservations."""
 
     order = (
         Order.objects
@@ -415,9 +373,10 @@ def cancel_order(
             f"current status is {order.status}"
         )
 
-    _cancel_reserved_allocations(
+    cancel_reservations_for_order(
         order=order,
     )
+
     order.cancel(
         user=user,
         reason=reason,
@@ -433,13 +392,14 @@ def deliver_order(
     order: Order,
     user=None,
 ) -> Order:
-    """Move packed order to DELIVERED."""
+    """Move a packed order to DELIVERED."""
 
     order = (
         Order.objects
         .select_for_update()
         .get(pk=order.pk)
     )
+
     order.mark_as_delivered(
         user=user,
     )
@@ -463,6 +423,7 @@ def _create_draft_order(
         )
 
     order = Order(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
     )
     order.snapshot_buyer(
@@ -521,9 +482,7 @@ def _normalize_order_lines(
         for _, product_id in resolved_inputs
     )
 
-    quantity_by_product_id: dict[int, int] = (
-        defaultdict(int)
-    )
+    quantity_by_product_id: dict[int, int] = defaultdict(int)
 
     for line_input, product_id in resolved_inputs:
         try:
@@ -586,6 +545,7 @@ def _place_order(
     _reserve_order(
         order=order,
     )
+
     order.mark_as_placed(
         user=user,
     )
@@ -597,7 +557,7 @@ def _reserve_order(
     *,
     order: Order,
 ) -> None:
-    """Reserve each business order line from normal orderable inventory."""
+    """Reserve business order lines from normal orderable inventory."""
 
     lines = list(
         order.lines
@@ -625,38 +585,7 @@ def _reserve_order(
         except InsufficientReservationCapacity as exc:
             raise InsufficientStockError(
                 product_name=line.product.display_name,
-                requested_quantity=(
-                    exc.requested_quantity
-                ),
-                available_quantity=(
-                    exc.available_quantity
-                ),
-                missing_quantity=(
-                    exc.missing_quantity
-                ),
+                requested_quantity=exc.requested_quantity,
+                available_quantity=exc.available_quantity,
+                missing_quantity=exc.missing_quantity,
             ) from exc
-
-
-def _cancel_reserved_allocations(
-    *,
-    order: Order,
-) -> None:
-    allocations = list(
-        order.allocations
-        .select_for_update()
-        .filter(
-            status=Allocation.Status.RESERVED,
-        )
-    )
-
-    for allocation in allocations:
-        allocation.cancel()
-
-
-def _delete_reserved_allocations(
-    *,
-    order: Order,
-) -> None:
-    order.allocations.filter(
-        status=Allocation.Status.RESERVED,
-    ).delete()

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import datetime
 
 from django.db import transaction
 from django.db.models import QuerySet
 
 from inventory.models import InventoryBatch
-from orders.models import Allocation, OrderLine
+from orders.models import Allocation, Order, OrderLine
 from reservations.planning import plan_batch_picks
 from reservations.protocols import BatchAvailability
 from reservations.selectors import (
@@ -18,6 +19,10 @@ class InvalidReservationPool(ValueError):
     """Raised when supplied batches cannot represent one reservation pool."""
 
 
+class MissingReservations(ValueError):
+    """Raised when an operation requires reservations but none exist."""
+
+
 @transaction.atomic
 def reserve_order_line_from_pool(
     *,
@@ -25,7 +30,7 @@ def reserve_order_line_from_pool(
     batches: QuerySet[InventoryBatch],
     quantity: int,
     reserved_until: datetime | None = None,
-) -> list[Allocation]:
+) -> None:
     """Reserve an order line from an explicitly selected batch pool.
 
     The caller owns eligibility policy.
@@ -88,22 +93,149 @@ def reserve_order_line_from_pool(
         for batch in locked_batches
     }
 
-    allocations = [
-        Allocation(
-            order=order_line.order,
-            order_line=order_line,
-            batch=batches_by_pk[pick.batch_pk],
-            quantity=pick.quantity,
-            reserved_until=reserved_until,
-        )
-        for pick in picks
-    ]
-
     Allocation.objects.bulk_create(
-        allocations,
+        [
+            Allocation(
+                order=order_line.order,
+                order_line=order_line,
+                batch=batches_by_pk[pick.batch_pk],
+                quantity=pick.quantity,
+                reserved_until=reserved_until,
+            )
+            for pick in picks
+        ]
     )
 
-    return allocations
+
+@transaction.atomic
+def cancel_reservations_for_order(
+    *,
+    order: Order,
+) -> None:
+    """Cancel every currently RESERVED allocation for an order."""
+
+    allocations = list(
+        Allocation.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status=Allocation.Status.RESERVED,
+        )
+        .order_by("id")
+    )
+
+    for allocation in allocations:
+        allocation.cancel()
+
+
+@transaction.atomic
+def cancel_temporary_reservations_for_order(
+    *,
+    order: Order,
+) -> None:
+    """Cancel temporary reservations for an order.
+
+    Non-expiring reservations are deliberately left untouched.
+    """
+
+    allocations = list(
+        Allocation.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status=Allocation.Status.RESERVED,
+            reserved_until__isnull=False,
+        )
+        .order_by("id")
+    )
+
+    for allocation in allocations:
+        allocation.cancel()
+
+
+@transaction.atomic
+def delete_reservations_for_order(
+    *,
+    order: Order,
+) -> None:
+    """Delete RESERVED allocations before rebuilding an order.
+
+    Consumed and cancelled allocation history is deliberately preserved.
+    """
+
+    (
+        Allocation.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status=Allocation.Status.RESERVED,
+        )
+        .delete()
+    )
+
+
+@transaction.atomic
+def consume_reservations_for_order(
+    *,
+    order: Order,
+) -> None:
+    """Consume reservations and reduce the corresponding physical stock.
+
+    Allocation rows and physical inventory batches are locked before mutation.
+    The physical pick and reservation state transitions therefore happen in the
+    same database transaction.
+    """
+
+    allocations = list(
+        Allocation.objects
+        .select_related("batch")
+        .select_for_update()
+        .filter(
+            order=order,
+            status=Allocation.Status.RESERVED,
+        )
+        .order_by(
+            "batch__best_before",
+            "batch__batch_id",
+            "id",
+        )
+    )
+
+    if not allocations:
+        raise MissingReservations(
+            f"order {order.pk} has no reserved allocations"
+        )
+
+    quantity_by_batch_pk: dict[int, int] = defaultdict(int)
+
+    for allocation in allocations:
+        quantity_by_batch_pk[
+            allocation.batch_id
+        ] += allocation.quantity
+
+    locked_batches = {
+        batch.pk: batch
+        for batch in (
+            InventoryBatch.objects
+            .select_for_update()
+            .filter(
+                pk__in=quantity_by_batch_pk,
+            )
+            .order_by("pk")
+        )
+    }
+
+    for batch_pk, quantity in quantity_by_batch_pk.items():
+        batch = locked_batches[
+            batch_pk
+        ]
+
+        batch.pick(
+            quantity=quantity,
+        )
+
+    for allocation in allocations:
+        allocation.consume()
 
 
 def _validate_pool(
@@ -113,8 +245,8 @@ def _validate_pool(
 ) -> None:
     """Protect the mechanical reservation boundary.
 
-    Eligibility itself is caller policy, but a reservation pool may never mix
-    products or reserve a product different from its order line.
+    Eligibility itself belongs to the caller's policy, but one reservation
+    pool may not mix products or target a product different from the order line.
     """
 
     product_ids = {

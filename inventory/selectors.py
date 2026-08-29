@@ -36,10 +36,11 @@ from inventory.low_stock import (
     is_low_stock,
 )
 from inventory.models import InventoryBatch
-from orders.models import Allocation
 from products.models import Product
+from reservations.datatypes import BatchUsage
 from reservations.selectors import (
     active_reserved_quantities_by_batch_pk,
+    list_batch_usage as list_reservation_batch_usage,
 )
 
 DEFAULT_BATCH_SORT = "status"
@@ -357,12 +358,14 @@ def available_quantity_by_product() -> list[AvailableStockRow]:
                 product_id
             ]
         )
+
         reserved_quantity = (
             reserved_quantity_by_product_id.get(
                 product_id,
                 0,
             )
         )
+
         available_quantity = (
             stock_totals.physical_quantity
             - reserved_quantity
@@ -450,7 +453,7 @@ def list_orderable_batches_for_product(
     """Return physical batches eligible for normal order reservation.
 
     This selector describes inventory eligibility only. Reservation accounting
-    and locking belong to the reservations layer.
+    and locking belong to reservations.
     """
 
     today = today or timezone.localdate()
@@ -619,28 +622,16 @@ def count_low_stock_products(
 def list_batch_allocations(
     *,
     batch: InventoryBatch,
-) -> list[Allocation]:
-    """Return allocation usage for one inventory batch.
+) -> list[BatchUsage]:
+    """Return reservation usage history for one physical batch.
 
-    This is not full audit history. It shows how the batch has been used by
-    orders through reservation, consumption and cancellation records.
+    The legacy selector name is retained temporarily so inventory callers do
+    not need to change in the same refactor. Allocation persistence remains
+    hidden behind reservations.
     """
 
-    return list(
-        Allocation.objects
-        .filter(
-            batch=batch,
-        )
-        .select_related(
-            "order",
-            "order__customer",
-            "order_line",
-            "order_line__product",
-        )
-        .order_by(
-            "-order__created_at",
-            "-id",
-        )
+    return list_reservation_batch_usage(
+        batch=batch,
     )
 
 

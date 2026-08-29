@@ -11,7 +11,6 @@ from inventory.errors import InsufficientStockError
 from inventory.models import InventoryBatch
 from orders.datatypes import BuyerInput
 from orders.models import (
-    Allocation,
     Order,
     OrderLine,
 )
@@ -20,6 +19,7 @@ from reservations.planning import (
     InsufficientReservationCapacity,
 )
 from reservations.services import (
+    cancel_temporary_reservations_for_order,
     reserve_order_line_from_pool,
 )
 from retail.models import (
@@ -87,7 +87,7 @@ def buyer_from_anonymous_retail_input(
     *,
     buyer: AnonymousBuyerInput,
 ) -> BuyerInput:
-    """Adapt anonymous retail input to the channel-agnostic buyer contract."""
+    """Adapt anonymous retail input to the shared buyer contract."""
 
     first_name = " ".join(
         buyer.first_name.strip().split()
@@ -106,24 +106,14 @@ def buyer_from_anonymous_retail_input(
             if part
         ),
         email=buyer.email.strip(),
-        phone_number=(
-            buyer.phone_number.strip()
-        ),
-        country=(
-            buyer.country
-            .strip()
-            .upper()
-        ),
-        postal_code=(
-            buyer.postal_code.strip()
-        ),
+        phone_number=buyer.phone_number.strip(),
+        country=buyer.country.strip().upper(),
+        postal_code=buyer.postal_code.strip(),
         city=" ".join(
             buyer.city.strip().split()
         ),
         address_line=" ".join(
-            buyer.address_line
-            .strip()
-            .split()
+            buyer.address_line.strip().split()
         ),
     )
 
@@ -136,13 +126,12 @@ def create_pending_retail_order(
 ) -> RetailCheckoutSession:
     """Start an anonymous retail checkout.
 
-    Every retail line references exactly one commercial offer.
+    Every line references exactly one commercial retail offer.
 
-    The generic OrderLine stores the durable product, quantity and price
-    snapshot. RetailOfferSelection preserves the retail-specific stock-pool
-    identity.
+    The generic OrderLine stores product, quantity and price snapshot.
+    RetailOfferSelection preserves the retail-specific offer identity.
 
-    Merely creating the checkout does not reserve physical inventory.
+    Creating a checkout does not reserve physical stock.
     """
 
     _validate_buyer_destination(
@@ -193,12 +182,8 @@ def create_pending_retail_order(
 
         RetailOfferSelection.objects.create(
             order_line=order_line,
-            product_offer=(
-                resolved_line.product_offer
-            ),
-            batch_offer=(
-                resolved_line.batch_offer
-            ),
+            product_offer=resolved_line.product_offer,
+            batch_offer=resolved_line.batch_offer,
         )
 
     return RetailCheckoutSession.objects.create(
@@ -215,11 +200,13 @@ def start_retail_payment(
     *,
     checkout: RetailCheckoutSession,
 ) -> RetailCheckoutSession:
-    """Create a temporary stock hold before external payment starts.
+    """Create temporary reservations before external payment begins.
 
-    Retail owns which batches are eligible for each commercial offer.
-    The reservations layer owns locking, active-reservation accounting,
-    FEFO planning and Allocation persistence.
+    Retail chooses the commercial batch pool. Reservations owns locking,
+    active-claim accounting, FEFO planning and allocation persistence.
+
+    Existing temporary holds are replaced atomically. No database lock is held
+    while the buyer interacts with the payment provider.
     """
 
     now = timezone.now()
@@ -255,10 +242,8 @@ def start_retail_payment(
         order.lines
         .select_related(
             "product",
-            "retail_offer_selection"
-            "__product_offer__product",
-            "retail_offer_selection"
-            "__batch_offer__batch__product",
+            "retail_offer_selection__product_offer__product",
+            "retail_offer_selection__batch_offer__batch__product",
         )
         .order_by("id")
     )
@@ -268,7 +253,7 @@ def start_retail_payment(
             "retail checkout has no order lines"
         )
 
-    _cancel_existing_payment_reservations(
+    cancel_temporary_reservations_for_order(
         order=order,
     )
 
@@ -296,15 +281,9 @@ def start_retail_payment(
         except InsufficientReservationCapacity as exc:
             raise InsufficientStockError(
                 product_name=line.product.display_name,
-                requested_quantity=(
-                    exc.requested_quantity
-                ),
-                available_quantity=(
-                    exc.available_quantity
-                ),
-                missing_quantity=(
-                    exc.missing_quantity
-                ),
+                requested_quantity=exc.requested_quantity,
+                available_quantity=exc.available_quantity,
+                missing_quantity=exc.missing_quantity,
             ) from exc
 
     return checkout
@@ -318,8 +297,7 @@ def _get_offer_selection(
         return line.retail_offer_selection
     except RetailOfferSelection.DoesNotExist as exc:
         raise InvalidRetailOrder(
-            f"order line {line.pk} "
-            "has no retail offer selection"
+            f"order line {line.pk} has no retail offer selection"
         ) from exc
 
 
@@ -327,7 +305,7 @@ def _eligible_batches_for_selection(
     *,
     selection: RetailOfferSelection,
 ) -> QuerySet[InventoryBatch]:
-    """Return the commercial stock pool selected by this retail line."""
+    """Return the commercial stock pool selected by one retail offer."""
 
     if selection.product_offer_id is not None:
         offer = selection.product_offer
@@ -351,30 +329,6 @@ def _eligible_batches_for_selection(
         f"retail offer selection {selection.pk} "
         "has no offer"
     )
-
-
-def _cancel_existing_payment_reservations(
-    *,
-    order: Order,
-) -> None:
-    """Cancel existing temporary payment holds for this draft.
-
-    Non-expiring allocations are not payment holds and are therefore never
-    silently cancelled here.
-    """
-
-    allocations = list(
-        order.allocations
-        .select_for_update()
-        .filter(
-            status=Allocation.Status.RESERVED,
-            reserved_until__isnull=False,
-        )
-        .order_by("id")
-    )
-
-    for allocation in allocations:
-        allocation.cancel()
 
 
 def _validate_buyer_destination(
@@ -476,7 +430,7 @@ def _validate_unique_products(
     *,
     lines: list[ResolvedRetailOrderLine],
 ) -> None:
-    """Protect the current generic OrderLine product uniqueness invariant."""
+    """Protect the current generic OrderLine product uniqueness constraint."""
 
     product_ids: set[int] = set()
 

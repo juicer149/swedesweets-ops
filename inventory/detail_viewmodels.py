@@ -15,7 +15,10 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
-from inventory.access import can_close_batch, can_edit_batch
+from inventory.access import (
+    can_close_batch,
+    can_edit_batch,
+)
 from inventory.expiry import build_expiry_info
 from inventory.models import InventoryBatch
 from inventory.presentation import (
@@ -24,8 +27,8 @@ from inventory.presentation import (
     batch_status_icon,
 )
 from orders.mini_cards import build_order_usage_mini_card
-from orders.models import Allocation
 from products.mini_cards import build_product_mini_card
+from reservations.datatypes import BatchUsage
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,28 +46,41 @@ class BatchStockSummary:
         cls,
         *,
         batch: InventoryBatch,
-        allocations: list[Allocation],
+        allocations: list[BatchUsage],
     ) -> BatchStockSummary:
         reserved_quantity = sum(
-            allocation.quantity
-            for allocation in allocations
-            if allocation.status == Allocation.Status.RESERVED
+            usage.quantity
+            for usage in allocations
+            if usage.is_active_reservation
         )
-        available_quantity = max(batch.quantity - reserved_quantity, 0)
+
+        available_quantity = max(
+            batch.quantity - reserved_quantity,
+            0,
+        )
 
         return cls(
             physical_quantity=batch.quantity,
-            physical_quantity_label=batch.product.stock_quantity_label(batch.quantity),
+            physical_quantity_label=(
+                batch.product.stock_quantity_label(
+                    batch.quantity
+                )
+            ),
             reserved_quantity=reserved_quantity,
-            reserved_quantity_label=batch.product.stock_quantity_label(
-                reserved_quantity
+            reserved_quantity_label=(
+                batch.product.stock_quantity_label(
+                    reserved_quantity
+                )
             ),
             available_quantity=available_quantity,
-            available_quantity_label=batch.product.stock_quantity_label(
-                available_quantity
+            available_quantity_label=(
+                batch.product.stock_quantity_label(
+                    available_quantity
+                )
             ),
             is_orderable=(
-                batch.status == InventoryBatch.Status.ACTIVE
+                batch.status
+                == InventoryBatch.Status.ACTIVE
                 and batch.product.active
                 and available_quantity > 0
             ),
@@ -115,18 +131,24 @@ class BatchDetailContext:
 def build_batch_detail_context(
     *,
     batch: InventoryBatch,
-    allocations: list[Allocation],
+    allocations: list[BatchUsage],
     cancel_url: str,
     role_spec: RoleSpec,
 ) -> BatchDetailContext:
-    usage_rows = _build_usage_rows(allocations)
+    usage_rows = _build_usage_rows(
+        allocations,
+    )
+
     stock = BatchStockSummary.from_batch_and_allocations(
         batch=batch,
         allocations=allocations,
     )
+
     product_href = reverse(
         "products:detail",
-        kwargs={"product_pk": batch.product_id},
+        kwargs={
+            "product_pk": batch.product_id,
+        },
     )
 
     return BatchDetailContext(
@@ -140,16 +162,24 @@ def build_batch_detail_context(
         usage_rows=usage_rows,
         usage_count=len(usage_rows),
         detail_card=DetailCard(
-            header=_build_batch_header(batch),
+            header=_build_batch_header(
+                batch,
+            ),
             panels=_build_batch_detail_panels(
                 batch=batch,
                 stock=stock,
                 usage_count=len(usage_rows),
             ),
-            content_card_class=batch_detail_card_class(batch),
-            secondary_actions=build_batch_secondary_actions(
-                batch=batch,
-                role_spec=role_spec,
+            content_card_class=(
+                batch_detail_card_class(
+                    batch,
+                )
+            ),
+            secondary_actions=(
+                build_batch_secondary_actions(
+                    batch=batch,
+                    role_spec=role_spec,
+                )
             ),
         ),
         title=f"Batch {batch.batch_id}",
@@ -165,32 +195,56 @@ def build_batch_secondary_actions(
 ) -> tuple[DetailAction, ...]:
     actions: list[DetailAction] = []
 
-    if can_edit_batch(batch=batch, role_spec=role_spec):
+    if can_edit_batch(
+        batch=batch,
+        role_spec=role_spec,
+    ):
         actions.append(
             build_secondary_get_action(
                 label="Edit batch",
-                href=reverse("inventory:edit", kwargs={"batch_pk": batch.pk}),
+                href=reverse(
+                    "inventory:edit",
+                    kwargs={
+                        "batch_pk": batch.pk,
+                    },
+                ),
             )
         )
 
-    if can_close_batch(batch=batch, role_spec=role_spec):
+    if can_close_batch(
+        batch=batch,
+        role_spec=role_spec,
+    ):
         actions.append(
             build_danger_get_action(
                 label="Close batch",
-                href=reverse("inventory:close", kwargs={"batch_pk": batch.pk}),
+                href=reverse(
+                    "inventory:close",
+                    kwargs={
+                        "batch_pk": batch.pk,
+                    },
+                ),
             )
         )
 
-    return tuple(actions)
+    return tuple(
+        actions
+    )
 
 
-def _build_batch_header(batch: InventoryBatch) -> DetailHeader:
+def _build_batch_header(
+    batch: InventoryBatch,
+) -> DetailHeader:
     return DetailHeader(
         eyebrow="Batch",
         title=batch.batch_id,
         status_label=batch.get_status_display(),
-        status_class=batch_detail_status_class(batch),
-        status_icon=batch_status_icon(batch),
+        status_class=batch_detail_status_class(
+            batch
+        ),
+        status_icon=batch_status_icon(
+            batch
+        ),
     )
 
 
@@ -205,52 +259,73 @@ def _build_batch_detail_panels(
             key="batch",
             label="Batch",
             summary=stock.available_quantity_label,
-            body_template="inventory/includes/detail_panel_batch.html",
+            body_template=(
+                "inventory/includes/"
+                "detail_panel_batch.html"
+            ),
             icon="tag",
             is_active=True,
         ),
         DetailPanel(
             key="usage",
             label="Usage",
-            summary=_usage_summary(usage_count),
-            body_template="inventory/includes/detail_panel_usage.html",
+            summary=_usage_summary(
+                usage_count
+            ),
+            body_template=(
+                "inventory/includes/"
+                "detail_panel_usage.html"
+            ),
             icon="inventory",
         ),
     )
 
 
-def _build_usage_rows(allocations: list[Allocation]) -> list[BatchUsageRow]:
+def _build_usage_rows(
+    allocations: list[BatchUsage],
+) -> list[BatchUsageRow]:
     rows: list[BatchUsageRow] = []
 
-    for allocation in allocations:
+    for usage in allocations:
         order_href = reverse(
             "orders:detail",
-            kwargs={"order_id": allocation.order_id},
+            kwargs={
+                "order_id": usage.order.pk,
+            },
         )
-        customer_name = allocation.order.customer.name
-        allocation_status = allocation.get_status_display()
-        quantity = allocation.quantity
-        quantity_text = allocation.batch.product.stock_quantity_label(quantity)
+
+        customer_href = ""
+
+        if usage.customer_id is not None:
+            customer_href = reverse(
+                "customers:detail",
+                kwargs={
+                    "customer_pk": usage.customer_id,
+                },
+            )
 
         rows.append(
             BatchUsageRow(
-                order_id=allocation.order_id,
+                order_id=usage.order.pk,
                 order_href=order_href,
-                customer_name=customer_name,
-                customer_href=reverse(
-                    "customers:detail",
-                    kwargs={"customer_pk": allocation.order.customer_id},
+                customer_name=usage.buyer_name,
+                customer_href=customer_href,
+                quantity=usage.quantity,
+                quantity_label=usage.quantity_label,
+                allocation_status=(
+                    usage.allocation_status
                 ),
-                quantity=quantity,
-                quantity_label=quantity_text,
-                allocation_status=allocation_status,
-                order_status=allocation.order.get_status_display(),
+                order_status=usage.order_status,
                 card=build_order_usage_mini_card(
-                    order=allocation.order,
+                    order=usage.order,
                     order_href=order_href,
-                    customer_name=customer_name,
-                    allocation_status=allocation_status,
-                    quantity_label_text=quantity_text,
+                    customer_name=usage.buyer_name,
+                    allocation_status=(
+                        usage.allocation_status
+                    ),
+                    quantity_label_text=(
+                        usage.quantity_label
+                    ),
                 ),
             )
         )
@@ -258,14 +333,18 @@ def _build_usage_rows(allocations: list[Allocation]) -> list[BatchUsageRow]:
     return rows
 
 
-def _usage_summary(usage_count: int) -> str:
+def _usage_summary(
+    usage_count: int,
+) -> str:
     if usage_count == 1:
         return "1 allocation"
 
     return f"{usage_count} allocations"
 
 
-def batch_expiry_label(batch: InventoryBatch) -> str:
+def batch_expiry_label(
+    batch: InventoryBatch,
+) -> str:
     expiry = build_expiry_info(
         best_before=batch.best_before,
         today=timezone.localdate(),
