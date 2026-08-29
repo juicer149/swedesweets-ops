@@ -24,32 +24,53 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Sum
 from django.utils import timezone
 
 from customers.models import Customer
+from inventory.errors import InsufficientStockError
 from inventory.models import InventoryBatch
-from inventory.services import plan_batch_picks
-from orders.datatypes import BuyerInput, OrderLineInput
+from inventory.selectors import (
+    list_orderable_batches_for_product,
+)
+from orders.datatypes import (
+    BuyerInput,
+    OrderLineInput,
+)
 from orders.errors import InvalidOrderOperation
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Allocation,
+    Order,
+    OrderLine,
+)
 from products.models import Product
-from products.units import normalize_order_unit, quantity_to_units
+from products.units import (
+    normalize_order_unit,
+    quantity_to_units,
+)
+from reservations.planning import (
+    InsufficientReservationCapacity,
+)
+from reservations.services import (
+    reserve_order_line_from_pool,
+)
 
 
 @dataclass(frozen=True)
 class NormalizedOrderLine:
     """Order line normalized to the operational fulfillment unit.
 
-    External input may use stock units, kg, or grams. The order workflow reserves
-    and picks stock in whole product stock units.
+    External input may use stock units, kg, or grams. The order workflow
+    reserves and picks stock in whole product stock units.
     """
 
     product: Product
     quantity: int
 
 
-def buyer_from_customer(*, customer: Customer) -> BuyerInput:
+def buyer_from_customer(
+    *,
+    customer: Customer,
+) -> BuyerInput:
     """Adapt a persisted customer to the buyer contract required by orders."""
 
     return BuyerInput(
@@ -77,7 +98,9 @@ def create_draft_order(
 
     return _create_draft_order(
         customer=customer,
-        buyer=buyer_from_customer(customer=customer),
+        buyer=buyer_from_customer(
+            customer=customer,
+        ),
         lines=lines,
     )
 
@@ -87,37 +110,45 @@ def get_or_create_customer_draft_order(
     *,
     customer: Customer,
 ) -> Order:
-    """Return the customer's active draft order, creating one if needed.
-
-    A customer may have at most one active draft. The database constraint owns
-    that invariant; this service provides the application-level workflow.
-    """
+    """Return the customer's active draft order, creating one if needed."""
 
     draft = (
-        Order.objects.select_for_update()
+        Order.objects
+        .select_for_update()
         .filter(
             customer=customer,
             status=Order.Status.DRAFT,
         )
-        .order_by("created_at", "id")
+        .order_by(
+            "created_at",
+            "id",
+        )
         .first()
     )
 
     if draft is not None:
         return draft
 
-    order = Order(customer=customer)
+    order = Order(
+        customer=customer,
+    )
     order.snapshot_buyer(
-        buyer=buyer_from_customer(customer=customer),
+        buyer=buyer_from_customer(
+            customer=customer,
+        ),
     )
 
     try:
         with transaction.atomic():
             order.save()
     except IntegrityError:
-        return Order.objects.select_for_update().get(
-            customer=customer,
-            status=Order.Status.DRAFT,
+        return (
+            Order.objects
+            .select_for_update()
+            .get(
+                customer=customer,
+                status=Order.Status.DRAFT,
+            )
         )
 
     return order
@@ -132,18 +163,25 @@ def replace_draft_order_lines(
 ) -> Order:
     """Replace all lines on a draft order.
 
-    Draft orders do not reserve stock. Stock is checked and reserved only when
-    the order is placed.
+    Draft business orders do not reserve stock. Stock is checked and reserved
+    only when the order is placed.
     """
 
-    order = Order.objects.select_for_update().get(pk=order.pk)
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
 
     if order.status != Order.Status.DRAFT:
         raise InvalidOrderOperation(
-            f"Only draft orders can be edited; current status is {order.status}"
+            "Only draft orders can be edited; "
+            f"current status is {order.status}"
         )
 
-    normalized_lines = _normalize_order_lines(lines=lines)
+    normalized_lines = _normalize_order_lines(
+        lines=lines,
+    )
 
     order.lines.all().delete()
 
@@ -154,7 +192,9 @@ def replace_draft_order_lines(
         )
 
     order.updated_at = timezone.now()
-    order.save(update_fields=["updated_at"])
+    order.save(
+        update_fields=["updated_at"],
+    )
 
     return order
 
@@ -164,22 +204,24 @@ def discard_draft_order(
     *,
     order: Order,
 ) -> None:
-    """Delete an unplaced draft order.
+    """Delete an unplaced draft order."""
 
-    Draft orders are customer work-in-progress. They do not reserve inventory and
-    are safe to delete as long as they have not entered the real order lifecycle.
-    """
-
-    order = Order.objects.select_for_update().get(pk=order.pk)
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
 
     if order.status != Order.Status.DRAFT:
         raise InvalidOrderOperation(
-            f"Only draft orders can be discarded; current status is {order.status}"
+            "Only draft orders can be discarded; "
+            f"current status is {order.status}"
         )
 
     if order.allocations.exists():
         raise InvalidOrderOperation(
-            f"Cannot discard draft order {order.pk}; it has allocations"
+            f"Cannot discard draft order {order.pk}; "
+            "it has allocations"
         )
 
     order.delete()
@@ -196,18 +238,30 @@ def create_order(
 
     order = _create_draft_order(
         customer=customer,
-        buyer=buyer_from_customer(customer=customer),
+        buyer=buyer_from_customer(
+            customer=customer,
+        ),
         lines=lines,
     )
 
-    return _place_order(order=order, user=user)
+    return _place_order(
+        order=order,
+        user=user,
+    )
 
 
 @transaction.atomic
-def place_order(*, order: Order, user=None) -> Order:
+def place_order(
+    *,
+    order: Order,
+    user=None,
+) -> Order:
     """Reserve inventory batches and move order to PLACED."""
 
-    return _place_order(order=order, user=user)
+    return _place_order(
+        order=order,
+        user=user,
+    )
 
 
 @transaction.atomic
@@ -217,84 +271,124 @@ def update_placed_order(
     lines: Iterable[OrderLineInput],
     user=None,
 ) -> Order:
-    """Replace lines for a PLACED order and rebuild reservations.
+    """Replace lines for a PLACED order and rebuild reservations."""
 
-    This is allowed only before physical stock has been picked. The old reserved
-    allocations and order lines are deleted, then new normalized lines and
-    allocations are created.
-
-    PACKED and DELIVERED orders must use separate workflows such as returns or
-    inventory corrections.
-    """
-
-    order = Order.objects.select_for_update().get(pk=order.pk)
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
 
     if order.status != Order.Status.PLACED:
         raise InvalidOrderOperation(
-            f"Only placed orders can be edited; current status is {order.status}"
+            "Only placed orders can be edited; "
+            f"current status is {order.status}"
         )
 
-    normalized_lines = _normalize_order_lines(lines=lines)
+    normalized_lines = _normalize_order_lines(
+        lines=lines,
+    )
 
     if not normalized_lines:
-        raise InvalidOrderOperation("order must contain at least one line")
+        raise InvalidOrderOperation(
+            "order must contain at least one line"
+        )
 
-    _delete_reserved_allocations(order=order)
+    _delete_reserved_allocations(
+        order=order,
+    )
     order.lines.all().delete()
 
     _create_order_lines(
         order=order,
         normalized_lines=normalized_lines,
     )
-    _reserve_order(order=order)
-    order.mark_as_edited(user=user)
+    _reserve_order(
+        order=order,
+    )
+    order.mark_as_edited(
+        user=user,
+    )
 
     return order
 
 
 @transaction.atomic
-def pack_order(*, order: Order, user=None) -> Order:
+def pack_order(
+    *,
+    order: Order,
+    user=None,
+) -> Order:
     """Pick physical inventory and move order to PACKED."""
 
-    order = Order.objects.select_for_update().get(pk=order.pk)
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
 
     if order.status != Order.Status.PLACED:
         raise InvalidOrderOperation(
-            f"Cannot pack order {order.pk}; current status is {order.status}"
+            f"Cannot pack order {order.pk}; "
+            f"current status is {order.status}"
         )
 
     allocations = list(
-        order.allocations.select_related("batch")
+        order.allocations
+        .select_related("batch")
         .select_for_update()
-        .filter(status=Allocation.Status.RESERVED)
-        .order_by("batch__best_before", "batch__batch_id", "id")
+        .filter(
+            status=Allocation.Status.RESERVED,
+        )
+        .order_by(
+            "batch__best_before",
+            "batch__batch_id",
+            "id",
+        )
     )
 
     if not allocations:
-        raise InvalidOrderOperation(f"Order {order.pk} has no reserved allocations")
+        raise InvalidOrderOperation(
+            f"Order {order.pk} has no reserved allocations"
+        )
 
-    quantity_by_batch_id: dict[int, int] = defaultdict(int)
+    quantity_by_batch_id: dict[int, int] = (
+        defaultdict(int)
+    )
 
     for allocation in allocations:
-        quantity_by_batch_id[allocation.batch_id] += allocation.quantity
+        quantity_by_batch_id[
+            allocation.batch_id
+        ] += allocation.quantity
 
     locked_batches = {
         batch.id: batch
         for batch in (
-            InventoryBatch.objects.select_for_update()
-            .filter(id__in=quantity_by_batch_id.keys())
+            InventoryBatch.objects
+            .select_for_update()
+            .filter(
+                id__in=quantity_by_batch_id.keys(),
+            )
             .order_by("id")
         )
     }
 
-    for batch_id, quantity_to_pick in quantity_by_batch_id.items():
-        batch = locked_batches[batch_id]
-        batch.pick(quantity=quantity_to_pick)
+    for batch_id, quantity_to_pick in (
+        quantity_by_batch_id.items()
+    ):
+        batch = locked_batches[
+            batch_id
+        ]
+        batch.pick(
+            quantity=quantity_to_pick,
+        )
 
     for allocation in allocations:
         allocation.consume()
 
-    order.mark_as_packed(user=user)
+    order.mark_as_packed(
+        user=user,
+    )
 
     return order
 
@@ -309,14 +403,21 @@ def cancel_order(
 ) -> Order:
     """Cancel order and release reserved allocations."""
 
-    order = Order.objects.select_for_update().get(pk=order.pk)
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
 
     if not order.can_be_cancelled:
         raise InvalidOrderOperation(
-            f"Cannot cancel order {order.pk}; current status is {order.status}"
+            f"Cannot cancel order {order.pk}; "
+            f"current status is {order.status}"
         )
 
-    _cancel_reserved_allocations(order=order)
+    _cancel_reserved_allocations(
+        order=order,
+    )
     order.cancel(
         user=user,
         reason=reason,
@@ -327,11 +428,21 @@ def cancel_order(
 
 
 @transaction.atomic
-def deliver_order(*, order: Order, user=None) -> Order:
+def deliver_order(
+    *,
+    order: Order,
+    user=None,
+) -> Order:
     """Move packed order to DELIVERED."""
 
-    order = Order.objects.select_for_update().get(pk=order.pk)
-    order.mark_as_delivered(user=user)
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
+    order.mark_as_delivered(
+        user=user,
+    )
 
     return order
 
@@ -342,13 +453,21 @@ def _create_draft_order(
     buyer: BuyerInput,
     lines: Iterable[OrderLineInput],
 ) -> Order:
-    normalized_lines = _normalize_order_lines(lines=lines)
+    normalized_lines = _normalize_order_lines(
+        lines=lines,
+    )
 
     if not normalized_lines:
-        raise InvalidOrderOperation("order must contain at least one line")
+        raise InvalidOrderOperation(
+            "order must contain at least one line"
+        )
 
-    order = Order(customer=customer)
-    order.snapshot_buyer(buyer=buyer)
+    order = Order(
+        customer=customer,
+    )
+    order.snapshot_buyer(
+        buyer=buyer,
+    )
     order.save()
 
     _create_order_lines(
@@ -382,13 +501,18 @@ def _normalize_order_lines(
     *,
     lines: Iterable[OrderLineInput],
 ) -> list[NormalizedOrderLine]:
-    line_inputs = list(lines)
+    line_inputs = list(
+        lines,
+    )
 
     if not line_inputs:
         return []
 
     resolved_inputs = [
-        (line_input, line_input.resolve_product_id())
+        (
+            line_input,
+            line_input.resolve_product_id(),
+        )
         for line_input in line_inputs
     ]
 
@@ -397,17 +521,23 @@ def _normalize_order_lines(
         for _, product_id in resolved_inputs
     )
 
-    quantity_by_product_id: dict[int, int] = defaultdict(int)
+    quantity_by_product_id: dict[int, int] = (
+        defaultdict(int)
+    )
 
     for line_input, product_id in resolved_inputs:
         try:
-            product = products_by_id[product_id]
+            product = products_by_id[
+                product_id
+            ]
         except KeyError as exc:
             raise InvalidOrderOperation(
                 f"Product {product_id} does not exist"
             ) from exc
 
-        unit = normalize_order_unit(str(line_input.unit))
+        unit = normalize_order_unit(
+            str(line_input.unit),
+        )
 
         quantity = quantity_to_units(
             product=product,
@@ -416,149 +546,105 @@ def _normalize_order_lines(
         )
 
         if quantity <= 0:
-            raise InvalidOrderOperation("order line quantity must be positive")
+            raise InvalidOrderOperation(
+                "order line quantity must be positive"
+            )
 
-        quantity_by_product_id[product_id] += quantity
+        quantity_by_product_id[
+            product_id
+        ] += quantity
 
     return [
         NormalizedOrderLine(
-            product=products_by_id[product_id],
+            product=products_by_id[
+                product_id
+            ],
             quantity=quantity,
         )
-        for product_id, quantity in quantity_by_product_id.items()
+        for product_id, quantity
+        in quantity_by_product_id.items()
     ]
 
 
-def _place_order(*, order: Order, user=None) -> Order:
-    order = Order.objects.select_for_update().get(pk=order.pk)
+def _place_order(
+    *,
+    order: Order,
+    user=None,
+) -> Order:
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
 
     if order.status != Order.Status.DRAFT:
         raise InvalidOrderOperation(
-            f"Only draft orders can be placed; current status is {order.status}"
+            "Only draft orders can be placed; "
+            f"current status is {order.status}"
         )
 
-    _reserve_order(order=order)
-    order.mark_as_placed(user=user)
+    _reserve_order(
+        order=order,
+    )
+    order.mark_as_placed(
+        user=user,
+    )
 
     return order
 
 
-def _reserve_order(*, order: Order) -> None:
+def _reserve_order(
+    *,
+    order: Order,
+) -> None:
+    """Reserve each business order line from normal orderable inventory."""
+
     lines = list(
-        order.lines.select_related("product").order_by("id")
+        order.lines
+        .select_related("product")
+        .order_by("id")
     )
 
     if not lines:
-        raise InvalidOrderOperation("order must contain at least one line")
-
-    reserved_quantity_by_batch_id: dict[int, int] = {}
-    new_allocations: list[Allocation] = []
+        raise InvalidOrderOperation(
+            "order must contain at least one line"
+        )
 
     for line in lines:
-        _load_existing_reservations_for_line(
-            line=line,
-            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
-        )
-
-        picks = plan_batch_picks(
+        batches = list_orderable_batches_for_product(
             product=line.product,
-            quantity=line.quantity_in_units,
-            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
         )
 
-        for pick in picks:
-            new_allocations.append(
-                Allocation(
-                    order=order,
-                    order_line=line,
-                    batch=pick.batch,
-                    quantity=pick.quantity,
-                )
+        try:
+            reserve_order_line_from_pool(
+                order_line=line,
+                batches=batches,
+                quantity=line.quantity_in_units,
+                reserved_until=None,
             )
+        except InsufficientReservationCapacity as exc:
+            raise InsufficientStockError(
+                product_name=line.product.display_name,
+                requested_quantity=(
+                    exc.requested_quantity
+                ),
+                available_quantity=(
+                    exc.available_quantity
+                ),
+                missing_quantity=(
+                    exc.missing_quantity
+                ),
+            ) from exc
 
-    Allocation.objects.bulk_create(new_allocations)
 
-
-def _load_existing_reservations_for_line(
+def _cancel_reserved_allocations(
     *,
-    line: OrderLine,
-    reserved_quantity_by_batch_id: dict[int, int],
+    order: Order,
 ) -> None:
-    """Load existing reserved quantity for candidate batches.
-
-    Candidate batches are locked before reading existing reservations. This makes
-    reservation planning safer under concurrent order placement.
-    """
-
-    candidate_batch_ids = list(
-        InventoryBatch.objects.select_for_update()
-        .filter(
-            product=line.product,
-            status=InventoryBatch.Status.ACTIVE,
-            quantity__gt=0,
-        )
-        .values_list("id", flat=True)
-    )
-
-    missing_batch_ids = [
-        batch_id
-        for batch_id in candidate_batch_ids
-        if batch_id not in reserved_quantity_by_batch_id
-    ]
-
-    if not missing_batch_ids:
-        return
-
-    reserved_quantity_by_batch_id.update(
-        _reserved_quantity_by_batch_id(
-            batch_ids=missing_batch_ids,
-        )
-    )
-
-
-def _reserved_quantity_by_batch_id(
-    *,
-    batch_ids: Iterable[int] | None = None,
-) -> dict[int, int]:
-    """Return quantity claimed by reservations that are active right now.
-
-    Reservation activity belongs to the reservation itself, not to the order
-    lifecycle.
-
-    A reservation is active when it is RESERVED and either has no expiry or
-    its expiry is still in the future.
-    """
-
-    now = timezone.now()
-
-    query = Allocation.objects.filter(
-        status=Allocation.Status.RESERVED,
-    ).filter(
-        Q(reserved_until__isnull=True)
-        | Q(reserved_until__gt=now)
-    )
-
-    if batch_ids is not None:
-        batch_ids = list(batch_ids)
-
-        if not batch_ids:
-            return {}
-
-        query = query.filter(batch_id__in=batch_ids)
-
-    rows = query.values("batch_id").annotate(
-        total=Sum("quantity"),
-    )
-
-    return {
-        row["batch_id"]: row["total"] or 0
-        for row in rows
-    }
-
-
-def _cancel_reserved_allocations(*, order: Order) -> None:
     allocations = list(
-        order.allocations.select_for_update().filter(
+        order.allocations
+        .select_for_update()
+        .filter(
             status=Allocation.Status.RESERVED,
         )
     )
@@ -567,7 +653,10 @@ def _cancel_reserved_allocations(*, order: Order) -> None:
         allocation.cancel()
 
 
-def _delete_reserved_allocations(*, order: Order) -> None:
+def _delete_reserved_allocations(
+    *,
+    order: Order,
+) -> None:
     order.allocations.filter(
         status=Allocation.Status.RESERVED,
     ).delete()

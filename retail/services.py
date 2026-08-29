@@ -1,18 +1,27 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import QuerySet
 from django.utils import timezone
 
+from inventory.errors import InsufficientStockError
 from inventory.models import InventoryBatch
-from inventory.services import plan_batch_picks
 from orders.datatypes import BuyerInput
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Allocation,
+    Order,
+    OrderLine,
+)
 from products.models import Product
+from reservations.planning import (
+    InsufficientReservationCapacity,
+)
+from reservations.services import (
+    reserve_order_line_from_pool,
+)
 from retail.models import (
     RetailBatchOffer,
     RetailCheckoutSession,
@@ -31,7 +40,7 @@ from retail.rules import (
     is_supported_retail_destination,
 )
 from retail.selectors import (
-    get_batch_for_batch_offer,
+    list_batches_for_batch_offer,
     list_batches_for_product_offer,
 )
 
@@ -90,16 +99,31 @@ def buyer_from_anonymous_retail_input(
     return BuyerInput(
         name=" ".join(
             part
-            for part in (first_name, last_name)
+            for part in (
+                first_name,
+                last_name,
+            )
             if part
         ),
         email=buyer.email.strip(),
-        phone_number=buyer.phone_number.strip(),
-        country=buyer.country.strip().upper(),
-        postal_code=buyer.postal_code.strip(),
-        city=" ".join(buyer.city.strip().split()),
+        phone_number=(
+            buyer.phone_number.strip()
+        ),
+        country=(
+            buyer.country
+            .strip()
+            .upper()
+        ),
+        postal_code=(
+            buyer.postal_code.strip()
+        ),
+        city=" ".join(
+            buyer.city.strip().split()
+        ),
         address_line=" ".join(
-            buyer.address_line.strip().split()
+            buyer.address_line
+            .strip()
+            .split()
         ),
     )
 
@@ -114,15 +138,19 @@ def create_pending_retail_order(
 
     Every retail line references exactly one commercial offer.
 
-    The offer is resolved server-side into product and price. The generic
-    OrderLine stores the durable product, quantity and price snapshot, while
-    RetailOfferSelection preserves the retail-specific stock-pool identity.
+    The generic OrderLine stores the durable product, quantity and price
+    snapshot. RetailOfferSelection preserves the retail-specific stock-pool
+    identity.
 
     Merely creating the checkout does not reserve physical inventory.
     """
 
-    _validate_buyer_destination(buyer)
-    _validate_lines(lines)
+    _validate_buyer_destination(
+        buyer,
+    )
+    _validate_lines(
+        lines,
+    )
 
     resolved_lines = _resolve_retail_lines(
         lines=lines,
@@ -165,13 +193,20 @@ def create_pending_retail_order(
 
         RetailOfferSelection.objects.create(
             order_line=order_line,
-            product_offer=resolved_line.product_offer,
-            batch_offer=resolved_line.batch_offer,
+            product_offer=(
+                resolved_line.product_offer
+            ),
+            batch_offer=(
+                resolved_line.batch_offer
+            ),
         )
 
     return RetailCheckoutSession.objects.create(
         order=order,
-        expires_at=timezone.now() + RETAIL_CHECKOUT_WINDOW,
+        expires_at=(
+            timezone.now()
+            + RETAIL_CHECKOUT_WINDOW
+        ),
     )
 
 
@@ -182,14 +217,9 @@ def start_retail_payment(
 ) -> RetailCheckoutSession:
     """Create a temporary stock hold before external payment starts.
 
-    The checkout and eligible inventory batches are locked only for this
-    database transaction.
-
-    No lock remains held while the buyer is at the payment provider.
-
-    Existing temporary reservations for this draft are cancelled and replaced
-    by a fresh reservation window. A failure anywhere in this transaction rolls
-    back both the cancellations and any newly planned allocations.
+    Retail owns which batches are eligible for each commercial offer.
+    The reservations layer owns locking, active-reservation accounting,
+    FEFO planning and Allocation persistence.
     """
 
     now = timezone.now()
@@ -225,8 +255,10 @@ def start_retail_payment(
         order.lines
         .select_related(
             "product",
-            "retail_offer_selection__product_offer__product",
-            "retail_offer_selection__batch_offer__batch__product",
+            "retail_offer_selection"
+            "__product_offer__product",
+            "retail_offer_selection"
+            "__batch_offer__batch__product",
         )
         .order_by("id")
     )
@@ -241,48 +273,39 @@ def start_retail_payment(
     )
 
     reserved_until = (
-        now + RETAIL_PAYMENT_RESERVATION_WINDOW
+        now
+        + RETAIL_PAYMENT_RESERVATION_WINDOW
     )
-
-    reserved_quantity_by_batch_id: dict[int, int] = {}
-    allocations: list[Allocation] = []
 
     for line in lines:
         selection = _get_offer_selection(
             line=line,
         )
 
-        eligible_batches = _lock_eligible_batches(
+        batches = _eligible_batches_for_selection(
             selection=selection,
         )
 
-        _load_active_reservations(
-            batches=eligible_batches,
-            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
-            now=now,
-        )
-
-        picks = plan_batch_picks(
-            product=line.product,
-            quantity=line.quantity_in_units,
-            batches=eligible_batches,
-            reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
-        )
-
-        for pick in picks:
-            allocations.append(
-                Allocation(
-                    order=order,
-                    order_line=line,
-                    batch=pick.batch,
-                    quantity=pick.quantity,
-                    reserved_until=reserved_until,
-                )
+        try:
+            reserve_order_line_from_pool(
+                order_line=line,
+                batches=batches,
+                quantity=line.quantity_in_units,
+                reserved_until=reserved_until,
             )
-
-    Allocation.objects.bulk_create(
-        allocations,
-    )
+        except InsufficientReservationCapacity as exc:
+            raise InsufficientStockError(
+                product_name=line.product.display_name,
+                requested_quantity=(
+                    exc.requested_quantity
+                ),
+                available_quantity=(
+                    exc.available_quantity
+                ),
+                missing_quantity=(
+                    exc.missing_quantity
+                ),
+            ) from exc
 
     return checkout
 
@@ -295,26 +318,24 @@ def _get_offer_selection(
         return line.retail_offer_selection
     except RetailOfferSelection.DoesNotExist as exc:
         raise InvalidRetailOrder(
-            f"order line {line.pk} has no retail offer selection"
+            f"order line {line.pk} "
+            "has no retail offer selection"
         ) from exc
 
 
-def _lock_eligible_batches(
+def _eligible_batches_for_selection(
     *,
     selection: RetailOfferSelection,
-) -> list[InventoryBatch]:
-    """Resolve retail stock policy and lock exactly that eligible pool."""
+) -> QuerySet[InventoryBatch]:
+    """Return the commercial stock pool selected by this retail line."""
 
     if selection.product_offer_id is not None:
         offer = selection.product_offer
 
         assert offer is not None
 
-        return list(
-            list_batches_for_product_offer(
-                offer=offer,
-            )
-            .select_for_update()
+        return list_batches_for_product_offer(
+            offer=offer,
         )
 
     if selection.batch_offer_id is not None:
@@ -322,65 +343,14 @@ def _lock_eligible_batches(
 
         assert offer is not None
 
-        batch = get_batch_for_batch_offer(
+        return list_batches_for_batch_offer(
             offer=offer,
         )
 
-        if batch is None:
-            return []
-
-        return list(
-            InventoryBatch.objects
-            .select_for_update()
-            .filter(pk=batch.pk)
-            .order_by("best_before", "batch_id")
-        )
-
     raise InvalidRetailOrder(
-        f"retail offer selection {selection.pk} has no offer"
+        f"retail offer selection {selection.pk} "
+        "has no offer"
     )
-
-
-def _load_active_reservations(
-    *,
-    batches: Iterable[InventoryBatch],
-    reserved_quantity_by_batch_id: dict[int, int],
-    now,
-) -> None:
-    """Load active reservations for newly encountered locked batches."""
-
-    batch_ids = [
-        batch.pk
-        for batch in batches
-        if batch.pk not in reserved_quantity_by_batch_id
-    ]
-
-    if not batch_ids:
-        return
-
-    rows = (
-        Allocation.objects
-        .filter(
-            batch_id__in=batch_ids,
-            status=Allocation.Status.RESERVED,
-        )
-        .filter(
-            Q(reserved_until__isnull=True)
-            | Q(reserved_until__gt=now)
-        )
-        .values("batch_id")
-        .annotate(total=Sum("quantity"))
-    )
-
-    totals = {
-        row["batch_id"]: row["total"] or 0
-        for row in rows
-    }
-
-    for batch_id in batch_ids:
-        reserved_quantity_by_batch_id[batch_id] = (
-            totals.get(batch_id, 0)
-        )
 
 
 def _cancel_existing_payment_reservations(
@@ -389,9 +359,8 @@ def _cancel_existing_payment_reservations(
 ) -> None:
     """Cancel existing temporary payment holds for this draft.
 
-    Only expiring reservations are replaced here. A non-expiring allocation is
-    not considered a temporary payment hold and is therefore not silently
-    cancelled.
+    Non-expiring allocations are not payment holds and are therefore never
+    silently cancelled here.
     """
 
     allocations = list(
@@ -517,7 +486,9 @@ def _validate_unique_products(
                 "duplicate retail product lines are not allowed"
             )
 
-        product_ids.add(line.product.pk)
+        product_ids.add(
+            line.product.pk,
+        )
 
 
 def _calculate_order_total(
@@ -548,7 +519,9 @@ def _get_retail_product_offer(
             "product retail offer does not exist"
         ) from exc
 
-    if not is_retail_product_sellable(offer):
+    if not is_retail_product_sellable(
+        offer,
+    ):
         raise InvalidRetailOrder(
             "product is not enabled for retail"
         )
@@ -573,7 +546,9 @@ def _get_retail_batch_offer(
             "batch retail offer does not exist"
         ) from exc
 
-    if not is_retail_batch_sellable(offer):
+    if not is_retail_batch_sellable(
+        offer,
+    ):
         raise InvalidRetailOrder(
             "batch is not enabled for retail"
         )
