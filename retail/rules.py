@@ -5,8 +5,8 @@ from decimal import Decimal
 
 from django.utils import timezone
 
-from inventory.models import InventoryBatch
 from inventory.expiry import is_orderable_best_before
+from inventory.models import InventoryBatch
 from retail.models import (
     RetailBatchOffer,
     RetailPostalArea,
@@ -20,7 +20,12 @@ MAX_RETAIL_LINE_QUANTITY = 20
 MAX_RETAIL_ORDER_LINES = 20
 MAX_RETAIL_ORDER_TOTAL = Decimal("1000.00")
 
-RETAIL_PAYMENT_WINDOW = timedelta(minutes=10)
+RETAIL_CHECKOUT_WINDOW = timedelta(minutes=90)
+RETAIL_PAYMENT_RESERVATION_WINDOW = timedelta(minutes=35)
+
+# Temporary compatibility alias for legacy RetailOrder tests.
+# Remove together with RetailOrder/RetailOrderLine.
+RETAIL_PAYMENT_WINDOW = RETAIL_CHECKOUT_WINDOW
 
 
 def is_supported_retail_destination(
@@ -96,6 +101,7 @@ def is_retail_batch_sellable(
             today=today,
         )
     )
+
 
 def is_valid_retail_line_quantity(quantity: int) -> bool:
     return MIN_RETAIL_LINE_QUANTITY <= quantity <= MAX_RETAIL_LINE_QUANTITY

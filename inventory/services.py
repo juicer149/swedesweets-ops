@@ -14,13 +14,13 @@ from dataclasses import dataclass
 from datetime import date
 
 from django.db import IntegrityError, transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from inventory.errors import InsufficientStockError, InvalidStockOperation
 from inventory.expiry import orderable_best_before_cutoff
 from inventory.models import InventoryBatch, normalize_batch_id
-from orders.models import Allocation, Order
+from orders.models import Allocation
 from products.models import Product
 
 BATCH_ID_SEQUENCE_WIDTH = 3
@@ -180,13 +180,27 @@ def close_batch(
 
 
 def reserved_quantity_for_batch(*, batch: InventoryBatch) -> int:
-    """Return quantity reserved from this batch by placed orders."""
+    """Return quantity claimed by active reservations for this batch.
 
-    result = Allocation.objects.filter(
-        batch=batch,
-        status=Allocation.Status.RESERVED,
-        order__status=Order.Status.PLACED,
-    ).aggregate(total=Sum("quantity"))
+    A RESERVED allocation is active when it has no expiry or when its expiry
+    lies in the future. Order lifecycle status does not determine reservation
+    activity.
+    """
+
+    now = timezone.now()
+
+    result = (
+        Allocation.objects
+        .filter(
+            batch=batch,
+            status=Allocation.Status.RESERVED,
+        )
+        .filter(
+            Q(reserved_until__isnull=True)
+            | Q(reserved_until__gt=now)
+        )
+        .aggregate(total=Sum("quantity"))
+    )
 
     return result["total"] or 0
 
@@ -196,10 +210,17 @@ def plan_batch_picks(
     product: Product,
     quantity: int,
     reserved_quantity_by_batch_id: dict[int, int] | None = None,
+    batches: Iterable[InventoryBatch] | None = None,
 ) -> list[BatchPick]:
-    """Plan which batches should be used for a product quantity.
+    """Plan which batches should satisfy a product quantity.
 
     Uses FEFO: first-expired, first-out.
+
+    When ``batches`` is omitted, normal inventory candidates are selected.
+
+    A caller that owns channel-specific eligibility policy may instead provide
+    an explicit batch pool. Inventory still owns FEFO planning, while the caller
+    owns which physical batches are commercially eligible.
     """
 
     if reserved_quantity_by_batch_id is None:
@@ -208,8 +229,19 @@ def plan_batch_picks(
     if quantity <= 0:
         raise InvalidStockOperation("quantity must be positive")
 
+    candidate_batches = (
+        list(batches)
+        if batches is not None
+        else _list_candidate_batches_for_picking(product=product)
+    )
+
+    if any(batch.product_id != product.pk for batch in candidate_batches):
+        raise InvalidStockOperation(
+            "all candidate batches must belong to the requested product"
+        )
+
     plan = _build_batch_pick_plan(
-        batches=_list_candidate_batches_for_picking(product=product),
+        batches=candidate_batches,
         requested_quantity=quantity,
         reserved_quantity_by_batch_id=reserved_quantity_by_batch_id,
     )
@@ -291,12 +323,18 @@ def _batch_text_part(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
 
-    characters = [character for character in ascii_value.upper() if character.isalnum()]
+    characters = [
+        character
+        for character in ascii_value.upper()
+        if character.isalnum()
+    ]
 
     if not characters:
         return "XXX"
 
-    return "".join(characters[:BATCH_ID_TEXT_PART_LENGTH]).ljust(
+    return "".join(
+        characters[:BATCH_ID_TEXT_PART_LENGTH]
+    ).ljust(
         BATCH_ID_TEXT_PART_LENGTH,
         "X",
     )
@@ -308,7 +346,9 @@ def _list_candidate_batches_for_picking(
 ) -> list[InventoryBatch]:
     """Return locked orderable active batches for product in FEFO order."""
 
-    cutoff_date = orderable_best_before_cutoff(today=timezone.localdate())
+    cutoff_date = orderable_best_before_cutoff(
+        today=timezone.localdate(),
+    )
 
     return list(
         InventoryBatch.objects.select_for_update()
@@ -352,7 +392,10 @@ def _build_batch_pick_plan(
             continue
 
         available_quantity += allocatable_quantity
-        quantity_to_pick = min(allocatable_quantity, remaining_quantity)
+        quantity_to_pick = min(
+            allocatable_quantity,
+            remaining_quantity,
+        )
 
         picks.append(
             BatchPick(
@@ -381,7 +424,10 @@ def _allocatable_quantity(
     batch: InventoryBatch,
     reserved_quantity_by_batch_id: dict[int, int],
 ) -> int:
-    already_reserved = reserved_quantity_by_batch_id.get(batch.id, 0)
+    already_reserved = reserved_quantity_by_batch_id.get(
+        batch.id,
+        0,
+    )
     return batch.quantity - already_reserved
 
 
@@ -391,5 +437,10 @@ def _reserve_planned_quantity(
     quantity: int,
     reserved_quantity_by_batch_id: dict[int, int],
 ) -> None:
-    already_reserved = reserved_quantity_by_batch_id.get(batch.id, 0)
-    reserved_quantity_by_batch_id[batch.id] = already_reserved + quantity
+    already_reserved = reserved_quantity_by_batch_id.get(
+        batch.id,
+        0,
+    )
+    reserved_quantity_by_batch_id[batch.id] = (
+        already_reserved + quantity
+    )
