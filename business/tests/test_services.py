@@ -9,10 +9,12 @@ from business.policies import (
     prepare_business_order_for_placement,
 )
 from business.services import (
+    create_draft_order,
     create_order,
     place_order,
     update_placed_order,
 )
+from business.tests.conftest import TODAY
 from inventory.errors import InsufficientStockError
 from inventory.services import create_batch
 from orders.datatypes import OrderLineInput
@@ -22,8 +24,6 @@ from orders.models import (
     Order,
     OrderLine,
 )
-from orders.services import create_draft_order
-from orders.tests.conftest import TODAY
 
 
 @pytest.mark.django_db
@@ -170,6 +170,102 @@ def test_create_order_does_not_use_expired_stock(
 
 
 @pytest.mark.django_db
+def test_create_draft_order_creates_business_draft_without_reservations(
+    customer,
+    apple,
+):
+    order = create_draft_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=10,
+            ),
+        ],
+    )
+
+    assert order.channel == Order.Channel.BUSINESS
+    assert order.status == Order.Status.DRAFT
+    assert order.customer == customer
+
+    line = order.lines.get()
+
+    assert line.product == apple
+    assert line.quantity_in_units == 10
+    assert Allocation.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_draft_order_snapshots_business_customer(
+    customer,
+    apple,
+):
+    order = create_draft_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=1,
+            ),
+        ],
+    )
+
+    assert order.buyer_name == customer.name
+    assert order.buyer_email == customer.email
+    assert (
+        order.buyer_phone_number
+        == customer.phone_number
+    )
+    assert order.buyer_country == customer.country
+    assert order.buyer_city == customer.city
+    assert (
+        order.buyer_address_line
+        == customer.address_line
+    )
+
+
+@pytest.mark.django_db
+def test_create_draft_order_merges_duplicate_business_product_lines(
+    customer,
+    apple,
+):
+    order = create_draft_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=10,
+            ),
+            OrderLineInput.kg(
+                product=apple,
+                kg="25.0",
+            ),
+        ],
+    )
+
+    line = order.lines.get()
+
+    assert line.product == apple
+    assert line.quantity_in_units == 15
+    assert line.quantity == 15
+    assert line.unit == OrderLine.Unit.STOCK_UNIT
+
+
+@pytest.mark.django_db
+def test_create_draft_order_rejects_empty_business_order(
+    customer,
+):
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="order must contain at least one line",
+    ):
+        create_draft_order(
+            customer=customer,
+            lines=[],
+        )
+
+
+@pytest.mark.django_db
 def test_place_order_places_existing_business_draft(
     customer,
     apple,
@@ -203,6 +299,31 @@ def test_place_order_places_existing_business_draft(
 
 
 @pytest.mark.django_db
+def test_place_order_rejects_non_draft_business_order(
+    customer,
+    apple,
+    stocked_inventory,
+):
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=10,
+            ),
+        ],
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Only draft orders can be placed",
+    ):
+        place_order(
+            order=order,
+        )
+
+
+@pytest.mark.django_db
 def test_business_policy_rejects_retail_order(
     apple,
 ):
@@ -230,7 +351,6 @@ def test_business_policy_rejects_retail_order(
 
 @pytest.mark.django_db
 def test_unexpired_retail_hold_reduces_business_availability(
-    customer,
     other_customer,
     apple,
 ):
@@ -283,8 +403,16 @@ def test_unexpired_retail_hold_reduces_business_availability(
         )
 
     assert (
+        error.value.requested_quantity
+        == 4
+    )
+    assert (
         error.value.available_quantity
         == 3
+    )
+    assert (
+        error.value.missing_quantity
+        == 1
     )
 
 
@@ -327,6 +455,63 @@ def test_expired_retail_hold_does_not_reduce_business_availability(
             - timedelta(seconds=1)
         ),
     )
+
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=10,
+            ),
+        ],
+    )
+
+    assert (
+        order.allocations.get().quantity
+        == 10
+    )
+
+
+@pytest.mark.django_db
+def test_cancelled_retail_hold_does_not_reduce_business_availability(
+    customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=(
+            TODAY + timedelta(days=60)
+        ),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    retail_order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+        status=Order.Status.DRAFT,
+    )
+    retail_line = OrderLine.objects.create(
+        order=retail_order,
+        product=apple,
+        quantity=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
+    )
+
+    allocation = Allocation.objects.create(
+        order=retail_order,
+        order_line=retail_line,
+        batch=batch,
+        quantity=10,
+        reserved_until=(
+            timezone.now()
+            + timedelta(minutes=35)
+        ),
+    )
+    allocation.cancel()
 
     order = create_order(
         customer=customer,

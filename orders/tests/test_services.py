@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.utils import timezone
@@ -13,7 +14,10 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from orders.datatypes import BuyerInput
+from orders.drafts import OrderDraft, ResolvedOrderLine
 from orders.services import (
+    create_draft_order,
     cancel_order,
     deliver_order,
     pack_order,
@@ -476,3 +480,72 @@ def test_expired_temporary_reservation_does_not_prevent_shared_placement(
 
     assert preparation_called is True
     assert placed.status == Order.Status.PLACED
+
+@pytest.mark.django_db
+def test_create_draft_order_persists_resolved_order_data(
+    customer,
+    apple,
+):
+    order = create_draft_order(
+        draft=OrderDraft(
+            channel=Order.Channel.BUSINESS,
+            currency=Order.Currency.EUR,
+            customer=customer,
+            buyer=BuyerInput(
+                name="Resolved Buyer",
+                email="buyer@example.com",
+                phone_number="+33123456789",
+                country="FR",
+                postal_code="74000",
+                city="Annecy",
+                address_line="1 Test Street",
+            ),
+            lines=(
+                ResolvedOrderLine(
+                    product=apple,
+                    quantity_in_units=3,
+                    unit_price_snapshot=Decimal("12.50"),
+                ),
+            ),
+        ),
+    )
+
+    line = order.lines.get()
+
+    assert order.status == Order.Status.DRAFT
+    assert order.channel == Order.Channel.BUSINESS
+    assert order.currency == Order.Currency.EUR
+    assert order.customer == customer
+    assert order.buyer_name == "Resolved Buyer"
+
+    assert line.product == apple
+    assert line.quantity == 3
+    assert line.quantity_in_units == 3
+    assert line.unit_price_snapshot == Decimal("12.50")
+
+
+@pytest.mark.django_db
+def test_create_draft_order_rejects_empty_resolved_draft(
+    customer,
+):
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="order must contain at least one line",
+    ):
+        create_draft_order(
+            draft=OrderDraft(
+                channel=Order.Channel.BUSINESS,
+                currency=Order.Currency.EUR,
+                customer=customer,
+                buyer=BuyerInput(
+                    name="Resolved Buyer",
+                    email="buyer@example.com",
+                    phone_number="+33123456789",
+                    country="FR",
+                    postal_code="74000",
+                    city="Annecy",
+                    address_line="1 Test Street",
+                ),
+                lines=(),
+            ),
+        )

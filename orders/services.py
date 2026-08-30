@@ -1,41 +1,35 @@
 """
-Order application services.
+Shared order application services.
 
-This module owns shared order lifecycle mutations and the existing draft
-persistence workflow.
+This module owns persistence and lifecycle mutations for already resolved
+orders.
+
+Sales channels resolve buyer input, products, quantities, prices and commercial
+eligibility before calling this module.
 
 Persistence mechanics such as transaction boundaries and row locking are
 centralized by orders.decorators.locked_order.
 
-Channel-specific transition prerequisites are injected as policies.
 Reservation persistence and accounting belong to reservations.
 """
 
 from __future__ import annotations
 
-from collections import defaultdict
 from collections.abc import Iterable
-from dataclasses import dataclass
 
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.utils import timezone
 
-from customers.models import Customer
 from orders.contracts import OrderTransitionPreparation
-from orders.datatypes import (
-    BuyerInput,
-    OrderLineInput,
-)
 from orders.decorators import locked_order
+from orders.drafts import (
+    OrderDraft,
+    ResolvedOrderLine,
+)
 from orders.errors import InvalidOrderOperation
 from orders.models import (
     Order,
     OrderLine,
-)
-from products.models import Product
-from products.units import (
-    normalize_order_unit,
-    quantity_to_units,
 )
 from reservations.selectors import (
     has_reservations_for_order,
@@ -46,14 +40,6 @@ from reservations.services import (
     consume_reservations_for_order,
     delete_reservations_for_order,
 )
-
-
-@dataclass(frozen=True)
-class NormalizedOrderLine:
-    """Order line normalized to the operational fulfillment unit."""
-
-    product: Product
-    quantity: int
 
 
 def _require_draft_for_edit(
@@ -122,88 +108,26 @@ def _require_cancellable(
         )
 
 
-def buyer_from_customer(
-    *,
-    customer: Customer,
-) -> BuyerInput:
-    """Adapt a persisted customer to the buyer snapshot contract."""
-
-    return BuyerInput(
-        name=customer.name,
-        email=customer.email,
-        phone_number=customer.phone_number,
-        country=customer.country,
-        city=customer.city,
-        address_line=customer.address_line,
-        postal_code="",
-    )
-
-
 @transaction.atomic
 def create_draft_order(
     *,
-    customer: Customer,
-    lines: Iterable[OrderLineInput],
+    draft: OrderDraft,
 ) -> Order:
-    """Create a business-shaped order in DRAFT status."""
+    """Persist an already resolved order draft."""
 
-    return _create_draft_order(
-        customer=customer,
-        buyer=buyer_from_customer(
-            customer=customer,
-        ),
-        lines=lines,
-    )
-
-
-@transaction.atomic
-def get_or_create_customer_draft_order(
-    *,
-    customer: Customer,
-) -> Order:
-    """Return the customer's active business draft, creating one if needed."""
-
-    draft = (
-        Order.objects
-        .select_for_update()
-        .filter(
-            channel=Order.Channel.BUSINESS,
-            customer=customer,
-            status=Order.Status.DRAFT,
-        )
-        .order_by(
-            "created_at",
-            "id",
-        )
-        .first()
-    )
-
-    if draft is not None:
-        return draft
+    if not draft.lines:
+        raise InvalidOrderOperation("order must contain at least one line")
 
     order = Order(
-        channel=Order.Channel.BUSINESS,
-        customer=customer,
+        channel=draft.channel,
+        currency=draft.currency,
+        customer=draft.customer,
+        status=Order.Status.DRAFT,
     )
-    order.snapshot_buyer(
-        buyer=buyer_from_customer(
-            customer=customer,
-        ),
-    )
+    order.snapshot_buyer(buyer=draft.buyer)
+    order.save()
 
-    try:
-        with transaction.atomic():
-            order.save()
-    except IntegrityError:
-        return (
-            Order.objects
-            .select_for_update()
-            .get(
-                channel=Order.Channel.BUSINESS,
-                customer=customer,
-                status=Order.Status.DRAFT,
-            )
-        )
+    _create_order_lines(order=order, lines=draft.lines)
 
     return order
 
@@ -214,30 +138,29 @@ def get_or_create_customer_draft_order(
 def replace_draft_order_lines(
     *,
     order: Order,
-    lines: Iterable[OrderLineInput],
+    lines: Iterable[ResolvedOrderLine],
     user=None,
 ) -> Order:
-    """Replace all lines on a draft order."""
+    """Replace lines using already resolved line data."""
 
-    normalized_lines = _normalize_order_lines(lines=lines)
+    resolved_lines = tuple(lines)
 
     order.lines.all().delete()
 
-    if normalized_lines:
-        _create_order_lines(
-            order=order,
-            normalized_lines=normalized_lines,
-        )
+    if resolved_lines:
+        _create_order_lines(order=order, lines=resolved_lines)
 
     order.updated_at = timezone.now()
-    order.save(update_fields=["updated_at"])
+    order.save(
+        update_fields=[
+            "updated_at",
+        ],
+    )
 
     return order
 
 
-@locked_order(
-    guard=_require_draft_for_discard,
-)
+@locked_order(guard=_require_draft_for_discard)
 def discard_draft_order(
     *,
     order: Order,
@@ -253,31 +176,6 @@ def discard_draft_order(
     order.delete()
 
 
-@transaction.atomic
-def create_order(
-    *,
-    customer: Customer,
-    lines: Iterable[OrderLineInput],
-    preparation: OrderTransitionPreparation,
-    user=None,
-) -> Order:
-    """Create a draft order and immediately place it.
-
-    Creation remains business-shaped temporarily. The placement policy is
-    supplied by the caller.
-    """
-
-    order = _create_draft_order(
-        customer=customer,
-        buyer=buyer_from_customer(
-            customer=customer,
-        ),
-        lines=lines,
-    )
-
-    return place_order(order=order, preparation=preparation, user=user)
-
-
 @locked_order(guard=_require_draft_for_placement)
 def place_order(
     *,
@@ -289,6 +187,7 @@ def place_order(
 
     preparation(order=order)
     order.mark_as_placed(user=user)
+
     return order
 
 
@@ -296,27 +195,20 @@ def place_order(
 def update_placed_order(
     *,
     order: Order,
-    lines: Iterable[OrderLineInput],
+    lines: Iterable[ResolvedOrderLine],
     preparation: OrderTransitionPreparation,
     user=None,
 ) -> Order:
-    """Replace lines on a placed order and rebuild channel preparation."""
+    """Replace resolved lines on a placed order and rebuild preparation."""
 
-    normalized_lines = _normalize_order_lines(lines=lines)
+    resolved_lines = tuple(lines)
 
-    if not normalized_lines:
-        raise InvalidOrderOperation(
-            "order must contain at least one line"
-        )
+    if not resolved_lines:
+        raise InvalidOrderOperation("order must contain at least one line")
 
     delete_reservations_for_order(order=order)
-
     order.lines.all().delete()
-
-    _create_order_lines(
-        order=order,
-        normalized_lines=normalized_lines,
-    )
+    _create_order_lines(order=order, lines=resolved_lines)
     preparation(order=order)
     order.mark_as_edited(user=user)
 
@@ -329,23 +221,18 @@ def pack_order(
     order: Order,
     user=None,
 ) -> Order:
-    """Consume existing reservations and move the order to PACKED.
-
-    Reservation consumption remains shared for now. It can become an injected
-    fulfillment preparation when multiple fulfillment strategies actually
-    exist.
-    """
+    """Consume existing reservations and move the order to PACKED."""
 
     try:
-        consume_reservations_for_order(
-            order=order,
-        )
+        consume_reservations_for_order(order=order)
+
     except MissingReservations as exc:
         raise InvalidOrderOperation(
             f"Order {order.pk} has no reserved allocations"
         ) from exc
 
     order.mark_as_packed(user=user)
+
     return order
 
 
@@ -370,115 +257,27 @@ def deliver_order(
     order: Order,
     user=None,
 ) -> Order:
-    """Move an order to DELIVERED.
-
-    Order.mark_as_delivered owns the valid source-state rule.
-    """
+    """Move an order to DELIVERED."""
 
     order.mark_as_delivered(user=user)
-    return order
-
-
-def _create_draft_order(
-    *,
-    customer: Customer,
-    buyer: BuyerInput,
-    lines: Iterable[OrderLineInput],
-) -> Order:
-    normalized_lines = _normalize_order_lines(
-        lines=lines,
-    )
-
-    if not normalized_lines:
-        raise InvalidOrderOperation(
-            "order must contain at least one line"
-        )
-
-    order = Order(
-        channel=Order.Channel.BUSINESS,
-        customer=customer,
-    )
-
-    order.snapshot_buyer(buyer=buyer)
-    order.save()
-
-    _create_order_lines(order= order, normalized_lines= normalized_lines)
     return order
 
 
 def _create_order_lines(
     *,
     order: Order,
-    normalized_lines: Iterable[NormalizedOrderLine],
+    lines: Iterable[ResolvedOrderLine],
 ) -> None:
     OrderLine.objects.bulk_create(
         [
             OrderLine(
                 order=order,
                 product=line.product,
-                quantity=line.quantity,
+                quantity=line.quantity_in_units,
                 unit=OrderLine.Unit.STOCK_UNIT,
-                quantity_in_units=line.quantity,
+                quantity_in_units=line.quantity_in_units,
+                unit_price_snapshot=line.unit_price_snapshot,
             )
-            for line in normalized_lines
+            for line in lines
         ]
     )
-
-
-def _normalize_order_lines(
-    *,
-    lines: Iterable[OrderLineInput],
-) -> list[NormalizedOrderLine]:
-    line_inputs = list(lines)
-
-    if not line_inputs:
-        return []
-
-    resolved_inputs = [
-        (
-            line_input,
-            line_input.resolve_product_id(),
-        )
-        for line_input in line_inputs
-    ]
-
-    products_by_id = Product.objects.in_bulk(
-        product_id
-        for _, product_id in resolved_inputs
-    )
-
-    quantity_by_product_id: dict[int, int] = defaultdict(int)
-
-    for line_input, product_id in resolved_inputs:
-        try:
-            product = products_by_id[product_id]
-        except KeyError as exc:
-            raise InvalidOrderOperation(
-                f"Product {product_id} does not exist"
-            ) from exc
-
-        unit = normalize_order_unit(str(line_input.unit))
-
-        quantity = quantity_to_units(
-            product=product,
-            quantity=line_input.quantity,
-            unit=unit,
-        )
-
-        if quantity <= 0:
-            raise InvalidOrderOperation(
-                "order line quantity must be positive"
-            )
-
-        quantity_by_product_id[product_id] += quantity
-
-    return [
-        NormalizedOrderLine(
-            product=products_by_id[
-                product_id
-            ],
-            quantity=quantity,
-        )
-        for product_id, quantity
-        in quantity_by_product_id.items()
-    ]

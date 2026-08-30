@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from business.services import create_draft_order
 from customers.tests.factories import customer_factory
 from customer_portal.services import (
     DraftStatus,
@@ -11,7 +12,6 @@ from customer_portal.services import (
 from inventory.tests.conftest import TODAY
 from inventory.tests.factories import batch_factory
 from orders.datatypes import OrderLineInput
-from orders.services import create_draft_order
 from products.tests.factories import product_factory
 
 

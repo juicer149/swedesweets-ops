@@ -4,17 +4,17 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 
+from business.services import (
+    get_or_create_customer_draft_order,
+    replace_draft_order_lines,
+)
 from customers.models import Customer
 from customers.services import update_customer
 from inventory.errors import InvalidStockOperation
 from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
 from orders.models import Order
-from orders.services import (
-    discard_draft_order,
-    get_or_create_customer_draft_order,
-    replace_draft_order_lines,
-)
+from orders.services import discard_draft_order
 
 
 class DraftStatus(StrEnum):
@@ -44,15 +44,8 @@ def save_or_clear_portal_draft_order(
     line_inputs: Iterable[OrderLineInput],
     user=None,
 ) -> PortalDraftMutationResult:
-    """Save validated portal draft lines, or clear the draft if it is empty.
+    """Save validated portal draft lines, or clear the draft if it is empty."""
 
-    This is a customer-portal workflow rule:
-
-    - non-empty lines mean "persist these draft lines"
-    - empty lines mean "there is no draft content to keep"
-
-    Core order mutations are delegated to orders.services.
-    """
     line_inputs = tuple(line_inputs)
 
     scope_error = _validate_optional_order_customer_scope(
@@ -63,7 +56,9 @@ def save_or_clear_portal_draft_order(
     if scope_error:
         return _failed(
             draft_order=draft_order,
-            errors=(scope_error,),
+            errors=(
+                scope_error,
+            ),
         )
 
     if not line_inputs:
@@ -75,13 +70,14 @@ def save_or_clear_portal_draft_order(
 
     if draft_order is None:
         try:
-            draft_order = get_or_create_customer_draft_order(
-                customer=customer,
-            )
+            draft_order = get_or_create_customer_draft_order(customer=customer)
+
         except PORTAL_DRAFT_OPERATION_ERRORS as error:
             return _failed(
                 draft_order=None,
-                errors=(str(error),),
+                errors=(
+                    str(error),
+                ),
             )
 
     try:
@@ -93,12 +89,14 @@ def save_or_clear_portal_draft_order(
     except PORTAL_DRAFT_OPERATION_ERRORS as error:
         return _failed(
             draft_order=draft_order,
-            errors=(str(error),),
+            errors=(
+                str(error),
+            ),
         )
 
     return _succeeded(
         draft_order=draft_order,
-        status=DraftStatus.SAVED
+        status=DraftStatus.SAVED,
     )
 
 
@@ -108,12 +106,8 @@ def discard_portal_draft_order(
     draft_order: Order | None,
     empty_save: bool = False,
 ) -> PortalDraftMutationResult:
-    """Discard a draft order in the customer portal scope.
+    """Discard a draft order in the customer portal scope."""
 
-    The ownership check lives outside the core order service. That keeps
-    orders.services reusable while preventing portal code from mutating another
-    customer's draft.
-    """
     scope_error = _validate_optional_order_customer_scope(
         customer=customer,
         order=draft_order,
@@ -122,7 +116,9 @@ def discard_portal_draft_order(
     if scope_error:
         return _failed(
             draft_order=draft_order,
-            errors=(scope_error,),
+            errors=(
+                scope_error,
+            ),
         )
 
     if draft_order is None:
@@ -133,17 +129,18 @@ def discard_portal_draft_order(
 
     try:
         discard_draft_order(order=draft_order)
+
     except PORTAL_DRAFT_OPERATION_ERRORS as error:
         return _failed(
             draft_order=draft_order,
-            errors=(str(error),),
+            errors=(
+                str(error),
+            ),
         )
-
-    status = DraftStatus.CLEARED
 
     return _succeeded(
         draft_order=None,
-        status=status,
+        status=DraftStatus.CLEARED,
     )
 
 
@@ -158,11 +155,8 @@ def update_portal_customer_profile(
     address_line: str,
     user=None,
 ) -> Customer:
-    """Update the current portal customer's editable store profile.
+    """Update the current portal customer's editable store profile."""
 
-    The caller must pass the customer resolved from CustomerMembership.
-    This service deliberately accepts no customer id.
-    """
     return update_customer(
         customer=customer,
         name=name,
