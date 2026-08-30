@@ -10,6 +10,7 @@ from reservations.services import (
     cancel_reservations_for_order,
     consume_reservations_for_order,
     delete_reservations_for_order,
+    make_reservations_permanent_for_order,
 )
 
 
@@ -64,3 +65,19 @@ def require_order_without_reservations_before_discard(
             f"Cannot discard draft order {order.pk}; "
             "it has allocations"
         )
+
+
+def make_order_reservations_permanent_before_placement(
+    *,
+    order: Order,
+) -> None:
+    """Promote temporary payment holds before an order is placed."""
+
+    try:
+        make_reservations_permanent_for_order(
+            order=order,
+        )
+    except MissingReservations as exc:
+        raise InvalidOrderOperation(
+            f"Order {order.pk} has no active payment reservations"
+        ) from exc

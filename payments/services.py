@@ -62,10 +62,7 @@ def cancel_pending_payment_attempts_for_order(
     *,
     order: Order,
 ) -> None:
-    """Cancel every pending payment attempt for an order.
-
-    The order row serializes payment-attempt replacement for one order.
-    """
+    """Cancel every pending payment attempt for an order."""
 
     order = (
         Order.objects
@@ -91,3 +88,33 @@ def cancel_pending_payment_attempts_for_order(
                 "updated_at",
             ]
         )
+
+
+@transaction.atomic
+def mark_payment_attempt_succeeded(
+    *,
+    attempt: PaymentAttempt,
+) -> PaymentAttempt:
+    """Move one pending payment attempt to SUCCEEDED."""
+
+    attempt = (
+        PaymentAttempt.objects
+        .select_for_update()
+        .select_related("order")
+        .get(pk=attempt.pk)
+    )
+
+    if attempt.status != PaymentAttempt.Status.PENDING:
+        raise InvalidPaymentAttempt(
+            "only pending payment attempts can succeed"
+        )
+
+    attempt.status = PaymentAttempt.Status.SUCCEEDED
+    attempt.save(
+        update_fields=[
+            "status",
+            "updated_at",
+        ]
+    )
+
+    return attempt

@@ -14,14 +14,22 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from orders.services import (
+    place_order as place_shared_order,
+)
 from payments.models import PaymentAttempt
 from payments.services import (
+    InvalidPaymentAttempt,
     cancel_pending_payment_attempts_for_order,
     create_payment_attempt,
+    mark_payment_attempt_succeeded,
 )
 from products.models import Product
 from reservations.planning import (
     InsufficientReservationCapacity,
+)
+from reservations.policies import (
+    make_order_reservations_permanent_before_placement,
 )
 from reservations.services import (
     cancel_temporary_reservations_for_order,
@@ -303,6 +311,57 @@ def start_retail_payment(
     return create_payment_attempt(
         order=order,
     )
+
+
+@transaction.atomic
+def complete_retail_payment(
+    *,
+    attempt: PaymentAttempt,
+) -> Order:
+    """Finalize a successfully paid retail checkout.
+
+    Temporary payment reservations become durable before the shared order
+    moves from DRAFT to PLACED.
+
+    The payment attempt is marked SUCCEEDED only after order placement
+    succeeds inside the same database transaction.
+    """
+
+    attempt = (
+        PaymentAttempt.objects
+        .select_for_update()
+        .select_related("order")
+        .get(pk=attempt.pk)
+    )
+
+    if attempt.status != PaymentAttempt.Status.PENDING:
+        raise InvalidPaymentAttempt(
+            "only pending payment attempts can complete retail payment"
+        )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=attempt.order_id)
+    )
+
+    if order.channel != Order.Channel.RETAIL:
+        raise InvalidRetailOrder(
+            "payment attempt does not belong to a retail order"
+        )
+
+    order = place_shared_order(
+        order=order,
+        preparation=(
+            make_order_reservations_permanent_before_placement
+        ),
+    )
+
+    mark_payment_attempt_succeeded(
+        attempt=attempt,
+    )
+
+    return order
 
 
 def _get_offer_selection(

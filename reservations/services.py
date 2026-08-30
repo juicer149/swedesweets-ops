@@ -5,6 +5,7 @@ from datetime import datetime
 
 from django.db import transaction
 from django.db.models import QuerySet
+from django.utils import timezone
 
 from inventory.models import InventoryBatch
 from orders.models import Allocation, Order, OrderLine
@@ -236,6 +237,57 @@ def consume_reservations_for_order(
 
     for allocation in allocations:
         allocation.consume()
+
+
+@transaction.atomic
+def make_reservations_permanent_for_order(
+    *,
+    order: Order,
+) -> None:
+    """Convert active temporary reservations into durable reservations."""
+
+    now = timezone.now()
+
+    reservations = list(
+        Allocation.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status=Allocation.Status.RESERVED,
+        )
+        .order_by("id")
+    )
+
+    active_reservations = [
+        reservation
+        for reservation in reservations
+        if (
+            reservation.reserved_until is None
+            or reservation.reserved_until > now
+        )
+    ]
+
+    if not active_reservations:
+        raise MissingReservations(
+            f"Order {order.pk} has no active reservations"
+        )
+
+    if any(
+        reservation.reserved_until is None
+        for reservation in active_reservations
+    ):
+        raise InvalidReservationPool(
+            f"Order {order.pk} already has durable reservations"
+        )
+
+    Allocation.objects.filter(
+        pk__in=[
+            reservation.pk
+            for reservation in active_reservations
+        ],
+    ).update(
+        reserved_until=None,
+    )
 
 
 def _validate_pool(
