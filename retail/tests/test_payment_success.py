@@ -13,7 +13,10 @@ from orders.models import (
     Order,
 )
 from payments.models import PaymentAttempt
-from payments.services import InvalidPaymentAttempt
+from payments.services import (
+    InvalidPaymentAttempt,
+    cancel_pending_payment_attempts_for_order,
+)
 from retail.services import (
     AnonymousBuyerInput,
     RetailOrderLineInput,
@@ -100,10 +103,12 @@ def test_complete_retail_payment_places_order_and_makes_reservation_permanent():
 
 @pytest.mark.django_db
 def test_complete_retail_payment_rejects_cancelled_attempt():
-    checkout, first_attempt = _create_checkout_with_payment_attempt()
+    checkout, first_attempt = (
+        _create_checkout_with_payment_attempt()
+    )
 
-    second_attempt = start_retail_payment(
-        checkout=checkout,
+    cancel_pending_payment_attempts_for_order(
+        order=checkout.order,
     )
 
     first_attempt.refresh_from_db()
@@ -112,9 +117,9 @@ def test_complete_retail_payment_rejects_cancelled_attempt():
         first_attempt.status
         == PaymentAttempt.Status.CANCELLED
     )
-    assert (
-        second_attempt.status
-        == PaymentAttempt.Status.PENDING
+
+    second_attempt = start_retail_payment(
+        checkout=checkout,
     )
 
     with pytest.raises(
@@ -126,15 +131,20 @@ def test_complete_retail_payment_rejects_cancelled_attempt():
         )
 
     checkout.order.refresh_from_db()
+    first_attempt.refresh_from_db()
     second_attempt.refresh_from_db()
 
     assert (
-        checkout.order.status
-        == Order.Status.DRAFT
+        first_attempt.status
+        == PaymentAttempt.Status.CANCELLED
     )
     assert (
         second_attempt.status
         == PaymentAttempt.Status.PENDING
+    )
+    assert (
+        checkout.order.status
+        == Order.Status.DRAFT
     )
 
 

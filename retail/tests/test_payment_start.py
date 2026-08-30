@@ -6,7 +6,6 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
-from inventory.errors import InsufficientStockError
 from inventory.services import create_batch
 from orders.models import (
     Allocation,
@@ -15,20 +14,20 @@ from orders.models import (
 from payments.models import PaymentAttempt
 from retail.services import (
     AnonymousBuyerInput,
+    InvalidRetailOrder,
     RetailOrderLineInput,
     create_pending_retail_order,
+    fail_retail_payment,
     start_retail_payment,
 )
 from retail.tests.factories import (
     retail_buyer_data,
     retail_postal_area_factory,
-    retail_product_factory,
     retail_product_offer_factory,
 )
 
 
-@pytest.mark.django_db
-def test_start_retail_payment_creates_pending_payment_attempt():
+def _create_checkout():
     retail_postal_area_factory()
 
     offer = retail_product_offer_factory(
@@ -47,7 +46,7 @@ def test_start_retail_payment_creates_pending_payment_attempt():
         location="Shelf A1",
     )
 
-    checkout = create_pending_retail_order(
+    return create_pending_retail_order(
         buyer=AnonymousBuyerInput(
             **retail_buyer_data()
         ),
@@ -58,6 +57,11 @@ def test_start_retail_payment_creates_pending_payment_attempt():
             ),
         ],
     )
+
+
+@pytest.mark.django_db
+def test_start_retail_payment_creates_pending_payment_attempt():
+    checkout = _create_checkout()
 
     attempt = start_retail_payment(
         checkout=checkout,
@@ -70,168 +74,41 @@ def test_start_retail_payment_creates_pending_payment_attempt():
 
     checkout.order.refresh_from_db()
 
-    assert checkout.order.status == Order.Status.DRAFT
+    assert (
+        checkout.order.status
+        == Order.Status.DRAFT
+    )
 
     allocation = checkout.order.allocations.get()
 
-    assert allocation.status == Allocation.Status.RESERVED
+    assert (
+        allocation.status
+        == Allocation.Status.RESERVED
+    )
     assert allocation.reserved_until is not None
 
 
 @pytest.mark.django_db
-def test_starting_retail_payment_again_replaces_pending_attempt():
-    retail_postal_area_factory()
-
-    offer = retail_product_offer_factory(
-        enabled=True,
-        price=Decimal("12.50"),
-    )
-
-    create_batch(
-        batch_id="A-001",
-        product=offer.product,
-        quantity=10,
-        best_before=(
-            timezone.localdate()
-            + timedelta(days=60)
-        ),
-        location="Shelf A1",
-    )
-
-    checkout = create_pending_retail_order(
-        buyer=AnonymousBuyerInput(
-            **retail_buyer_data()
-        ),
-        lines=[
-            RetailOrderLineInput(
-                product_offer_id=offer.pk,
-                quantity=2,
-            ),
-        ],
-    )
+def test_start_retail_payment_rejects_existing_pending_attempt():
+    checkout = _create_checkout()
 
     first_attempt = start_retail_payment(
         checkout=checkout,
     )
 
-    second_attempt = start_retail_payment(
-        checkout=checkout,
-    )
-
-    first_attempt.refresh_from_db()
-
-    assert (
-        first_attempt.status
-        == PaymentAttempt.Status.CANCELLED
-    )
-
-    assert (
-        second_attempt.status
-        == PaymentAttempt.Status.PENDING
-    )
-
-    assert first_attempt.pk != second_attempt.pk
-
-    assert (
-        PaymentAttempt.objects
-        .filter(
-            order=checkout.order,
-            status=PaymentAttempt.Status.PENDING,
-        )
-        .count()
-        == 1
-    )
-
-
-@pytest.mark.django_db
-def test_failed_retail_payment_start_rolls_back_attempt_replacement():
-    retail_postal_area_factory()
-
-    first_product = retail_product_factory(
-        name="Product A",
-    )
-    second_product = retail_product_factory(
-        name="Product B",
-    )
-
-    first_offer = retail_product_offer_factory(
-        product=first_product,
-        enabled=True,
-        price=Decimal("12.50"),
-    )
-    second_offer = retail_product_offer_factory(
-        product=second_product,
-        enabled=True,
-        price=Decimal("8.50"),
-    )
-
-    first_batch = create_batch(
-        batch_id="A-001",
-        product=first_product,
-        quantity=10,
-        best_before=(
-            timezone.localdate()
-            + timedelta(days=60)
-        ),
-        location="Shelf A1",
-    )
-
-    second_batch = create_batch(
-        batch_id="B-001",
-        product=second_product,
-        quantity=10,
-        best_before=(
-            timezone.localdate()
-            + timedelta(days=60)
-        ),
-        location="Shelf B1",
-    )
-
-    checkout = create_pending_retail_order(
-        buyer=AnonymousBuyerInput(
-            **retail_buyer_data()
-        ),
-        lines=[
-            RetailOrderLineInput(
-                product_offer_id=first_offer.pk,
-                quantity=4,
-            ),
-            RetailOrderLineInput(
-                product_offer_id=second_offer.pk,
-                quantity=2,
-            ),
-        ],
-    )
-
-    first_attempt = start_retail_payment(
-        checkout=checkout,
-    )
-
-    first_allocations = list(
-        checkout.order.allocations
-        .filter(
-            status=Allocation.Status.RESERVED,
-        )
-        .order_by("id")
-    )
-
-    assert len(first_allocations) == 2
-
-    second_batch.quantity = 1
-    second_batch.save(
-        update_fields=[
-            "quantity",
-        ]
-    )
+    allocation = checkout.order.allocations.get()
+    original_reserved_until = allocation.reserved_until
 
     with pytest.raises(
-        InsufficientStockError,
+        InvalidRetailOrder,
+        match="already has a pending payment attempt",
     ):
         start_retail_payment(
             checkout=checkout,
         )
 
     first_attempt.refresh_from_db()
+    allocation.refresh_from_db()
 
     assert (
         first_attempt.status
@@ -240,21 +117,79 @@ def test_failed_retail_payment_start_rolls_back_attempt_replacement():
 
     assert (
         PaymentAttempt.objects
-        .filter(
-            order=checkout.order,
-            status=PaymentAttempt.Status.PENDING,
-        )
+        .filter(order=checkout.order)
         .count()
         == 1
     )
 
-    for allocation in first_allocations:
-        allocation.refresh_from_db()
+    assert (
+        allocation.status
+        == Allocation.Status.RESERVED
+    )
+    assert (
+        allocation.reserved_until
+        == original_reserved_until
+    )
 
-        assert (
-            allocation.status
-            == Allocation.Status.RESERVED
+
+@pytest.mark.django_db
+def test_new_retail_payment_can_start_after_previous_attempt_failed():
+    checkout = _create_checkout()
+
+    first_attempt = start_retail_payment(
+        checkout=checkout,
+    )
+
+    first_allocation = checkout.order.allocations.get()
+
+    fail_retail_payment(
+        attempt=first_attempt,
+    )
+
+    first_attempt.refresh_from_db()
+    first_allocation.refresh_from_db()
+
+    assert (
+        first_attempt.status
+        == PaymentAttempt.Status.FAILED
+    )
+    assert (
+        first_allocation.status
+        == Allocation.Status.CANCELLED
+    )
+
+    second_attempt = start_retail_payment(
+        checkout=checkout,
+    )
+
+    second_attempt.refresh_from_db()
+
+    assert second_attempt.pk != first_attempt.pk
+    assert (
+        second_attempt.status
+        == PaymentAttempt.Status.PENDING
+    )
+
+    assert (
+        PaymentAttempt.objects
+        .filter(order=checkout.order)
+        .count()
+        == 2
+    )
+
+    active_allocations = (
+        checkout.order.allocations
+        .filter(
+            status=Allocation.Status.RESERVED,
         )
+    )
 
-    first_batch.refresh_from_db()
-    second_batch.refresh_from_db()
+    assert active_allocations.count() == 1
+
+    second_allocation = active_allocations.get()
+
+    assert (
+        second_allocation.pk
+        != first_allocation.pk
+    )
+    assert second_allocation.reserved_until is not None

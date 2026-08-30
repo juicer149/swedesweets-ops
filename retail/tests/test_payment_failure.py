@@ -12,7 +12,10 @@ from orders.models import (
     Order,
 )
 from payments.models import PaymentAttempt
-from payments.services import InvalidPaymentAttempt
+from payments.services import (
+    InvalidPaymentAttempt,
+    cancel_pending_payment_attempts_for_order,
+)
 from retail.services import (
     AnonymousBuyerInput,
     InvalidRetailOrder,
@@ -141,8 +144,8 @@ def test_cancelled_payment_attempt_cannot_fail_later():
         _create_checkout_with_payment_attempt()
     )
 
-    second_attempt = start_retail_payment(
-        checkout=checkout,
+    cancel_pending_payment_attempts_for_order(
+        order=checkout.order,
     )
 
     first_attempt.refresh_from_db()
@@ -150,6 +153,10 @@ def test_cancelled_payment_attempt_cannot_fail_later():
     assert (
         first_attempt.status
         == PaymentAttempt.Status.CANCELLED
+    )
+
+    second_attempt = start_retail_payment(
+        checkout=checkout,
     )
 
     with pytest.raises(
@@ -160,8 +167,13 @@ def test_cancelled_payment_attempt_cannot_fail_later():
             attempt=first_attempt,
         )
 
+    first_attempt.refresh_from_db()
     second_attempt.refresh_from_db()
 
+    assert (
+        first_attempt.status
+        == PaymentAttempt.Status.CANCELLED
+    )
     assert (
         second_attempt.status
         == PaymentAttempt.Status.PENDING

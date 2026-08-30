@@ -20,7 +20,6 @@ from orders.services import (
 from payments.models import PaymentAttempt
 from payments.services import (
     InvalidPaymentAttempt,
-    cancel_pending_payment_attempts_for_order,
     create_payment_attempt,
     mark_payment_attempt_failed,
     mark_payment_attempt_succeeded,
@@ -214,13 +213,16 @@ def start_retail_payment(
     *,
     checkout: RetailCheckoutSession,
 ) -> PaymentAttempt:
-    """Prepare one retail order for an external payment attempt.
+    """Prepare one retail order for a new external payment attempt.
+
+    A retail order may have at most one active payment workflow.
+
+    Existing pending payment attempts are never implicitly replaced here.
+    Provider initialization for an existing pending attempt must instead be
+    retried or reconciled explicitly.
 
     The checkout and order are locked while retail availability is
     re-evaluated.
-
-    Existing temporary reservations and pending payment attempts are replaced
-    atomically.
 
     The returned PaymentAttempt exists only after every order line has been
     successfully reserved.
@@ -257,6 +259,21 @@ def start_retail_payment(
             "only draft retail orders can start payment"
         )
 
+    pending_attempt = (
+        PaymentAttempt.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status=PaymentAttempt.Status.PENDING,
+        )
+        .first()
+    )
+
+    if pending_attempt is not None:
+        raise InvalidRetailOrder(
+            "retail order already has a pending payment attempt"
+        )
+
     lines = list(
         order.lines
         .select_related(
@@ -273,10 +290,6 @@ def start_retail_payment(
         )
 
     cancel_temporary_reservations_for_order(
-        order=order,
-    )
-
-    cancel_pending_payment_attempts_for_order(
         order=order,
     )
 
@@ -430,6 +443,7 @@ def fail_retail_payment(
     return mark_payment_attempt_failed(
         attempt=attempt,
     )
+
 
 def _get_offer_selection(
     *,

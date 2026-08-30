@@ -15,6 +15,7 @@ from inventory.services import (
     update_batch,
 )
 from orders.models import Allocation, Order, OrderLine
+from payments.models import PaymentAttempt
 from retail.models import (
     RetailCheckoutSession,
     RetailOfferSelection,
@@ -968,7 +969,7 @@ def test_product_offer_payment_reservation_uses_fefo():
 
 
 @pytest.mark.django_db
-def test_starting_payment_again_replaces_previous_temporary_hold():
+def test_starting_payment_again_preserves_existing_temporary_hold():
     retail_postal_area_factory()
 
     offer = retail_product_offer_factory(
@@ -980,7 +981,10 @@ def test_starting_payment_again_replaces_previous_temporary_hold():
         batch_id="A-001",
         product=offer.product,
         quantity=10,
-        best_before=timezone.localdate() + timedelta(days=60),
+        best_before=(
+            timezone.localdate()
+            + timedelta(days=60)
+        ),
         location="Shelf A1",
     )
 
@@ -996,32 +1000,48 @@ def test_starting_payment_again_replaces_previous_temporary_hold():
         ],
     )
 
-    start_retail_payment(
+    first_attempt = start_retail_payment(
         checkout=checkout,
     )
 
     first_allocation = (
         checkout.order.allocations.get()
     )
-
-    start_retail_payment(
-        checkout=checkout,
+    original_reserved_until = (
+        first_allocation.reserved_until
     )
 
+    with pytest.raises(
+        InvalidRetailOrder,
+        match="already has a pending payment attempt",
+    ):
+        start_retail_payment(
+            checkout=checkout,
+        )
+
+    first_attempt.refresh_from_db()
     first_allocation.refresh_from_db()
 
     assert (
+        first_attempt.status
+        == PaymentAttempt.Status.PENDING
+    )
+
+    assert (
+        PaymentAttempt.objects
+        .filter(order=checkout.order)
+        .count()
+        == 1
+    )
+
+    assert (
         first_allocation.status
-        == Allocation.Status.CANCELLED
+        == Allocation.Status.RESERVED
     )
-
-    active_allocations = (
-        checkout.order.allocations
-        .filter(status=Allocation.Status.RESERVED)
+    assert (
+        first_allocation.reserved_until
+        == original_reserved_until
     )
-
-    assert active_allocations.count() == 1
-    assert active_allocations.get().quantity == 4
 
 
 @pytest.mark.django_db

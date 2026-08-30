@@ -20,6 +20,7 @@ from retail.payments import (
 )
 from retail.services import (
     AnonymousBuyerInput,
+    InvalidRetailOrder,
     RetailOrderLineInput,
     create_pending_retail_order,
 )
@@ -312,3 +313,74 @@ def test_retry_retail_hosted_payment_reuses_existing_attempt_and_reservation(
         second_request.currency
         == first_request.currency
     )
+
+
+@pytest.mark.django_db
+def test_existing_provider_checkout_blocks_new_payment_start(
+    monkeypatch,
+):
+    checkout = _create_checkout()
+
+    provider = FakeHostedPaymentProvider()
+
+    monkeypatch.setattr(
+        "retail.payments.get_default_hosted_payment_provider",
+        lambda: provider,
+    )
+
+    first_result = begin_retail_hosted_payment(
+        checkout=checkout,
+        customer_return_url=(
+            "https://shop.example.com/payment/return"
+        ),
+        webhook_url=(
+            "https://shop.example.com/payment/webhook"
+        ),
+    )
+
+    allocation = checkout.order.allocations.get()
+    original_reserved_until = allocation.reserved_until
+
+    with pytest.raises(
+        InvalidRetailOrder,
+        match="already has a pending payment attempt",
+    ):
+        begin_retail_hosted_payment(
+            checkout=checkout,
+            customer_return_url=(
+                "https://shop.example.com/payment/return"
+            ),
+            webhook_url=(
+                "https://shop.example.com/payment/webhook"
+            ),
+        )
+
+    first_result.attempt.refresh_from_db()
+    allocation.refresh_from_db()
+
+    assert (
+        first_result.attempt.status
+        == PaymentAttempt.Status.PENDING
+    )
+    assert (
+        first_result.attempt.provider_payment_id
+        == "sumup-checkout-123"
+    )
+
+    assert (
+        PaymentAttempt.objects
+        .filter(order=checkout.order)
+        .count()
+        == 1
+    )
+
+    assert (
+        allocation.status
+        == Allocation.Status.RESERVED
+    )
+    assert (
+        allocation.reserved_until
+        == original_reserved_until
+    )
+
+    assert len(provider.requests) == 1
