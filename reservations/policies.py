@@ -6,6 +6,7 @@ from reservations.services import (
     MissingReservations,
     cancel_reservations_for_order,
     consume_reservations_for_order,
+    delete_reservations_for_order,
 )
 
 
@@ -32,5 +33,16 @@ def release_order_reservations_before_cancellation(
     """Release active reservations before an order is cancelled."""
 
     cancel_reservations_for_order(
+        order=order,
+    )
+
+
+def clear_order_reservations_before_line_replacement(
+    *,
+    order: Order,
+) -> None:
+    """Remove active reservations before an order's lines are replaced."""
+
+    delete_reservations_for_order(
         order=order,
     )

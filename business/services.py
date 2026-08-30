@@ -21,6 +21,9 @@ from orders.services import (
     replace_draft_order_lines as replace_shared_draft_order_lines,
     update_placed_order as update_shared_placed_order,
 )
+from reservations.policies import (
+    clear_order_reservations_before_line_replacement,
+)
 
 
 @transaction.atomic
@@ -166,6 +169,9 @@ def update_placed_order(
     return update_shared_placed_order(
         order=order,
         lines=resolved_lines,
+        before_replacement=(
+            clear_order_reservations_before_line_replacement
+        ),
         preparation=prepare_business_order_for_placement,
         user=user,
     )

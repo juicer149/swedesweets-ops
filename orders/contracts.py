@@ -16,8 +16,8 @@ class OrderMutationGuard(Protocol):
         ...
 
 
-class OrderTransitionPreparation(Protocol):
-    """Perform required work before an order lifecycle transition."""
+class OrderMutationPreparation(Protocol):
+    """Perform required work around a shared order mutation."""
 
     def __call__(
         self,

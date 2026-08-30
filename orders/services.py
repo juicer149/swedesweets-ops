@@ -10,7 +10,7 @@ eligibility before calling this module.
 Persistence mechanics such as transaction boundaries and row locking are
 centralized by orders.decorators.locked_order.
 
-Transition-specific prerequisites are injected as policies.
+Mutation-specific prerequisites are injected as policies.
 Reservation persistence and accounting belong to reservations.
 """
 
@@ -21,7 +21,7 @@ from collections.abc import Iterable
 from django.db import transaction
 from django.utils import timezone
 
-from orders.contracts import OrderTransitionPreparation
+from orders.contracts import OrderMutationPreparation
 from orders.decorators import locked_order
 from orders.drafts import (
     OrderDraft,
@@ -34,9 +34,6 @@ from orders.models import (
 )
 from reservations.selectors import (
     has_reservations_for_order,
-)
-from reservations.services import (
-    delete_reservations_for_order,
 )
 
 
@@ -197,7 +194,7 @@ def discard_draft_order(
 def place_order(
     *,
     order: Order,
-    preparation: OrderTransitionPreparation,
+    preparation: OrderMutationPreparation,
     user=None,
 ) -> Order:
     """Prepare a draft order and move it to PLACED."""
@@ -220,10 +217,11 @@ def update_placed_order(
     *,
     order: Order,
     lines: Iterable[ResolvedOrderLine],
-    preparation: OrderTransitionPreparation,
+    before_replacement: OrderMutationPreparation,
+    preparation: OrderMutationPreparation,
     user=None,
 ) -> Order:
-    """Replace resolved lines on a placed order and rebuild preparation."""
+    """Replace resolved lines and rebuild mutation prerequisites."""
 
     resolved_lines = tuple(
         lines
@@ -234,7 +232,7 @@ def update_placed_order(
             "order must contain at least one line"
         )
 
-    delete_reservations_for_order(
+    before_replacement(
         order=order,
     )
 
@@ -262,7 +260,7 @@ def update_placed_order(
 def pack_order(
     *,
     order: Order,
-    preparation: OrderTransitionPreparation,
+    preparation: OrderMutationPreparation,
     user=None,
 ) -> Order:
     """Prepare a placed order and move it to PACKED."""
@@ -284,7 +282,7 @@ def pack_order(
 def cancel_order(
     *,
     order: Order,
-    preparation: OrderTransitionPreparation,
+    preparation: OrderMutationPreparation,
     user=None,
     reason: str = "",
     note: str = "",

@@ -21,6 +21,7 @@ from orders.services import (
     deliver_order,
     pack_order,
     place_order,
+    update_placed_order,
 )
 
 
@@ -195,6 +196,209 @@ def test_place_order_rolls_back_preparation_when_transition_fails(
     line.refresh_from_db()
 
     assert line.quantity_in_units == 1
+
+
+@pytest.mark.django_db
+def test_update_placed_order_runs_hooks_around_line_replacement(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+    )
+
+    events: list[
+        tuple[str, list[int]]
+    ] = []
+
+    def before_replacement(
+        *,
+        order: Order,
+    ) -> None:
+        events.append(
+            (
+                "before",
+                list(
+                    order.lines.values_list(
+                        "quantity_in_units",
+                        flat=True,
+                    )
+                ),
+            )
+        )
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        events.append(
+            (
+                "prepare",
+                list(
+                    order.lines.values_list(
+                        "quantity_in_units",
+                        flat=True,
+                    )
+                ),
+            )
+        )
+
+    updated = update_placed_order(
+        order=order,
+        lines=(
+            ResolvedOrderLine(
+                product=apple,
+                quantity_in_units=20,
+            ),
+        ),
+        before_replacement=before_replacement,
+        preparation=preparation,
+    )
+
+    assert events == [
+        (
+            "before",
+            [10],
+        ),
+        (
+            "prepare",
+            [20],
+        ),
+    ]
+
+    assert updated.status == Order.Status.PLACED
+    assert updated.edited_at is not None
+    assert list(
+        updated.lines.values_list(
+            "quantity_in_units",
+            flat=True,
+        )
+    ) == [20]
+
+
+@pytest.mark.django_db
+def test_update_placed_order_rejects_non_placed_before_running_hooks(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+    )
+
+    events: list[str] = []
+
+    def before_replacement(
+        *,
+        order: Order,
+    ) -> None:
+        events.append(
+            "before"
+        )
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        events.append(
+            "prepare"
+        )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Only placed orders can be edited",
+    ):
+        update_placed_order(
+            order=order,
+            lines=(
+                ResolvedOrderLine(
+                    product=apple,
+                    quantity_in_units=20,
+                ),
+            ),
+            before_replacement=before_replacement,
+            preparation=preparation,
+        )
+
+    assert events == []
+
+
+@pytest.mark.django_db
+def test_update_placed_order_rolls_back_line_replacement_when_preparation_fails(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+    original_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+    )
+
+    before_called = False
+
+    def before_replacement(
+        *,
+        order: Order,
+    ) -> None:
+        nonlocal before_called
+        before_called = True
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        raise RuntimeError(
+            "preparation failed"
+        )
+
+    with pytest.raises(
+        RuntimeError,
+        match="preparation failed",
+    ):
+        update_placed_order(
+            order=order,
+            lines=(
+                ResolvedOrderLine(
+                    product=apple,
+                    quantity_in_units=20,
+                ),
+            ),
+            before_replacement=before_replacement,
+            preparation=preparation,
+        )
+
+    assert before_called is True
+
+    assert OrderLine.objects.filter(
+        pk=original_line.pk,
+        order=order,
+        quantity_in_units=10,
+    ).exists()
+
+    assert not OrderLine.objects.filter(
+        order=order,
+        quantity_in_units=20,
+    ).exists()
 
 
 @pytest.mark.django_db
