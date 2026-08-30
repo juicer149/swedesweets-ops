@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 from payments.contracts import (
+    ExternalPaymentState,
     ExternalPaymentStatus,
 )
 from payments.models import PaymentAttempt
@@ -25,10 +27,24 @@ class PaymentReconciliationConflict(RuntimeError):
     """Provider truth conflicts with an irreversible local payment state."""
 
 
+class RetailPaymentRecoveryAction(StrEnum):
+    CONTINUE_PAYMENT = "continue_payment"
+    CONFIRMED = "confirmed"
+    PAYMENT_FAILED = "payment_failed"
+    NEEDS_SUPPORT = "needs_support"
+
+
 @dataclass(frozen=True, slots=True)
 class RetailPaymentRedirect:
     attempt: PaymentAttempt
     redirect_url: str
+
+
+@dataclass(frozen=True, slots=True)
+class RetailPaymentRecovery:
+    attempt: PaymentAttempt
+    action: RetailPaymentRecoveryAction
+    redirect_url: str | None = None
 
 
 def begin_retail_hosted_payment(
@@ -65,6 +81,102 @@ def retry_retail_hosted_payment(
     )
 
 
+def recover_retail_payment(
+    *,
+    attempt: PaymentAttempt,
+) -> RetailPaymentRecovery:
+    """Resolve the customer-facing state of one retail payment.
+
+    Recovery never guesses about unknown external payment creation.
+
+    A pending attempt without a provider payment id is therefore routed to
+    support instead of implicitly creating another external checkout.
+    """
+
+    attempt = (
+        PaymentAttempt.objects
+        .select_related("order")
+        .get(pk=attempt.pk)
+    )
+
+    if attempt.status == PaymentAttempt.Status.SUCCEEDED:
+        return RetailPaymentRecovery(
+            attempt=attempt,
+            action=RetailPaymentRecoveryAction.CONFIRMED,
+        )
+
+    if attempt.status == PaymentAttempt.Status.FAILED:
+        return RetailPaymentRecovery(
+            attempt=attempt,
+            action=RetailPaymentRecoveryAction.PAYMENT_FAILED,
+        )
+
+    if (
+        attempt.status == PaymentAttempt.Status.CANCELLED
+        and not attempt.provider_payment_id
+    ):
+        return RetailPaymentRecovery(
+            attempt=attempt,
+            action=RetailPaymentRecoveryAction.PAYMENT_FAILED,
+        )
+
+    if not attempt.provider_payment_id:
+        return RetailPaymentRecovery(
+            attempt=attempt,
+            action=RetailPaymentRecoveryAction.NEEDS_SUPPORT,
+        )
+
+    try:
+        external = _get_external_payment_state(
+            attempt=attempt,
+        )
+
+        reconciled = _reconcile_retail_payment_state(
+            attempt=attempt,
+            external=external,
+        )
+    except Exception:
+        attempt.refresh_from_db()
+
+        return RetailPaymentRecovery(
+            attempt=attempt,
+            action=RetailPaymentRecoveryAction.NEEDS_SUPPORT,
+        )
+
+    if reconciled.status == PaymentAttempt.Status.SUCCEEDED:
+        return RetailPaymentRecovery(
+            attempt=reconciled,
+            action=RetailPaymentRecoveryAction.CONFIRMED,
+        )
+
+    if reconciled.status in {
+        PaymentAttempt.Status.FAILED,
+        PaymentAttempt.Status.CANCELLED,
+    }:
+        return RetailPaymentRecovery(
+            attempt=reconciled,
+            action=RetailPaymentRecoveryAction.PAYMENT_FAILED,
+        )
+
+    if reconciled.status != PaymentAttempt.Status.PENDING:
+        return RetailPaymentRecovery(
+            attempt=reconciled,
+            action=RetailPaymentRecoveryAction.NEEDS_SUPPORT,
+        )
+
+    if not external.hosted_payment_url:
+        return RetailPaymentRecovery(
+            attempt=reconciled,
+            action=RetailPaymentRecoveryAction.NEEDS_SUPPORT,
+        )
+
+    return RetailPaymentRecovery(
+        attempt=reconciled,
+        action=RetailPaymentRecoveryAction.CONTINUE_PAYMENT,
+        redirect_url=external.hosted_payment_url,
+    )
+
+
 def reconcile_retail_payment(
     *,
     attempt: PaymentAttempt,
@@ -87,6 +199,20 @@ def reconcile_retail_payment(
             "payment attempt has no provider payment id"
         )
 
+    external = _get_external_payment_state(
+        attempt=attempt,
+    )
+
+    return _reconcile_retail_payment_state(
+        attempt=attempt,
+        external=external,
+    )
+
+
+def _get_external_payment_state(
+    *,
+    attempt: PaymentAttempt,
+) -> ExternalPaymentState:
     provider = get_default_hosted_payment_provider()
 
     external = provider.get_payment(
@@ -103,6 +229,14 @@ def reconcile_retail_payment(
             "provider returned a different payment id"
         )
 
+    return external
+
+
+def _reconcile_retail_payment_state(
+    *,
+    attempt: PaymentAttempt,
+    external: ExternalPaymentState,
+) -> PaymentAttempt:
     attempt.refresh_from_db()
 
     if external.status == ExternalPaymentStatus.PENDING:

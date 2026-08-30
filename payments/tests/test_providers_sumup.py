@@ -171,6 +171,9 @@ def test_sumup_provider_gets_pending_checkout():
             {
                 "id": "sumup-checkout-123",
                 "status": "PENDING",
+                "hosted_checkout_url": (
+                    "https://checkout.sumup.com/pay/123"
+                ),
             }
         ),
     ) as mocked_urlopen:
@@ -183,6 +186,10 @@ def test_sumup_provider_gets_pending_checkout():
         == ExternalPaymentStatus.PENDING
     )
     assert state.provider_transaction_id is None
+    assert (
+        state.hosted_payment_url
+        == "https://checkout.sumup.com/pay/123"
+    )
 
     http_request = mocked_urlopen.call_args.args[0]
 
@@ -194,6 +201,32 @@ def test_sumup_provider_gets_pending_checkout():
             "sumup-checkout-123"
         )
     )
+
+
+def test_sumup_provider_pending_checkout_allows_missing_hosted_url():
+    provider = SumUpHostedPaymentProvider(
+        api_key="test-key",
+        merchant_code="M123456",
+    )
+
+    with patch(
+        "payments.providers.sumup.urlopen",
+        return_value=_urlopen_response(
+            {
+                "id": "sumup-checkout-123",
+                "status": "PENDING",
+            }
+        ),
+    ):
+        state = provider.get_payment(
+            provider_payment_id="sumup-checkout-123",
+        )
+
+    assert (
+        state.status
+        == ExternalPaymentStatus.PENDING
+    )
+    assert state.hosted_payment_url is None
 
 
 def test_sumup_provider_gets_paid_checkout():
@@ -209,6 +242,9 @@ def test_sumup_provider_gets_paid_checkout():
                 "id": "sumup-checkout-123",
                 "status": "PAID",
                 "transaction_id": "transaction-456",
+                "hosted_checkout_url": (
+                    "https://checkout.sumup.com/pay/123"
+                ),
             }
         ),
     ):
@@ -223,6 +259,10 @@ def test_sumup_provider_gets_paid_checkout():
     assert (
         state.provider_transaction_id
         == "transaction-456"
+    )
+    assert (
+        state.hosted_payment_url
+        == "https://checkout.sumup.com/pay/123"
     )
 
 

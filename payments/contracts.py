@@ -33,6 +33,7 @@ class ExternalPaymentState:
     provider_payment_id: str
     status: ExternalPaymentStatus
     provider_transaction_id: str | None = None
+    hosted_payment_url: str | None = None
 
 
 class HostedPaymentProvider(Protocol):

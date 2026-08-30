@@ -150,6 +150,16 @@ class SumUpHostedPaymentProvider:
                 "SumUp returned an unexpected checkout id"
             )
 
+        hosted_payment_url = response.get(
+            "hosted_checkout_url"
+        )
+
+        if not isinstance(
+            hosted_payment_url,
+            str,
+        ) or not hosted_payment_url:
+            hosted_payment_url = None
+
         status = response.get(
             "status"
         )
@@ -158,6 +168,7 @@ class SumUpHostedPaymentProvider:
             return ExternalPaymentState(
                 provider_payment_id=response_id,
                 status=ExternalPaymentStatus.PENDING,
+                hosted_payment_url=hosted_payment_url,
             )
 
         if status in {
@@ -167,6 +178,7 @@ class SumUpHostedPaymentProvider:
             return ExternalPaymentState(
                 provider_payment_id=response_id,
                 status=ExternalPaymentStatus.FAILED,
+                hosted_payment_url=hosted_payment_url,
             )
 
         if status == "PAID":
@@ -186,6 +198,7 @@ class SumUpHostedPaymentProvider:
                 provider_payment_id=response_id,
                 status=ExternalPaymentStatus.SUCCEEDED,
                 provider_transaction_id=transaction_id,
+                hosted_payment_url=hosted_payment_url,
             )
 
         raise SumUpPaymentError(
