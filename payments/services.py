@@ -3,6 +3,11 @@ from __future__ import annotations
 from django.db import transaction
 
 from orders.models import Order
+from payments.contracts import (
+    HostedPaymentProvider,
+    HostedPaymentRequest,
+    HostedPaymentSession,
+)
 from payments.models import PaymentAttempt
 
 
@@ -146,3 +151,76 @@ def mark_payment_attempt_failed(
     )
 
     return attempt
+
+def create_hosted_payment_session(
+    *,
+    attempt: PaymentAttempt,
+    provider: HostedPaymentProvider,
+    customer_return_url: str,
+    webhook_url: str,
+) -> HostedPaymentSession:
+    """Create and persist an external hosted payment session.
+
+    External provider I/O deliberately happens outside a database transaction.
+
+    The returned provider identifier is persisted only after the provider has
+    successfully created the remote payment session.
+    """
+
+    attempt = (
+        PaymentAttempt.objects
+        .select_related("order")
+        .get(pk=attempt.pk)
+    )
+
+    if attempt.status != PaymentAttempt.Status.PENDING:
+        raise InvalidPaymentAttempt(
+            "only pending payment attempts can create a hosted payment session"
+        )
+
+    if attempt.provider_payment_id:
+        raise InvalidPaymentAttempt(
+            "payment attempt already has a provider payment"
+        )
+
+    session = provider.create_payment(
+        request=HostedPaymentRequest(
+            reference=f"payment-{attempt.pk}",
+            amount=attempt.amount,
+            currency=attempt.currency,
+            description=(
+                f"SwedeSweets order {attempt.order_id}"
+            ),
+            customer_return_url=customer_return_url,
+            webhook_url=webhook_url,
+        ),
+    )
+
+    with transaction.atomic():
+        locked_attempt = (
+            PaymentAttempt.objects
+            .select_for_update()
+            .get(pk=attempt.pk)
+        )
+
+        if locked_attempt.status != PaymentAttempt.Status.PENDING:
+            raise InvalidPaymentAttempt(
+                "payment attempt changed state while provider payment was created"
+            )
+
+        if locked_attempt.provider_payment_id:
+            raise InvalidPaymentAttempt(
+                "payment attempt already has a provider payment"
+            )
+
+        locked_attempt.provider_payment_id = (
+            session.provider_payment_id
+        )
+        locked_attempt.save(
+            update_fields=[
+                "provider_payment_id",
+                "updated_at",
+            ]
+        )
+
+    return session

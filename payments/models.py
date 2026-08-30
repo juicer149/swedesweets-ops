@@ -14,6 +14,9 @@ class PaymentAttempt(models.Model):
     Order owns the commercial purchase and its price snapshots.
     PaymentAttempt snapshots the amount and currency that this specific
     payment attempt was created for.
+
+    Provider identifiers belong here because they identify this specific
+    external payment attempt, not the order as a whole.
     """
 
     class Status(models.TextChoices):
@@ -21,6 +24,9 @@ class PaymentAttempt(models.Model):
         SUCCEEDED = "succeeded", "Succeeded"
         FAILED = "failed", "Failed"
         CANCELLED = "cancelled", "Cancelled"
+
+    class Provider(models.TextChoices):
+        SUMUP = "sumup", "SumUp"
 
     order = models.ForeignKey(
         "orders.Order",
@@ -32,6 +38,22 @@ class PaymentAttempt(models.Model):
         max_length=16,
         choices=Status.choices,
         default=Status.PENDING,
+    )
+
+    provider = models.CharField(
+        max_length=32,
+        choices=Provider.choices,
+        default=Provider.SUMUP,
+    )
+
+    provider_payment_id = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    provider_transaction_id = models.CharField(
+        max_length=255,
+        blank=True,
     )
 
     amount = models.DecimalField(
@@ -62,6 +84,12 @@ class PaymentAttempt(models.Model):
                     "status",
                 ],
             ),
+            models.Index(
+                fields=[
+                    "provider",
+                    "provider_payment_id",
+                ],
+            ),
         ]
         constraints = [
             models.CheckConstraint(
@@ -78,6 +106,16 @@ class PaymentAttempt(models.Model):
                     status="pending",
                 ),
                 name="one_pending_payment_attempt_per_order",
+            ),
+            models.UniqueConstraint(
+                fields=[
+                    "provider",
+                    "provider_payment_id",
+                ],
+                condition=~Q(
+                    provider_payment_id="",
+                ),
+                name="unique_provider_payment_id",
             ),
         ]
 

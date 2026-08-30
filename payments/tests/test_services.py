@@ -6,10 +6,12 @@ import pytest
 
 from customers.tests.factories import customer_factory
 from orders.models import Order, OrderLine
+from payments.contracts import HostedPaymentSession
 from payments.models import PaymentAttempt
 from payments.services import (
     InvalidPaymentAttempt,
     cancel_pending_payment_attempts_for_order,
+    create_hosted_payment_session,
     create_payment_attempt,
     mark_payment_attempt_failed,
     mark_payment_attempt_succeeded,
@@ -251,3 +253,96 @@ def test_cancelled_payment_attempt_cannot_fail():
         attempt.status
         == PaymentAttempt.Status.CANCELLED
     )
+
+
+class FakeHostedPaymentProvider:
+    def __init__(self) -> None:
+        self.requests = []
+
+    def create_payment(
+        self,
+        *,
+        request,
+    ) -> HostedPaymentSession:
+        self.requests.append(
+            request,
+        )
+
+        return HostedPaymentSession(
+            provider_payment_id="provider-123",
+            redirect_url="https://provider.example/pay",
+        )
+
+
+@pytest.mark.django_db
+def test_create_hosted_payment_session_persists_provider_payment_id():
+    order = _create_priced_order(
+        amount=Decimal("12.50"),
+    )
+
+    attempt = create_payment_attempt(
+        order=order,
+    )
+
+    provider = FakeHostedPaymentProvider()
+
+    session = create_hosted_payment_session(
+        attempt=attempt,
+        provider=provider,
+        customer_return_url=(
+            "https://shop.example.com/return"
+        ),
+        webhook_url=(
+            "https://shop.example.com/webhook"
+        ),
+    )
+
+    attempt.refresh_from_db()
+
+    assert (
+        attempt.provider_payment_id
+        == "provider-123"
+    )
+    assert (
+        session.redirect_url
+        == "https://provider.example/pay"
+    )
+
+    assert len(provider.requests) == 1
+
+    request = provider.requests[0]
+
+    assert request.reference == f"payment-{attempt.pk}"
+    assert request.amount == Decimal("12.50")
+    assert request.currency == Order.Currency.EUR
+
+
+@pytest.mark.django_db
+def test_hosted_payment_session_cannot_be_created_twice():
+    order = _create_priced_order()
+
+    attempt = create_payment_attempt(
+        order=order,
+    )
+
+    provider = FakeHostedPaymentProvider()
+
+    create_hosted_payment_session(
+        attempt=attempt,
+        provider=provider,
+        customer_return_url="https://example.com/return",
+        webhook_url="https://example.com/webhook",
+    )
+
+    with pytest.raises(
+        InvalidPaymentAttempt,
+        match="already has a provider payment",
+    ):
+        create_hosted_payment_session(
+            attempt=attempt,
+            provider=provider,
+            customer_return_url="https://example.com/return",
+            webhook_url="https://example.com/webhook",
+        )
+
+    assert len(provider.requests) == 1
