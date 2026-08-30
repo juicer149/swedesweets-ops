@@ -6,12 +6,15 @@ from urllib.error import (
     HTTPError,
     URLError,
 )
+from urllib.parse import quote
 from urllib.request import (
     Request,
     urlopen,
 )
 
 from payments.contracts import (
+    ExternalPaymentState,
+    ExternalPaymentStatus,
     HostedPaymentRequest,
     HostedPaymentSession,
 )
@@ -22,14 +25,11 @@ SUMUP_CHECKOUTS_PATH = "/v0.1/checkouts"
 
 
 class SumUpPaymentError(RuntimeError):
-    """Raised when SumUp cannot create a hosted payment checkout."""
+    """Raised when communication with SumUp cannot be trusted."""
 
 
 class SumUpHostedPaymentProvider:
-    """Create hosted SumUp checkout sessions.
-
-    This adapter owns only SumUp-specific HTTP and payload mapping.
-    """
+    """Adapter between our payment contract and SumUp Online Payments."""
 
     def __init__(
         self,
@@ -75,7 +75,8 @@ class SumUpHostedPaymentProvider:
             },
         }
 
-        response = self._post_json(
+        response = self._request_json(
+            method="POST",
             path=SUMUP_CHECKOUTS_PATH,
             payload=payload,
         )
@@ -108,26 +109,113 @@ class SumUpHostedPaymentProvider:
             redirect_url=redirect_url,
         )
 
-    def _post_json(
+    def get_payment(
         self,
         *,
+        provider_payment_id: str,
+    ) -> ExternalPaymentState:
+        """Retrieve and normalize the current SumUp checkout state."""
+
+        provider_payment_id = (
+            provider_payment_id.strip()
+        )
+
+        if not provider_payment_id:
+            raise ValueError(
+                "provider payment id is required"
+            )
+
+        encoded_id = quote(
+            provider_payment_id,
+            safe="",
+        )
+
+        response = self._request_json(
+            method="GET",
+            path=(
+                f"{SUMUP_CHECKOUTS_PATH}/"
+                f"{encoded_id}"
+            ),
+        )
+
+        response_id = response.get(
+            "id"
+        )
+
+        if (
+            not isinstance(response_id, str)
+            or response_id != provider_payment_id
+        ):
+            raise SumUpPaymentError(
+                "SumUp returned an unexpected checkout id"
+            )
+
+        status = response.get(
+            "status"
+        )
+
+        if status == "PENDING":
+            return ExternalPaymentState(
+                provider_payment_id=response_id,
+                status=ExternalPaymentStatus.PENDING,
+            )
+
+        if status in {
+            "FAILED",
+            "EXPIRED",
+        }:
+            return ExternalPaymentState(
+                provider_payment_id=response_id,
+                status=ExternalPaymentStatus.FAILED,
+            )
+
+        if status == "PAID":
+            transaction_id = response.get(
+                "transaction_id"
+            )
+
+            if not isinstance(
+                transaction_id,
+                str,
+            ) or not transaction_id:
+                raise SumUpPaymentError(
+                    "paid SumUp checkout has no transaction id"
+                )
+
+            return ExternalPaymentState(
+                provider_payment_id=response_id,
+                status=ExternalPaymentStatus.SUCCEEDED,
+                provider_transaction_id=transaction_id,
+            )
+
+        raise SumUpPaymentError(
+            f"unsupported SumUp checkout status: {status!r}"
+        )
+
+    def _request_json(
+        self,
+        *,
+        method: str,
         path: str,
-        payload: dict[str, object],
+        payload: dict[str, object] | None = None,
     ) -> dict[str, object]:
-        body = json.dumps(
-            payload,
-        ).encode("utf-8")
+        body = None
+
+        if payload is not None:
+            body = json.dumps(
+                payload,
+            ).encode("utf-8")
 
         http_request = Request(
             url=f"{SUMUP_API_BASE_URL}{path}",
             data=body,
-            method="POST",
+            method=method,
             headers={
                 "Authorization": (
                     f"Bearer {self._api_key}"
                 ),
-                "Content-Type": "application/json",
                 "Accept": "application/json",
+                "Content-Type": "application/json",
             },
         )
 

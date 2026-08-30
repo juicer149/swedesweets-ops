@@ -318,33 +318,41 @@ def start_retail_payment(
 def complete_retail_payment(
     *,
     attempt: PaymentAttempt,
+    provider_transaction_id: str | None = None,
 ) -> Order:
     """Finalize a successfully paid retail checkout.
 
-    Temporary payment reservations become durable before the shared order
-    moves from DRAFT to PLACED.
-
-    The payment attempt is marked SUCCEEDED only after order placement
-    succeeds inside the same database transaction.
+    Lock ordering is Order -> PaymentAttempt, matching payment-start paths.
     """
+
+    order_id = (
+        PaymentAttempt.objects
+        .only("order_id")
+        .get(pk=attempt.pk)
+        .order_id
+    )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order_id)
+    )
 
     attempt = (
         PaymentAttempt.objects
         .select_for_update()
-        .select_related("order")
         .get(pk=attempt.pk)
     )
+
+    if attempt.order_id != order.pk:
+        raise InvalidPaymentAttempt(
+            "payment attempt order changed unexpectedly"
+        )
 
     if attempt.status != PaymentAttempt.Status.PENDING:
         raise InvalidPaymentAttempt(
             "only pending payment attempts can complete retail payment"
         )
-
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=attempt.order_id)
-    )
 
     if order.channel != Order.Channel.RETAIL:
         raise InvalidRetailOrder(
@@ -360,6 +368,7 @@ def complete_retail_payment(
 
     mark_payment_attempt_succeeded(
         attempt=attempt,
+        provider_transaction_id=provider_transaction_id,
     )
 
     return order
@@ -372,29 +381,37 @@ def fail_retail_payment(
 ) -> PaymentAttempt:
     """Finalize a failed retail payment attempt.
 
-    Temporary payment reservations are released while the shared order remains
-    in DRAFT so the buyer may retry checkout.
-
-    Reservation release and payment state transition happen atomically.
+    Lock ordering is Order -> PaymentAttempt, matching payment-start paths.
     """
+
+    order_id = (
+        PaymentAttempt.objects
+        .only("order_id")
+        .get(pk=attempt.pk)
+        .order_id
+    )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order_id)
+    )
 
     attempt = (
         PaymentAttempt.objects
         .select_for_update()
-        .select_related("order")
         .get(pk=attempt.pk)
     )
+
+    if attempt.order_id != order.pk:
+        raise InvalidPaymentAttempt(
+            "payment attempt order changed unexpectedly"
+        )
 
     if attempt.status != PaymentAttempt.Status.PENDING:
         raise InvalidPaymentAttempt(
             "only pending payment attempts can fail retail payment"
         )
-
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=attempt.order_id)
-    )
 
     if order.channel != Order.Channel.RETAIL:
         raise InvalidRetailOrder(
@@ -413,7 +430,6 @@ def fail_retail_payment(
     return mark_payment_attempt_failed(
         attempt=attempt,
     )
-
 
 def _get_offer_selection(
     *,

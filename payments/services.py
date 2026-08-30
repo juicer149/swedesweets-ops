@@ -99,6 +99,7 @@ def cancel_pending_payment_attempts_for_order(
 def mark_payment_attempt_succeeded(
     *,
     attempt: PaymentAttempt,
+    provider_transaction_id: str | None = None,
 ) -> PaymentAttempt:
     """Move one pending payment attempt to SUCCEEDED."""
 
@@ -113,12 +114,31 @@ def mark_payment_attempt_succeeded(
             "only pending payment attempts can succeed"
         )
 
+    update_fields = [
+        "status",
+        "updated_at",
+    ]
+
+    if provider_transaction_id is not None:
+        provider_transaction_id = (
+            provider_transaction_id.strip()
+        )
+
+        if not provider_transaction_id:
+            raise InvalidPaymentAttempt(
+                "provider transaction id cannot be empty"
+            )
+
+        attempt.provider_transaction_id = (
+            provider_transaction_id
+        )
+        update_fields.append(
+            "provider_transaction_id"
+        )
+
     attempt.status = PaymentAttempt.Status.SUCCEEDED
     attempt.save(
-        update_fields=[
-            "status",
-            "updated_at",
-        ]
+        update_fields=update_fields,
     )
 
     return attempt

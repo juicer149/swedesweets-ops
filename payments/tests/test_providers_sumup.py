@@ -9,7 +9,10 @@ from unittest.mock import (
 
 import pytest
 
-from payments.contracts import HostedPaymentRequest
+from payments.contracts import (
+    ExternalPaymentStatus,
+    HostedPaymentRequest,
+)
 from payments.providers.sumup import (
     SumUpHostedPaymentProvider,
     SumUpPaymentError,
@@ -153,6 +156,155 @@ def test_sumup_provider_rejects_missing_hosted_checkout_url():
         ):
             provider.create_payment(
                 request=_request(),
+            )
+
+
+def test_sumup_provider_gets_pending_checkout():
+    provider = SumUpHostedPaymentProvider(
+        api_key="test-key",
+        merchant_code="M123456",
+    )
+
+    with patch(
+        "payments.providers.sumup.urlopen",
+        return_value=_urlopen_response(
+            {
+                "id": "sumup-checkout-123",
+                "status": "PENDING",
+            }
+        ),
+    ) as mocked_urlopen:
+        state = provider.get_payment(
+            provider_payment_id="sumup-checkout-123",
+        )
+
+    assert (
+        state.status
+        == ExternalPaymentStatus.PENDING
+    )
+    assert state.provider_transaction_id is None
+
+    http_request = mocked_urlopen.call_args.args[0]
+
+    assert http_request.get_method() == "GET"
+    assert (
+        http_request.full_url
+        == (
+            "https://api.sumup.com/v0.1/checkouts/"
+            "sumup-checkout-123"
+        )
+    )
+
+
+def test_sumup_provider_gets_paid_checkout():
+    provider = SumUpHostedPaymentProvider(
+        api_key="test-key",
+        merchant_code="M123456",
+    )
+
+    with patch(
+        "payments.providers.sumup.urlopen",
+        return_value=_urlopen_response(
+            {
+                "id": "sumup-checkout-123",
+                "status": "PAID",
+                "transaction_id": "transaction-456",
+            }
+        ),
+    ):
+        state = provider.get_payment(
+            provider_payment_id="sumup-checkout-123",
+        )
+
+    assert (
+        state.status
+        == ExternalPaymentStatus.SUCCEEDED
+    )
+    assert (
+        state.provider_transaction_id
+        == "transaction-456"
+    )
+
+
+@pytest.mark.parametrize(
+    "sumup_status",
+    [
+        "FAILED",
+        "EXPIRED",
+    ],
+)
+def test_sumup_provider_maps_terminal_failure_states(
+    sumup_status,
+):
+    provider = SumUpHostedPaymentProvider(
+        api_key="test-key",
+        merchant_code="M123456",
+    )
+
+    with patch(
+        "payments.providers.sumup.urlopen",
+        return_value=_urlopen_response(
+            {
+                "id": "sumup-checkout-123",
+                "status": sumup_status,
+            }
+        ),
+    ):
+        state = provider.get_payment(
+            provider_payment_id="sumup-checkout-123",
+        )
+
+    assert (
+        state.status
+        == ExternalPaymentStatus.FAILED
+    )
+
+
+def test_sumup_provider_rejects_paid_checkout_without_transaction_id():
+    provider = SumUpHostedPaymentProvider(
+        api_key="test-key",
+        merchant_code="M123456",
+    )
+
+    with patch(
+        "payments.providers.sumup.urlopen",
+        return_value=_urlopen_response(
+            {
+                "id": "sumup-checkout-123",
+                "status": "PAID",
+            }
+        ),
+    ):
+        with pytest.raises(
+            SumUpPaymentError,
+            match="transaction id",
+        ):
+            provider.get_payment(
+                provider_payment_id="sumup-checkout-123",
+            )
+
+
+def test_sumup_provider_rejects_unknown_checkout_status():
+    provider = SumUpHostedPaymentProvider(
+        api_key="test-key",
+        merchant_code="M123456",
+    )
+
+    with patch(
+        "payments.providers.sumup.urlopen",
+        return_value=_urlopen_response(
+            {
+                "id": "sumup-checkout-123",
+                "status": "SOMETHING_NEW",
+            }
+        ),
+    ):
+        with pytest.raises(
+            SumUpPaymentError,
+            match="unsupported SumUp checkout status",
+        ):
+            provider.get_payment(
+                provider_payment_id="sumup-checkout-123",
             )
 
 

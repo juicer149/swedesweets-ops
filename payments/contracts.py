@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from enum import StrEnum
 from typing import Protocol
+
+
+class ExternalPaymentStatus(StrEnum):
+    PENDING = "pending"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,10 +28,24 @@ class HostedPaymentSession:
     redirect_url: str
 
 
+@dataclass(frozen=True, slots=True)
+class ExternalPaymentState:
+    provider_payment_id: str
+    status: ExternalPaymentStatus
+    provider_transaction_id: str | None = None
+
+
 class HostedPaymentProvider(Protocol):
     def create_payment(
         self,
         *,
         request: HostedPaymentRequest,
     ) -> HostedPaymentSession:
+        ...
+
+    def get_payment(
+        self,
+        *,
+        provider_payment_id: str,
+    ) -> ExternalPaymentState:
         ...
