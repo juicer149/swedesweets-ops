@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from fulfillment.services import pack_order
 from orders.models import (
     Allocation,
     Order,
@@ -18,7 +19,6 @@ from orders.selectors import (
     list_packed_orders_for_dashboard,
     list_placed_orders_for_dashboard,
 )
-from orders.services import pack_order
 
 
 def _create_line(

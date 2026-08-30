@@ -55,10 +55,10 @@ from orders.selectors import (
     get_packaging_list,
     list_orders,
 )
+from fulfillment.services import pack_order
 from orders.services import (
     cancel_order,
     deliver_order,
-    pack_order,
 )
 
 

@@ -30,6 +30,7 @@ testpaths = [
     "orders",
     "business",
     "retail",
+    "fulfillment",
 ]
 addopts = [
     "-ra",

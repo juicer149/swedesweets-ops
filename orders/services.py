@@ -10,6 +10,7 @@ eligibility before calling this module.
 Persistence mechanics such as transaction boundaries and row locking are
 centralized by orders.decorators.locked_order.
 
+Transition-specific prerequisites are injected as policies.
 Reservation persistence and accounting belong to reservations.
 """
 
@@ -35,9 +36,7 @@ from reservations.selectors import (
     has_reservations_for_order,
 )
 from reservations.services import (
-    MissingReservations,
     cancel_reservations_for_order,
-    consume_reservations_for_order,
     delete_reservations_for_order,
 )
 
@@ -116,7 +115,9 @@ def create_draft_order(
     """Persist an already resolved order draft."""
 
     if not draft.lines:
-        raise InvalidOrderOperation("order must contain at least one line")
+        raise InvalidOrderOperation(
+            "order must contain at least one line"
+        )
 
     order = Order(
         channel=draft.channel,
@@ -124,10 +125,16 @@ def create_draft_order(
         customer=draft.customer,
         status=Order.Status.DRAFT,
     )
-    order.snapshot_buyer(buyer=draft.buyer)
+
+    order.snapshot_buyer(
+        buyer=draft.buyer,
+    )
     order.save()
 
-    _create_order_lines(order=order, lines=draft.lines)
+    _create_order_lines(
+        order=order,
+        lines=draft.lines,
+    )
 
     return order
 
@@ -143,12 +150,17 @@ def replace_draft_order_lines(
 ) -> Order:
     """Replace lines using already resolved line data."""
 
-    resolved_lines = tuple(lines)
+    resolved_lines = tuple(
+        lines
+    )
 
     order.lines.all().delete()
 
     if resolved_lines:
-        _create_order_lines(order=order, lines=resolved_lines)
+        _create_order_lines(
+            order=order,
+            lines=resolved_lines,
+        )
 
     order.updated_at = timezone.now()
     order.save(
@@ -160,14 +172,18 @@ def replace_draft_order_lines(
     return order
 
 
-@locked_order(guard=_require_draft_for_discard)
+@locked_order(
+    guard=_require_draft_for_discard,
+)
 def discard_draft_order(
     *,
     order: Order,
 ) -> None:
     """Delete an unplaced draft order."""
 
-    if has_reservations_for_order(order=order):
+    if has_reservations_for_order(
+        order=order,
+    ):
         raise InvalidOrderOperation(
             f"Cannot discard draft order {order.pk}; "
             "it has allocations"
@@ -176,7 +192,9 @@ def discard_draft_order(
     order.delete()
 
 
-@locked_order(guard=_require_draft_for_placement)
+@locked_order(
+    guard=_require_draft_for_placement,
+)
 def place_order(
     *,
     order: Order,
@@ -185,13 +203,20 @@ def place_order(
 ) -> Order:
     """Prepare a draft order and move it to PLACED."""
 
-    preparation(order=order)
-    order.mark_as_placed(user=user)
+    preparation(
+        order=order,
+    )
+
+    order.mark_as_placed(
+        user=user,
+    )
 
     return order
 
 
-@locked_order(guard=_require_placed_for_edit)
+@locked_order(
+    guard=_require_placed_for_edit,
+)
 def update_placed_order(
     *,
     order: Order,
@@ -201,42 +226,62 @@ def update_placed_order(
 ) -> Order:
     """Replace resolved lines on a placed order and rebuild preparation."""
 
-    resolved_lines = tuple(lines)
+    resolved_lines = tuple(
+        lines
+    )
 
     if not resolved_lines:
-        raise InvalidOrderOperation("order must contain at least one line")
+        raise InvalidOrderOperation(
+            "order must contain at least one line"
+        )
 
-    delete_reservations_for_order(order=order)
+    delete_reservations_for_order(
+        order=order,
+    )
+
     order.lines.all().delete()
-    _create_order_lines(order=order, lines=resolved_lines)
-    preparation(order=order)
-    order.mark_as_edited(user=user)
+
+    _create_order_lines(
+        order=order,
+        lines=resolved_lines,
+    )
+
+    preparation(
+        order=order,
+    )
+
+    order.mark_as_edited(
+        user=user,
+    )
 
     return order
 
 
-@locked_order(guard=_require_placed_for_packing)
+@locked_order(
+    guard=_require_placed_for_packing,
+)
 def pack_order(
     *,
     order: Order,
+    preparation: OrderTransitionPreparation,
     user=None,
 ) -> Order:
-    """Consume existing reservations and move the order to PACKED."""
+    """Prepare a placed order and move it to PACKED."""
 
-    try:
-        consume_reservations_for_order(order=order)
+    preparation(
+        order=order,
+    )
 
-    except MissingReservations as exc:
-        raise InvalidOrderOperation(
-            f"Order {order.pk} has no reserved allocations"
-        ) from exc
-
-    order.mark_as_packed(user=user)
+    order.mark_as_packed(
+        user=user,
+    )
 
     return order
 
 
-@locked_order(guard=_require_cancellable)
+@locked_order(
+    guard=_require_cancellable,
+)
 def cancel_order(
     *,
     order: Order,
@@ -246,8 +291,16 @@ def cancel_order(
 ) -> Order:
     """Cancel an order and release active reservations."""
 
-    cancel_reservations_for_order(order=order)
-    order.cancel(user=user, reason=reason, note=note)
+    cancel_reservations_for_order(
+        order=order,
+    )
+
+    order.cancel(
+        user=user,
+        reason=reason,
+        note=note,
+    )
+
     return order
 
 
@@ -259,7 +312,10 @@ def deliver_order(
 ) -> Order:
     """Move an order to DELIVERED."""
 
-    order.mark_as_delivered(user=user)
+    order.mark_as_delivered(
+        user=user,
+    )
+
     return order
 
 
