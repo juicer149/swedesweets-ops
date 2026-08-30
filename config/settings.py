@@ -11,8 +11,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # =============================================================================
 
 
-def env_bool(name: str, *, default: bool = False) -> bool:
-    value = os.environ.get(name)
+def env_bool(
+    name: str,
+    *,
+    default: bool = False,
+) -> bool:
+    value = os.environ.get(
+        name
+    )
 
     if value is None:
         return default
@@ -25,28 +31,45 @@ def env_bool(name: str, *, default: bool = False) -> bool:
     }
 
 
-def env_list(name: str, *, default: list[str] | None = None) -> list[str]:
-    value = os.environ.get(name)
+def env_list(
+    name: str,
+    *,
+    default: list[str] | None = None,
+) -> list[str]:
+    value = os.environ.get(
+        name
+    )
 
     if value is None:
         return default or []
 
-    return [item.strip() for item in value.split(",") if item.strip()]
+    return [
+        item.strip()
+        for item in value.split(",")
+        if item.strip()
+    ]
 
 
 # =============================================================================
 # Core settings
 # =============================================================================
 
-DEBUG = env_bool("DJANGO_DEBUG", default=True)
+DEBUG = env_bool(
+    "DJANGO_DEBUG",
+    default=True,
+)
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY"
+)
 
 if not SECRET_KEY:
     if DEBUG:
         SECRET_KEY = "dev-only-change-me"
     else:
-        raise RuntimeError("DJANGO_SECRET_KEY must be set when DEBUG is false.")
+        raise RuntimeError(
+            "DJANGO_SECRET_KEY must be set when DEBUG is false."
+        )
 
 ALLOWED_HOSTS = env_list(
     "DJANGO_ALLOWED_HOSTS",
@@ -62,7 +85,10 @@ CSRF_TRUSTED_ORIGINS = env_list(
 )
 
 # Railway/other reverse proxies terminate HTTPS before Django.
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)
 
 
 # =============================================================================
@@ -113,6 +139,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 # =============================================================================
 # URL / WSGI
 # =============================================================================
@@ -128,8 +155,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "BACKEND": (
+            "django.template.backends.django.DjangoTemplates"
+        ),
+        "DIRS": [
+            BASE_DIR / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -150,20 +181,38 @@ TEMPLATES = [
 if os.environ.get("PGHOST"):
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ["PGDATABASE"],
-            "USER": os.environ["PGUSER"],
-            "PASSWORD": os.environ["PGPASSWORD"],
-            "HOST": os.environ["PGHOST"],
-            "PORT": os.environ.get("PGPORT", "5432"),
+            "ENGINE": (
+                "django.db.backends.postgresql"
+            ),
+            "NAME": os.environ[
+                "PGDATABASE"
+            ],
+            "USER": os.environ[
+                "PGUSER"
+            ],
+            "PASSWORD": os.environ[
+                "PGPASSWORD"
+            ],
+            "HOST": os.environ[
+                "PGHOST"
+            ],
+            "PORT": os.environ.get(
+                "PGPORT",
+                "5432",
+            ),
             "CONN_MAX_AGE": 600,
         }
     }
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "ENGINE": (
+                "django.db.backends.sqlite3"
+            ),
+            "NAME": (
+                BASE_DIR
+                / "db.sqlite3"
+            ),
         }
     }
 
@@ -174,21 +223,35 @@ else:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        ),
     },
 ]
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "accounts:after_login"
+LOGIN_REDIRECT_URL = (
+    "accounts:after_login"
+)
 LOGOUT_REDIRECT_URL = "login"
 
 
@@ -198,9 +261,15 @@ LOGOUT_REDIRECT_URL = "login"
 
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL",
-    "SwedeSweets <no-reply@swedesweets.local>"
+    (
+        "SwedeSweets "
+        "<no-reply@swedesweets.local>"
+    )
     if DEBUG
-    else "SwedeSweets <no-reply@swedesweets.com>",
+    else (
+        "SwedeSweets "
+        "<no-reply@swedesweets.com>"
+    ),
 )
 
 SERVER_EMAIL = os.environ.get(
@@ -211,32 +280,87 @@ SERVER_EMAIL = os.environ.get(
 if DEBUG:
     EMAIL_BACKEND = os.environ.get(
         "EMAIL_BACKEND",
-        "django.core.mail.backends.console.EmailBackend",
+        (
+            "django.core.mail.backends."
+            "console.EmailBackend"
+        ),
     )
 else:
     EMAIL_BACKEND = os.environ.get(
         "EMAIL_BACKEND",
-        "django.core.mail.backends.smtp.EmailBackend",
+        (
+            "django.core.mail.backends."
+            "smtp.EmailBackend"
+        ),
     )
 
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", default=not DEBUG)
-EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", default=False)
-EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
+EMAIL_HOST = os.environ.get(
+    "EMAIL_HOST",
+    "",
+)
+EMAIL_PORT = int(
+    os.environ.get(
+        "EMAIL_PORT",
+        "587",
+    )
+)
+EMAIL_HOST_USER = os.environ.get(
+    "EMAIL_HOST_USER",
+    "",
+)
+EMAIL_HOST_PASSWORD = os.environ.get(
+    "EMAIL_HOST_PASSWORD",
+    "",
+)
+EMAIL_USE_TLS = env_bool(
+    "EMAIL_USE_TLS",
+    default=not DEBUG,
+)
+EMAIL_USE_SSL = env_bool(
+    "EMAIL_USE_SSL",
+    default=False,
+)
+EMAIL_TIMEOUT = int(
+    os.environ.get(
+        "EMAIL_TIMEOUT",
+        "10",
+    )
+)
+
+
+# =============================================================================
+# Payments
+# =============================================================================
+
+SUMUP_API_KEY = os.environ.get(
+    "SUMUP_API_KEY",
+    "",
+)
+
+SUMUP_MERCHANT_CODE = os.environ.get(
+    "SUMUP_MERCHANT_CODE",
+    "",
+)
 
 
 # =============================================================================
 # Internationalization
 # =============================================================================
 
-LANGUAGE_CODE = os.environ.get("DJANGO_LANGUAGE_CODE", "en")
+LANGUAGE_CODE = os.environ.get(
+    "DJANGO_LANGUAGE_CODE",
+    "en",
+)
 
 LANGUAGES = [
-    ("en", "English"),
-    ("fr", "French"),
+    (
+        "en",
+        "English",
+    ),
+    (
+        "fr",
+        "French",
+    ),
 ]
 
 LOCALE_PATHS = [
@@ -244,6 +368,7 @@ LOCALE_PATHS = [
 ]
 
 TIME_ZONE = "Europe/Stockholm"
+
 USE_I18N = True
 USE_TZ = True
 
@@ -253,24 +378,41 @@ USE_TZ = True
 # =============================================================================
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = (
+    BASE_DIR
+    / "staticfiles"
+)
+STATICFILES_DIRS = [
+    BASE_DIR
+    / "static",
+]
 
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": (
+            "django.core.files.storage."
+            "FileSystemStorage"
+        ),
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "whitenoise.storage."
+            "CompressedManifestStaticFilesStorage"
+        ),
     },
 }
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = (
+    BASE_DIR
+    / "media"
+)
 
 
 # =============================================================================
 # Defaults
 # =============================================================================
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = (
+    "django.db.models.BigAutoField"
+)

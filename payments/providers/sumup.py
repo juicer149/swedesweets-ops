@@ -80,9 +80,11 @@ class SumUpHostedPaymentProvider:
             payload=payload,
         )
 
-        provider_payment_id = response.get("id")
-        hosted_checkout = response.get(
-            "hosted_checkout",
+        provider_payment_id = response.get(
+            "id"
+        )
+        redirect_url = response.get(
+            "hosted_checkout_url"
         )
 
         if not isinstance(
@@ -92,18 +94,6 @@ class SumUpHostedPaymentProvider:
             raise SumUpPaymentError(
                 "SumUp checkout response has no checkout id"
             )
-
-        if not isinstance(
-            hosted_checkout,
-            dict,
-        ):
-            raise SumUpPaymentError(
-                "SumUp checkout response has no hosted checkout"
-            )
-
-        redirect_url = hosted_checkout.get(
-            "hosted_checkout_url",
-        )
 
         if not isinstance(
             redirect_url,

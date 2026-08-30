@@ -152,6 +152,7 @@ def mark_payment_attempt_failed(
 
     return attempt
 
+
 def create_hosted_payment_session(
     *,
     attempt: PaymentAttempt,

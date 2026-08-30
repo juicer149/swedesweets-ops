@@ -56,11 +56,9 @@ def test_sumup_provider_creates_hosted_checkout():
         return_value=_urlopen_response(
             {
                 "id": "sumup-checkout-123",
-                "hosted_checkout": {
-                    "hosted_checkout_url": (
-                        "https://pay.sumup.com/checkout/123"
-                    ),
-                },
+                "hosted_checkout_url": (
+                    "https://checkout.sumup.com/pay/123"
+                ),
             }
         ),
     ) as mocked_urlopen:
@@ -74,7 +72,7 @@ def test_sumup_provider_creates_hosted_checkout():
     )
     assert (
         session.redirect_url
-        == "https://pay.sumup.com/checkout/123"
+        == "https://checkout.sumup.com/pay/123"
     )
 
     http_request = mocked_urlopen.call_args.args[0]
@@ -110,6 +108,31 @@ def test_sumup_provider_creates_hosted_checkout():
     }
 
 
+def test_sumup_provider_rejects_missing_checkout_id():
+    provider = SumUpHostedPaymentProvider(
+        api_key="test-key",
+        merchant_code="M123456",
+    )
+
+    with patch(
+        "payments.providers.sumup.urlopen",
+        return_value=_urlopen_response(
+            {
+                "hosted_checkout_url": (
+                    "https://checkout.sumup.com/pay/123"
+                ),
+            }
+        ),
+    ):
+        with pytest.raises(
+            SumUpPaymentError,
+            match="checkout id",
+        ):
+            provider.create_payment(
+                request=_request(),
+            )
+
+
 def test_sumup_provider_rejects_missing_hosted_checkout_url():
     provider = SumUpHostedPaymentProvider(
         api_key="test-key",
@@ -126,7 +149,7 @@ def test_sumup_provider_rejects_missing_hosted_checkout_url():
     ):
         with pytest.raises(
             SumUpPaymentError,
-            match="hosted checkout",
+            match="hosted checkout URL",
         ):
             provider.create_payment(
                 request=_request(),
