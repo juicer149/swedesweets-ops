@@ -23,13 +23,35 @@ from accounts.access import (
 from customer_portal.access import (
     VIEW_CAPABILITIES as CUSTOMER_PORTAL_VIEW_CAPABILITIES,
 )
-from customers.access import VIEW_CAPABILITIES as CUSTOMER_VIEW_CAPABILITIES
-from dashboard.access import VIEW_CAPABILITIES as DASHBOARD_VIEW_CAPABILITIES
-from inventory.access import VIEW_CAPABILITIES as INVENTORY_VIEW_CAPABILITIES
-from orders.access import VIEW_CAPABILITIES as ORDER_VIEW_CAPABILITIES
-from products.access import VIEW_CAPABILITIES as PRODUCT_VIEW_CAPABILITIES
+from customers.access import (
+    VIEW_CAPABILITIES as CUSTOMER_VIEW_CAPABILITIES,
+)
+from dashboard.access import (
+    VIEW_CAPABILITIES as DASHBOARD_VIEW_CAPABILITIES,
+)
+from inventory.access import (
+    VIEW_CAPABILITIES as INVENTORY_VIEW_CAPABILITIES,
+)
+from orders.access import (
+    VIEW_CAPABILITIES as ORDER_VIEW_CAPABILITIES,
+)
+from payments.access import (
+    AUTH_EXEMPT_VIEWS as PAYMENT_AUTH_EXEMPT_VIEWS,
+)
+from payments.access import (
+    VIEW_CAPABILITIES as PAYMENT_VIEW_CAPABILITIES,
+)
+from products.access import (
+    VIEW_CAPABILITIES as PRODUCT_VIEW_CAPABILITIES,
+)
 
-AUTH_EXEMPT_VIEWS = ACCOUNT_AUTH_EXEMPT_VIEWS
+
+AUTH_EXEMPT_VIEWS = frozenset(
+    {
+        *ACCOUNT_AUTH_EXEMPT_VIEWS,
+        *PAYMENT_AUTH_EXEMPT_VIEWS,
+    }
+)
 
 
 VIEW_CAPABILITIES = {
@@ -40,6 +62,7 @@ VIEW_CAPABILITIES = {
     **PRODUCT_VIEW_CAPABILITIES,
     **CUSTOMER_VIEW_CAPABILITIES,
     **CUSTOMER_PORTAL_VIEW_CAPABILITIES,
+    **PAYMENT_VIEW_CAPABILITIES,
 }
 
 
