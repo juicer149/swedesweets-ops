@@ -14,6 +14,11 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from payments.models import PaymentAttempt
+from payments.services import (
+    cancel_pending_payment_attempts_for_order,
+    create_payment_attempt,
+)
 from products.models import Product
 from reservations.planning import (
     InsufficientReservationCapacity,
@@ -199,14 +204,19 @@ def create_pending_retail_order(
 def start_retail_payment(
     *,
     checkout: RetailCheckoutSession,
-) -> RetailCheckoutSession:
-    """Create temporary reservations before external payment begins.
+) -> PaymentAttempt:
+    """Prepare one retail order for an external payment attempt.
 
-    Retail chooses the commercial batch pool. Reservations owns locking,
-    active-claim accounting, FEFO planning and allocation persistence.
+    The checkout and order are locked while retail availability is
+    re-evaluated.
 
-    Existing temporary holds are replaced atomically. No database lock is held
-    while the buyer interacts with the payment provider.
+    Existing temporary reservations and pending payment attempts are replaced
+    atomically.
+
+    The returned PaymentAttempt exists only after every order line has been
+    successfully reserved.
+
+    No payment-provider call happens while these database locks are held.
     """
 
     now = timezone.now()
@@ -257,6 +267,10 @@ def start_retail_payment(
         order=order,
     )
 
+    cancel_pending_payment_attempts_for_order(
+        order=order,
+    )
+
     reserved_until = (
         now
         + RETAIL_PAYMENT_RESERVATION_WINDOW
@@ -286,7 +300,9 @@ def start_retail_payment(
                 missing_quantity=exc.missing_quantity,
             ) from exc
 
-    return checkout
+    return create_payment_attempt(
+        order=order,
+    )
 
 
 def _get_offer_selection(
