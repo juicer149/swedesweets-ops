@@ -11,7 +11,6 @@ Persistence mechanics such as transaction boundaries and row locking are
 centralized by orders.decorators.locked_order.
 
 Mutation-specific prerequisites are injected as policies.
-Reservation persistence and accounting belong to reservations.
 """
 
 from __future__ import annotations
@@ -31,9 +30,6 @@ from orders.errors import InvalidOrderOperation
 from orders.models import (
     Order,
     OrderLine,
-)
-from reservations.selectors import (
-    has_reservations_for_order,
 )
 
 
@@ -174,16 +170,13 @@ def replace_draft_order_lines(
 def discard_draft_order(
     *,
     order: Order,
+    preparation: OrderMutationPreparation,
 ) -> None:
-    """Delete an unplaced draft order."""
+    """Prepare and delete an unplaced draft order."""
 
-    if has_reservations_for_order(
+    preparation(
         order=order,
-    ):
-        raise InvalidOrderOperation(
-            f"Cannot discard draft order {order.pk}; "
-            "it has allocations"
-        )
+    )
 
     order.delete()
 

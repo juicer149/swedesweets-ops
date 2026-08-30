@@ -17,12 +17,14 @@ from orders.datatypes import OrderLineInput
 from orders.models import Order
 from orders.services import (
     create_draft_order as create_shared_draft_order,
+    discard_draft_order as discard_shared_draft_order,
     place_order as place_shared_order,
     replace_draft_order_lines as replace_shared_draft_order_lines,
     update_placed_order as update_shared_placed_order,
 )
 from reservations.policies import (
     clear_order_reservations_before_line_replacement,
+    require_order_without_reservations_before_discard,
 )
 
 
@@ -137,6 +139,18 @@ def replace_draft_order_lines(
         order=order,
         lines=resolved_lines,
         user=user,
+    )
+
+
+def discard_draft_order(
+    *,
+    order: Order,
+) -> None:
+    """Discard a business draft that owns no reservations."""
+
+    discard_shared_draft_order(
+        order=order,
+        preparation=require_order_without_reservations_before_discard,
     )
 
 

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from orders.errors import InvalidOrderOperation
 from orders.models import Order
+from reservations.selectors import (
+    has_reservations_for_order,
+)
 from reservations.services import (
     MissingReservations,
     cancel_reservations_for_order,
@@ -46,3 +49,18 @@ def clear_order_reservations_before_line_replacement(
     delete_reservations_for_order(
         order=order,
     )
+
+
+def require_order_without_reservations_before_discard(
+    *,
+    order: Order,
+) -> None:
+    """Reject discarding an order that still owns reservations."""
+
+    if has_reservations_for_order(
+        order=order,
+    ):
+        raise InvalidOrderOperation(
+            f"Cannot discard draft order {order.pk}; "
+            "it has allocations"
+        )

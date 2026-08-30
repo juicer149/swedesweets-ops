@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from business.services import (
+    discard_draft_order,
     get_or_create_customer_draft_order,
     replace_draft_order_lines,
 )
@@ -14,7 +15,6 @@ from inventory.errors import InvalidStockOperation
 from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
 from orders.models import Order
-from orders.services import discard_draft_order
 
 
 class DraftStatus(StrEnum):
@@ -46,7 +46,9 @@ def save_or_clear_portal_draft_order(
 ) -> PortalDraftMutationResult:
     """Save validated portal draft lines, or clear the draft if it is empty."""
 
-    line_inputs = tuple(line_inputs)
+    line_inputs = tuple(
+        line_inputs
+    )
 
     scope_error = _validate_optional_order_customer_scope(
         customer=customer,
@@ -70,8 +72,9 @@ def save_or_clear_portal_draft_order(
 
     if draft_order is None:
         try:
-            draft_order = get_or_create_customer_draft_order(customer=customer)
-
+            draft_order = get_or_create_customer_draft_order(
+                customer=customer,
+            )
         except PORTAL_DRAFT_OPERATION_ERRORS as error:
             return _failed(
                 draft_order=None,
@@ -128,8 +131,9 @@ def discard_portal_draft_order(
         )
 
     try:
-        discard_draft_order(order=draft_order)
-
+        discard_draft_order(
+            order=draft_order,
+        )
     except PORTAL_DRAFT_OPERATION_ERRORS as error:
         return _failed(
             draft_order=draft_order,
