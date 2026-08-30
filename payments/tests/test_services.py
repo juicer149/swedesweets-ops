@@ -11,6 +11,7 @@ from payments.services import (
     InvalidPaymentAttempt,
     cancel_pending_payment_attempts_for_order,
     create_payment_attempt,
+    mark_payment_attempt_failed,
     mark_payment_attempt_succeeded,
 )
 from products.tests.factories import product_factory
@@ -195,6 +196,52 @@ def test_cancelled_payment_attempt_cannot_succeed():
         match="only pending",
     ):
         mark_payment_attempt_succeeded(
+            attempt=attempt,
+        )
+
+    attempt.refresh_from_db()
+
+    assert (
+        attempt.status
+        == PaymentAttempt.Status.CANCELLED
+    )
+
+
+@pytest.mark.django_db
+def test_mark_payment_attempt_failed():
+    order = _create_priced_order()
+
+    attempt = create_payment_attempt(
+        order=order,
+    )
+
+    failed = mark_payment_attempt_failed(
+        attempt=attempt,
+    )
+
+    assert (
+        failed.status
+        == PaymentAttempt.Status.FAILED
+    )
+
+
+@pytest.mark.django_db
+def test_cancelled_payment_attempt_cannot_fail():
+    order = _create_priced_order()
+
+    attempt = create_payment_attempt(
+        order=order,
+    )
+
+    cancel_pending_payment_attempts_for_order(
+        order=order,
+    )
+
+    with pytest.raises(
+        InvalidPaymentAttempt,
+        match="only pending",
+    ):
+        mark_payment_attempt_failed(
             attempt=attempt,
         )
 

@@ -22,6 +22,7 @@ from payments.services import (
     InvalidPaymentAttempt,
     cancel_pending_payment_attempts_for_order,
     create_payment_attempt,
+    mark_payment_attempt_failed,
     mark_payment_attempt_succeeded,
 )
 from products.models import Product
@@ -362,6 +363,56 @@ def complete_retail_payment(
     )
 
     return order
+
+
+@transaction.atomic
+def fail_retail_payment(
+    *,
+    attempt: PaymentAttempt,
+) -> PaymentAttempt:
+    """Finalize a failed retail payment attempt.
+
+    Temporary payment reservations are released while the shared order remains
+    in DRAFT so the buyer may retry checkout.
+
+    Reservation release and payment state transition happen atomically.
+    """
+
+    attempt = (
+        PaymentAttempt.objects
+        .select_for_update()
+        .select_related("order")
+        .get(pk=attempt.pk)
+    )
+
+    if attempt.status != PaymentAttempt.Status.PENDING:
+        raise InvalidPaymentAttempt(
+            "only pending payment attempts can fail retail payment"
+        )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=attempt.order_id)
+    )
+
+    if order.channel != Order.Channel.RETAIL:
+        raise InvalidRetailOrder(
+            "payment attempt does not belong to a retail order"
+        )
+
+    if order.status != Order.Status.DRAFT:
+        raise InvalidRetailOrder(
+            "only draft retail orders can fail payment"
+        )
+
+    cancel_temporary_reservations_for_order(
+        order=order,
+    )
+
+    return mark_payment_attempt_failed(
+        attempt=attempt,
+    )
 
 
 def _get_offer_selection(

@@ -100,7 +100,6 @@ def mark_payment_attempt_succeeded(
     attempt = (
         PaymentAttempt.objects
         .select_for_update()
-        .select_related("order")
         .get(pk=attempt.pk)
     )
 
@@ -110,6 +109,35 @@ def mark_payment_attempt_succeeded(
         )
 
     attempt.status = PaymentAttempt.Status.SUCCEEDED
+    attempt.save(
+        update_fields=[
+            "status",
+            "updated_at",
+        ]
+    )
+
+    return attempt
+
+
+@transaction.atomic
+def mark_payment_attempt_failed(
+    *,
+    attempt: PaymentAttempt,
+) -> PaymentAttempt:
+    """Move one pending payment attempt to FAILED."""
+
+    attempt = (
+        PaymentAttempt.objects
+        .select_for_update()
+        .get(pk=attempt.pk)
+    )
+
+    if attempt.status != PaymentAttempt.Status.PENDING:
+        raise InvalidPaymentAttempt(
+            "only pending payment attempts can fail"
+        )
+
+    attempt.status = PaymentAttempt.Status.FAILED
     attempt.save(
         update_fields=[
             "status",
