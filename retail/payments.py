@@ -26,11 +26,51 @@ def begin_retail_hosted_payment(
     """Start a retail payment and create its external hosted checkout.
 
     The local payment start commits before any provider HTTP request occurs.
+
+    If provider creation fails, the pending PaymentAttempt and its temporary
+    reservations remain intact so provider initialization may be retried.
     """
 
     attempt = start_retail_payment(
         checkout=checkout,
     )
+
+    return _create_retail_hosted_payment_session(
+        attempt=attempt,
+        customer_return_url=customer_return_url,
+        webhook_url=webhook_url,
+    )
+
+
+def retry_retail_hosted_payment(
+    *,
+    attempt: PaymentAttempt,
+    customer_return_url: str,
+    webhook_url: str,
+) -> RetailPaymentRedirect:
+    """Retry provider initialization for an existing payment attempt.
+
+    This does not create another PaymentAttempt and does not replace the
+    existing temporary reservations.
+
+    The payment service itself rejects attempts that are no longer pending or
+    that already have a provider payment identifier.
+    """
+
+    return _create_retail_hosted_payment_session(
+        attempt=attempt,
+        customer_return_url=customer_return_url,
+        webhook_url=webhook_url,
+    )
+
+
+def _create_retail_hosted_payment_session(
+    *,
+    attempt: PaymentAttempt,
+    customer_return_url: str,
+    webhook_url: str,
+) -> RetailPaymentRedirect:
+    """Create the external hosted checkout for one local payment attempt."""
 
     provider = get_default_hosted_payment_provider()
 
