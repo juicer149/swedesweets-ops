@@ -5,6 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from business.services import (
+    create_order,
+    update_placed_order,
+)
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
@@ -53,11 +57,10 @@ from orders.selectors import (
 )
 from orders.services import (
     cancel_order,
-    create_order,
     deliver_order,
     pack_order,
-    update_placed_order,
 )
+
 
 ORDER_FILTERS = [
     TableFilter("", "All"),
@@ -113,20 +116,36 @@ def index(request):
     )
 
     context = {
-        "page_header": build_orders_page_header(role_spec=request.role_spec),
+        "page_header": build_orders_page_header(
+            role_spec=request.role_spec,
+        ),
         "order_rows": build_order_page_rows(
             orders=orders,
             role_spec=request.role_spec,
         ),
-        "filters": controls.build_filter_links(ORDER_FILTERS),
-        "table_sorts": controls.build_table_sort_links(ORDER_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(ORDER_TABLE_SORTS),
-        "mobile_sort_direction": controls.build_mobile_sort_direction(),
-        "table_controls_template": ORDER_TABLE_CONTROLS_TEMPLATE,
+        "filters": controls.build_filter_links(
+            ORDER_FILTERS,
+        ),
+        "table_sorts": controls.build_table_sort_links(
+            ORDER_TABLE_SORTS,
+        ),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(
+            ORDER_TABLE_SORTS,
+        ),
+        "mobile_sort_direction": (
+            controls.build_mobile_sort_direction()
+        ),
+        "table_controls_template": (
+            ORDER_TABLE_CONTROLS_TEMPLATE
+        ),
         "numeric_table_fields": ["quantity"],
     }
 
-    return render(request, "orders/index.html", context)
+    return render(
+        request,
+        "orders/index.html",
+        context,
+    )
 
 
 @login_required
@@ -155,24 +174,36 @@ def create(request):
                 return redirect("orders:index")
     else:
         form = OrderCreateForm()
-        line_formset = OrderLineFormSet(prefix=ORDER_LINE_FORMSET_PREFIX)
+        line_formset = OrderLineFormSet(
+            prefix=ORDER_LINE_FORMSET_PREFIX,
+        )
 
     context = build_create_order_form_context(
         form=form,
         line_formset=line_formset,
     ).as_dict()
 
-    return render(request, "orders/order_form.html", context)
+    return render(
+        request,
+        "orders/order_form.html",
+        context,
+    )
 
 
 @login_required
-def edit(request, order_id: int):
+def edit(
+    request,
+    order_id: int,
+):
     order = _get_order_or_404(order_id)
 
     if not can_edit_order(order=order, role_spec=request.role_spec):
         messages.error(
             request,
-            f"Order #{order.id} cannot be edited because it is {order.status}.",
+            (
+                f"Order #{order.id} cannot be edited "
+                f"because it is {order.status}."
+            ),
         )
         return redirect("orders:detail", order_id=order.id)
 
@@ -187,7 +218,9 @@ def edit(request, order_id: int):
             try:
                 updated_order = update_placed_order(
                     order=order,
-                    lines=build_order_line_inputs(line_formset),
+                    lines=build_order_line_inputs(
+                        line_formset,
+                    ),
                     user=request.user,
                 )
             except ORDER_OPERATION_ERRORS as error:
@@ -205,7 +238,9 @@ def edit(request, order_id: int):
                 )
     else:
         line_formset = OrderLineFormSet(
-            initial=build_order_line_initial_data(order),
+            initial=build_order_line_initial_data(
+                order
+            ),
             prefix=ORDER_LINE_FORMSET_PREFIX,
             order=order,
         )
@@ -216,30 +251,46 @@ def edit(request, order_id: int):
         role_spec=request.role_spec,
     ).as_dict()
 
-    return render(request, "orders/order_form.html", context)
+    return render(
+        request,
+        "orders/order_form.html",
+        context,
+    )
 
 
 @login_required
-def cancel(request, order_id: int):
+def cancel(
+    request,
+    order_id: int,
+):
     order = _get_order_or_404(order_id)
 
     if not can_cancel_order(order=order, role_spec=request.role_spec):
         messages.error(
             request,
-            f"Order #{order.id} cannot be cancelled because it is {order.status}.",
+            (
+                f"Order #{order.id} cannot be cancelled "
+                f"because it is {order.status}."
+            ),
         )
         return redirect("orders:detail", order_id=order.id)
 
     if request.method == "POST":
-        form = OrderCancelForm(request.POST)
+        form = OrderCancelForm(
+            request.POST,
+        )
 
         if form.is_valid():
             try:
                 cancelled_order = cancel_order(
                     order=order,
                     user=request.user,
-                    reason=form.cleaned_data["reason"],
-                    note=form.cleaned_data["note"],
+                    reason=form.cleaned_data[
+                        "reason"
+                    ],
+                    note=form.cleaned_data[
+                        "note"
+                    ],
                 )
             except InvalidOrderOperation as error:
                 messages.error(request, str(error))
@@ -250,6 +301,7 @@ def cancel(request, order_id: int):
                 f"Order #{cancelled_order.id} cancelled.",
             )
             return redirect("orders:detail", order_id=cancelled_order.id)
+
     else:
         form = OrderCancelForm()
 
@@ -259,23 +311,34 @@ def cancel(request, order_id: int):
         role_spec=request.role_spec,
     ).as_dict()
 
-    return render(request, "orders/cancel.html", context)
+    return render(
+        request,
+        "orders/cancel.html",
+        context,
+    )
 
 
 @login_required
-def pack(request, order_id: int):
+def pack(
+    request,
+    order_id: int,
+):
     order = _get_order_or_404(order_id)
 
     if not can_pack_order(order=order, role_spec=request.role_spec):
         messages.error(
             request,
-            f"Order #{order.id} cannot be packed because it is {order.status}.",
+            (
+                f"Order #{order.id} cannot be packed "
+                f"because it is {order.status}."
+            ),
         )
         return redirect("orders:detail", order_id=order.id)
 
     if request.method == "POST":
         try:
             packed_order = pack_order(order=order, user=request.user)
+
         except ORDER_OPERATION_ERRORS as error:
             messages.error(request, str(error))
             return redirect("orders:pack", order_id=order.id)
@@ -301,64 +364,103 @@ def pack(request, order_id: int):
         active_panel="",
         include_contents=True,
         pick_lines=pick_lines,
-        primary_action=build_pack_action(is_disabled=not pick_lines),
+        primary_action=build_pack_action(
+            is_disabled=not pick_lines,
+        ),
         secondary_actions=build_order_secondary_actions(
             order=order,
             role_spec=request.role_spec,
         ),
     ).as_dict()
 
-    return render(request, "orders/pack.html", context)
+    return render(
+        request,
+        "orders/pack.html",
+        context,
+    )
 
 
 @login_required
-def deliver(request, order_id: int):
+def deliver(
+    request,
+    order_id: int,
+):
     order = _get_order_or_404(order_id)
 
-    if not can_deliver_order(order=order, role_spec=request.role_spec):
+    if not can_deliver_order(
+        order=order,
+        role_spec=request.role_spec,
+    ):
         messages.error(
             request,
-            f"Order #{order.id} cannot be delivered because it is {order.status}.",
+            (
+                f"Order #{order.id} cannot be delivered "
+                f"because it is {order.status}."
+            ),
         )
-        return redirect("orders:detail", order_id=order.id)
+        return redirect(
+            "orders:detail",
+            order_id=order.id,
+        )
 
     if request.method == "POST":
         try:
             delivered_order = deliver_order(order=order, user=request.user)
         except InvalidOrderOperation as error:
             messages.error(request, str(error))
-            return redirect("orders:deliver", order_id=order.id)
+            return redirect(
+                "orders:deliver",
+                order_id=order.id,
+            )
 
         messages.success(
             request,
             f"Order #{delivered_order.id} delivered.",
         )
-        return redirect("orders:detail", order_id=delivered_order.id)
+        return redirect(
+            "orders:detail",
+            order_id=delivered_order.id,
+        )
 
     context = build_order_detail_context(
         order=order,
         title=f"Deliver order #{order.id}",
         description="",
-        cancel_url=reverse("orders:index"),
+        cancel_url=reverse(
+            "orders:index"
+        ),
         active_panel="contents",
         include_contents=True,
         primary_action=build_deliver_action(),
     ).as_dict()
 
-    return render(request, "orders/deliver.html", context)
+    return render(
+        request,
+        "orders/deliver.html",
+        context,
+    )
 
 
 @login_required
-def detail(request, order_id: int):
+def detail(
+    request,
+    order_id: int,
+):
     order = _get_order_or_404(order_id)
 
-    active_panel = "order" if order.status == Order.Status.CANCELLED else "contents"
+    active_panel = (
+        "order"
+        if order.status == Order.Status.CANCELLED
+        else "contents"
+    )
 
     context = build_order_detail_context(
         order=order,
         title=f"Order #{order.id}",
         description="",
-        cancel_url=reverse("orders:index"),
+        cancel_url=reverse(
+            "orders:index"
+        ),
         active_panel=active_panel,
         include_contents=True,
         primary_action=build_order_detail_primary_action(
@@ -371,18 +473,28 @@ def detail(request, order_id: int):
         ),
     ).as_dict()
 
-    return render(request, "orders/detail.html", context)
+    return render(
+        request,
+        "orders/detail.html",
+        context,
+    )
 
 
-def _get_order_or_404(order_id: int) -> Order:
+def _get_order_or_404(
+    order_id: int,
+) -> Order:
     return get_object_or_404(
-        Order.objects.select_related(
+        Order.objects
+        .select_related(
             "customer",
             "edited_by",
             "placed_by",
             "packed_by",
             "delivered_by",
             "cancelled_by",
-        ).prefetch_related("lines__product"),
+        )
+        .prefetch_related(
+            "lines__product",
+        ),
         pk=order_id,
     )

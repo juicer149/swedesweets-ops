@@ -25,11 +25,10 @@ testpaths = [
     "inventory",
     "accounts",
     "reservations",
-    # B2B customer and order management
     "customers",
     "customer_portal",
     "orders",
-    # B2C customer and order management
+    "business",
     "retail",
 ]
 addopts = [

@@ -57,9 +57,8 @@ class InventoryBatch(models.Model):
 
     InventoryBatch owns physical stock quantity and physical lifecycle.
 
-    Reservation ownership belongs to orders.Allocation. This model should know
-    how physical stock changes, but it should not know how orders reserve stock
-    or how allocations are stored.
+    Reservation ownership belongs to the reservation domain.
+    InventoryBatch does not know how reservation records are stored.
     """
 
     class Status(models.TextChoices):

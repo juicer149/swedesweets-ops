@@ -1,12 +1,14 @@
 """
 Order application services.
 
-This module owns generic order lifecycle operations and the existing business
-order workflow.
+This module owns shared order lifecycle mutations and the existing draft
+persistence workflow.
 
-Reservation mechanics belong to reservations. Inventory eligibility policy for
-the current business workflow is selected here, but locking, reservation
-accounting, allocation persistence and consumption are delegated.
+Persistence mechanics such as transaction boundaries and row locking are
+centralized by orders.decorators.locked_order.
+
+Channel-specific transition prerequisites are injected as policies.
+Reservation persistence and accounting belong to reservations.
 """
 
 from __future__ import annotations
@@ -19,14 +21,12 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from customers.models import Customer
-from inventory.errors import InsufficientStockError
-from inventory.selectors import (
-    list_orderable_batches_for_product,
-)
+from orders.contracts import OrderTransitionPreparation
 from orders.datatypes import (
     BuyerInput,
     OrderLineInput,
 )
+from orders.decorators import locked_order
 from orders.errors import InvalidOrderOperation
 from orders.models import (
     Order,
@@ -37,9 +37,6 @@ from products.units import (
     normalize_order_unit,
     quantity_to_units,
 )
-from reservations.planning import (
-    InsufficientReservationCapacity,
-)
 from reservations.selectors import (
     has_reservations_for_order,
 )
@@ -48,27 +45,88 @@ from reservations.services import (
     cancel_reservations_for_order,
     consume_reservations_for_order,
     delete_reservations_for_order,
-    reserve_order_line_from_pool,
 )
 
 
 @dataclass(frozen=True)
 class NormalizedOrderLine:
-    """Order line normalized to the operational fulfillment unit.
-
-    External input may use stock units, kg, or grams. The order workflow
-    reserves and picks stock in whole product stock units.
-    """
+    """Order line normalized to the operational fulfillment unit."""
 
     product: Product
     quantity: int
+
+
+def _require_draft_for_edit(
+    *,
+    order: Order,
+) -> None:
+    if order.status != Order.Status.DRAFT:
+        raise InvalidOrderOperation(
+            "Only draft orders can be edited; "
+            f"current status is {order.status}"
+        )
+
+
+def _require_draft_for_discard(
+    *,
+    order: Order,
+) -> None:
+    if order.status != Order.Status.DRAFT:
+        raise InvalidOrderOperation(
+            "Only draft orders can be discarded; "
+            f"current status is {order.status}"
+        )
+
+
+def _require_draft_for_placement(
+    *,
+    order: Order,
+) -> None:
+    if order.status != Order.Status.DRAFT:
+        raise InvalidOrderOperation(
+            "Only draft orders can be placed; "
+            f"current status is {order.status}"
+        )
+
+
+def _require_placed_for_edit(
+    *,
+    order: Order,
+) -> None:
+    if order.status != Order.Status.PLACED:
+        raise InvalidOrderOperation(
+            "Only placed orders can be edited; "
+            f"current status is {order.status}"
+        )
+
+
+def _require_placed_for_packing(
+    *,
+    order: Order,
+) -> None:
+    if order.status != Order.Status.PLACED:
+        raise InvalidOrderOperation(
+            f"Cannot pack order {order.pk}; "
+            f"current status is {order.status}"
+        )
+
+
+def _require_cancellable(
+    *,
+    order: Order,
+) -> None:
+    if not order.can_be_cancelled:
+        raise InvalidOrderOperation(
+            f"Cannot cancel order {order.pk}; "
+            f"current status is {order.status}"
+        )
 
 
 def buyer_from_customer(
     *,
     customer: Customer,
 ) -> BuyerInput:
-    """Adapt a persisted customer to the buyer contract required by orders."""
+    """Adapt a persisted customer to the buyer snapshot contract."""
 
     return BuyerInput(
         name=customer.name,
@@ -87,11 +145,7 @@ def create_draft_order(
     customer: Customer,
     lines: Iterable[OrderLineInput],
 ) -> Order:
-    """Create a business order in DRAFT status.
-
-    Multiple input lines for the same product are normalized to stock units and
-    merged into one OrderLine.
-    """
+    """Create a business-shaped order in DRAFT status."""
 
     return _create_draft_order(
         customer=customer,
@@ -154,34 +208,18 @@ def get_or_create_customer_draft_order(
     return order
 
 
-@transaction.atomic
+@locked_order(
+    guard=_require_draft_for_edit,
+)
 def replace_draft_order_lines(
     *,
     order: Order,
     lines: Iterable[OrderLineInput],
     user=None,
 ) -> Order:
-    """Replace all lines on a business draft order.
+    """Replace all lines on a draft order."""
 
-    Draft business orders do not reserve stock. Stock is checked and reserved
-    only when the order is placed.
-    """
-
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=order.pk)
-    )
-
-    if order.status != Order.Status.DRAFT:
-        raise InvalidOrderOperation(
-            "Only draft orders can be edited; "
-            f"current status is {order.status}"
-        )
-
-    normalized_lines = _normalize_order_lines(
-        lines=lines,
-    )
+    normalized_lines = _normalize_order_lines(lines=lines)
 
     order.lines.all().delete()
 
@@ -192,35 +230,21 @@ def replace_draft_order_lines(
         )
 
     order.updated_at = timezone.now()
-    order.save(
-        update_fields=["updated_at"],
-    )
+    order.save(update_fields=["updated_at"])
 
     return order
 
 
-@transaction.atomic
+@locked_order(
+    guard=_require_draft_for_discard,
+)
 def discard_draft_order(
     *,
     order: Order,
 ) -> None:
     """Delete an unplaced draft order."""
 
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=order.pk)
-    )
-
-    if order.status != Order.Status.DRAFT:
-        raise InvalidOrderOperation(
-            "Only draft orders can be discarded; "
-            f"current status is {order.status}"
-        )
-
-    if has_reservations_for_order(
-        order=order,
-    ):
+    if has_reservations_for_order(order=order):
         raise InvalidOrderOperation(
             f"Cannot discard draft order {order.pk}; "
             "it has allocations"
@@ -234,9 +258,14 @@ def create_order(
     *,
     customer: Customer,
     lines: Iterable[OrderLineInput],
+    preparation: OrderTransitionPreparation,
     user=None,
 ) -> Order:
-    """Create a business draft order and immediately place it."""
+    """Create a draft order and immediately place it.
+
+    Creation remains business-shaped temporarily. The placement policy is
+    supplied by the caller.
+    """
 
     order = _create_draft_order(
         customer=customer,
@@ -246,94 +275,66 @@ def create_order(
         lines=lines,
     )
 
-    return _place_order(
-        order=order,
-        user=user,
-    )
+    return place_order(order=order, preparation=preparation, user=user)
 
 
-@transaction.atomic
+@locked_order(guard=_require_draft_for_placement)
 def place_order(
     *,
     order: Order,
+    preparation: OrderTransitionPreparation,
     user=None,
 ) -> Order:
-    """Reserve inventory and move a draft order to PLACED."""
+    """Prepare a draft order and move it to PLACED."""
 
-    return _place_order(
-        order=order,
-        user=user,
-    )
+    preparation(order=order)
+    order.mark_as_placed(user=user)
+    return order
 
 
-@transaction.atomic
+@locked_order(guard=_require_placed_for_edit)
 def update_placed_order(
     *,
     order: Order,
     lines: Iterable[OrderLineInput],
+    preparation: OrderTransitionPreparation,
     user=None,
 ) -> Order:
-    """Replace lines for a PLACED business order and rebuild reservations."""
+    """Replace lines on a placed order and rebuild channel preparation."""
 
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=order.pk)
-    )
-
-    if order.status != Order.Status.PLACED:
-        raise InvalidOrderOperation(
-            "Only placed orders can be edited; "
-            f"current status is {order.status}"
-        )
-
-    normalized_lines = _normalize_order_lines(
-        lines=lines,
-    )
+    normalized_lines = _normalize_order_lines(lines=lines)
 
     if not normalized_lines:
         raise InvalidOrderOperation(
             "order must contain at least one line"
         )
 
-    delete_reservations_for_order(
-        order=order,
-    )
+    delete_reservations_for_order(order=order)
+
     order.lines.all().delete()
 
     _create_order_lines(
         order=order,
         normalized_lines=normalized_lines,
     )
-    _reserve_order(
-        order=order,
-    )
-    order.mark_as_edited(
-        user=user,
-    )
+    preparation(order=order)
+    order.mark_as_edited(user=user)
 
     return order
 
 
-@transaction.atomic
+@locked_order(guard=_require_placed_for_packing)
 def pack_order(
     *,
     order: Order,
     user=None,
 ) -> Order:
-    """Consume reserved stock and move the order to PACKED."""
+    """Consume existing reservations and move the order to PACKED.
 
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=order.pk)
-    )
-
-    if order.status != Order.Status.PLACED:
-        raise InvalidOrderOperation(
-            f"Cannot pack order {order.pk}; "
-            f"current status is {order.status}"
-        )
+    Reservation consumption remains shared for now. It can become an injected
+    fulfillment preparation when multiple fulfillment strategies actually
+    exist.
+    """
 
     try:
         consume_reservations_for_order(
@@ -344,14 +345,11 @@ def pack_order(
             f"Order {order.pk} has no reserved allocations"
         ) from exc
 
-    order.mark_as_packed(
-        user=user,
-    )
-
+    order.mark_as_packed(user=user)
     return order
 
 
-@transaction.atomic
+@locked_order(guard=_require_cancellable)
 def cancel_order(
     *,
     order: Order,
@@ -361,49 +359,23 @@ def cancel_order(
 ) -> Order:
     """Cancel an order and release active reservations."""
 
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=order.pk)
-    )
-
-    if not order.can_be_cancelled:
-        raise InvalidOrderOperation(
-            f"Cannot cancel order {order.pk}; "
-            f"current status is {order.status}"
-        )
-
-    cancel_reservations_for_order(
-        order=order,
-    )
-
-    order.cancel(
-        user=user,
-        reason=reason,
-        note=note,
-    )
-
+    cancel_reservations_for_order(order=order)
+    order.cancel(user=user, reason=reason, note=note)
     return order
 
 
-@transaction.atomic
+@locked_order()
 def deliver_order(
     *,
     order: Order,
     user=None,
 ) -> Order:
-    """Move a packed order to DELIVERED."""
+    """Move an order to DELIVERED.
 
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=order.pk)
-    )
+    Order.mark_as_delivered owns the valid source-state rule.
+    """
 
-    order.mark_as_delivered(
-        user=user,
-    )
-
+    order.mark_as_delivered(user=user)
     return order
 
 
@@ -426,16 +398,11 @@ def _create_draft_order(
         channel=Order.Channel.BUSINESS,
         customer=customer,
     )
-    order.snapshot_buyer(
-        buyer=buyer,
-    )
+
+    order.snapshot_buyer(buyer=buyer)
     order.save()
 
-    _create_order_lines(
-        order=order,
-        normalized_lines=normalized_lines,
-    )
-
+    _create_order_lines(order= order, normalized_lines= normalized_lines)
     return order
 
 
@@ -462,9 +429,7 @@ def _normalize_order_lines(
     *,
     lines: Iterable[OrderLineInput],
 ) -> list[NormalizedOrderLine]:
-    line_inputs = list(
-        lines,
-    )
+    line_inputs = list(lines)
 
     if not line_inputs:
         return []
@@ -486,17 +451,13 @@ def _normalize_order_lines(
 
     for line_input, product_id in resolved_inputs:
         try:
-            product = products_by_id[
-                product_id
-            ]
+            product = products_by_id[product_id]
         except KeyError as exc:
             raise InvalidOrderOperation(
                 f"Product {product_id} does not exist"
             ) from exc
 
-        unit = normalize_order_unit(
-            str(line_input.unit),
-        )
+        unit = normalize_order_unit(str(line_input.unit))
 
         quantity = quantity_to_units(
             product=product,
@@ -509,9 +470,7 @@ def _normalize_order_lines(
                 "order line quantity must be positive"
             )
 
-        quantity_by_product_id[
-            product_id
-        ] += quantity
+        quantity_by_product_id[product_id] += quantity
 
     return [
         NormalizedOrderLine(
@@ -523,69 +482,3 @@ def _normalize_order_lines(
         for product_id, quantity
         in quantity_by_product_id.items()
     ]
-
-
-def _place_order(
-    *,
-    order: Order,
-    user=None,
-) -> Order:
-    order = (
-        Order.objects
-        .select_for_update()
-        .get(pk=order.pk)
-    )
-
-    if order.status != Order.Status.DRAFT:
-        raise InvalidOrderOperation(
-            "Only draft orders can be placed; "
-            f"current status is {order.status}"
-        )
-
-    _reserve_order(
-        order=order,
-    )
-
-    order.mark_as_placed(
-        user=user,
-    )
-
-    return order
-
-
-def _reserve_order(
-    *,
-    order: Order,
-) -> None:
-    """Reserve business order lines from normal orderable inventory."""
-
-    lines = list(
-        order.lines
-        .select_related("product")
-        .order_by("id")
-    )
-
-    if not lines:
-        raise InvalidOrderOperation(
-            "order must contain at least one line"
-        )
-
-    for line in lines:
-        batches = list_orderable_batches_for_product(
-            product=line.product,
-        )
-
-        try:
-            reserve_order_line_from_pool(
-                order_line=line,
-                batches=batches,
-                quantity=line.quantity_in_units,
-                reserved_until=None,
-            )
-        except InsufficientReservationCapacity as exc:
-            raise InsufficientStockError(
-                product_name=line.product.display_name,
-                requested_quantity=exc.requested_quantity,
-                available_quantity=exc.available_quantity,
-                missing_quantity=exc.missing_quantity,
-            ) from exc

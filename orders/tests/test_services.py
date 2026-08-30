@@ -3,413 +3,202 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pytest
-from django.db.models import ProtectedError
 from django.utils import timezone
 
-from inventory.errors import InsufficientStockError
 from inventory.models import InventoryBatch
 from inventory.services import create_batch
-from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Allocation,
+    Order,
+    OrderLine,
+)
 from orders.services import (
-    buyer_from_customer,
     cancel_order,
-    create_draft_order,
-    create_order,
     deliver_order,
     pack_order,
     place_order,
-    update_placed_order,
 )
-from orders.tests.conftest import TODAY
+from business.tests.conftest import TODAY
 
 
-@pytest.mark.django_db
-def test_create_draft_order_creates_lines_but_does_not_reserve_stock(
-    apple,
-    customer,
-    stocked_inventory,
-):
-    order = create_draft_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+def _create_order_line(
+    *,
+    order: Order,
+    product,
+    quantity: int,
+) -> OrderLine:
+    return OrderLine.objects.create(
+        order=order,
+        product=product,
+        quantity=quantity,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=quantity,
     )
 
-    assert order.status == Order.Status.DRAFT
-    assert order.lines.count() == 1
-    assert Allocation.objects.count() == 0
-
 
 @pytest.mark.django_db
-def test_create_draft_order_snapshots_buyer_details(customer, apple):
-    order = create_draft_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=1),
-        ],
-    )
-
-    assert order.buyer_name_snapshot == customer.name
-    assert order.buyer_email_snapshot == customer.email
-    assert order.buyer_phone_snapshot == customer.phone_number
-    assert order.buyer_country_snapshot == customer.country
-    assert order.buyer_postal_code_snapshot == ""
-    assert order.buyer_city_snapshot == customer.city
-    assert order.buyer_address_line_snapshot == customer.address_line
-
-    assert order.buyer_name == customer.name
-    assert order.buyer_email == customer.email
-    assert order.buyer_phone_number == customer.phone_number
-    assert order.buyer_country == customer.country
-    assert order.buyer_postal_code == ""
-    assert order.buyer_city == customer.city
-    assert order.buyer_address_line == customer.address_line
-
-    assert customer.address_line in order.buyer_address
-    assert customer.city in order.buyer_address
-
-
-@pytest.mark.django_db
-def test_order_buyer_display_uses_snapshot_after_customer_changes(customer, apple):
-    original_name = customer.name
-    original_email = customer.email
-    original_phone_number = customer.phone_number
-    original_country = customer.country
-    original_city = customer.city
-    original_address_line = customer.address_line
-
-    order = create_draft_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=1),
-        ],
-    )
-
-    customer.name = "Updated Customer"
-    customer.email = "updated@example.fr"
-    customer.phone_number = "+33 1 11 22 33 44"
-    customer.country = "CH"
-    customer.city = "Zürich"
-    customer.address_line = "Bahnhofstrasse 1"
-    customer.save()
-
-    order.refresh_from_db()
-
-    assert order.customer.name == "Updated Customer"
-    assert order.customer.email == "updated@example.fr"
-    assert order.customer.phone_number == "+33111223344"
-    assert order.customer.country == "CH"
-    assert order.customer.city == "Zürich"
-    assert order.customer.address_line == "Bahnhofstrasse 1"
-
-    assert order.buyer_name == original_name
-    assert order.buyer_email == original_email
-    assert order.buyer_phone_number == original_phone_number
-    assert order.buyer_country == original_country
-    assert order.buyer_city == original_city
-    assert order.buyer_address_line == original_address_line
-
-    assert original_address_line in order.buyer_address
-    assert original_city in order.buyer_address
-    assert "Bahnhofstrasse" not in order.buyer_address
-    assert "Zürich" not in order.buyer_address
-
-
-@pytest.mark.django_db
-def test_customer_with_order_is_protected_from_delete_but_buyer_snapshot_remains(
+def test_place_order_runs_injected_preparation_before_transition(
     customer,
     apple,
 ):
-    order = create_draft_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=1),
-        ],
+        status=Order.Status.DRAFT,
+    )
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=1,
     )
 
-    original_name = customer.name
-    original_email = customer.email
-    original_phone_number = customer.phone_number
-    original_country = customer.country
-    original_city = customer.city
-    original_address_line = customer.address_line
+    calls: list[
+        tuple[int, str]
+    ] = []
 
-    with pytest.raises(ProtectedError):
-        customer.delete()
-
-    order.refresh_from_db()
-
-    assert order.customer_id == customer.id
-    assert order.buyer_name == original_name
-    assert order.buyer_email == original_email
-    assert order.buyer_phone_number == original_phone_number
-    assert order.buyer_country == original_country
-    assert order.buyer_city == original_city
-    assert order.buyer_address_line == original_address_line
-
-
-@pytest.mark.django_db
-def test_create_draft_order_merges_duplicate_product_lines(customer, apple):
-    order = create_draft_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-            OrderLineInput.kg(product=apple, kg="25.0"),
-        ],
-    )
-
-    line = order.lines.get()
-
-    assert line.product == apple
-    assert line.quantity_in_units == 15
-    assert line.quantity == 15
-    assert line.unit == OrderLine.Unit.STOCK_UNIT
-
-
-@pytest.mark.django_db
-def test_create_draft_order_rejects_empty_order(customer):
-    with pytest.raises(
-        InvalidOrderOperation,
-        match="order must contain at least one line",
-    ):
-        create_draft_order(
-            customer=customer,
-            lines=[],
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        calls.append(
+            (
+                order.pk,
+                order.status,
+            )
         )
 
-
-@pytest.mark.django_db
-def test_place_order_places_existing_draft_order(
-    customer,
-    apple,
-    stocked_inventory,
-):
-    order = create_draft_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+    placed = place_order(
+        order=order,
+        preparation=preparation,
     )
 
-    order = place_order(order=order)
-
-    assert order.status == Order.Status.PLACED
-    assert order.placed_at is not None
-    assert Allocation.objects.count() == 1
+    assert calls == [
+        (
+            order.pk,
+            Order.Status.DRAFT,
+        )
+    ]
+    assert placed.status == Order.Status.PLACED
+    assert placed.placed_at is not None
 
 
 @pytest.mark.django_db
-def test_place_order_rejects_non_draft_order(
+def test_place_order_uses_fresh_persisted_order(
     customer,
     apple,
-    stocked_inventory,
 ):
-    order = create_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+        status=Order.Status.DRAFT,
     )
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=1,
+    )
+
+    stale_order = Order.objects.get(
+        pk=order.pk,
+    )
+
+    seen_statuses: list[str] = []
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        seen_statuses.append(
+            order.status
+        )
+
+    place_order(
+        order=stale_order,
+        preparation=preparation,
+    )
+
+    assert seen_statuses == [
+        Order.Status.DRAFT,
+    ]
+
+
+@pytest.mark.django_db
+def test_place_order_rejects_non_draft_before_running_preparation(
+    customer,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+    )
+
+    called = False
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        nonlocal called
+        called = True
 
     with pytest.raises(
         InvalidOrderOperation,
         match="Only draft orders can be placed",
     ):
-        place_order(order=order)
+        place_order(
+            order=order,
+            preparation=preparation,
+        )
+
+    assert called is False
 
 
 @pytest.mark.django_db
-def test_create_order_places_order_and_creates_fefo_allocations(
+def test_place_order_rolls_back_preparation_when_transition_fails(
     customer,
     apple,
-    banana,
-    stocked_inventory,
 ):
-    order = create_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=120),
-            OrderLineInput.kg(product=banana, kg="25.0"),
-        ],
+        status=Order.Status.DRAFT,
+    )
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=1,
     )
 
-    assert order.status == Order.Status.PLACED
-
-    allocations = list(
-        Allocation.objects.select_related(
-            "batch",
-            "order_line__product",
-        ).order_by("batch__batch_id")
-    )
-
-    assert [
-        (
-            allocation.batch.batch_id,
-            allocation.order_line.product.sku,
-            allocation.quantity,
-            allocation.status,
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        line = order.lines.get()
+        line.quantity = 2
+        line.quantity_in_units = 2
+        line.save(
+            update_fields=[
+                "quantity",
+                "quantity_in_units",
+            ]
         )
-        for allocation in allocations
-    ] == [
-        ("A-001", "SS-001", 100, Allocation.Status.RESERVED),
-        ("A-002", "SS-001", 20, Allocation.Status.RESERVED),
-        ("B-001", "SS-002", 5, Allocation.Status.RESERVED),
-    ]
+
+        order.status = Order.Status.PACKED
+
+    with pytest.raises(Exception):
+        place_order(
+            order=order,
+            preparation=preparation,
+        )
+
+    line.refresh_from_db()
+
+    assert line.quantity_in_units == 1
 
 
 @pytest.mark.django_db
-def test_order_cannot_reserve_more_than_available_stock(customer, apple):
-    create_batch(
-        batch_id="A-001",
-        product=apple,
-        quantity=100,
-        best_before=TODAY + timedelta(days=60),
-        location="Shelf A1",
-        today=TODAY,
-    )
-
-    with pytest.raises(InsufficientStockError) as error:
-        create_order(
-            customer=customer,
-            lines=[
-                OrderLineInput.units(product=apple, quantity=120),
-            ],
-        )
-
-    assert error.value.requested_quantity == 120
-    assert error.value.available_quantity == 100
-    assert error.value.missing_quantity == 20
-
-    assert Order.objects.count() == 0
-    assert OrderLine.objects.count() == 0
-    assert Allocation.objects.count() == 0
-
-
-@pytest.mark.django_db
-def test_order_cannot_reserve_expired_stock(customer, apple):
-    create_batch(
-        batch_id="A-001",
-        product=apple,
-        quantity=100,
-        best_before=TODAY,
-        location="Shelf A1",
-        today=TODAY,
-        allow_non_future_best_before=True,
-    )
-
-    with pytest.raises(InsufficientStockError) as error:
-        create_order(
-            customer=customer,
-            lines=[
-                OrderLineInput.units(product=apple, quantity=1),
-            ],
-        )
-
-    assert error.value.requested_quantity == 1
-    assert error.value.available_quantity == 0
-    assert error.value.missing_quantity == 1
-
-    assert Order.objects.count() == 0
-    assert OrderLine.objects.count() == 0
-    assert Allocation.objects.count() == 0
-
-
-@pytest.mark.django_db
-def test_two_placed_orders_do_not_reserve_same_quantity(
-    customer,
-    other_customer,
-    apple,
-):
-    create_batch(
-        batch_id="A-001",
-        product=apple,
-        quantity=100,
-        best_before=TODAY + timedelta(days=60),
-        location="Shelf A1",
-        today=TODAY,
-    )
-
-    first = create_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=70),
-        ],
-    )
-
-    second = create_order(
-        customer=other_customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=30),
-        ],
-    )
-
-    assert first.allocations.get().quantity == 70
-    assert second.allocations.get().quantity == 30
-
-    with pytest.raises(InsufficientStockError):
-        create_order(
-            customer=customer,
-            lines=[
-                OrderLineInput.units(product=apple, quantity=1),
-            ],
-        )
-
-
-@pytest.mark.django_db
-def test_unexpired_draft_reservation_reduces_available_stock(
-    other_customer,
-    apple,
-):
-    batch = create_batch(
-        batch_id="A-001",
-        product=apple,
-        quantity=10,
-        best_before=TODAY + timedelta(days=60),
-        location="Shelf A1",
-        today=TODAY,
-    )
-
-    retail_order = Order.objects.create(
-        channel=Order.Channel.RETAIL,
-        customer=None,
-    )
-    retail_line = OrderLine.objects.create(
-        order=retail_order,
-        product=apple,
-        quantity=7,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=7,
-    )
-
-    Allocation.objects.create(
-        order=retail_order,
-        order_line=retail_line,
-        batch=batch,
-        quantity=7,
-        reserved_until=timezone.now() + timedelta(minutes=35),
-    )
-
-    with pytest.raises(InsufficientStockError) as error:
-        create_order(
-            customer=other_customer,
-            lines=[
-                OrderLineInput.units(
-                    product=apple,
-                    quantity=4,
-                ),
-            ],
-        )
-
-    assert error.value.requested_quantity == 4
-    assert error.value.available_quantity == 3
-    assert error.value.missing_quantity == 1
-
-
-@pytest.mark.django_db
-def test_expired_draft_reservation_does_not_reduce_available_stock(
+def test_pack_order_consumes_existing_reservations_and_reduces_stock(
     customer,
     apple,
 ):
@@ -417,363 +206,273 @@ def test_expired_draft_reservation_does_not_reduce_available_stock(
         batch_id="A-001",
         product=apple,
         quantity=10,
-        best_before=TODAY + timedelta(days=60),
+        best_before=(
+            TODAY + timedelta(days=60)
+        ),
         location="Shelf A1",
         today=TODAY,
     )
 
-    retail_order = Order.objects.create(
-        channel=Order.Channel.RETAIL,
-        customer=None,
-    )
-    retail_line = OrderLine.objects.create(
-        order=retail_order,
-        product=apple,
-        quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
-    )
-
-    Allocation.objects.create(
-        order=retail_order,
-        order_line=retail_line,
-        batch=batch,
-        quantity=10,
-        reserved_until=timezone.now() - timedelta(seconds=1),
-    )
-
-    order = create_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(
-                product=apple,
-                quantity=10,
-            ),
-        ],
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
     )
-
-    assert order.allocations.get().quantity == 10
-
-
-@pytest.mark.django_db
-def test_cancelled_temporary_reservation_does_not_reduce_available_stock(
-    customer,
-    apple,
-):
-    batch = create_batch(
-        batch_id="A-001",
+    line = _create_order_line(
+        order=order,
         product=apple,
-        quantity=10,
-        best_before=TODAY + timedelta(days=60),
-        location="Shelf A1",
-        today=TODAY,
-    )
-
-    retail_order = Order.objects.create(
-        channel=Order.Channel.RETAIL,
-        customer=None,
-    )
-    retail_line = OrderLine.objects.create(
-        order=retail_order,
-        product=apple,
-        quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
+        quantity=4,
     )
 
     allocation = Allocation.objects.create(
-        order=retail_order,
-        order_line=retail_line,
+        order=order,
+        order_line=line,
         batch=batch,
-        quantity=10,
-        reserved_until=timezone.now() + timedelta(minutes=35),
-    )
-    allocation.cancel()
-
-    order = create_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(
-                product=apple,
-                quantity=10,
-            ),
-        ],
+        quantity=4,
     )
 
-    assert order.allocations.get().quantity == 10
-
-
-@pytest.mark.django_db
-def test_placed_business_reservation_has_no_expiry(
-    customer,
-    apple,
-):
-    create_batch(
-        batch_id="A-001",
-        product=apple,
-        quantity=10,
-        best_before=TODAY + timedelta(days=60),
-        location="Shelf A1",
-        today=TODAY,
+    packed = pack_order(
+        order=order,
     )
 
-    order = create_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(
-                product=apple,
-                quantity=5,
-            ),
-        ],
+    packed.refresh_from_db()
+    allocation.refresh_from_db()
+    batch.refresh_from_db()
+
+    assert packed.status == Order.Status.PACKED
+    assert packed.packed_at is not None
+
+    assert (
+        allocation.status
+        == Allocation.Status.CONSUMED
     )
-
-    allocation = order.allocations.get()
-
-    assert allocation.status == Allocation.Status.RESERVED
-    assert allocation.reserved_until is None
-
-
-@pytest.mark.django_db
-def test_pack_order_consumes_allocations_and_reduces_physical_stock(
-    customer,
-    apple,
-    banana,
-    stocked_inventory,
-):
-    order = create_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=120),
-            OrderLineInput.kg(product=banana, kg="25.0"),
-        ],
-    )
-
-    order = pack_order(order=order)
-
-    assert order.status == Order.Status.PACKED
-    assert order.packed_at is not None
-
-    assert set(Allocation.objects.values_list("status", flat=True)) == {
-        Allocation.Status.CONSUMED,
-    }
-
-    batches = {
-        batch.batch_id: batch
-        for batch in InventoryBatch.objects.order_by("batch_id")
-    }
-
-    assert batches["A-001"].quantity == 0
-    assert batches["A-001"].status == InventoryBatch.Status.DEPLETED
-
-    assert batches["A-002"].quantity == 30
-    assert batches["A-002"].status == InventoryBatch.Status.ACTIVE
-
-    assert batches["B-001"].quantity == 75
-    assert batches["B-001"].status == InventoryBatch.Status.ACTIVE
+    assert batch.quantity == 6
 
 
 @pytest.mark.django_db
 def test_pack_order_rejects_non_placed_order(
     customer,
-    apple,
-    stocked_inventory,
 ):
-    order = create_draft_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+        status=Order.Status.DRAFT,
     )
 
     with pytest.raises(
         InvalidOrderOperation,
         match="Cannot pack order",
     ):
-        pack_order(order=order)
+        pack_order(
+            order=order,
+        )
 
 
 @pytest.mark.django_db
-def test_cancel_placed_order_releases_reserved_allocations(
+def test_pack_order_requires_existing_reservations(
     customer,
-    apple,
-    stocked_inventory,
 ):
-    order = create_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
     )
 
-    order = cancel_order(
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="has no reserved allocations",
+    ):
+        pack_order(
+            order=order,
+        )
+
+
+@pytest.mark.django_db
+def test_cancel_order_releases_existing_reservations(
+    customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=(
+            TODAY + timedelta(days=60)
+        ),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+    line = _create_order_line(
         order=order,
-        reason=Order.CancelReason.CUSTOMER_REQUEST,
+        product=apple,
+        quantity=4,
+    )
+
+    allocation = Allocation.objects.create(
+        order=order,
+        order_line=line,
+        batch=batch,
+        quantity=4,
+    )
+
+    cancelled = cancel_order(
+        order=order,
+        reason=(
+            Order.CancelReason.CUSTOMER_REQUEST
+        ),
         note="  Customer cancelled.  ",
     )
 
-    order.refresh_from_db()
+    cancelled.refresh_from_db()
+    allocation.refresh_from_db()
 
-    assert order.status == Order.Status.CANCELLED
-    assert order.cancel_reason == Order.CancelReason.CUSTOMER_REQUEST
-    assert order.cancel_note == "Customer cancelled."
-
-    assert set(order.allocations.values_list("status", flat=True)) == {
-        Allocation.Status.CANCELLED,
-    }
+    assert (
+        cancelled.status
+        == Order.Status.CANCELLED
+    )
+    assert (
+        cancelled.cancel_reason
+        == Order.CancelReason.CUSTOMER_REQUEST
+    )
+    assert (
+        cancelled.cancel_note
+        == "Customer cancelled."
+    )
+    assert (
+        allocation.status
+        == Allocation.Status.CANCELLED
+    )
 
 
 @pytest.mark.django_db
 def test_cancel_order_rejects_packed_order(
     customer,
-    apple,
-    stocked_inventory,
 ):
-    order = create_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+        status=Order.Status.PACKED,
     )
-
-    order = pack_order(order=order)
 
     with pytest.raises(
         InvalidOrderOperation,
         match="Cannot cancel order",
     ):
-        cancel_order(order=order)
+        cancel_order(
+            order=order,
+        )
 
 
 @pytest.mark.django_db
 def test_deliver_order_moves_packed_order_to_delivered(
     customer,
-    apple,
-    stocked_inventory,
 ):
-    order = create_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+        status=Order.Status.PACKED,
+        packed_at=timezone.now(),
     )
 
-    order = pack_order(order=order)
+    delivered = deliver_order(
+        order=order,
+    )
 
-    order = deliver_order(order=order)
-    order.refresh_from_db()
+    delivered.refresh_from_db()
 
-    assert order.status == Order.Status.DELIVERED
-    assert order.delivered_at is not None
+    assert (
+        delivered.status
+        == Order.Status.DELIVERED
+    )
+    assert delivered.delivered_at is not None
 
 
 @pytest.mark.django_db
 def test_deliver_order_rejects_placed_order(
     customer,
-    apple,
-    stocked_inventory,
 ):
-    order = create_order(
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
     )
-
-    with pytest.raises(Exception, match="Cannot transition"):
-        deliver_order(order=order)
-
-
-@pytest.mark.django_db
-def test_update_placed_order_rebuilds_lines_and_reservations(
-    customer,
-    apple,
-    banana,
-    stocked_inventory,
-):
-    order = create_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
-    )
-
-    old_allocation_ids = set(
-        order.allocations.values_list(
-            "id",
-            flat=True,
-        )
-    )
-
-    order = update_placed_order(
-        order=order,
-        lines=[
-            OrderLineInput.units(product=banana, quantity=20),
-        ],
-    )
-
-    order.refresh_from_db()
-
-    assert order.status == Order.Status.PLACED
-    assert order.edited_at is not None
-
-    assert list(
-        order.lines.values_list(
-            "product_id",
-            "quantity_in_units",
-        )
-    ) == [
-        (banana.id, 20),
-    ]
-
-    assert not Allocation.objects.filter(
-        id__in=old_allocation_ids,
-    ).exists()
-
-    assert list(
-        order.allocations.values_list(
-            "batch__batch_id",
-            "quantity",
-        )
-    ) == [
-        ("B-001", 20),
-    ]
-
-
-@pytest.mark.django_db
-def test_update_placed_order_rejects_packed_order(
-    customer,
-    apple,
-    stocked_inventory,
-):
-    order = create_order(
-        customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
-    )
-
-    order = pack_order(order=order)
 
     with pytest.raises(
-        InvalidOrderOperation,
-        match="Only placed orders can be edited",
+        Exception,
+        match="Cannot transition",
     ):
-        update_placed_order(
+        deliver_order(
             order=order,
-            lines=[
-                OrderLineInput.units(product=apple, quantity=5),
-            ],
         )
 
 
 @pytest.mark.django_db
-def test_buyer_from_customer_builds_order_buyer(customer):
-    buyer = buyer_from_customer(customer=customer)
+def test_expired_temporary_reservation_does_not_prevent_shared_placement(
+    customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=(
+            TODAY + timedelta(days=60)
+        ),
+        location="Shelf A1",
+        today=TODAY,
+    )
 
-    assert buyer.name == customer.name
-    assert buyer.email == customer.email
-    assert buyer.phone_number == customer.phone_number
-    assert buyer.country == customer.country
-    assert buyer.postal_code == ""
-    assert buyer.city == customer.city
-    assert buyer.address_line == customer.address_line
+    other_order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=None,
+        status=Order.Status.DRAFT,
+    )
+    other_line = _create_order_line(
+        order=other_order,
+        product=apple,
+        quantity=10,
+    )
+
+    Allocation.objects.create(
+        order=other_order,
+        order_line=other_line,
+        batch=batch,
+        quantity=10,
+        reserved_until=(
+            timezone.now()
+            - timedelta(seconds=1)
+        ),
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+
+    preparation_called = False
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        nonlocal preparation_called
+        preparation_called = True
+
+    placed = place_order(
+        order=order,
+        preparation=preparation,
+    )
+
+    assert preparation_called is True
+    assert placed.status == Order.Status.PLACED

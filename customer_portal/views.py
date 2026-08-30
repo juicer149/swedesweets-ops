@@ -11,6 +11,9 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
+from business.services import (
+    place_order as place_draft_order,
+)
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
@@ -62,7 +65,6 @@ from orders.selectors import (
     get_customer_order_summary,
     list_customer_orders,
 )
-from orders.services import place_order as place_draft_order
 
 
 class PortalOrderIntent(StrEnum):
@@ -437,7 +439,6 @@ def profile(request):
     )
 
 
-# It just redirects for now to the profile page
 @login_required
 def edit_profile(request):
     return redirect("customer_portal:profile")
@@ -450,6 +451,7 @@ def contact(request):
 
 def _safe_next_url(request) -> str | None:
     next_url = request.POST.get("next", "").strip()
+
     if not next_url:
         return None
 

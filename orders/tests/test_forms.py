@@ -5,8 +5,8 @@ from decimal import Decimal
 
 import pytest
 
+from inventory.models import InventoryBatch
 from inventory.services import create_batch
-from orders.datatypes import OrderLineInput
 from orders.forms import (
     MAX_UNITS_PER_PRODUCT_PER_ORDER,
     OrderCancelForm,
@@ -17,56 +17,87 @@ from orders.forms import (
     build_order_line_initial_data,
     build_order_line_inputs,
 )
-from orders.models import Order, OrderLine
-from orders.product_choices import build_product_choice_context
-from orders.services import create_order
+from orders.models import (
+    Allocation,
+    Order,
+    OrderLine,
+)
+from orders.product_choices import (
+    build_product_choice_context,
+)
 from orders.tests.conftest import TODAY
 from products.units import OrderUnit
 
 
 @pytest.mark.django_db
-def test_order_create_form_accepts_customer(customer):
+def test_order_create_form_accepts_customer(
+    customer,
+):
     form = OrderCreateForm(
         data={
-            "customer": str(customer.pk),
+            "customer": str(
+                customer.pk
+            ),
         }
     )
 
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["customer"] == customer
+    assert (
+        form.cleaned_data["customer"]
+        == customer
+    )
 
 
 @pytest.mark.django_db
 def test_order_create_form_rejects_missing_customer():
-    form = OrderCreateForm(data={})
+    form = OrderCreateForm(
+        data={},
+    )
 
     assert not form.is_valid()
     assert "customer" in form.errors
 
 
 @pytest.mark.django_db
-def test_product_choice_field_label_includes_internal_number_weight_and_stock(apple):
+def test_product_choice_field_label_includes_internal_number_weight_and_stock(
+    apple,
+):
     field = ProductChoiceField(
-        queryset=type(apple).objects.all(),
+        queryset=type(
+            apple
+        ).objects.all(),
         available_units_by_product_id={
             apple.id: 12,
         },
     )
 
-    assert field.label_from_instance(apple) == (
-        "#1 · Generic — Apple · 5000 g / Box · 12 left"
+    assert (
+        field.label_from_instance(
+            apple
+        )
+        == "#1 · Generic — Apple · 5000 g / Box · 12 left"
     )
 
 
 @pytest.mark.django_db
-def test_order_line_form_accepts_valid_line(apple):
+def test_order_line_form_accepts_valid_line(
+    apple,
+):
     form = OrderLineForm(
         data={
-            "product": str(apple.pk),
+            "product": str(
+                apple.pk
+            ),
             "unit": OrderUnit.STOCK,
             "quantity": "10",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
         available_units_by_product_id={
             apple.id: 100,
         },
@@ -74,22 +105,44 @@ def test_order_line_form_accepts_valid_line(apple):
 
     assert form.is_valid(), form.errors
 
-    assert form.cleaned_data["product"] == apple
-    assert form.cleaned_data["quantity"] == Decimal("10")
-    assert form.cleaned_data["unit"] == OrderUnit.STOCK
-    assert form.cleaned_data["quantity_in_units"] == 10
+    assert (
+        form.cleaned_data["product"]
+        == apple
+    )
+    assert (
+        form.cleaned_data["quantity"]
+        == Decimal("10")
+    )
+    assert (
+        form.cleaned_data["unit"]
+        == OrderUnit.STOCK
+    )
+    assert (
+        form.cleaned_data[
+            "quantity_in_units"
+        ]
+        == 10
+    )
     assert form.has_line_data is True
 
 
 @pytest.mark.django_db
-def test_order_line_form_allows_empty_line(apple):
+def test_order_line_form_allows_empty_line(
+    apple,
+):
     form = OrderLineForm(
         data={
             "product": "",
             "unit": "",
             "quantity": "",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
     )
 
     assert form.is_valid(), form.errors
@@ -97,14 +150,22 @@ def test_order_line_form_allows_empty_line(apple):
 
 
 @pytest.mark.django_db
-def test_order_line_form_requires_product_when_quantity_is_present(apple):
+def test_order_line_form_requires_product_when_quantity_is_present(
+    apple,
+):
     form = OrderLineForm(
         data={
             "product": "",
             "unit": OrderUnit.STOCK,
             "quantity": "10",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
     )
 
     assert not form.is_valid()
@@ -112,14 +173,24 @@ def test_order_line_form_requires_product_when_quantity_is_present(apple):
 
 
 @pytest.mark.django_db
-def test_order_line_form_requires_quantity_when_product_is_present(apple):
+def test_order_line_form_requires_quantity_when_product_is_present(
+    apple,
+):
     form = OrderLineForm(
         data={
-            "product": str(apple.pk),
+            "product": str(
+                apple.pk
+            ),
             "unit": OrderUnit.STOCK,
             "quantity": "",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
     )
 
     assert not form.is_valid()
@@ -127,92 +198,180 @@ def test_order_line_form_requires_quantity_when_product_is_present(apple):
 
 
 @pytest.mark.django_db
-def test_order_line_form_defaults_missing_unit_to_stock_unit(apple):
+def test_order_line_form_defaults_missing_unit_to_stock_unit(
+    apple,
+):
     form = OrderLineForm(
         data={
-            "product": str(apple.pk),
+            "product": str(
+                apple.pk
+            ),
             "unit": "",
             "quantity": "5",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
         available_units_by_product_id={
             apple.id: 100,
         },
     )
 
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["unit"] == OrderUnit.STOCK
+    assert (
+        form.cleaned_data["unit"]
+        == OrderUnit.STOCK
+    )
 
 
 @pytest.mark.django_db
-def test_order_line_form_accepts_kg_quantity(apple):
+def test_order_line_form_accepts_kg_quantity(
+    apple,
+):
     form = OrderLineForm(
         data={
-            "product": str(apple.pk),
+            "product": str(
+                apple.pk
+            ),
             "unit": OrderUnit.KG,
             "quantity": "12.5",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
         available_units_by_product_id={
             apple.id: 100,
         },
     )
 
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["quantity"] == Decimal("12.5")
-    assert form.cleaned_data["unit"] == OrderUnit.KG
-    assert form.cleaned_data["quantity_in_units"] == 3
+
+    assert (
+        form.cleaned_data["quantity"]
+        == Decimal("12.5")
+    )
+    assert (
+        form.cleaned_data["unit"]
+        == OrderUnit.KG
+    )
+    assert (
+        form.cleaned_data[
+            "quantity_in_units"
+        ]
+        == 3
+    )
 
 
 @pytest.mark.django_db
-def test_order_line_form_accepts_grams_quantity(apple):
+def test_order_line_form_accepts_grams_quantity(
+    apple,
+):
     form = OrderLineForm(
         data={
-            "product": str(apple.pk),
+            "product": str(
+                apple.pk
+            ),
             "unit": OrderUnit.GRAMS,
             "quantity": "12000",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
         available_units_by_product_id={
             apple.id: 100,
         },
     )
 
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["quantity"] == Decimal("12000")
-    assert form.cleaned_data["unit"] == OrderUnit.GRAMS
-    assert form.cleaned_data["quantity_in_units"] == 3
+
+    assert (
+        form.cleaned_data["quantity"]
+        == Decimal("12000")
+    )
+    assert (
+        form.cleaned_data["unit"]
+        == OrderUnit.GRAMS
+    )
+    assert (
+        form.cleaned_data[
+            "quantity_in_units"
+        ]
+        == 3
+    )
 
 
 @pytest.mark.django_db
-def test_order_line_form_accepts_line_before_formset_stock_validation(apple):
+def test_order_line_form_accepts_line_before_formset_stock_validation(
+    apple,
+):
     form = OrderLineForm(
         data={
-            "product": str(apple.pk),
+            "product": str(
+                apple.pk
+            ),
             "unit": OrderUnit.STOCK,
             "quantity": "11",
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
         available_units_by_product_id={
             apple.id: 10,
         },
     )
 
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["quantity_in_units"] == 11
+    assert (
+        form.cleaned_data[
+            "quantity_in_units"
+        ]
+        == 11
+    )
 
 
 @pytest.mark.django_db
-def test_order_line_form_rejects_unusually_large_line(apple):
+def test_order_line_form_rejects_unusually_large_line(
+    apple,
+):
     form = OrderLineForm(
         data={
-            "product": str(apple.pk),
+            "product": str(
+                apple.pk
+            ),
             "unit": OrderUnit.STOCK,
-            "quantity": str(MAX_UNITS_PER_PRODUCT_PER_ORDER + 1),
+            "quantity": str(
+                MAX_UNITS_PER_PRODUCT_PER_ORDER
+                + 1
+            ),
         },
-        product_queryset=type(apple).objects.filter(pk=apple.pk),
+        product_queryset=(
+            type(apple)
+            .objects
+            .filter(
+                pk=apple.pk,
+            )
+        ),
         available_units_by_product_id={
-            apple.id: MAX_UNITS_PER_PRODUCT_PER_ORDER + 10,
+            apple.id: (
+                MAX_UNITS_PER_PRODUCT_PER_ORDER
+                + 10
+            ),
         },
     )
 
@@ -221,7 +380,9 @@ def test_order_line_form_rejects_unusually_large_line(apple):
 
 
 @pytest.mark.django_db
-def test_order_line_formset_requires_at_least_one_line(apple):
+def test_order_line_formset_requires_at_least_one_line(
+    apple,
+):
     formset = OrderLineFormSet(
         data={
             "form-TOTAL_FORMS": "1",
@@ -235,49 +396,79 @@ def test_order_line_formset_requires_at_least_one_line(apple):
     )
 
     assert not formset.is_valid()
-    assert "Add at least one order line." in formset.non_form_errors()
+    assert (
+        "Add at least one order line."
+        in formset.non_form_errors()
+    )
 
 
 @pytest.mark.django_db
-def test_order_line_formset_rejects_more_than_available_stock(apple, stocked_inventory):
+def test_order_line_formset_rejects_more_than_available_stock(
+    apple,
+    stocked_inventory,
+):
     formset = OrderLineFormSet(
         data={
             "form-TOTAL_FORMS": "1",
             "form-INITIAL_FORMS": "0",
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
-            "form-0-product": str(apple.pk),
-            "form-0-unit": OrderUnit.STOCK,
+            "form-0-product": str(
+                apple.pk
+            ),
+            "form-0-unit": (
+                OrderUnit.STOCK
+            ),
             "form-0-quantity": "151",
         },
     )
 
     assert not formset.is_valid()
-    assert "Only 150 boxes available for Generic — Apple." in formset.non_form_errors()
+    assert (
+        "Only 150 boxes available for Generic — Apple."
+        in formset.non_form_errors()
+    )
 
 
 @pytest.mark.django_db
-def test_order_line_formset_accepts_available_stock(apple, stocked_inventory):
+def test_order_line_formset_accepts_available_stock(
+    apple,
+    stocked_inventory,
+):
     formset = OrderLineFormSet(
         data={
             "form-TOTAL_FORMS": "1",
             "form-INITIAL_FORMS": "0",
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
-            "form-0-product": str(apple.pk),
-            "form-0-unit": OrderUnit.STOCK,
+            "form-0-product": str(
+                apple.pk
+            ),
+            "form-0-unit": (
+                OrderUnit.STOCK
+            ),
             "form-0-quantity": "150",
         },
     )
 
-    assert formset.is_valid(), formset.errors
+    assert (
+        formset.is_valid()
+    ), formset.errors
 
-    inputs = build_order_line_inputs(formset)
+    inputs = build_order_line_inputs(
+        formset
+    )
 
     assert len(inputs) == 1
     assert inputs[0].product == apple
-    assert inputs[0].quantity == Decimal("150")
-    assert inputs[0].unit == OrderUnit.STOCK
+    assert (
+        inputs[0].quantity
+        == Decimal("150")
+    )
+    assert (
+        inputs[0].unit
+        == OrderUnit.STOCK
+    )
 
 
 @pytest.mark.django_db
@@ -287,16 +478,30 @@ def test_build_product_choice_context_includes_only_orderable_products(
     stocked_inventory,
     inactive_product,
 ):
-    context = build_product_choice_context()
+    context = (
+        build_product_choice_context()
+    )
 
-    products = list(context.queryset)
+    products = list(
+        context.queryset
+    )
 
     assert apple in products
     assert banana in products
     assert inactive_product not in products
 
-    assert context.available_units_by_product_id[apple.id] == 150
-    assert context.available_units_by_product_id[banana.id] == 80
+    assert (
+        context.available_units_by_product_id[
+            apple.id
+        ]
+        == 150
+    )
+    assert (
+        context.available_units_by_product_id[
+            banana.id
+        ]
+        == 80
+    )
 
 
 @pytest.mark.django_db
@@ -313,10 +518,17 @@ def test_build_product_choice_context_excludes_product_with_only_expired_stock(
         allow_non_future_best_before=True,
     )
 
-    context = build_product_choice_context()
+    context = (
+        build_product_choice_context()
+    )
 
-    assert list(context.queryset) == []
-    assert apple.id not in context.available_units_by_product_id
+    assert list(
+        context.queryset
+    ) == []
+    assert (
+        apple.id
+        not in context.available_units_by_product_id
+    )
 
 
 @pytest.mark.django_db
@@ -335,10 +547,21 @@ def test_build_product_choice_context_includes_existing_order_product_even_if_in
         quantity_in_units=1,
     )
 
-    context = build_product_choice_context(order=order)
+    context = (
+        build_product_choice_context(
+            order=order,
+        )
+    )
 
-    assert list(context.queryset) == [inactive_product]
-    assert inactive_product.id not in context.available_units_by_product_id
+    assert list(
+        context.queryset
+    ) == [
+        inactive_product,
+    ]
+    assert (
+        inactive_product.id
+        not in context.available_units_by_product_id
+    )
 
 
 @pytest.mark.django_db
@@ -350,7 +573,10 @@ def test_build_product_choice_context_does_not_add_draft_quantity_to_available_s
         batch_id="A-DRAFT-AVAILABLE",
         product=apple,
         quantity=3,
-        best_before=TODAY + timedelta(days=30),
+        best_before=(
+            TODAY
+            + timedelta(days=30)
+        ),
         location="Shelf A1",
         today=TODAY,
     )
@@ -368,10 +594,25 @@ def test_build_product_choice_context_does_not_add_draft_quantity_to_available_s
         quantity_in_units=13,
     )
 
-    context = build_product_choice_context(order=draft)
+    context = (
+        build_product_choice_context(
+            order=draft,
+        )
+    )
 
-    assert context.available_units_by_product_id[apple.id] == 3
-    assert context.queryset.filter(pk=apple.pk).exists()
+    assert (
+        context.available_units_by_product_id[
+            apple.id
+        ]
+        == 3
+    )
+    assert (
+        context.queryset
+        .filter(
+            pk=apple.pk,
+        )
+        .exists()
+    )
 
 
 @pytest.mark.django_db
@@ -380,48 +621,116 @@ def test_build_product_choice_context_adds_placed_order_quantity_back(
     customer,
     stocked_inventory,
 ):
-    order = create_order(
+    order = Order.objects.create(
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+    )
+    order.mark_as_placed()
+
+    line = OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
     )
 
-    context = build_product_choice_context(order=order)
+    batch = (
+        InventoryBatch.objects
+        .filter(
+            product=apple,
+        )
+        .order_by(
+            "best_before",
+            "batch_id",
+        )
+        .first()
+    )
 
-    assert context.available_units_by_product_id[apple.id] == 150
-    assert context.queryset.filter(pk=apple.pk).exists()
+    assert batch is not None
+
+    Allocation.objects.create(
+        order=order,
+        order_line=line,
+        batch=batch,
+        quantity=10,
+    )
+
+    context = (
+        build_product_choice_context(
+            order=order,
+        )
+    )
+
+    assert (
+        context.available_units_by_product_id[
+            apple.id
+        ]
+        == 150
+    )
+    assert (
+        context.queryset
+        .filter(
+            pk=apple.pk,
+        )
+        .exists()
+    )
 
 
 @pytest.mark.django_db
-def test_build_order_line_initial_data(customer, apple, stocked_inventory):
-    order = create_order(
+def test_build_order_line_initial_data(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
         customer=customer,
-        lines=[
-            OrderLineInput.units(product=apple, quantity=10),
-        ],
+    )
+    order.mark_as_placed()
+
+    OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=10,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=10,
     )
 
-    assert build_order_line_initial_data(order) == [
-        {
-            "product": apple.id,
-            "unit": OrderUnit.STOCK,
-            "quantity": Decimal("10.000"),
-        }
-    ]
+    assert (
+        build_order_line_initial_data(
+            order
+        )
+        == [
+            {
+                "product": apple.id,
+                "unit": OrderUnit.STOCK,
+                "quantity": Decimal(
+                    "10.000"
+                ),
+            }
+        ]
+    )
 
 
 def test_order_cancel_form_accepts_reason_and_note():
     form = OrderCancelForm(
         data={
-            "reason": Order.CancelReason.CUSTOMER_REQUEST,
-            "note": "Customer changed their mind.",
+            "reason": (
+                Order.CancelReason.CUSTOMER_REQUEST
+            ),
+            "note": (
+                "Customer changed their mind."
+            ),
         }
     )
 
     assert form.is_valid(), form.errors
-    assert form.cleaned_data["reason"] == Order.CancelReason.CUSTOMER_REQUEST
-    assert form.cleaned_data["note"] == "Customer changed their mind."
+    assert (
+        form.cleaned_data["reason"]
+        == Order.CancelReason.CUSTOMER_REQUEST
+    )
+    assert (
+        form.cleaned_data["note"]
+        == "Customer changed their mind."
+    )
 
 
 def test_order_cancel_form_rejects_invalid_reason():
