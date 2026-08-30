@@ -15,6 +15,10 @@ from common.table_controls import (
     TableFilter,
     TableSortField,
 )
+from fulfillment.services import (
+    cancel_order,
+    pack_order,
+)
 from inventory.errors import InvalidStockOperation
 from orders.access import (
     can_cancel_order,
@@ -55,11 +59,7 @@ from orders.selectors import (
     get_packaging_list,
     list_orders,
 )
-from fulfillment.services import pack_order
-from orders.services import (
-    cancel_order,
-    deliver_order,
-)
+from orders.services import deliver_order
 
 
 ORDER_FILTERS = [
@@ -197,7 +197,10 @@ def edit(
 ):
     order = _get_order_or_404(order_id)
 
-    if not can_edit_order(order=order, role_spec=request.role_spec):
+    if not can_edit_order(
+        order=order,
+        role_spec=request.role_spec,
+    ):
         messages.error(
             request,
             (
@@ -205,7 +208,10 @@ def edit(
                 f"because it is {order.status}."
             ),
         )
-        return redirect("orders:detail", order_id=order.id)
+        return redirect(
+            "orders:detail",
+            order_id=order.id,
+        )
 
     if request.method == "POST":
         line_formset = OrderLineFormSet(
@@ -224,7 +230,10 @@ def edit(
                     user=request.user,
                 )
             except ORDER_OPERATION_ERRORS as error:
-                messages.error(request, str(error))
+                messages.error(
+                    request,
+                    str(error),
+                )
             else:
                 messages.success(
                     request,
@@ -263,9 +272,14 @@ def cancel(
     request,
     order_id: int,
 ):
-    order = _get_order_or_404(order_id)
+    order = _get_order_or_404(
+        order_id
+    )
 
-    if not can_cancel_order(order=order, role_spec=request.role_spec):
+    if not can_cancel_order(
+        order=order,
+        role_spec=request.role_spec,
+    ):
         messages.error(
             request,
             (
@@ -273,7 +287,10 @@ def cancel(
                 f"because it is {order.status}."
             ),
         )
-        return redirect("orders:detail", order_id=order.id)
+        return redirect(
+            "orders:detail",
+            order_id=order.id,
+        )
 
     if request.method == "POST":
         form = OrderCancelForm(
@@ -293,14 +310,23 @@ def cancel(
                     ],
                 )
             except InvalidOrderOperation as error:
-                messages.error(request, str(error))
-                return redirect("orders:detail", order_id=order.id)
+                messages.error(
+                    request,
+                    str(error),
+                )
+                return redirect(
+                    "orders:detail",
+                    order_id=order.id,
+                )
 
             messages.success(
                 request,
                 f"Order #{cancelled_order.id} cancelled.",
             )
-            return redirect("orders:detail", order_id=cancelled_order.id)
+            return redirect(
+                "orders:detail",
+                order_id=cancelled_order.id,
+            )
 
     else:
         form = OrderCancelForm()
@@ -323,9 +349,14 @@ def pack(
     request,
     order_id: int,
 ):
-    order = _get_order_or_404(order_id)
+    order = _get_order_or_404(
+        order_id
+    )
 
-    if not can_pack_order(order=order, role_spec=request.role_spec):
+    if not can_pack_order(
+        order=order,
+        role_spec=request.role_spec,
+    ):
         messages.error(
             request,
             (
@@ -333,15 +364,26 @@ def pack(
                 f"because it is {order.status}."
             ),
         )
-        return redirect("orders:detail", order_id=order.id)
+        return redirect(
+            "orders:detail",
+            order_id=order.id,
+        )
 
     if request.method == "POST":
         try:
-            packed_order = pack_order(order=order, user=request.user)
-
+            packed_order = pack_order(
+                order=order,
+                user=request.user,
+            )
         except ORDER_OPERATION_ERRORS as error:
-            messages.error(request, str(error))
-            return redirect("orders:pack", order_id=order.id)
+            messages.error(
+                request,
+                str(error),
+            )
+            return redirect(
+                "orders:pack",
+                order_id=order.id,
+            )
 
         messages.success(
             request,
@@ -354,13 +396,17 @@ def pack(
             )
         )
 
-    pick_lines = get_packaging_list(order=order)
+    pick_lines = get_packaging_list(
+        order=order
+    )
 
     context = build_order_detail_context(
         order=order,
         title=f"Pack order #{order.id}",
         description="",
-        cancel_url=reverse("orders:index"),
+        cancel_url=reverse(
+            "orders:index"
+        ),
         active_panel="",
         include_contents=True,
         pick_lines=pick_lines,
@@ -385,7 +431,9 @@ def deliver(
     request,
     order_id: int,
 ):
-    order = _get_order_or_404(order_id)
+    order = _get_order_or_404(
+        order_id
+    )
 
     if not can_deliver_order(
         order=order,
@@ -405,9 +453,15 @@ def deliver(
 
     if request.method == "POST":
         try:
-            delivered_order = deliver_order(order=order, user=request.user)
+            delivered_order = deliver_order(
+                order=order,
+                user=request.user,
+            )
         except InvalidOrderOperation as error:
-            messages.error(request, str(error))
+            messages.error(
+                request,
+                str(error),
+            )
             return redirect(
                 "orders:deliver",
                 order_id=order.id,
@@ -446,7 +500,9 @@ def detail(
     request,
     order_id: int,
 ):
-    order = _get_order_or_404(order_id)
+    order = _get_order_or_404(
+        order_id
+    )
 
     active_panel = (
         "order"

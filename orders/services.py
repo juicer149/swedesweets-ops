@@ -36,7 +36,6 @@ from reservations.selectors import (
     has_reservations_for_order,
 )
 from reservations.services import (
-    cancel_reservations_for_order,
     delete_reservations_for_order,
 )
 
@@ -285,13 +284,14 @@ def pack_order(
 def cancel_order(
     *,
     order: Order,
+    preparation: OrderTransitionPreparation,
     user=None,
     reason: str = "",
     note: str = "",
 ) -> Order:
-    """Cancel an order and release active reservations."""
+    """Prepare an order and move it to CANCELLED."""
 
-    cancel_reservations_for_order(
+    preparation(
         order=order,
     )
 

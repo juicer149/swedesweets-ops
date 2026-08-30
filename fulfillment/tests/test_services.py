@@ -5,7 +5,10 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
-from fulfillment.services import pack_order
+from fulfillment.services import (
+    cancel_order,
+    pack_order,
+)
 from fulfillment.tests.conftest import TODAY
 from inventory.services import create_batch
 from orders.errors import InvalidOrderOperation
@@ -106,3 +109,152 @@ def test_pack_order_requires_reservations(
 
     assert order.status == Order.Status.PLACED
     assert order.packed_at is None
+
+
+@pytest.mark.django_db
+def test_cancel_order_releases_existing_reservations(
+    customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=4,
+    )
+
+    allocation = Allocation.objects.create(
+        order=order,
+        order_line=line,
+        batch=batch,
+        quantity=4,
+    )
+
+    cancelled = cancel_order(
+        order=order,
+        reason=Order.CancelReason.CUSTOMER_REQUEST,
+        note="  Customer cancelled.  ",
+    )
+
+    cancelled.refresh_from_db()
+    allocation.refresh_from_db()
+    batch.refresh_from_db()
+
+    assert (
+        cancelled.status
+        == Order.Status.CANCELLED
+    )
+    assert cancelled.cancelled_at is not None
+    assert (
+        cancelled.cancel_reason
+        == Order.CancelReason.CUSTOMER_REQUEST
+    )
+    assert (
+        cancelled.cancel_note
+        == "Customer cancelled."
+    )
+
+    assert (
+        allocation.status
+        == Allocation.Status.CANCELLED
+    )
+
+    assert batch.quantity == 10
+
+
+@pytest.mark.django_db
+def test_cancel_order_succeeds_without_reservations(
+    customer,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    cancelled = cancel_order(
+        order=order,
+        reason=Order.CancelReason.CUSTOMER_REQUEST,
+    )
+
+    cancelled.refresh_from_db()
+
+    assert (
+        cancelled.status
+        == Order.Status.CANCELLED
+    )
+    assert cancelled.cancelled_at is not None
+    assert (
+        cancelled.cancel_reason
+        == Order.CancelReason.CUSTOMER_REQUEST
+    )
+
+
+@pytest.mark.django_db
+def test_cancel_order_does_not_release_consumed_allocations(
+    customer,
+    apple,
+):
+    batch = create_batch(
+        batch_id="A-001",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=4,
+    )
+
+    allocation = Allocation.objects.create(
+        order=order,
+        order_line=line,
+        batch=batch,
+        quantity=4,
+    )
+
+    allocation.consume()
+
+    cancelled = cancel_order(
+        order=order,
+        reason=Order.CancelReason.CUSTOMER_REQUEST,
+    )
+
+    cancelled.refresh_from_db()
+    allocation.refresh_from_db()
+
+    assert (
+        cancelled.status
+        == Order.Status.CANCELLED
+    )
+    assert (
+        allocation.status
+        == Allocation.Status.CONSUMED
+    )

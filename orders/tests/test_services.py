@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 from django.utils import timezone
 
-from inventory.services import create_batch
 from orders.datatypes import BuyerInput
 from orders.drafts import (
     OrderDraft,
@@ -14,7 +12,6 @@ from orders.drafts import (
 )
 from orders.errors import InvalidOrderOperation
 from orders.models import (
-    Allocation,
     Order,
     OrderLine,
 )
@@ -25,9 +22,6 @@ from orders.services import (
     pack_order,
     place_order,
 )
-
-
-TODAY = timezone.localdate()
 
 
 def _create_order_line(
@@ -318,50 +312,42 @@ def test_pack_order_rolls_back_preparation_when_transition_fails(
 
 
 @pytest.mark.django_db
-def test_cancel_order_releases_existing_reservations(
+def test_cancel_order_runs_injected_preparation_before_transition(
     customer,
-    apple,
 ):
-    batch = create_batch(
-        batch_id="A-001",
-        product=apple,
-        quantity=10,
-        best_before=(
-            TODAY + timedelta(days=60)
-        ),
-        location="Shelf A1",
-        today=TODAY,
-    )
-
     order = Order.objects.create(
         channel=Order.Channel.BUSINESS,
         customer=customer,
         status=Order.Status.PLACED,
         placed_at=timezone.now(),
     )
-    line = _create_order_line(
-        order=order,
-        product=apple,
-        quantity=4,
-    )
 
-    allocation = Allocation.objects.create(
-        order=order,
-        order_line=line,
-        batch=batch,
-        quantity=4,
-    )
+    calls: list[tuple[int, str]] = []
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        calls.append(
+            (
+                order.pk,
+                order.status,
+            )
+        )
 
     cancelled = cancel_order(
         order=order,
-        reason=(
-            Order.CancelReason.CUSTOMER_REQUEST
-        ),
+        preparation=preparation,
+        reason=Order.CancelReason.CUSTOMER_REQUEST,
         note="  Customer cancelled.  ",
     )
 
-    cancelled.refresh_from_db()
-    allocation.refresh_from_db()
+    assert calls == [
+        (
+            order.pk,
+            Order.Status.PLACED,
+        )
+    ]
 
     assert (
         cancelled.status
@@ -375,21 +361,27 @@ def test_cancel_order_releases_existing_reservations(
         cancelled.cancel_note
         == "Customer cancelled."
     )
-    assert (
-        allocation.status
-        == Allocation.Status.CANCELLED
-    )
 
 
 @pytest.mark.django_db
-def test_cancel_order_rejects_packed_order(
+def test_cancel_order_rejects_non_cancellable_before_running_preparation(
     customer,
 ):
     order = Order.objects.create(
         channel=Order.Channel.BUSINESS,
         customer=customer,
         status=Order.Status.PACKED,
+        packed_at=timezone.now(),
     )
+
+    called = False
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        nonlocal called
+        called = True
 
     with pytest.raises(
         InvalidOrderOperation,
@@ -397,7 +389,54 @@ def test_cancel_order_rejects_packed_order(
     ):
         cancel_order(
             order=order,
+            preparation=preparation,
         )
+
+    assert called is False
+
+
+@pytest.mark.django_db
+def test_cancel_order_rolls_back_preparation_when_transition_fails(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=1,
+    )
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        line = order.lines.get()
+        line.quantity = 2
+        line.quantity_in_units = 2
+        line.save(
+            update_fields=[
+                "quantity",
+                "quantity_in_units",
+            ]
+        )
+
+        order.status = Order.Status.DELIVERED
+
+    with pytest.raises(Exception):
+        cancel_order(
+            order=order,
+            preparation=preparation,
+        )
+
+    line.refresh_from_db()
+
+    assert line.quantity_in_units == 1
 
 
 @pytest.mark.django_db

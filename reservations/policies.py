@@ -4,6 +4,7 @@ from orders.errors import InvalidOrderOperation
 from orders.models import Order
 from reservations.services import (
     MissingReservations,
+    cancel_reservations_for_order,
     consume_reservations_for_order,
 )
 
@@ -12,14 +13,7 @@ def consume_order_reservations_before_packing(
     *,
     order: Order,
 ) -> None:
-    """Consume reserved stock before an order moves to PACKED.
-
-    This policy expresses the current fulfillment rule:
-
-    an order may be packed only by consuming its existing reservations.
-
-    The reservation service owns locking and physical stock mutation.
-    """
+    """Consume reserved stock before an order moves to PACKED."""
 
     try:
         consume_reservations_for_order(
@@ -29,3 +23,14 @@ def consume_order_reservations_before_packing(
         raise InvalidOrderOperation(
             f"Order {order.pk} has no reserved allocations"
         ) from exc
+
+
+def release_order_reservations_before_cancellation(
+    *,
+    order: Order,
+) -> None:
+    """Release active reservations before an order is cancelled."""
+
+    cancel_reservations_for_order(
+        order=order,
+    )
