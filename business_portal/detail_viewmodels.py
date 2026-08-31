@@ -25,11 +25,11 @@ from business_portal.order_presentation import (
     order_status_icon,
     quantity_label,
 )
-from products.models import Product
-from products.presentation import (
-    translated_product_catalog_label,
-    translated_product_name,
+from business_portal.product_presentation import (
+    business_product_catalog_label,
 )
+from products.localization import translated_product_name
+from products.models import Product
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,7 +153,7 @@ def _build_content_line(
 ) -> PortalOrderContentLine:
     product = line.product
     line_quantity_label = quantity_label(line.quantity_in_units)
-    catalog_label = translated_product_catalog_label(
+    catalog_label = business_product_catalog_label(
         product,
         language_code=language_code,
     )

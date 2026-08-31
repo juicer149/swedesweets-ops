@@ -12,7 +12,9 @@ from business_portal.order_presentation import (
     quantity_label,
 )
 from products.models import Product
-from products.presentation import translated_product_catalog_label
+from business_portal.product_presentation import (
+    business_product_catalog_label,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,7 +104,7 @@ def _build_review_line(
         product=product,
         quantity=line.quantity_in_units,
         quantity_label=line_quantity_label,
-        catalog_label=translated_product_catalog_label(
+        catalog_label=business_product_catalog_label(
             product,
             language_code=language_code,
         ),

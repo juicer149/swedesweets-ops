@@ -8,6 +8,7 @@ from common.ui import (
     StatusPresentation,
     UiText,
 )
+from products.localization import translated_product_name
 from products.models import Product
 
 
@@ -97,28 +98,6 @@ def product_attribute_tags(product: Product) -> tuple[ProductTagPresentation, ..
         tags.append(PRODUCT_TAG_VEGAN)
 
     return tuple(tags)
-
-
-def translated_product_name(
-    product: Product,
-    *,
-    language_code: str,
-) -> str:
-    translations = getattr(product, "prefetched_translations", None)
-
-    if translations is not None:
-        for translation in translations:
-            if translation.language_code == language_code and translation.name:
-                return translation.name
-
-        return product.display_name
-
-    translation = product.translations.filter(language_code=language_code).first()
-
-    if translation is None:
-        return product.display_name
-
-    return translation.name
 
 
 def translated_product_catalog_label(

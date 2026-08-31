@@ -26,7 +26,8 @@ from orders.order_limits import (
 )
 from orders.product_choices import build_product_choice_context
 from products.models import Product
-from products.presentation import translated_product_name
+from products.localization import translated_product_name
+
 
 DEFAULT_PORTAL_ORDER_LINE_COUNT = 1
 MIN_PORTAL_ORDER_QUANTITY = 1
