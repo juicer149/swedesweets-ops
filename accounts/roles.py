@@ -19,7 +19,7 @@ from django.utils.translation import gettext_lazy as _
 
 class Capability(StrEnum):
     VIEW_STAFF_OPS = "can_view_staff_ops"
-    VIEW_CUSTOMER_PORTAL = "can_view_business_portal"
+    VIEW_BUSINESS_PORTAL = "can_view_business_portal"
 
     MANAGE_ACCOUNTS = "can_manage_accounts"
     VIEW_OWN_ACCOUNT = "can_view_own_account"
@@ -50,8 +50,8 @@ class Capability(StrEnum):
     CREATE_CUSTOMERS = "can_create_customers"
     EDIT_CUSTOMERS = "can_edit_customers"
 
-    # Customer portal
-    PLACE_CUSTOMER_ORDERS = "can_place_customer_orders"
+    # Business portal
+    PLACE_BUSINESS_ORDERS = "can_place_business_orders"
     VIEW_OWN_ORDERS = "can_view_own_orders"
 
 
@@ -71,7 +71,10 @@ class AccountRole(StrEnum):
     OWNER = "owner"
     FULL_STAFF = "full_staff"
     RESTRICTED_STAFF = "restricted_staff"
-    CUSTOMER = "customer"
+
+    # Keep the persisted/external value stable until its usages are audited.
+    BUSINESS_CUSTOMER = "customer"
+
     UNKNOWN = "unknown"
 
 
@@ -109,8 +112,8 @@ STAFF_CAPABILITIES = frozenset(
         Capability.CREATE_PRODUCTS,
         Capability.EDIT_PRODUCTS,
         Capability.VIEW_CUSTOMERS,
-        Capability.CREATE_CUSTOMERS,
-        Capability.EDIT_CUSTOMERS,
+        Capability.CREATE_CUSTOMERS,  # TODO: Check rename create business account
+        Capability.EDIT_CUSTOMERS,  # TODO: Check rename edit business account
     }
 )
 
@@ -125,16 +128,16 @@ RESTRICTED_STAFF_CAPABILITIES = frozenset(
         Capability.VIEW_INVENTORY,
         Capability.CREATE_BATCHES,
         Capability.VIEW_OPS_PRODUCTS,
-        Capability.VIEW_CUSTOMERS,
+        Capability.VIEW_CUSTOMERS,  # TODO: Check rename view business customer 
     }
 )
 
-CUSTOMER_CAPABILITIES = frozenset(
+BUSINESS_CUSTOMER_CAPABILITIES = frozenset(
     {
-        Capability.VIEW_CUSTOMER_PORTAL,
+        Capability.VIEW_BUSINESS_PORTAL,
         Capability.VIEW_OWN_ACCOUNT,
         Capability.EDIT_OWN_ACCOUNT,
-        Capability.PLACE_CUSTOMER_ORDERS,
+        Capability.PLACE_BUSINESS_ORDERS,
         Capability.VIEW_OWN_ORDERS,
     }
 )
@@ -152,8 +155,8 @@ RESTRICTED_STAFF_SPEC = RoleSpec(
     capabilities=RESTRICTED_STAFF_CAPABILITIES,
 )
 
-CUSTOMER_SPEC = RoleSpec(
-    capabilities=CUSTOMER_CAPABILITIES,
+BUSINESS_CUSTOMER_SPEC = RoleSpec(
+    capabilities=BUSINESS_CUSTOMER_CAPABILITIES,
 )
 
 UNKNOWN_SPEC = RoleSpec(
@@ -165,7 +168,7 @@ ROLE_SPECS: dict[AccountRole, RoleSpec] = {
     AccountRole.OWNER: OWNER_SPEC,
     AccountRole.FULL_STAFF: FULL_STAFF_SPEC,
     AccountRole.RESTRICTED_STAFF: RESTRICTED_STAFF_SPEC,
-    AccountRole.CUSTOMER: CUSTOMER_SPEC,
+    AccountRole.BUSINESS_CUSTOMER: BUSINESS_CUSTOMER_SPEC,
     AccountRole.UNKNOWN: UNKNOWN_SPEC,
 }
 
@@ -174,16 +177,15 @@ ROLE_LABELS: dict[AccountRole, str] = {
     AccountRole.OWNER: _("Owner"),
     AccountRole.FULL_STAFF: _("Full staff"),
     AccountRole.RESTRICTED_STAFF: _("Restricted staff"),
-    AccountRole.CUSTOMER: _("Customer"),
+    AccountRole.BUSINESS_CUSTOMER: _("Business customer"),
     AccountRole.UNKNOWN: _("Unlinked"),
 }
-
 
 ROLE_RANKS: dict[AccountRole, int] = {
     AccountRole.OWNER: 0,
     AccountRole.FULL_STAFF: 1,
     AccountRole.RESTRICTED_STAFF: 2,
-    AccountRole.CUSTOMER: 3,
+    AccountRole.BUSINESS_CUSTOMER: 3,
     AccountRole.UNKNOWN: 4,
 }
 

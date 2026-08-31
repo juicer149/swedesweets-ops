@@ -100,7 +100,7 @@ CUSTOMER_PORTAL_CATALOG_NAV_ITEM = NavItem(
     route_name="business_portal:catalog",
     namespace="business_portal",
     icon="lollipop",
-    capability=Capability.VIEW_CUSTOMER_PORTAL,
+    capability=Capability.VIEW_BUSINESS_PORTAL,
     active_url_names=("catalog",),
 )
 
@@ -118,7 +118,7 @@ CUSTOMER_PORTAL_CONTACT_NAV_ITEM = NavItem(
     route_name="business_portal:contact",
     namespace="business_portal",
     icon="tag",
-    capability=Capability.VIEW_CUSTOMER_PORTAL,
+    capability=Capability.VIEW_BUSINESS_PORTAL,
     active_url_names=("contact",),
 )
 
@@ -143,7 +143,7 @@ RESTRICTED_STAFF_NAV_ITEMS = (
     INVENTORY_NAV_ITEM,
 )
 
-CUSTOMER_NAV_ITEMS = (
+BUSINESS_CUSTOMER_NAV_ITEMS = (
     CUSTOMER_PORTAL_ORDERS_NAV_ITEM,
     # TODO: Add these back in when the customer portal is implemented.
     # CUSTOMER_PORTAL_CATALOG_NAV_ITEM, # NOT IMPLEMENTED YET
@@ -156,7 +156,7 @@ NAV_ITEMS_BY_ROLE: dict[AccountRole, tuple[NavItem, ...]] = {
     AccountRole.OWNER: STAFF_NAV_ITEMS,
     AccountRole.FULL_STAFF: STAFF_NAV_ITEMS,
     AccountRole.RESTRICTED_STAFF: RESTRICTED_STAFF_NAV_ITEMS,
-    AccountRole.CUSTOMER: CUSTOMER_NAV_ITEMS,
+    AccountRole.BUSINESS_CUSTOMER: BUSINESS_CUSTOMER_NAV_ITEMS,
 }
 
 

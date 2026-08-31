@@ -3,7 +3,7 @@ from __future__ import annotations
 
 AUTH_EXEMPT_VIEWS = frozenset(
     {
-        "retail:payment_return",
+        "storefront:payment_return",
     }
 )
 

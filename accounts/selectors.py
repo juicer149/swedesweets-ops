@@ -316,7 +316,7 @@ def list_internal_account_rows(*, sort: str) -> tuple[AccountListRow, ...]:
 
 def list_customer_account_rows(*, sort: str) -> tuple[AccountListRow, ...]:
     return _list_account_rows_for_roles(
-        roles=frozenset({AccountRole.CUSTOMER}),
+        roles=frozenset({AccountRole.BUSINESS_CUSTOMER}),
         sort=sort,
     )
 
@@ -417,7 +417,7 @@ def _resolve_account_identity(user) -> ResolvedAccountIdentity:
             linked_identity=_staff_identity_label(user.staff_account.access_level),
         )
 
-    if account_role == AccountRole.CUSTOMER:
+    if account_role == AccountRole.BUSINESS_CUSTOMER:
         customer = user.customer_membership.customer
 
         return ResolvedAccountIdentity(

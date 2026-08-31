@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from accounts.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from accounts.roles import (
-    CUSTOMER_SPEC,
+    BUSINESS_CUSTOMER_SPEC,
     FULL_STAFF_SPEC,
     OWNER_SPEC,
     RESTRICTED_STAFF_SPEC,
@@ -185,7 +185,7 @@ def test_customer_user_access_matches_declared_capabilities(client):
 
     client.force_login(user)
 
-    expected_access = _expected_access_by_view(CUSTOMER_SPEC)
+    expected_access = _expected_access_by_view(BUSINESS_CUSTOMER_SPEC)
 
     for view_name, should_allow in expected_access.items():
         response = client.get(_url_for_view_name(view_name))
@@ -236,7 +236,7 @@ def test_role_specs_cover_expected_policy_shape():
         AccountRole.OWNER: OWNER_SPEC,
         AccountRole.FULL_STAFF: FULL_STAFF_SPEC,
         AccountRole.RESTRICTED_STAFF: RESTRICTED_STAFF_SPEC,
-        AccountRole.CUSTOMER: CUSTOMER_SPEC,
+        AccountRole.BUSINESS_CUSTOMER: BUSINESS_CUSTOMER_SPEC,
         AccountRole.UNKNOWN: UNKNOWN_SPEC,
     }
 

@@ -327,7 +327,7 @@ def _change_customer_account_status(
     account_user = membership.user
 
     if not can_manage_customer_account_status(
-        target_account_role=AccountRole.CUSTOMER,
+        target_account_role=AccountRole.BUSINESS_CUSTOMER,
         role_spec=request.role_spec,
     ):
         raise PermissionDenied("You cannot change this account status.")
@@ -408,7 +408,7 @@ def _internal_account_edit_url(user) -> str:
 
 
 def _accounts_url_for_account(account) -> str:
-    if account.account_role == AccountRole.CUSTOMER:
+    if account.account_role == AccountRole.BUSINESS_CUSTOMER:
         return _accounts_customer_url()
 
     if account.account_role == AccountRole.UNKNOWN:

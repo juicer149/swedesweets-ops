@@ -38,7 +38,7 @@ def resolve_account_role(user) -> AccountRole:
         raise InvalidAccountIdentity(f"Unknown staff access level: {access_level!r}")
 
     if has_customer_membership:
-        return AccountRole.CUSTOMER
+        return AccountRole.BUSINESS_CUSTOMER
 
     return AccountRole.UNKNOWN
 

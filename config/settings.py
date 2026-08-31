@@ -115,6 +115,7 @@ INSTALLED_APPS = [
     "business_portal",
     "retail",
     "payments",
+    "storefront",
 ]
 
 

@@ -204,7 +204,7 @@ database. Views coordinate the HTTP flow.
 Customer account creation is also an account-management use case. A customer
 login should be linked through `CustomerMembership`.
 
-Customer portal access must still be scoped through customer membership. A
+Business portal access must still be scoped through customer membership. A
 customer user must only see records belonging to their linked `Customer`.
 
 ## Inactive users
@@ -394,9 +394,9 @@ If activity becomes a central product feature, consider adding a persistent
 Avoid using Django signals for core audit/activity creation unless there is a
 strong reason. Service-layer writes are more explicit and easier to reason about.
 
-## Customer portal query scope
+## Business portal query scope
 
-Customer portal access must be scoped at the query level.
+Business portal access must be scoped at the query level.
 
 A customer user must never fetch records only by primary key:
 

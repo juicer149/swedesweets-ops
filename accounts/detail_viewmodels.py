@@ -202,7 +202,7 @@ def customer_account_status_success_message(
 
 
 def _self_safe_account_row(account: AccountListRow) -> AccountListRow:
-    if account.account_role != AccountRole.CUSTOMER:
+    if account.account_role != AccountRole.BUSINESS_CUSTOMER:
         return account
 
     return replace(
@@ -406,7 +406,7 @@ def account_datetime_label(value: datetime | None) -> str:
 
 def _accounts_url_for_account(account: AccountListRow) -> str:
     match account.account_role:
-        case AccountRole.CUSTOMER:
+        case AccountRole.BUSINESS_CUSTOMER:
             return _accounts_customer_url()
         case AccountRole.UNKNOWN:
             return _accounts_unlinked_url()

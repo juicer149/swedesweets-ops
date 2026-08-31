@@ -1,9 +1,9 @@
 from django.urls import path
 
-from retail import views
+from storefront import views
 
 
-app_name = "retail"
+app_name = "storefront"
 
 
 urlpatterns = [

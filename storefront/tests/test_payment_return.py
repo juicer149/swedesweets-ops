@@ -63,13 +63,13 @@ def test_payment_return_is_public_and_shows_confirmation(
         )
 
     monkeypatch.setattr(
-        "retail.views.recover_retail_payment",
+        "storefront.views.recover_retail_payment",
         fake_recover_retail_payment,
     )
 
     response = client.get(
         reverse(
-            "retail:payment_return",
+            "storefront:payment_return",
             kwargs={
                 "checkout_id": checkout.pk,
             },
@@ -99,13 +99,13 @@ def test_payment_return_redirects_to_existing_hosted_checkout(
         )
 
     monkeypatch.setattr(
-        "retail.views.recover_retail_payment",
+        "storefront.views.recover_retail_payment",
         fake_recover_retail_payment,
     )
 
     response = client.get(
         reverse(
-            "retail:payment_return",
+            "storefront:payment_return",
             kwargs={
                 "checkout_id": checkout.pk,
             },
@@ -136,13 +136,13 @@ def test_payment_return_shows_failed_state(
         )
 
     monkeypatch.setattr(
-        "retail.views.recover_retail_payment",
+        "storefront.views.recover_retail_payment",
         fake_recover_retail_payment,
     )
 
     response = client.get(
         reverse(
-            "retail:payment_return",
+            "storefront:payment_return",
             kwargs={
                 "checkout_id": checkout.pk,
             },
@@ -171,13 +171,13 @@ def test_payment_return_shows_support_state(
         )
 
     monkeypatch.setattr(
-        "retail.views.recover_retail_payment",
+        "storefront.views.recover_retail_payment",
         fake_recover_retail_payment,
     )
 
     response = client.get(
         reverse(
-            "retail:payment_return",
+            "storefront:payment_return",
             kwargs={
                 "checkout_id": checkout.pk,
             },
@@ -196,7 +196,7 @@ def test_payment_return_returns_not_found_for_unknown_checkout(
 
     response = client.get(
         reverse(
-            "retail:payment_return",
+            "storefront:payment_return",
             kwargs={
                 "checkout_id": uuid.uuid4(),
             },
@@ -228,7 +228,7 @@ def test_payment_return_returns_not_found_when_checkout_has_no_payment_attempt(
 
     response = client.get(
         reverse(
-            "retail:payment_return",
+            "storefront:payment_return",
             kwargs={
                 "checkout_id": checkout.pk,
             },

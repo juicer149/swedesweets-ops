@@ -5,7 +5,7 @@ import pytest
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role, resolve_role_spec
 from accounts.roles import (
-    CUSTOMER_CAPABILITIES,
+    BUSINESS_CUSTOMER_CAPABILITIES,
     RESTRICTED_STAFF_CAPABILITIES,
     STAFF_CAPABILITIES,
     AccountRole,
@@ -69,7 +69,7 @@ def test_superuser_resolves_as_owner():
     )
     _assert_denies_all(
         spec,
-        CUSTOMER_CAPABILITIES - STAFF_CAPABILITIES,
+        BUSINESS_CUSTOMER_CAPABILITIES - STAFF_CAPABILITIES,
     )
 
 
@@ -87,7 +87,7 @@ def test_full_staff_resolves_as_full_staff():
     )
     _assert_denies_all(
         spec,
-        CUSTOMER_CAPABILITIES - STAFF_CAPABILITIES,
+        BUSINESS_CUSTOMER_CAPABILITIES - STAFF_CAPABILITIES,
     )
 
 
@@ -116,17 +116,17 @@ def test_customer_resolves_as_customer(user, customer):
         customer=customer,
     )
 
-    assert resolve_account_role(user) == AccountRole.CUSTOMER
+    assert resolve_account_role(user) == AccountRole.BUSINESS_CUSTOMER
 
     spec = resolve_role_spec(user)
 
     _assert_allows_all(
         spec,
-        CUSTOMER_CAPABILITIES,
+        BUSINESS_CUSTOMER_CAPABILITIES,
     )
     _assert_denies_all(
         spec,
-        frozenset(Capability) - CUSTOMER_CAPABILITIES,
+        frozenset(Capability) - BUSINESS_CUSTOMER_CAPABILITIES,
     )
 
 

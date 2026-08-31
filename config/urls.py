@@ -80,10 +80,10 @@ urlpatterns = [
         ),
     ),
     path(
-        "retail/",
+        "shop/",
         include(
-            "retail.urls",
-            namespace="retail",
+            "storefront.urls",
+            namespace="storefront",
         ),
     ),
 ]
