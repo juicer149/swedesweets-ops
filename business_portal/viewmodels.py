@@ -137,7 +137,7 @@ def _build_home_actions(
     return (
         PortalHomeAction(
             label=order_action_label,
-            href=reverse("customer_portal:place_order"),
+            href=reverse("business_portal:place_order"),
             css_class=(
                 "button button--hero-action button--tone-place button--with-icon"
             ),
@@ -147,7 +147,7 @@ def _build_home_actions(
         ),
         PortalHomeAction(
             label=_("Orders"),
-            href=reverse("customer_portal:orders"),
+            href=reverse("business_portal:orders"),
             css_class=(
                 "button button--hero-action button--tone-pack button--with-icon"
             ),
@@ -163,7 +163,7 @@ def _recent_order_row(order) -> PortalRecentOrderRow:
     return PortalRecentOrderRow(
         order_id=order.pk,
         href=reverse(
-            "customer_portal:order_detail",
+            "business_portal:order_detail",
             kwargs={"order_id": order.pk},
         ),
         card_class=(

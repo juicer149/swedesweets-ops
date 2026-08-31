@@ -60,14 +60,14 @@ def test_customer_updates_only_own_store_profile(
 
     response = client.post(
         reverse(
-            "customer_portal:profile"
+            "business_portal:profile"
         ),
         PROFILE_FORM_DATA,
     )
 
     assert response.status_code == 302
     assert response["Location"] == reverse(
-        "customer_portal:profile"
+        "business_portal:profile"
     )
 
     customer.refresh_from_db()
@@ -157,7 +157,7 @@ def test_profile_update_affects_future_orders_but_not_existing_snapshots(
 
     response = client.post(
         reverse(
-            "customer_portal:profile"
+            "business_portal:profile"
         ),
         PROFILE_FORM_DATA,
     )

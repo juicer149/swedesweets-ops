@@ -88,8 +88,8 @@ ACCOUNTS_NAV_ITEM = NavItem(
 
 CUSTOMER_PORTAL_ORDERS_NAV_ITEM = NavItem(
     label=_("Orders"),
-    route_name="customer_portal:orders",
-    namespace="customer_portal",
+    route_name="business_portal:orders",
+    namespace="business_portal",
     icon="packed",
     capability=Capability.VIEW_OWN_ORDERS,
     active_url_names=("orders", "order_detail"),
@@ -97,8 +97,8 @@ CUSTOMER_PORTAL_ORDERS_NAV_ITEM = NavItem(
 
 CUSTOMER_PORTAL_CATALOG_NAV_ITEM = NavItem(
     label=_("Catalog"),
-    route_name="customer_portal:catalog",
-    namespace="customer_portal",
+    route_name="business_portal:catalog",
+    namespace="business_portal",
     icon="lollipop",
     capability=Capability.VIEW_CUSTOMER_PORTAL,
     active_url_names=("catalog",),
@@ -106,8 +106,8 @@ CUSTOMER_PORTAL_CATALOG_NAV_ITEM = NavItem(
 
 CUSTOMER_PORTAL_PROFILE_NAV_ITEM = NavItem(
     label=_("Store profile"),
-    route_name="customer_portal:profile",
-    namespace="customer_portal",
+    route_name="business_portal:profile",
+    namespace="business_portal",
     icon="users",
     capability=Capability.VIEW_OWN_ACCOUNT,
     active_url_names=("profile", "edit_profile"),
@@ -115,8 +115,8 @@ CUSTOMER_PORTAL_PROFILE_NAV_ITEM = NavItem(
 
 CUSTOMER_PORTAL_CONTACT_NAV_ITEM = NavItem(
     label=_("Contact"),
-    route_name="customer_portal:contact",
-    namespace="customer_portal",
+    route_name="business_portal:contact",
+    namespace="business_portal",
     icon="tag",
     capability=Capability.VIEW_CUSTOMER_PORTAL,
     active_url_names=("contact",),

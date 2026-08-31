@@ -68,8 +68,8 @@ urlpatterns = [
     path(
         "my/",
         include(
-            "customer_portal.urls",
-            namespace="customer_portal",
+            "business_portal.urls",
+            namespace="business_portal",
         ),
     ),
     path(

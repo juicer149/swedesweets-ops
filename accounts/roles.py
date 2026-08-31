@@ -19,7 +19,7 @@ from django.utils.translation import gettext_lazy as _
 
 class Capability(StrEnum):
     VIEW_STAFF_OPS = "can_view_staff_ops"
-    VIEW_CUSTOMER_PORTAL = "can_view_customer_portal"
+    VIEW_CUSTOMER_PORTAL = "can_view_business_portal"
 
     MANAGE_ACCOUNTS = "can_manage_accounts"
     VIEW_OWN_ACCOUNT = "can_view_own_account"

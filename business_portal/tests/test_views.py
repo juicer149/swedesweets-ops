@@ -5,8 +5,8 @@ from django.contrib.messages import get_messages
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test import RequestFactory
 
-from customer_portal.services import DraftStatus
-from customer_portal.views import PortalOrderIntent, _add_draft_save_message
+from business_portal.services import DraftStatus
+from business_portal.views import PortalOrderIntent, _add_draft_save_message
 
 
 def _request_with_messages():

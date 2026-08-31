@@ -1,4 +1,4 @@
-# customer_portal/selectors.py
+# business_portal/selectors.py
 
 from __future__ import annotations
 

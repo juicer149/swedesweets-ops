@@ -103,7 +103,7 @@ def build_portal_order_detail_context(
         ),
         title=_("Order #%(order_id)s") % {"order_id": order.pk},
         customer_status_label=customer_order_status_label(order.status),
-        cancel_url=reverse("customer_portal:orders"),
+        cancel_url=reverse("business_portal:orders"),
     )
 
 
@@ -128,7 +128,7 @@ def _build_order_detail_panels(
             key="order",
             label=_("Order"),
             summary=_("Details"),
-            body_template="customer_portal/includes/detail_panel_order.html",
+            body_template="business_portal/includes/detail_panel_order.html",
             icon="cart",
             is_active=order.status == Order.Status.CANCELLED,
         ),
@@ -139,7 +139,7 @@ def _build_order_detail_panels(
                 product_count=product_count,
                 total_quantity=total_quantity,
             ),
-            body_template="customer_portal/includes/detail_panel_items.html",
+            body_template="business_portal/includes/detail_panel_items.html",
             icon="box",
             is_active=order.status != Order.Status.CANCELLED,
         ),

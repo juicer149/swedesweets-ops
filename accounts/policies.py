@@ -20,7 +20,7 @@ from accounts.access import (
 from accounts.access import (
     VIEW_CAPABILITIES as ACCOUNT_VIEW_CAPABILITIES,
 )
-from customer_portal.access import (
+from business_portal.access import (
     VIEW_CAPABILITIES as CUSTOMER_PORTAL_VIEW_CAPABILITIES,
 )
 from customers.access import (

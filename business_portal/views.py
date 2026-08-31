@@ -21,37 +21,37 @@ from common.table_controls import (
     TableSortField,
 )
 from customers.errors import InvalidCustomerData
-from customer_portal.detail_viewmodels import (
+from business_portal.detail_viewmodels import (
     build_portal_order_detail_context,
 )
-from customer_portal.form_viewmodels import (
+from business_portal.form_viewmodels import (
     build_portal_place_order_context,
 )
-from customer_portal.forms import (
+from business_portal.forms import (
     CustomerProfileForm,
     PortalOrderLineFormSet,
     build_customer_profile_initial_data,
     build_portal_order_line_initial_data,
     build_portal_order_line_inputs,
 )
-from customer_portal.order_list_viewmodels import (
+from business_portal.order_list_viewmodels import (
     build_portal_order_page_rows,
     build_portal_orders_page_header,
 )
-from customer_portal.review_viewmodels import (
+from business_portal.review_viewmodels import (
     build_portal_order_review_context,
 )
-from customer_portal.selectors import (
+from business_portal.selectors import (
     get_portal_customer_for_user,
     get_portal_order_for_user,
 )
-from customer_portal.services import (
+from business_portal.services import (
     DraftStatus,
     discard_portal_draft_order,
     save_or_clear_portal_draft_order,
     update_portal_customer_profile,
 )
-from customer_portal.viewmodels import (
+from business_portal.viewmodels import (
     RECENT_PORTAL_ORDER_LIMIT,
     build_portal_home_context,
 )
@@ -186,7 +186,7 @@ def index(request):
         active_draft_order=active_draft_order,
     ).as_dict()
 
-    return render(request, "customer_portal/index.html", context)
+    return render(request, "business_portal/index.html", context)
 
 
 @login_required
@@ -230,7 +230,7 @@ def orders(request):
         "numeric_table_fields": ["quantity"],
     }
 
-    return render(request, "customer_portal/orders.html", context)
+    return render(request, "business_portal/orders.html", context)
 
 
 @login_required
@@ -246,7 +246,7 @@ def place_order(request):
             )
         except ValueError:
             messages.error(request, _("Unknown order action."))
-            return redirect("customer_portal:place_order")
+            return redirect("business_portal:place_order")
 
         match intent:
             case PortalOrderIntent.DISCARD_DRAFT:
@@ -257,7 +257,7 @@ def place_order(request):
 
                 if not result.succeeded:
                     _add_service_errors(request, result.errors)
-                    return redirect("customer_portal:place_order")
+                    return redirect("business_portal:place_order")
 
                 if result.status == DraftStatus.CLEARED:
                     messages.success(request, _("Draft order discarded."))
@@ -278,14 +278,14 @@ def place_order(request):
 
                 if result.succeeded:
                     if intent == PortalOrderIntent.REVIEW_ORDER:
-                        return redirect("customer_portal:review_order")
+                        return redirect("business_portal:review_order")
 
                     _add_draft_save_message(request, result.status)
                     return redirect(_safe_next_url(request) or "accounts:after_login")
 
             case _:
                 messages.error(request, _("Unknown order action."))
-                return redirect("customer_portal:place_order")
+                return redirect("business_portal:place_order")
 
     else:
         initial = ()
@@ -306,7 +306,7 @@ def place_order(request):
         has_active_draft=draft_order is not None,
     ).as_dict()
 
-    return render(request, "customer_portal/place_order.html", context)
+    return render(request, "business_portal/place_order.html", context)
 
 
 @login_required
@@ -316,7 +316,7 @@ def review_order(request):
 
     if draft_order is None:
         messages.info(request, _("No draft order to review."))
-        return redirect("customer_portal:place_order")
+        return redirect("business_portal:place_order")
 
     if request.method == "POST":
         try:
@@ -325,7 +325,7 @@ def review_order(request):
             )
         except ValueError:
             messages.error(request, _("Unknown order action."))
-            return redirect("customer_portal:review_order")
+            return redirect("business_portal:review_order")
 
         match intent:
             case PortalOrderIntent.SAVE_DRAFT:
@@ -340,7 +340,7 @@ def review_order(request):
 
                 if not result.succeeded:
                     _add_service_errors(request, result.errors)
-                    return redirect("customer_portal:review_order")
+                    return redirect("business_portal:review_order")
 
                 if result.status == DraftStatus.CLEARED:
                     messages.success(request, _("Draft order discarded."))
@@ -355,7 +355,7 @@ def review_order(request):
                     )
                 except ORDER_OPERATION_ERRORS as error:
                     messages.error(request, str(error))
-                    return redirect("customer_portal:review_order")
+                    return redirect("business_portal:review_order")
 
                 messages.success(
                     request,
@@ -365,20 +365,20 @@ def review_order(request):
                     },
                 )
                 return redirect(
-                    "customer_portal:order_detail",
+                    "business_portal:order_detail",
                     order_id=placed_order.id,
                 )
 
             case _:
                 messages.error(request, _("Unknown order action."))
-                return redirect("customer_portal:review_order")
+                return redirect("business_portal:review_order")
 
     context = build_portal_order_review_context(
         order=draft_order,
         language_code=request.LANGUAGE_CODE,
     ).as_dict()
 
-    return render(request, "customer_portal/review_order.html", context)
+    return render(request, "business_portal/review_order.html", context)
 
 
 @login_required
@@ -393,7 +393,7 @@ def order_detail(request, order_id: int):
         language_code=request.LANGUAGE_CODE,
     ).as_dict()
 
-    return render(request, "customer_portal/order_detail.html", context)
+    return render(request, "business_portal/order_detail.html", context)
 
 
 @login_required
@@ -422,7 +422,7 @@ def profile(request):
                 form.add_error(None, str(error))
             else:
                 messages.success(request, _("Profile updated."))
-                return redirect("customer_portal:profile")
+                return redirect("business_portal:profile")
     else:
         form = CustomerProfileForm(
             initial=build_customer_profile_initial_data(customer),
@@ -431,7 +431,7 @@ def profile(request):
 
     return render(
         request,
-        "customer_portal/profile.html",
+        "business_portal/profile.html",
         {
             "form": form,
             "customer": customer,
@@ -441,12 +441,12 @@ def profile(request):
 
 @login_required
 def edit_profile(request):
-    return redirect("customer_portal:profile")
+    return redirect("business_portal:profile")
 
 
 @login_required
 def contact(request):
-    return render(request, "customer_portal/contact.html")
+    return render(request, "business_portal/contact.html")
 
 
 def _safe_next_url(request) -> str | None:

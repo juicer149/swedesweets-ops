@@ -45,7 +45,7 @@ def build_portal_orders_page_header(
         description=_("Review your orders and follow their current status."),
         action=PageHeaderAction(
             label=(_("Continue draft") if has_active_draft else _("Place order")),
-            href=reverse("customer_portal:place_order"),
+            href=reverse("business_portal:place_order"),
             icon="cart",
             aria_label=(
                 _("Continue your unfinished order")
@@ -142,7 +142,7 @@ def _build_meta_row(
 
 def _order_detail_href(order: Order) -> str:
     return reverse(
-        "customer_portal:order_detail",
+        "business_portal:order_detail",
         kwargs={"order_id": order.pk},
     )
 

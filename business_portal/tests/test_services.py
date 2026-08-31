@@ -4,7 +4,7 @@ import pytest
 
 from business.services import create_draft_order
 from customers.tests.factories import customer_factory
-from customer_portal.services import (
+from business_portal.services import (
     DraftStatus,
     discard_portal_draft_order,
     save_or_clear_portal_draft_order,

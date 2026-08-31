@@ -416,7 +416,7 @@ Order.objects.get(
 or through a dedicated selector:
 
 ```python
-get_customer_portal_order(
+get_business_portal_order(
     user=request.user,
     order_id=order_id,
 )

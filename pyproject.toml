@@ -26,7 +26,7 @@ testpaths = [
     "accounts",
     "reservations",
     "customers",
-    "customer_portal",
+    "business_portal",
     "orders",
     "business",
     "retail",
