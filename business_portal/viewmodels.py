@@ -7,8 +7,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from orders.presentation import (
-    customer_order_status_label,
+from business_portal.order_presentation import (
+    business_order_status_label,
     order_status_tone,
 )
 
@@ -169,7 +169,7 @@ def _recent_order_row(order) -> PortalRecentOrderRow:
         card_class=(
             f"mobile-card mobile-card--clickable mobile-card--{tone} portal-order-item"
         ),
-        status_label=customer_order_status_label(order.status),
+        status_label=business_order_status_label(order.status),
         status_class=f"status-text status-text--{order.status}",
         created_at_label=_datetime_label(order.created_at),
         action_label=_("View order →"),

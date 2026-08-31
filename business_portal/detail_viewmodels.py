@@ -17,9 +17,9 @@ from common.ui import (
     UiText,
 )
 from orders.models import Order, OrderLine
-from orders.presentation import (
+from business_portal.order_presentation import (
+    business_order_status_label,
     contents_summary,
-    customer_order_status_label,
     order_detail_card_class,
     order_detail_status_class,
     order_status_icon,
@@ -102,7 +102,7 @@ def build_portal_order_detail_context(
             ),
         ),
         title=_("Order #%(order_id)s") % {"order_id": order.pk},
-        customer_status_label=customer_order_status_label(order.status),
+        customer_status_label=business_order_status_label(order.status),
         cancel_url=reverse("business_portal:orders"),
     )
 
@@ -111,7 +111,7 @@ def _build_order_header(order: Order) -> DetailHeader:
     return DetailHeader(
         eyebrow=_("Order details"),
         title=_("Order #%(order_id)s") % {"order_id": order.pk},
-        status_label=customer_order_status_label(order.status),
+        status_label=business_order_status_label(order.status),
         status_class=order_detail_status_class(order.status),
         status_icon=order_status_icon(order.status),
     )

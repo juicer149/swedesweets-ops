@@ -15,7 +15,7 @@ from common.ui import (
     UiText,
 )
 from orders.models import Order
-from orders.presentation import (
+from business_portal.order_presentation import (
     build_order_status_presentation,
     order_action_link_class,
     order_card_css_class,
