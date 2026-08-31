@@ -494,8 +494,6 @@ def test_paid_webhook_after_temporary_reservation_expiry_does_not_place_order(
         provider_transaction_id="transaction-integration-expired",
     )
 
-    client.raise_request_exception = False
-
     response = _post_sumup_webhook(
         client=client,
         provider_payment_id="checkout-integration-123",

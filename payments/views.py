@@ -34,6 +34,9 @@ def sumup_webhook(
 
     Provider state is verified through the SumUp API by
     reconcile_retail_payment() before local payment state changes.
+
+    Reconciliation failures return a server error so the provider can retry
+    the notification instead of treating an unresolved payment as handled.
     """
 
     if request.method != "POST":
@@ -76,10 +79,13 @@ def sumup_webhook(
         "id"
     )
 
-    if not isinstance(
-        provider_payment_id,
-        str,
-    ) or not provider_payment_id.strip():
+    if (
+        not isinstance(
+            provider_payment_id,
+            str,
+        )
+        or not provider_payment_id.strip()
+    ):
         return HttpResponseBadRequest(
             "Checkout id is required."
         )
@@ -110,6 +116,15 @@ def sumup_webhook(
     except PaymentReconciliationConflict:
         logger.exception(
             "SumUp payment reconciliation conflict for attempt %s",
+            attempt.pk,
+        )
+
+        return HttpResponse(
+            status=500
+        )
+    except Exception:
+        logger.exception(
+            "SumUp payment reconciliation failed for attempt %s",
             attempt.pk,
         )
 

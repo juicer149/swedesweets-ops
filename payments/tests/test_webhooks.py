@@ -251,3 +251,40 @@ def test_sumup_webhook_rejects_get(
     )
 
     assert response.status_code == 405
+
+
+@pytest.mark.django_db
+def test_sumup_webhook_returns_server_error_when_reconciliation_fails(
+    client,
+    monkeypatch,
+    payment_attempt,
+):
+    def failed_reconciliation(
+        *,
+        attempt,
+    ):
+        raise RuntimeError(
+            "reconciliation failed"
+        )
+
+    monkeypatch.setattr(
+        "payments.views.reconcile_retail_payment",
+        failed_reconciliation,
+    )
+
+    response = client.post(
+        reverse(
+            "payments:sumup_webhook"
+        ),
+        data=json.dumps(
+            {
+                "event_type": (
+                    "CHECKOUT_STATUS_CHANGED"
+                ),
+                "id": "sumup-checkout-123",
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 500
