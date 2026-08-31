@@ -79,6 +79,13 @@ urlpatterns = [
             namespace="payments",
         ),
     ),
+    path(
+        "retail/",
+        include(
+            "retail.urls",
+            namespace="retail",
+        ),
+    ),
 ]
 
 
