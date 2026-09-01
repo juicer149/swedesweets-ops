@@ -1,443 +1,328 @@
 # Architecture
 
-This project uses small, explicit Django app boundaries. The goal is not to abstract everything, but to keep each kind of decision in the right place.
+SwedeSweets uses explicit Django application boundaries.
 
-## App responsibilities
+This document describes the stable architectural direction of the project.
+Some staff-facing HTTP/UI code is still being migrated toward these boundaries,
+so the rules below describe the intended dependency direction rather than the
+current location of every view.
 
-```text
-views.py              HTTP orchestration: request, forms, selectors/services, render/redirect
-access.py             Route capabilities and app-specific action predicates
-selectors.py          Read-side queries, filtering, sorting, annotations, summaries
-services.py           Write-side mutations and business operations
-forms.py              User input, fields, widgets, validation, normalization
-form_viewmodels.py    Template context for create/edit/form pages
-list_viewmodels.py    Index page rows, mobile cards, page headers, quick jumps, section links
-detail_viewmodels.py  Detail page context, panels, actions, relation rows, mini cards
-presentation.py       Reusable UI policy: status, tone, icon, CSS class, display labels
-```
+## Dependency direction
 
-Not every app needs every file. A file should exist only when it carries real responsibility.
-
-## Access
-
-`accounts` owns the shared access language and central enforcement:
+Actor-facing UI depends on domain/application code.
 
 ```text
-accounts/roles.py      Capability, RoleSpec and AccountRole
-accounts/policies.py   Aggregated route access declarations
-accounts/middleware.py Route access enforcement
+business_portal
+storefront
+ops_portal
+        ↓
+domain / application apps
 ```
 
-Each app owns the access policy for its own routes in `access.py`.
+Core domain/application code must not depend on actor-facing portals.
+
+Domain and application functionality should remain usable outside HTTP flows,
+for example from:
 
 ```text
-dashboard/access.py
-orders/access.py
-inventory/access.py
-products/access.py
-customers/access.py
+manage.py shell
+management commands
+workers
+tests
 ```
 
-`access.py` contains route-level capability mappings:
-
-```python
-VIEW_CAPABILITIES = {
-    "orders:index": Capability.VIEW_ORDERS,
-    "orders:create": Capability.CREATE_ORDERS,
-    "orders:pack": Capability.PACK_ORDERS,
-}
-```
-
-It may also contain object/action predicates:
-
-```python
-def can_pack_order(*, order: Order, role_spec: RoleSpec) -> bool:
-    return (
-        order.status == Order.Status.PLACED
-        and role_spec.allows(Capability.PACK_ORDERS)
-    )
-```
-
-Route-level capability mappings answer:
+Core logic should therefore not require:
 
 ```text
-May this role enter this view?
+HttpRequest
+templates
+messages
+URL routing
+browser state
 ```
 
-Object/action predicates answer:
+Cross-application composition belongs in `config`.
+
+## Actor-facing UI
+
+UI ownership follows the actor using the interface, not the domain being
+manipulated.
 
 ```text
-May this role perform this action on this object now?
+business_portal
+    authenticated B2B customer UI
+
+storefront
+    public retail UI
+
+ops_portal
+    internal staff UI
 ```
 
-Views use these predicates when an object-level guard is needed:
+For example, staff product-management pages belong to `ops_portal`, while
+product state, queries and mutations remain owned by `products`.
 
-```python
-if not can_close_batch(batch=batch, role_spec=request.role_spec):
-    return redirect(...)
-```
+The project is still migrating some existing staff-facing views toward this
+boundary.
 
-Viewmodels use the same predicates when deciding which actions to show:
+## Domain and application apps
 
-```python
-if can_edit_order(order=order, role_spec=role_spec):
-    actions.append(...)
-```
+Domain apps own their persistence and business behavior.
 
-Avoid raw capability checks in `list_viewmodels.py` and `detail_viewmodels.py`:
-
-```python
-role_spec.allows(Capability.CREATE_PRODUCTS)
-```
-
-Prefer app-specific predicates:
-
-```python
-can_create_product(role_spec=role_spec)
-```
-
-This keeps permission logic out of templates and prevents viewmodels from becoming the owner of access policy.
-
-More detailed identity, role, middleware and deny-by-default rules belong in the accounts architecture documentation.
-
-## Views
-
-Views orchestrate HTTP flow.
-
-A view may:
+Typical responsibilities:
 
 ```text
-- read request.GET / request.POST
-- bind forms and formsets
-- call selectors for read data
-- call services for mutations
-- call viewmodel builders for template context
-- call access predicates for object-level guards
-- set messages
-- redirect or render
+models.py
+    persistent state
+
+selectors.py
+    read-only queries and read models
+
+services.py
+    mutations, workflows and invariants
+
+access.py
+    capability declarations for routes owned by the app
 ```
 
-A view should avoid:
+Not every app needs every module.
+
+Selectors should not mutate state.
+
+Services should own transactional writes and business invariants.
+
+Views should remain thin orchestration around HTTP concerns.
+
+## Read ownership
+
+Persistence knowledge belongs to the domain that owns the model.
+
+For example:
 
 ```text
-- business mutations outside services
-- large query construction outside selectors
-- template presentation logic
-- status/tone/icon/class policy
-- app-specific action rules that belong in access.py
+orders/selectors.py
+    knows how orders are queried
+
+inventory/selectors.py
+    knows how inventory batches are queried
+
+products/selectors.py
+    knows how products are queried
+
+customers/selectors.py
+    knows how customers are queried
 ```
 
-Object lookup helpers stay in `views.py` when they use `get_object_or_404(...)`, because 404 handling is HTTP/view behavior.
+Cross-domain read use cases may compose those selectors, but should not duplicate
+their ORM knowledge.
 
-Use neutral helper names when the same lookup is shared by detail, edit, cancel, pack, deliver, or close flows:
-
-```python
-_get_customer_or_404(...)
-_get_batch_or_404(...)
-_get_order_or_404(...)
-_get_product_or_404(...)
-```
-
-## Index pages
-
-Index pages keep request/querystring state in `views.py`.
-
-Typical pattern:
-
-```python
-@login_required
-def index(request):
-    controls = TableControls.from_request_values(...)
-
-    rows = build_x_page_rows(
-        list_x(
-            filter=controls.active_filter or None,
-            sort=controls.active_sort,
-        )
-    )
-
-    context = {
-        "page_header": build_x_page_header(role_spec=request.role_spec),
-        "x_rows": rows,
-        "filters": controls.build_filter_links(X_FILTERS),
-        "table_sorts": controls.build_table_sort_links(X_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(X_TABLE_SORTS),
-        "mobile_sort_direction": controls.build_mobile_sort_direction(),
-        "table_controls_template": X_TABLE_CONTROLS_TEMPLATE,
-        "numeric_table_fields": [...],
-    }
-
-    return render(request, "x/index.html", context)
-```
-
-`TableControls.from_request_values(...)` stays in `views.py` because it depends on `request.path` and `request.GET`.
-
-`controls.active_filter` and `controls.active_sort` are used by the view when calling selectors. They do not need to be passed separately to templates when filter links, sort links, and mobile sort fields already carry their own active state.
-
-### `list_viewmodels.py`
-
-Index page presentation belongs in `list_viewmodels.py`.
-
-A list viewmodel may build:
+Example:
 
 ```text
-- page headers
-- header actions
-- page rows
-- mobile cards
-- quick jumps
-- section links
-- list-specific href decisions
+accounts/activity_selectors.py
+        ↓
+orders/selectors.py
+products/selectors.py
+inventory/selectors.py
+customers/selectors.py
 ```
 
-Typical pattern:
+## Accounts and authorization
+
+`accounts` owns the shared account identity and capability language.
 
 ```text
-build_x_page_rows(...)
-→ _build_x_page_row(...)
-→ _x_card(...)
-→ _x_card_rows(...)
-→ _x_specific_row(...)
+accounts/models.py
+    StaffAccount
+    CustomerMembership
+
+accounts/roles.py
+    AccountRole
+    StaffAccessLevel
+    Capability
+    RoleSpec
+
+accounts/permissions.py
+    resolve Django User -> AccountRole -> RoleSpec
+
+accounts/services.py
+    account lifecycle mutations and invariants
 ```
 
-For simple cards, the row builder may pass already-computed presentation state into the card builder:
+Django authentication answers:
 
-```python
-status = product_status_presentation(product)
-detail_href = _product_detail_href(product)
+> Who is logged in?
 
-return ProductPageRow(
-    product=product,
-    status=status,
-    detail_href=detail_href,
-    card=_product_card(
-        product=product,
-        status=status,
-        detail_href=detail_href,
-    ),
-)
-```
+`accounts` answers:
 
-List viewmodels may call app-specific access predicates when deciding whether to show actions:
+> What account identity does this user represent?
+> What capabilities does that identity have?
 
-```python
-if not can_create_product(role_spec=role_spec):
-    return None
-```
+Route access declarations live close to the routes they describe.
 
-The list viewmodel should express the UI decision, not own the access policy.
-
-## Multi-section index pages
-
-If an index page has multiple sections, such as inventory batches and product stock, the section switch stays in `views.py`:
-
-```python
-@login_required
-def index(request):
-    active_view = _active_inventory_view(
-        request.GET.get(INVENTORY_VIEW_QUERY_KEY, "")
-    )
-
-    if active_view == INVENTORY_VIEW_PRODUCTS:
-        context = _build_products_index_context(request)
-    else:
-        context = _build_batches_index_context(request)
-
-    return render(request, "inventory/index.html", context)
-```
-
-Section navigation itself belongs in `list_viewmodels.py`.
-
-If all sections share the same row shape and table structure, keep one index flow and switch only the selector or data source.
-
-If sections have different row shapes, filters, table sorts, quick jumps, or template keys, split them into private `_build_*_index_context(...)` helpers in `views.py`.
-
-## Detail pages
-
-Detail pages fetch one main object, load related read data through selectors, and delegate render context construction to `detail_viewmodels.py`.
-
-Typical pattern:
-
-```python
-@login_required
-def detail(request, object_pk: int):
-    obj = _get_object_or_404(object_pk)
-
-    context = build_object_detail_context(
-        obj=obj,
-        related_data=list_related_data(obj=obj),
-        role_spec=request.role_spec,
-        cancel_url=reverse("objects:index"),
-    ).as_dict()
-
-    return render(request, "objects/detail.html", context)
-```
-
-### `detail_viewmodels.py`
-
-Detail page presentation belongs in `detail_viewmodels.py`.
-
-A detail viewmodel may build:
+Global access-policy composition belongs in:
 
 ```text
-- detail context dataclasses
-- detail cards
-- headers
-- panels
-- primary actions
-- secondary actions
-- relation rows
-- mini cards
-- page title and cancel URL
-- detail-specific hrefs
+config/policies.py
 ```
 
-Detail pages often use context dataclasses with `.as_dict()` because they combine domain data and presentation state into one coherent page object.
+Authorization is fail-closed.
 
-Typical pattern:
+Navigation is UX, not authorization.
+
+A visible or hidden link must never be treated as the security boundary.
+
+## Object scope
+
+Capabilities answer:
+
+> May this actor access this kind of operation?
+
+Scoped selectors answer:
+
+> May this actor access this specific object?
+
+Both may be required.
+
+For example, a business customer may have permission to view their own orders,
+but the order query must still be scoped through that customer's membership.
+
+## Composition root
+
+`config` owns application-wide composition.
+
+Examples:
 
 ```text
-build_x_detail_context(...)
-→ _build_x_header(...)
-→ _build_x_detail_panels(...)
-→ build_x_primary_action(...)
-→ build_x_secondary_actions(...)
+config/policies.py
+    aggregate route access declarations
+
+config/login_routing.py
+    choose the correct destination after login
+
+config/context_processors.py
+    compose actor-specific navigation
+
+config/middleware.py
+    global login/session behavior
+
+config/settings.py
+    wire installed apps and middleware
 ```
 
-Detail viewmodels may call app-specific access predicates when deciding which actions to show:
+Domain apps should not become composition roots for unrelated applications.
 
-```python
-if can_edit_order(order=order, role_spec=role_spec):
-    actions.append(...)
-```
+## Presentation
 
-Detail viewmodels should not define access predicates themselves. Rules such as `can_edit_order`, `can_close_batch`, `can_cancel_order`, or `can_pack_order` belong in the app's `access.py`.
+Presentation code belongs to the actor-facing UI when it is actor-specific.
 
-Small single-use action builders may be inlined when they only wrap a generic helper:
-
-```python
-build_secondary_get_action(
-    label="Edit order",
-    href=order_edit_href(order),
-)
-```
-
-More semantic or specialized actions may remain as named builders when they encode meaningful UI behavior:
-
-```python
-build_pack_action(...)
-build_deliver_action()
-build_go_to_pack_action(...)
-build_go_to_deliver_action(...)
-```
-
-## Href helpers
-
-Repeated `reverse(...)` calls may be hidden behind small local href helpers.
-
-```python
-def order_pack_href(order: Order) -> str:
-    return reverse("orders:pack", kwargs={"order_id": order.pk})
-```
-
-Use helpers when the same route is used in several places, or when the helper name makes navigation intent clearer.
-
-Keep href helpers local to the module that uses them. Avoid importing helpers from `detail_viewmodels.py` into `list_viewmodels.py` just to remove duplication.
-
-A little duplication is acceptable when it keeps presentation modules independent.
-
-## Card navigation
-
-Cards without inner links may use card-level navigation:
-
-```python
-UiCard(
-    href=detail_href,
-    footer_hint="Open details →",
-    rows=...,
-)
-```
-
-Cards with inner interactive links should not also make the entire card clickable. In that case, use an explicit action link instead:
-
-```python
-UiCard(
-    rows=...,
-    action=UiText(
-        text="View customer →",
-        href=detail_href,
-    ),
-)
-```
-
-This avoids nested interactive elements and keeps mobile cards semantically clear.
-
-## Form pages
-
-Form pages follow their own create/edit pattern.
-
-The view keeps GET/POST orchestration:
+Examples:
 
 ```text
-- bind form or formset
-- validate input
-- call services
-- handle domain errors
-- set messages
-- redirect or render
+business_portal/
+    B2B-specific labels, links and page context
+
+ops_portal/
+    staff-specific labels, actions, routes and page context
+
+storefront/
+    public retail presentation
 ```
 
-Form page context belongs in `form_viewmodels.py`.
+Neutral presentation helpers may remain close to the domain or shared capability
+when they do not know about a specific portal.
 
-This section should be expanded when the create/edit form views have been standardized.
+Prefer small duplication over premature cross-portal abstractions.
 
-## Constants
+## Sales channels
 
-Keep constants when they define a stable contract:
+Authentication and sales channel are separate concepts.
+
+A user being authenticated does not by itself determine:
 
 ```text
-X_LIST_ANCHOR
-X_FILTER_QUERY_KEY
-X_VIEW_QUERY_KEY
-ORDER_LINE_FORMSET_PREFIX
-INVENTORY_VIEW_PRODUCTS
-INVENTORY_VIEW_BATCHES
-X_FILTERS
-X_TABLE_SORTS
-X_TABLE_CONTROLS_TEMPLATE
+catalog
+pricing
+payment behavior
+reservation behavior
 ```
 
-Avoid constants that merely hide a one-off label, icon, or CSS class without adding meaning.
+Those decisions belong to channel policy.
 
-## Rule of thumb
+A persistent `Customer` represents a business/customer entity.
+
+Anonymous retail checkout does not require creating a `Customer`.
+
+## Shared capabilities
+
+Capabilities that are meaningful across channels should remain separate from
+actor-facing portals.
+
+Examples:
 
 ```text
-views.py              decides the HTTP flow
-access.py             decides route and action permissions
-selectors.py          decides how data is read
-services.py           decides how data changes
-forms.py              decides how input is validated
-form_viewmodels.py    decides what form templates receive
-list_viewmodels.py    decides what index templates receive
-detail_viewmodels.py  decides what detail templates receive
-presentation.py       decides reusable UI policy
-common/               contains stable primitives, not app-specific shortcuts
+reservations
+    stock reservation capability
+
+payments
+    payment capability
+
+fulfillment
+    shared fulfillment application workflows
 ```
 
-Prefer local, explicit, domain-named helpers over premature shared abstractions.
+Future billing/invoice behavior should remain separate from payment processing.
 
-Good:
+## Design rules
 
-```python
-can_pack_order(...)
-order_pack_href(...)
-build_order_detail_primary_action(...)
+Prefer:
+
+```text
+explicit dependencies
+domain-owned queries
+service-owned mutations
+thin HTTP orchestration
+fail-closed authorization
+small modules with one clear responsibility
 ```
 
-Avoid too early:
+Avoid:
 
-```python
-can_edit_object(...)
-build_generic_action(...)
-common_href(...)
+```text
+portal imports from core domain/application modules
+business rules in templates
+ORM knowledge duplicated across apps
+navigation used as authorization
+generic abstractions created only to remove small duplication
 ```
+
+## Migration status
+
+The project is currently being aligned with these boundaries.
+
+Completed examples:
+
+```text
+B2B customer UI
+    -> business_portal
+
+public retail UI
+    -> storefront
+
+staff account-management UI
+    -> ops_portal/accounts
+
+cross-app policy composition
+    -> config
+
+post-login destination composition
+    -> config
+
+account activity ORM queries
+    -> owning domain selectors
+```
+
+Some remaining staff-facing views in domain apps may still move into
+`ops_portal`.
+
+Update this section as those migrations are completed.
