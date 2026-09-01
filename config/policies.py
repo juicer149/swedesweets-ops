@@ -1,13 +1,9 @@
 """
-Route access policy.
+Global route access policy composition.
 
-This module answers:
-
-    What capability is required to reach this view?
-
-Each app declares the access policy for the views it owns in its own
-access.py module. This module aggregates those declarations into the policy map
-used by ViewCapabilityMiddleware.
+Each HTTP-facing app declares the access policy for the views it owns in its
+own access.py module. This module composes those declarations into the policy
+maps enforced by ViewCapabilityMiddleware.
 
 Views are denied by default unless listed here or marked auth-exempt.
 """
@@ -26,11 +22,11 @@ from business_portal.access import (
 from customers.access import (
     VIEW_CAPABILITIES as CUSTOMER_VIEW_CAPABILITIES,
 )
-from dashboard.access import (
-    VIEW_CAPABILITIES as DASHBOARD_VIEW_CAPABILITIES,
-)
 from inventory.access import (
     VIEW_CAPABILITIES as INVENTORY_VIEW_CAPABILITIES,
+)
+from ops_portal.access import (
+    VIEW_CAPABILITIES as OPS_PORTAL_VIEW_CAPABILITIES,
 )
 from orders.access import (
     VIEW_CAPABILITIES as ORDER_VIEW_CAPABILITIES,
@@ -62,7 +58,7 @@ AUTH_EXEMPT_VIEWS = frozenset(
 
 
 VIEW_CAPABILITIES = {
-    **DASHBOARD_VIEW_CAPABILITIES,
+    **OPS_PORTAL_VIEW_CAPABILITIES,
     **ACCOUNT_VIEW_CAPABILITIES,
     **ORDER_VIEW_CAPABILITIES,
     **INVENTORY_VIEW_CAPABILITIES,

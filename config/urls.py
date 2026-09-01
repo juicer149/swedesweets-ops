@@ -6,7 +6,7 @@ from django.urls import (
     path,
 )
 
-from dashboard import views as dashboard_views
+from ops_portal.dashboard import views as dashboard_views
 
 
 urlpatterns = [

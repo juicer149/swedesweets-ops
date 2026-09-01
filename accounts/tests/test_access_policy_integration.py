@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from django.urls import reverse
 
-from accounts.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
+from config.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from accounts.roles import (
     BUSINESS_CUSTOMER_SPEC,
     FULL_STAFF_SPEC,

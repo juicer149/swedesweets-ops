@@ -106,7 +106,7 @@ INSTALLED_APPS = [
     "django_extensions",
     # Local apps
     "config",
-    "dashboard",
+    "ops_portal",
     "accounts",
     "products",
     "inventory",
@@ -132,7 +132,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # Require login for all app pages except explicitly exempt paths.
-    "common.middleware.LoginRequiredMiddleware",
+    "config.middleware.LoginRequiredMiddleware",
     # Custom middleware to set request.account and check view permissions.
     "accounts.middleware.AccountContextMiddleware",
     "accounts.middleware.ViewCapabilityMiddleware",

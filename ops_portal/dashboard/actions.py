@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from django.urls import reverse
 
 from accounts.roles import AccountRole, Capability, RoleSpec
-from dashboard.viewmodels import DashboardAction
+from ops_portal.dashboard.viewmodels import DashboardAction
 from orders.models import Order
 
 MAX_DASHBOARD_ACTIONS = 3
@@ -118,9 +118,6 @@ RESTRICTED_STAFF_DASHBOARD_ACTIONS = (
     ADD_BATCH_ACTION,
 )
 
-BUSINESS_CUSTOMER_DASHBOARD_ACTIONS: tuple[DashboardActionSpec, ...] = ()
-
-
 DASHBOARD_ACTIONS_BY_ROLE: dict[
     AccountRole,
     tuple[DashboardActionSpec, ...],
@@ -128,7 +125,6 @@ DASHBOARD_ACTIONS_BY_ROLE: dict[
     AccountRole.OWNER: STAFF_DASHBOARD_ACTIONS,
     AccountRole.FULL_STAFF: STAFF_DASHBOARD_ACTIONS,
     AccountRole.RESTRICTED_STAFF: RESTRICTED_STAFF_DASHBOARD_ACTIONS,
-    AccountRole.BUSINESS_CUSTOMER: BUSINESS_CUSTOMER_DASHBOARD_ACTIONS,
 }
 
 

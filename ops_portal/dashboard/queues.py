@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from django.urls import reverse
 
 from accounts.roles import AccountRole, Capability, RoleSpec
-from dashboard.viewmodels import (
+from ops_portal.dashboard.viewmodels import (
     DashboardQueueItem,
     DashboardQueuePanel,
     DashboardQueueTab,
@@ -290,9 +290,6 @@ RESTRICTED_STAFF_DASHBOARD_QUEUES = (
     PACKED_ORDERS_QUEUE,
 )
 
-CUSTOMER_DASHBOARD_QUEUES: tuple[DashboardQueueSpec, ...] = ()
-
-
 DASHBOARD_QUEUES_BY_ROLE: dict[
     AccountRole,
     tuple[DashboardQueueSpec, ...],
@@ -300,7 +297,6 @@ DASHBOARD_QUEUES_BY_ROLE: dict[
     AccountRole.OWNER: OPS_DASHBOARD_QUEUES,
     AccountRole.FULL_STAFF: OPS_DASHBOARD_QUEUES,
     AccountRole.RESTRICTED_STAFF: RESTRICTED_STAFF_DASHBOARD_QUEUES,
-    AccountRole.BUSINESS_CUSTOMER: CUSTOMER_DASHBOARD_QUEUES,
 }
 
 

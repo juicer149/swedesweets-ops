@@ -3,7 +3,7 @@ Primary navigation for internal account roles.
 
 Navigation is not authorization.
 
-accounts.policies decides what routes can be reached.
+config.policies decides what routes can be reached.
 accounts.roles decides what each role can do.
 This module defines internal staff navigation only.
 """

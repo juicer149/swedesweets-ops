@@ -6,25 +6,22 @@ from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.views import redirect_to_login
 from django.shortcuts import redirect
-from django.urls import resolve
+from django.urls import Resolver404, resolve
 
-from accounts.policies import AUTH_EXEMPT_VIEWS
+from config.policies import AUTH_EXEMPT_VIEWS
 
 
 class LoginRequiredMiddleware:
-    """Require authentication for all non-exempt application pages.
+    """Require authentication for protected application views.
 
-    Admin keeps its own login flow. Static and media files are ignored.
+    Global route exemptions are composed in config.policies.
 
-    Django auth views such as login and password reset must be reachable before
-    login. Those view names are declared in accounts.policies.AUTH_EXEMPT_VIEWS.
+    Django authentication views such as login and password reset must be
+    reachable before login. Auth-exempt does not necessarily mean public:
+    views such as password_change may still enforce authentication themselves.
 
-    Auth-exempt does not necessarily mean public. Some exempt views, such as
-    password_change, still enforce login through Django's built-in auth view.
-
-    Inactive authenticated sessions are logged out and sent to the inactive
-    account information page. This covers the case where an account is disabled
-    after the user already has a valid session.
+    Inactive authenticated sessions are logged out and redirected to the
+    inactive-account information page.
     """
 
     def __init__(self, get_response):
@@ -50,9 +47,10 @@ class LoginRequiredMiddleware:
             "next",
         )
 
-    def _is_exempt_path(self, path: str) -> bool:
+    @staticmethod
+    def _is_exempt_path(path: str) -> bool:
         exempt_prefixes = (
-            self._path_from_url(settings.LOGIN_URL),
+            LoginRequiredMiddleware._path_from_url(settings.LOGIN_URL),
             "/accounts/login/",
             "/accounts/logout/",
             "/admin/",
@@ -61,13 +59,16 @@ class LoginRequiredMiddleware:
             "/favicon.ico",
         )
 
-        return any(prefix and path.startswith(prefix) for prefix in exempt_prefixes)
+        return any(
+            prefix and path.startswith(prefix)
+            for prefix in exempt_prefixes
+        )
 
     @staticmethod
     def _is_auth_exempt_view(path: str) -> bool:
         try:
             resolver_match = resolve(path)
-        except Exception:
+        except Resolver404:
             return False
 
         return resolver_match.view_name in AUTH_EXEMPT_VIEWS
@@ -75,4 +76,5 @@ class LoginRequiredMiddleware:
     @staticmethod
     def _path_from_url(url: str) -> str:
         parsed_url = urlparse(url)
+
         return parsed_url.path or url

@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role
-from accounts.policies import (
+from config.policies import (
     AUTH_EXEMPT_VIEWS,
     EXEMPT_PATH_PREFIXES,
     VIEW_CAPABILITIES,
@@ -47,7 +47,7 @@ class AccountContextMiddleware:
 class ViewCapabilityMiddleware:
     """Deny access unless the resolved view has an explicit access policy.
 
-    Access policy is declared centrally in accounts.policies.
+    Access policy is composed centrally in config.policies.
 
     Rules:
 

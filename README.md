@@ -192,7 +192,7 @@ AUTH_EXEMPT_VIEWS is denied by default.
 The central policy module aggregates app declarations:
 
 ```text
-accounts/policies.py
+config/policies.py
 ```
 
 Any resolved view that is not listed in aggregated `VIEW_CAPABILITIES` or
@@ -206,7 +206,7 @@ Django User
   -> request.account_role
   -> request.role_spec
   -> ViewCapabilityMiddleware
-  -> accounts.policies.VIEW_CAPABILITIES[view_name]
+  -> config.policies.VIEW_CAPABILITIES[view_name]
   -> role_spec.allows(required_capability)
 ```
 
@@ -281,7 +281,7 @@ When adding a new navigation link:
 This keeps authorization and navigation aligned:
 
 ```text
-accounts/policies.py
+config/policies.py
   decides what a route requires
 
 accounts/roles.py
@@ -320,7 +320,7 @@ restricted staff:
 ```
 
 Dashboard UI is not authorization. Route access is still enforced by
-`accounts/policies.py` and `ViewCapabilityMiddleware`.
+`config/policies.py` and `ViewCapabilityMiddleware`.
 
 ## Customers
 
@@ -585,7 +585,7 @@ Current access model:
 * Business identity is resolved per request by `AccountContextMiddleware`
 * Capabilities are defined centrally in `accounts/roles.py`
 * Views are denied by default unless declared in app-level `access.py` modules
-  and aggregated by `accounts/policies.py`
+  and aggregated by `config/policies.py`
 * View policy uses `Capability` values, not raw strings
 * Navigation is role-aware through account capabilities
 * Dashboard actions and queues are role-aware through account capabilities
