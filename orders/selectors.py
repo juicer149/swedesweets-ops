@@ -8,6 +8,8 @@ pages, dashboard summaries, and packing workflows.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 from django.db.models import (
@@ -329,6 +331,91 @@ def get_packed_lines(
         )
         for pick in picks
     ]
+
+
+class OrderActivityKind(StrEnum):
+    PLACED = "placed"
+    PACKED = "packed"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+    EDITED = "edited"
+
+
+@dataclass(frozen=True, slots=True)
+class OrderActivity:
+    occurred_at: datetime
+    kind: OrderActivityKind
+    order: Order
+
+
+_ORDER_ACTIVITY_SPECS = (
+    (
+        "placed_by",
+        "placed_at",
+        OrderActivityKind.PLACED,
+    ),
+    (
+        "packed_by",
+        "packed_at",
+        OrderActivityKind.PACKED,
+    ),
+    (
+        "delivered_by",
+        "delivered_at",
+        OrderActivityKind.DELIVERED,
+    ),
+    (
+        "cancelled_by",
+        "cancelled_at",
+        OrderActivityKind.CANCELLED,
+    ),
+    (
+        "edited_by",
+        "edited_at",
+        OrderActivityKind.EDITED,
+    ),
+)
+
+
+def list_order_activity_for_actor(
+    *,
+    actor,
+    limit: int,
+) -> tuple[OrderActivity, ...]:
+    activities: list[OrderActivity] = []
+
+    for actor_field, occurred_at_field, kind in _ORDER_ACTIVITY_SPECS:
+        orders = (
+            Order.objects
+            .filter(
+                **{
+                    actor_field: actor,
+                    f"{occurred_at_field}__isnull": False,
+                }
+            )
+            .select_related("customer")
+            .order_by(f"-{occurred_at_field}")[:limit]
+        )
+
+        activities.extend(
+            OrderActivity(
+                occurred_at=getattr(
+                    order,
+                    occurred_at_field,
+                ),
+                kind=kind,
+                order=order,
+            )
+            for order in orders
+        )
+
+    return tuple(
+        sorted(
+            activities,
+            key=lambda activity: activity.occurred_at,
+            reverse=True,
+        )[:limit]
+    )
 
 
 def _build_pick_line(

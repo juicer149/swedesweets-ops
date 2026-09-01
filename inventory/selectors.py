@@ -10,7 +10,8 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+from enum import StrEnum
 from typing import TypeAlias
 
 from django.db.models import (
@@ -667,6 +668,79 @@ def orderable_quantity_by_product_id(
         for product_id, physical_quantity
         in physical_quantity_by_product_id.items()
     }
+
+
+class InventoryActivityKind(StrEnum):
+    ADDED = "added"
+    EDITED = "edited"
+    CLOSED = "closed"
+
+
+@dataclass(frozen=True, slots=True)
+class InventoryActivity:
+    occurred_at: datetime
+    kind: InventoryActivityKind
+    batch: InventoryBatch
+
+
+_INVENTORY_ACTIVITY_SPECS = (
+    (
+        "created_by",
+        "created_at",
+        InventoryActivityKind.ADDED,
+    ),
+    (
+        "edited_by",
+        "edited_at",
+        InventoryActivityKind.EDITED,
+    ),
+    (
+        "closed_by",
+        "closed_at",
+        InventoryActivityKind.CLOSED,
+    ),
+)
+
+
+def list_inventory_activity_for_actor(
+    *,
+    actor,
+    limit: int,
+) -> tuple[InventoryActivity, ...]:
+    activities: list[InventoryActivity] = []
+
+    for actor_field, occurred_at_field, kind in _INVENTORY_ACTIVITY_SPECS:
+        batches = (
+            InventoryBatch.objects
+            .filter(
+                **{
+                    actor_field: actor,
+                    f"{occurred_at_field}__isnull": False,
+                }
+            )
+            .select_related("product")
+            .order_by(f"-{occurred_at_field}")[:limit]
+        )
+
+        activities.extend(
+            InventoryActivity(
+                occurred_at=getattr(
+                    batch,
+                    occurred_at_field,
+                ),
+                kind=kind,
+                batch=batch,
+            )
+            for batch in batches
+        )
+
+    return tuple(
+        sorted(
+            activities,
+            key=lambda activity: activity.occurred_at,
+            reverse=True,
+        )[:limit]
+    )
 
 
 def _orderable_physical_quantity_by_product_id(

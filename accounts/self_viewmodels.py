@@ -16,10 +16,8 @@ from accounts.presentation import (
 )
 from accounts.roles import RoleSpec
 from accounts.self_activity_links import self_activity_target_href
-from accounts.selectors import (
-    AccountActivity,
-    AccountRecord,
-)
+from accounts.activity import AccountActivity
+from accounts.selectors import AccountRecord
 from common.detail_cards import (
     DetailAction,
     DetailCard,

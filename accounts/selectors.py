@@ -10,11 +10,11 @@ from django.utils import timezone
 
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role
-from accounts.roles import AccountRole, StaffAccessLevel, get_role_rank
-from customers.models import Customer
-from inventory.models import InventoryBatch
-from orders.models import Order
-from products.models import Product
+from accounts.roles import (
+    AccountRole,
+    StaffAccessLevel,
+    get_role_rank,
+)
 
 User = get_user_model()
 
@@ -27,8 +27,6 @@ INTERNAL_ACCOUNT_ROLES = frozenset(
     }
 )
 
-ACCOUNT_ACTIVITY_LIMIT = 24
-
 
 class AccountIdentityKind(StrEnum):
     OWNER = "owner"
@@ -38,28 +36,6 @@ class AccountIdentityKind(StrEnum):
     INVALID_STAFF = "invalid_staff"
     INVALID_CUSTOMER = "invalid_customer"
     UNLINKED = "unlinked"
-
-
-class AccountActivityKind(StrEnum):
-    ORDER_PLACED = "order_placed"
-    ORDER_PACKED = "order_packed"
-    ORDER_DELIVERED = "order_delivered"
-    ORDER_CANCELLED = "order_cancelled"
-    ORDER_EDITED = "order_edited"
-
-    PRODUCT_CREATED = "product_created"
-    PRODUCT_EDITED = "product_edited"
-    PRODUCT_ACTIVATED = "product_activated"
-    PRODUCT_DEACTIVATED = "product_deactivated"
-
-    INVENTORY_ADDED = "inventory_added"
-    INVENTORY_EDITED = "inventory_edited"
-    INVENTORY_CLOSED = "inventory_closed"
-
-    CUSTOMER_CREATED = "customer_created"
-    CUSTOMER_EDITED = "customer_edited"
-    CUSTOMER_ACTIVATED = "customer_activated"
-    CUSTOMER_DEACTIVATED = "customer_deactivated"
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,150 +57,6 @@ class AccountRecord:
     date_joined: datetime
 
 
-@dataclass(frozen=True, slots=True)
-class AccountActivity:
-    occurred_at: datetime
-    kind: AccountActivityKind
-    target: object
-
-
-@dataclass(frozen=True, slots=True)
-class ActivitySpec:
-    model: type
-    actor_field: str
-    occurred_at_field: str
-    kind: AccountActivityKind
-    select_related: tuple[str, ...] = ()
-
-
-ORDER_ACTIVITY_SPECS = (
-    ActivitySpec(
-        model=Order,
-        actor_field="placed_by",
-        occurred_at_field="placed_at",
-        kind=AccountActivityKind.ORDER_PLACED,
-        select_related=("customer",),
-    ),
-    ActivitySpec(
-        model=Order,
-        actor_field="packed_by",
-        occurred_at_field="packed_at",
-        kind=AccountActivityKind.ORDER_PACKED,
-        select_related=("customer",),
-    ),
-    ActivitySpec(
-        model=Order,
-        actor_field="delivered_by",
-        occurred_at_field="delivered_at",
-        kind=AccountActivityKind.ORDER_DELIVERED,
-        select_related=("customer",),
-    ),
-    ActivitySpec(
-        model=Order,
-        actor_field="cancelled_by",
-        occurred_at_field="cancelled_at",
-        kind=AccountActivityKind.ORDER_CANCELLED,
-        select_related=("customer",),
-    ),
-    ActivitySpec(
-        model=Order,
-        actor_field="edited_by",
-        occurred_at_field="edited_at",
-        kind=AccountActivityKind.ORDER_EDITED,
-        select_related=("customer",),
-    ),
-)
-
-
-PRODUCT_ACTIVITY_SPECS = (
-    ActivitySpec(
-        model=Product,
-        actor_field="created_by",
-        occurred_at_field="created_at",
-        kind=AccountActivityKind.PRODUCT_CREATED,
-    ),
-    ActivitySpec(
-        model=Product,
-        actor_field="edited_by",
-        occurred_at_field="edited_at",
-        kind=AccountActivityKind.PRODUCT_EDITED,
-    ),
-    ActivitySpec(
-        model=Product,
-        actor_field="activated_by",
-        occurred_at_field="activated_at",
-        kind=AccountActivityKind.PRODUCT_ACTIVATED,
-    ),
-    ActivitySpec(
-        model=Product,
-        actor_field="deactivated_by",
-        occurred_at_field="deactivated_at",
-        kind=AccountActivityKind.PRODUCT_DEACTIVATED,
-    ),
-)
-
-
-INVENTORY_ACTIVITY_SPECS = (
-    ActivitySpec(
-        model=InventoryBatch,
-        actor_field="created_by",
-        occurred_at_field="created_at",
-        kind=AccountActivityKind.INVENTORY_ADDED,
-        select_related=("product",),
-    ),
-    ActivitySpec(
-        model=InventoryBatch,
-        actor_field="edited_by",
-        occurred_at_field="edited_at",
-        kind=AccountActivityKind.INVENTORY_EDITED,
-        select_related=("product",),
-    ),
-    ActivitySpec(
-        model=InventoryBatch,
-        actor_field="closed_by",
-        occurred_at_field="closed_at",
-        kind=AccountActivityKind.INVENTORY_CLOSED,
-        select_related=("product",),
-    ),
-)
-
-
-CUSTOMER_ACTIVITY_SPECS = (
-    ActivitySpec(
-        model=Customer,
-        actor_field="created_by",
-        occurred_at_field="created_at",
-        kind=AccountActivityKind.CUSTOMER_CREATED,
-    ),
-    ActivitySpec(
-        model=Customer,
-        actor_field="edited_by",
-        occurred_at_field="edited_at",
-        kind=AccountActivityKind.CUSTOMER_EDITED,
-    ),
-    ActivitySpec(
-        model=Customer,
-        actor_field="activated_by",
-        occurred_at_field="activated_at",
-        kind=AccountActivityKind.CUSTOMER_ACTIVATED,
-    ),
-    ActivitySpec(
-        model=Customer,
-        actor_field="deactivated_by",
-        occurred_at_field="deactivated_at",
-        kind=AccountActivityKind.CUSTOMER_DEACTIVATED,
-    ),
-)
-
-
-ACCOUNT_ACTIVITY_SPECS = (
-    *ORDER_ACTIVITY_SPECS,
-    *PRODUCT_ACTIVITY_SPECS,
-    *INVENTORY_ACTIVITY_SPECS,
-    *CUSTOMER_ACTIVITY_SPECS,
-)
-
-
 def get_account_user(*, user_id: int):
     return get_object_or_404(
         User.objects.select_related(
@@ -239,7 +71,10 @@ def get_account_record(*, user) -> AccountRecord:
     return _build_account_record(user)
 
 
-def list_internal_account_records(*, sort: str) -> tuple[AccountRecord, ...]:
+def list_internal_account_records(
+    *,
+    sort: str,
+) -> tuple[AccountRecord, ...]:
     return _list_account_records_for_roles(
         roles=INTERNAL_ACCOUNT_ROLES,
         sort=sort,
@@ -251,30 +86,26 @@ def list_business_customer_account_records(
     sort: str,
 ) -> tuple[AccountRecord, ...]:
     return _list_account_records_for_roles(
-        roles=frozenset({AccountRole.BUSINESS_CUSTOMER}),
+        roles=frozenset(
+            {
+                AccountRole.BUSINESS_CUSTOMER,
+            }
+        ),
         sort=sort,
     )
 
 
-def list_unlinked_account_records(*, sort: str) -> tuple[AccountRecord, ...]:
+def list_unlinked_account_records(
+    *,
+    sort: str,
+) -> tuple[AccountRecord, ...]:
     return _list_account_records_for_roles(
-        roles=frozenset({AccountRole.UNKNOWN}),
+        roles=frozenset(
+            {
+                AccountRole.UNKNOWN,
+            }
+        ),
         sort=sort,
-    )
-
-
-def list_account_activities(*, user) -> tuple[AccountActivity, ...]:
-    activities = _activities_from_specs(
-        user=user,
-        specs=ACCOUNT_ACTIVITY_SPECS,
-    )
-
-    return tuple(
-        sorted(
-            activities,
-            key=lambda activity: activity.occurred_at,
-            reverse=True,
-        )[:ACCOUNT_ACTIVITY_LIMIT]
     )
 
 
@@ -419,18 +250,24 @@ def _account_sort_key(sort_key: str):
     )
 
 
-def _email_sort_key(record: AccountRecord):
+def _email_sort_key(
+    record: AccountRecord,
+):
     return record.email.casefold()
 
 
-def _role_sort_key(record: AccountRecord):
+def _role_sort_key(
+    record: AccountRecord,
+):
     return (
         get_role_rank(record.account_role),
         record.email.casefold(),
     )
 
 
-def _linked_identity_sort_key(record: AccountRecord):
+def _linked_identity_sort_key(
+    record: AccountRecord,
+):
     identity = record.identity
 
     return (
@@ -441,21 +278,27 @@ def _linked_identity_sort_key(record: AccountRecord):
     )
 
 
-def _status_sort_key(record: AccountRecord):
+def _status_sort_key(
+    record: AccountRecord,
+):
     return (
         0 if record.is_active else 1,
         record.email.casefold(),
     )
 
 
-def _last_login_sort_key(record: AccountRecord):
+def _last_login_sort_key(
+    record: AccountRecord,
+):
     return (
         record.last_login or _oldest_datetime(),
         record.email.casefold(),
     )
 
 
-def _date_joined_sort_key(record: AccountRecord):
+def _date_joined_sort_key(
+    record: AccountRecord,
+):
     return (
         record.date_joined,
         record.email.casefold(),
@@ -466,45 +309,6 @@ def _oldest_datetime() -> datetime:
     return datetime.min.replace(
         tzinfo=timezone.get_current_timezone()
     )
-
-
-def _activities_from_specs(
-    *,
-    user,
-    specs: tuple[ActivitySpec, ...],
-) -> list[AccountActivity]:
-    activities: list[AccountActivity] = []
-
-    for spec in specs:
-        queryset = spec.model.objects.filter(
-            **{
-                spec.actor_field: user,
-                f"{spec.occurred_at_field}__isnull": False,
-            }
-        )
-
-        if spec.select_related:
-            queryset = queryset.select_related(
-                *spec.select_related
-            )
-
-        queryset = queryset.order_by(
-            f"-{spec.occurred_at_field}"
-        )[:ACCOUNT_ACTIVITY_LIMIT]
-
-        activities.extend(
-            AccountActivity(
-                occurred_at=getattr(
-                    item,
-                    spec.occurred_at_field,
-                ),
-                kind=spec.kind,
-                target=item,
-            )
-            for item in queryset
-        )
-
-    return activities
 
 
 def _has_staff_account(user) -> bool:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from datetime import datetime
 from decimal import Decimal
 
@@ -111,4 +112,82 @@ def get_product_delivered_demand_summary(
         delivered_quantity=delivered_quantity,
         average_quantity_per_delivered_order=average,
         last_delivered_at=stats["last_delivered_at"],
+    )
+
+
+class ProductActivityKind(StrEnum):
+    CREATED = "created"
+    EDITED = "edited"
+    ACTIVATED = "activated"
+    DEACTIVATED = "deactivated"
+
+
+@dataclass(frozen=True, slots=True)
+class ProductActivity:
+    occurred_at: datetime
+    kind: ProductActivityKind
+    product: Product
+
+
+_PRODUCT_ACTIVITY_SPECS = (
+    (
+        "created_by",
+        "created_at",
+        ProductActivityKind.CREATED,
+    ),
+    (
+        "edited_by",
+        "edited_at",
+        ProductActivityKind.EDITED,
+    ),
+    (
+        "activated_by",
+        "activated_at",
+        ProductActivityKind.ACTIVATED,
+    ),
+    (
+        "deactivated_by",
+        "deactivated_at",
+        ProductActivityKind.DEACTIVATED,
+    ),
+)
+
+
+def list_product_activity_for_actor(
+    *,
+    actor,
+    limit: int,
+) -> tuple[ProductActivity, ...]:
+    activities: list[ProductActivity] = []
+
+    for actor_field, occurred_at_field, kind in _PRODUCT_ACTIVITY_SPECS:
+        products = (
+            Product.objects
+            .filter(
+                **{
+                    actor_field: actor,
+                    f"{occurred_at_field}__isnull": False,
+                }
+            )
+            .order_by(f"-{occurred_at_field}")[:limit]
+        )
+
+        activities.extend(
+            ProductActivity(
+                occurred_at=getattr(
+                    product,
+                    occurred_at_field,
+                ),
+                kind=kind,
+                product=product,
+            )
+            for product in products
+        )
+
+    return tuple(
+        sorted(
+            activities,
+            key=lambda activity: activity.occurred_at,
+            reverse=True,
+        )[:limit]
     )

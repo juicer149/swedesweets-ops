@@ -10,10 +10,8 @@ from django.utils.translation import ngettext
 from accounts.activity_viewmodels import AccountActivityPresentation
 from accounts.presentation import AccountPresentation
 from accounts.roles import AccountRole, RoleSpec
-from accounts.selectors import (
-    AccountActivity,
-    AccountRecord,
-)
+from accounts.activity import AccountActivity
+from accounts.selectors import AccountRecord
 from common.detail_cards import (
     DetailAction,
     DetailCard,

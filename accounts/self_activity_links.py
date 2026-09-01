@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.urls import reverse
 
 from accounts.roles import Capability, RoleSpec
-from accounts.selectors import AccountActivity
+from accounts.activity import AccountActivity
 from customers.models import Customer
 from inventory.models import InventoryBatch
 from orders.models import Order

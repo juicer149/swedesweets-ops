@@ -6,7 +6,7 @@ from datetime import datetime
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from accounts.selectors import (
+from accounts.activity import (
     AccountActivity,
     AccountActivityKind,
 )

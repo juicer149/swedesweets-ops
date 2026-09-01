@@ -6,10 +6,8 @@ from django.urls import reverse
 
 from accounts.access import get_after_login_redirect_name
 from accounts.self_viewmodels import build_self_account_detail_context
-from accounts.selectors import (
-    get_account_record,
-    list_account_activities,
-)
+from accounts.activity_selectors import list_account_activities
+from accounts.selectors import get_account_record
 
 
 def inactive(request):

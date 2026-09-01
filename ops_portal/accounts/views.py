@@ -35,10 +35,10 @@ from accounts.models import (
     StaffAccount,
 )
 from accounts.roles import AccountRole
+from accounts.activity_selectors import list_account_activities
 from accounts.selectors import (
     get_account_record,
     get_account_user,
-    list_account_activities,
     list_business_customer_account_records,
     list_internal_account_records,
     list_unlinked_account_records,

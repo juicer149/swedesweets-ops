@@ -8,7 +8,7 @@ from accounts.activity_viewmodels import (
     AccountActivityPresentation,
     build_account_activity_presentations,
 )
-from accounts.selectors import AccountActivity
+from accounts.activity import AccountActivity
 from customers.models import Customer
 from inventory.models import InventoryBatch
 from orders.models import Order
