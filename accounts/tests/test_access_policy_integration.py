@@ -30,10 +30,10 @@ PRODUCT_KWARGS = {"product_pk": MISSING_OBJECT_ID}
 CUSTOMER_KWARGS = {"customer_pk": MISSING_OBJECT_ID}
 
 VIEW_KWARGS = {
-    "accounts:detail": ACCOUNT_USER_KWARGS,
-    "accounts:edit_internal": ACCOUNT_USER_KWARGS,
-    "accounts:activate_customer_account": ACCOUNT_USER_KWARGS,
-    "accounts:deactivate_customer_account": ACCOUNT_USER_KWARGS,
+    "ops_accounts:detail": ACCOUNT_USER_KWARGS,
+    "ops_accounts:edit_internal": ACCOUNT_USER_KWARGS,
+    "ops_accounts:activate_customer_account": ACCOUNT_USER_KWARGS,
+    "ops_accounts:deactivate_customer_account": ACCOUNT_USER_KWARGS,
     "orders:detail": ORDER_KWARGS,
     "orders:edit": ORDER_KWARGS,
     "orders:cancel": ORDER_KWARGS,

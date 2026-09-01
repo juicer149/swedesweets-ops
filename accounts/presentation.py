@@ -3,10 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from accounts.roles import AccountRole, get_role_label, get_staff_access_level_label
+from accounts.roles import (
+    AccountRole,
+    get_role_label,
+    get_staff_access_level_label,
+)
 from accounts.selectors import (
     AccountIdentity,
     AccountIdentityKind,
@@ -30,8 +33,6 @@ class AccountPresentation:
 
 def build_account_presentation(
     account: AccountRecord,
-    *,
-    link_customer: bool = True,
 ) -> AccountPresentation:
     return AccountPresentation(
         user_id=account.user_id,
@@ -39,10 +40,7 @@ def build_account_presentation(
         account_role=account.account_role,
         role_label=_role_label(account),
         linked_identity=_linked_identity_label(account.identity),
-        linked_identity_href=_linked_identity_href(
-            identity=account.identity,
-            link_customer=link_customer,
-        ),
+        linked_identity_href="",
         status_label=_status_label(
             is_active=account.is_active,
         ),
@@ -96,23 +94,10 @@ def _linked_identity_label(identity: AccountIdentity) -> str:
     return "—"
 
 
-def _linked_identity_href(
+def _status_label(
     *,
-    identity: AccountIdentity,
-    link_customer: bool,
+    is_active: bool,
 ) -> str:
-    if not link_customer or identity.customer_id is None:
-        return ""
-
-    return reverse(
-        "customers:detail",
-        kwargs={
-            "customer_pk": identity.customer_id,
-        },
-    )
-
-
-def _status_label(*, is_active: bool) -> str:
     if is_active:
         return _("Active")
 

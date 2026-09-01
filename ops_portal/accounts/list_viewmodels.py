@@ -6,9 +6,9 @@ from datetime import datetime
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.presentation import (
-    AccountPresentation,
-    build_account_presentation,
+from accounts.presentation import AccountPresentation
+from ops_portal.accounts.presentation import (
+    build_ops_account_presentation,
 )
 from accounts.selectors import AccountRecord
 from common.page_header import PageHeader, PageHeaderAction
@@ -95,12 +95,12 @@ def build_account_page_rows(
 def _build_account_page_row(
     record: AccountRecord,
 ) -> AccountPageRow:
-    account = build_account_presentation(record)
+    account = build_ops_account_presentation(record)
     status_tone = _status_tone(is_active=account.is_active)
     last_login_label = _datetime_label(account.last_login)
     date_joined_label = _datetime_label(account.date_joined)
     detail_href = reverse(
-        "accounts:detail",
+        "ops_accounts:detail",
         kwargs={"user_id": account.user_id},
     )
 
@@ -186,7 +186,7 @@ def _build_accounts_page_action(
     if active_view == ACCOUNT_VIEW_INTERNAL:
         return PageHeaderAction(
             label="Create internal account",
-            href=reverse("accounts:create_internal"),
+            href=reverse("ops_accounts:create_internal"),
             icon="plus",
             aria_label="Create internal staff account",
         )
@@ -194,7 +194,7 @@ def _build_accounts_page_action(
     if active_view == ACCOUNT_VIEW_CUSTOMER:
         return PageHeaderAction(
             label="Create customer account",
-            href=reverse("accounts:create_customer_account"),
+            href=reverse("ops_accounts:create_customer_account"),
             icon="plus",
             aria_label="Create customer login account",
         )
@@ -203,7 +203,7 @@ def _build_accounts_page_action(
 
 
 def _accounts_view_href(view: str) -> str:
-    return f"{reverse('accounts:index')}?view={view}#accounts-list"
+    return f"{reverse('ops_accounts:index')}?view={view}#accounts-list"
 
 
 def _status_tone(*, is_active: bool) -> str:

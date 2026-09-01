@@ -5,12 +5,15 @@ from typing import Any
 
 from django.urls import reverse
 
-from accounts.forms import (
+from ops_portal.accounts.list_viewmodels import (
+    ACCOUNT_VIEW_CUSTOMER,
+    ACCOUNT_VIEW_INTERNAL,
+)
+from ops_portal.accounts.forms import (
     CustomerAccountCreateForm,
     InternalAccountCreateForm,
     InternalAccountEditForm,
 )
-from accounts.list_viewmodels import ACCOUNT_VIEW_CUSTOMER, ACCOUNT_VIEW_INTERNAL
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,7 +23,9 @@ class AccountFormContext:
     submit_label: str
     cancel_url: str
     form: (
-        CustomerAccountCreateForm | InternalAccountCreateForm | InternalAccountEditForm
+        CustomerAccountCreateForm
+        | InternalAccountCreateForm
+        | InternalAccountEditForm
     )
 
     def as_dict(self) -> dict[str, Any]:
@@ -40,7 +45,9 @@ def build_create_customer_account_form_context(
     return AccountFormContext(
         form=form,
         title="Create customer account",
-        description=("Create a customer portal login linked to an existing customer."),
+        description=(
+            "Create a customer portal login linked to an existing customer."
+        ),
         submit_label="Create account",
         cancel_url=_accounts_customer_url(),
     )
@@ -53,7 +60,9 @@ def build_create_internal_account_form_context(
     return AccountFormContext(
         form=form,
         title="Create internal account",
-        description=("Create a login account for full or restricted operations staff."),
+        description=(
+            "Create a login account for full or restricted operations staff."
+        ),
         submit_label="Create account",
         cancel_url=_accounts_internal_url(),
     )
@@ -67,15 +76,28 @@ def build_edit_internal_account_form_context(
     return AccountFormContext(
         form=form,
         title="Edit internal account",
-        description=("Update account email, staff access level and login status."),
+        description=(
+            "Update account email, staff access level and login status."
+        ),
         submit_label="Save account",
-        cancel_url=reverse("accounts:detail", kwargs={"user_id": user_id}),
+        cancel_url=reverse(
+            "ops_accounts:detail",
+            kwargs={
+                "user_id": user_id,
+            },
+        ),
     )
 
 
 def _accounts_customer_url() -> str:
-    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
+    return (
+        f"{reverse('ops_accounts:index')}"
+        f"?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
+    )
 
 
 def _accounts_internal_url() -> str:
-    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_INTERNAL}#accounts-list"
+    return (
+        f"{reverse('ops_accounts:index')}"
+        f"?view={ACCOUNT_VIEW_INTERNAL}#accounts-list"
+    )

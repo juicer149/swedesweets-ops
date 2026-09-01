@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -30,37 +29,25 @@ class AccountActivityPresentation:
 
 def build_account_activity_presentations(
     activities: tuple[AccountActivity, ...],
-    *,
-    include_target_links: bool = True,
 ) -> tuple[AccountActivityPresentation, ...]:
     return tuple(
-        _build_account_activity_presentation(
-            activity,
-            include_target_links=include_target_links,
-        )
+        _build_account_activity_presentation(activity)
         for activity in activities
     )
 
 
 def _build_account_activity_presentation(
     activity: AccountActivity,
-    *,
-    include_target_links: bool,
 ) -> AccountActivityPresentation:
     return AccountActivityPresentation(
         occurred_at=activity.occurred_at,
         occurred_at_label=_datetime_label(activity.occurred_at),
         event_label=_event_label(activity.kind),
         target_label=_target_label(activity.target),
-        target_href=(
-            _target_href(activity.target)
-            if include_target_links
-            else ""
-        ),
+        target_href="",
         meta=_target_meta(activity.target),
         tone=_event_tone(activity.kind),
     )
-
 
 def _event_label(kind: AccountActivityKind) -> str:
     labels = {
@@ -140,43 +127,6 @@ def _target_meta(target: object) -> str:
 
         case Customer():
             return target.email
-
-    return ""
-
-
-def _target_href(target: object) -> str:
-    match target:
-        case Order():
-            return reverse(
-                "orders:detail",
-                kwargs={
-                    "order_id": target.pk,
-                },
-            )
-
-        case Product():
-            return reverse(
-                "products:detail",
-                kwargs={
-                    "product_pk": target.pk,
-                },
-            )
-
-        case InventoryBatch():
-            return reverse(
-                "inventory:detail",
-                kwargs={
-                    "batch_pk": target.pk,
-                },
-            )
-
-        case Customer():
-            return reverse(
-                "customers:detail",
-                kwargs={
-                    "customer_pk": target.pk,
-                },
-            )
 
     return ""
 

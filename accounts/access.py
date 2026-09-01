@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from accounts.roles import AccountRole, Capability, RoleSpec
 
+
 AUTH_EXEMPT_VIEWS = frozenset(
     {
         "login",
@@ -20,7 +21,6 @@ AUTH_EXEMPT_VIEWS = frozenset(
 
 CAPABILITIES = frozenset(
     {
-        Capability.MANAGE_ACCOUNTS,
         Capability.VIEW_OWN_ACCOUNT,
         Capability.EDIT_OWN_ACCOUNT,
     }
@@ -29,14 +29,7 @@ CAPABILITIES = frozenset(
 
 VIEW_CAPABILITIES = {
     "accounts:after_login": Capability.VIEW_OWN_ACCOUNT,
-    "accounts:index": Capability.MANAGE_ACCOUNTS,
     "accounts:me": Capability.VIEW_OWN_ACCOUNT,
-    "accounts:create_internal": Capability.MANAGE_ACCOUNTS,
-    "accounts:edit_internal": Capability.MANAGE_ACCOUNTS,
-    "accounts:create_customer_account": Capability.MANAGE_ACCOUNTS,
-    "accounts:activate_customer_account": Capability.MANAGE_ACCOUNTS,
-    "accounts:deactivate_customer_account": Capability.MANAGE_ACCOUNTS,
-    "accounts:detail": Capability.MANAGE_ACCOUNTS,
 }
 
 
@@ -52,13 +45,3 @@ def get_after_login_redirect_name(
         return "index"
 
     return "accounts:me"
-
-
-def can_manage_customer_account_status(
-    *,
-    target_account_role: AccountRole,
-    role_spec: RoleSpec,
-) -> bool:
-    return target_account_role == AccountRole.BUSINESS_CUSTOMER and role_spec.allows(
-        Capability.MANAGE_ACCOUNTS
-    )

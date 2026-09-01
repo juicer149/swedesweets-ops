@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from accounts.navigation import (
-    build_home_href,
-    build_staff_primary_nav_items,
-)
+from accounts.navigation import build_home_href
+from ops_portal.navigation import build_staff_primary_nav_items
 from accounts.roles import AccountRole
 from business_portal.navigation import (
     build_business_primary_nav_items,

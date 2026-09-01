@@ -30,6 +30,13 @@ urlpatterns = [
             namespace="accounts",
         ),
     ),
+    path(
+        "accounts/",
+        include(
+            "ops_portal.accounts.urls",
+            namespace="ops_accounts",
+        ),
+    ),
     # Django auth views:
     # /accounts/login/  -> name="login"
     # /accounts/logout/ -> name="logout"

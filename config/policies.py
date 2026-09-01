@@ -28,6 +28,9 @@ from inventory.access import (
 from ops_portal.access import (
     VIEW_CAPABILITIES as OPS_PORTAL_VIEW_CAPABILITIES,
 )
+from ops_portal.accounts.access import (
+    VIEW_CAPABILITIES as OPS_ACCOUNT_VIEW_CAPABILITIES,
+)
 from orders.access import (
     VIEW_CAPABILITIES as ORDER_VIEW_CAPABILITIES,
 )
@@ -59,6 +62,7 @@ AUTH_EXEMPT_VIEWS = frozenset(
 
 VIEW_CAPABILITIES = {
     **OPS_PORTAL_VIEW_CAPABILITIES,
+    **OPS_ACCOUNT_VIEW_CAPABILITIES,
     **ACCOUNT_VIEW_CAPABILITIES,
     **ORDER_VIEW_CAPABILITIES,
     **INVENTORY_VIEW_CAPABILITIES,

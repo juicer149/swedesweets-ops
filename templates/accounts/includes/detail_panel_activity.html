@@ -14,78 +14,123 @@
 
       <tbody>
         {% for row in activity_rows %}
-          <tr
-            class="clickable-row"
-            data-tone="{{ row.tone }}"
-            data-href="{{ row.target_href }}"
-            tabindex="0"
-            role="link"
-            aria-label="{% blocktrans with target=row.target_label %}Open {{ target }}{% endblocktrans %}"
-          >
-            <td>{{ row.occurred_at_label }}</td>
-            <td>{{ row.event_label }}</td>
+          {% if row.target_href %}
+            <tr
+              class="clickable-row"
+              data-tone="{{ row.tone }}"
+              data-href="{{ row.target_href }}"
+              tabindex="0"
+              role="link"
+              aria-label="{% blocktrans with target=row.target_label %}Open {{ target }}{% endblocktrans %}"
+            >
+          {% else %}
+            <tr data-tone="{{ row.tone }}">
+          {% endif %}
+              <td>{{ row.occurred_at_label }}</td>
+              <td>{{ row.event_label }}</td>
 
-            <th scope="row">
-              <span class="row-link">
-                {{ row.target_label }}
-              </span>
-            </th>
+              <th scope="row">
+                {% if row.target_href %}
+                  <span class="row-link">
+                    {{ row.target_label }}
+                  </span>
+                {% else %}
+                  {{ row.target_label }}
+                {% endif %}
+              </th>
 
-            <td>{{ row.meta }}</td>
-          </tr>
+              <td>{{ row.meta }}</td>
+            </tr>
         {% endfor %}
       </tbody>
     </table>
 
     <p class="table-hint">
-      {% trans "Select an activity row to open the affected record." %}
+      {% trans "Select an available activity row to open the affected record." %}
     </p>
   </div>
 
   <div class="mobile-card-list account-activity-card-list">
     {% for row in activity_rows %}
-      <a
-        class="mobile-card mobile-card--{{ row.tone }} mobile-card--clickable mobile-card--account-activity"
-        href="{{ row.target_href }}"
-        aria-label="{% blocktrans with target=row.target_label %}Open {{ target }}{% endblocktrans %}"
-      >
-        <div class="ui-card__row">
-          <div class="ui-card__cell ui-card__cell--left">
-            <span class="ui-card-id">
-              {{ row.event_label }}
-            </span>
+      {% if row.target_href %}
+        <a
+          class="mobile-card mobile-card--{{ row.tone }} mobile-card--clickable mobile-card--account-activity"
+          href="{{ row.target_href }}"
+          aria-label="{% blocktrans with target=row.target_label %}Open {{ target }}{% endblocktrans %}"
+        >
+          <div class="ui-card__row">
+            <div class="ui-card__cell ui-card__cell--left">
+              <span class="ui-card-id">
+                {{ row.event_label }}
+              </span>
+            </div>
+
+            <div class="ui-card__cell ui-card__cell--right">
+              <span class="ui-card-location">
+                <span class="ui-card-label">{% trans "Time" %}</span>
+                {{ row.occurred_at_label }}
+              </span>
+            </div>
           </div>
 
-          <div class="ui-card__cell ui-card__cell--right">
-            <span class="ui-card-location">
-              <span class="ui-card-label">{% trans "Time" %}</span>
-              {{ row.occurred_at_label }}
-            </span>
+          <div class="ui-card__row">
+            <div class="ui-card__cell ui-card__cell--left">
+              <span class="ui-card-title">
+                {{ row.target_label }}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div class="ui-card__row">
-          <div class="ui-card__cell ui-card__cell--left">
-            <span class="ui-card-title">
-              {{ row.target_label }}
-            </span>
+          <div class="ui-card__row">
+            <div class="ui-card__cell ui-card__cell--left">
+              <span class="ui-card-muted">
+                {{ row.meta }}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div class="ui-card__row">
-          <div class="ui-card__cell ui-card__cell--left">
-            <span class="ui-card-muted">
-              {{ row.meta }}
+          <footer class="ui-card__footer ui-card__footer--hint">
+            <span class="ui-card__hint">
+              {% trans "Open affected record" %}
             </span>
-          </div>
-        </div>
+          </footer>
+        </a>
+      {% else %}
+        <article
+          class="mobile-card mobile-card--{{ row.tone }} mobile-card--account-activity"
+        >
+          <div class="ui-card__row">
+            <div class="ui-card__cell ui-card__cell--left">
+              <span class="ui-card-id">
+                {{ row.event_label }}
+              </span>
+            </div>
 
-        <footer class="ui-card__footer ui-card__footer--hint">
-          <span class="ui-card__hint">
-            {% trans "Open affected record" %}
-          </span>
-        </footer>
-      </a>
+            <div class="ui-card__cell ui-card__cell--right">
+              <span class="ui-card-location">
+                <span class="ui-card-label">{% trans "Time" %}</span>
+                {{ row.occurred_at_label }}
+              </span>
+            </div>
+          </div>
+
+          <div class="ui-card__row">
+            <div class="ui-card__cell ui-card__cell--left">
+              <span class="ui-card-title">
+                {{ row.target_label }}
+              </span>
+            </div>
+          </div>
+
+          <div class="ui-card__row">
+            <div class="ui-card__cell ui-card__cell--left">
+              <span class="ui-card-muted">
+                {{ row.meta }}
+              </span>
+            </div>
+          </div>
+        </article>
+      {% endif %}
     {% endfor %}
   </div>
 {% else %}
