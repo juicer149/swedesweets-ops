@@ -4,10 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from accounts.access import get_after_login_redirect_name
 from accounts.self_viewmodels import build_self_account_detail_context
 from accounts.activity_selectors import list_account_activities
 from accounts.selectors import get_account_record
+from config.login_routing import get_after_login_redirect_name
 
 
 def inactive(request):
