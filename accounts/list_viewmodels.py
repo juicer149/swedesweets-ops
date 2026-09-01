@@ -6,7 +6,11 @@ from datetime import datetime
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.selectors import AccountListRow
+from accounts.presentation import (
+    AccountPresentation,
+    build_account_presentation,
+)
+from accounts.selectors import AccountRecord
 from common.page_header import PageHeader, PageHeaderAction
 from common.ui import (
     TONE_MUTED,
@@ -80,30 +84,39 @@ def build_account_view_links(
 
 
 def build_account_page_rows(
-    rows: tuple[AccountListRow, ...],
+    records: tuple[AccountRecord, ...],
 ) -> tuple[AccountPageRow, ...]:
-    return tuple(_build_account_page_row(row) for row in rows)
+    return tuple(
+        _build_account_page_row(record)
+        for record in records
+    )
 
 
-def _build_account_page_row(row: AccountListRow) -> AccountPageRow:
-    status_tone = _status_tone(is_active=row.is_active)
-    last_login_label = _datetime_label(row.last_login)
-    date_joined_label = _datetime_label(row.date_joined)
-    detail_href = reverse("accounts:detail", kwargs={"user_id": row.user_id})
+def _build_account_page_row(
+    record: AccountRecord,
+) -> AccountPageRow:
+    account = build_account_presentation(record)
+    status_tone = _status_tone(is_active=account.is_active)
+    last_login_label = _datetime_label(account.last_login)
+    date_joined_label = _datetime_label(account.date_joined)
+    detail_href = reverse(
+        "accounts:detail",
+        kwargs={"user_id": account.user_id},
+    )
 
     return AccountPageRow(
-        user_id=row.user_id,
-        email=row.email,
-        role_label=row.role_label,
-        linked_identity=row.linked_identity,
-        linked_identity_href=row.linked_identity_href,
-        status_label=row.status_label,
+        user_id=account.user_id,
+        email=account.email,
+        role_label=account.role_label,
+        linked_identity=account.linked_identity,
+        linked_identity_href=account.linked_identity_href,
+        status_label=account.status_label,
         status_tone=status_tone,
         last_login_label=last_login_label,
         date_joined_label=date_joined_label,
         detail_href=detail_href,
         card=_account_card(
-            row=row,
+            account=account,
             status_tone=status_tone,
             last_login_label=last_login_label,
             date_joined_label=date_joined_label,
@@ -114,38 +127,38 @@ def _build_account_page_row(row: AccountListRow) -> AccountPageRow:
 
 def _account_card(
     *,
-    row: AccountListRow,
+    account: AccountPresentation,
     status_tone: str,
     last_login_label: str,
     date_joined_label: str,
     detail_href: str,
 ) -> UiCard:
     return UiCard(
-        tone=TONE_NEUTRAL if row.is_active else TONE_MUTED,
+        tone=TONE_NEUTRAL if account.is_active else TONE_MUTED,
         css_class="mobile-card mobile-card--account",
         href=detail_href,
-        aria_label=f"View account {row.email}",
+        aria_label=f"View account {account.email}",
         rows=(
             UiCardRow(
                 left=UiText(
-                    text=row.email,
+                    text=account.email,
                     css_class="ui-card-title",
                 ),
                 right=UiText(
-                    text=row.status_label,
+                    text=account.status_label,
                     css_class=f"status-text status-text--{status_tone}",
                 ),
             ),
             UiCardRow(
                 left=UiText(
-                    text=row.role_label,
+                    text=account.role_label,
                     label="Role",
                     css_class="ui-card-location",
                 ),
             ),
             UiCardRow(
                 left=UiText(
-                    text=row.linked_identity,
+                    text=account.linked_identity,
                     label="Linked identity",
                     css_class="ui-card-location",
                 ),

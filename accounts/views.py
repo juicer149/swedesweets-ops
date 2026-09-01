@@ -38,12 +38,12 @@ from accounts.list_viewmodels import (
 from accounts.models import CustomerMembership, StaffAccount
 from accounts.roles import AccountRole
 from accounts.selectors import (
-    get_account_row,
+    get_account_record,
     get_account_user,
-    list_account_activity_rows,
-    list_customer_account_rows,
-    list_internal_account_rows,
-    list_unlinked_account_rows,
+    list_account_activities,
+    list_business_customer_account_records,
+    list_internal_account_records,
+    list_unlinked_account_records,
 )
 from accounts.services import (
     create_customer_account as create_customer_login_account,
@@ -69,7 +69,6 @@ ACCOUNT_ALLOWED_VIEWS = {
 ACCOUNT_LIST_ANCHOR = "accounts-list"
 ACCOUNT_VIEW_QUERY_KEY = "view"
 
-# TODO: Move account sort aliases closer to account selectors.
 ACCOUNT_SORTS = {
     "account": ("email", "username"),
     "-account": ("-email", "-username"),
@@ -105,7 +104,10 @@ ACCOUNT_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 
 
 def inactive(request):
-    return render(request, "accounts/inactive.html")
+    return render(
+        request,
+        "accounts/inactive.html",
+    )
 
 
 @login_required
@@ -120,7 +122,12 @@ def after_login(request):
 
 @login_required
 def index(request):
-    active_view = _active_account_view(request.GET.get(ACCOUNT_VIEW_QUERY_KEY, ""))
+    active_view = _active_account_view(
+        request.GET.get(
+            ACCOUNT_VIEW_QUERY_KEY,
+            "",
+        )
+    )
 
     controls = TableControls.from_request_values(
         base_path=request.path,
@@ -135,81 +142,134 @@ def index(request):
         },
     )
 
-    account_rows = _list_account_rows(
+    account_records = _list_account_records(
         active_view=active_view,
         sort=controls.active_sort,
     )
 
     context = {
-        "page_header": build_accounts_page_header(active_view=active_view),
-        "view_links": build_account_view_links(active_view=active_view),
-        "account_rows": build_account_page_rows(account_rows),
+        "page_header": build_accounts_page_header(
+            active_view=active_view
+        ),
+        "view_links": build_account_view_links(
+            active_view=active_view
+        ),
+        "account_rows": build_account_page_rows(
+            account_records
+        ),
         "filters": [],
-        "table_sorts": controls.build_table_sort_links(ACCOUNT_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(ACCOUNT_TABLE_SORTS),
-        "mobile_sort_direction": controls.build_mobile_sort_direction(),
-        "table_controls_template": ACCOUNT_TABLE_CONTROLS_TEMPLATE,
+        "table_sorts": controls.build_table_sort_links(
+            ACCOUNT_TABLE_SORTS
+        ),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(
+            ACCOUNT_TABLE_SORTS
+        ),
+        "mobile_sort_direction": (
+            controls.build_mobile_sort_direction()
+        ),
+        "table_controls_template": (
+            ACCOUNT_TABLE_CONTROLS_TEMPLATE
+        ),
         "numeric_table_fields": [],
         "active_view": active_view,
     }
 
-    return render(request, "accounts/index.html", context)
+    return render(
+        request,
+        "accounts/index.html",
+        context,
+    )
 
 
 @login_required
 def me(request):
-    account = get_account_row(user=request.user)
-    activity_rows = list_account_activity_rows(
-        user=request.user,
-        use_business_portal_links=hasattr(request.user, "customer_membership"),
+    account = get_account_record(
+        user=request.user
+    )
+    activities = list_account_activities(
+        user=request.user
     )
 
     context = build_self_account_detail_context(
         account=account,
-        activity_rows=activity_rows,
-        cancel_url=reverse("accounts:after_login"),
+        activity_rows=activities,
+        cancel_url=reverse(
+            "accounts:after_login"
+        ),
     ).as_dict()
 
-    return render(request, "accounts/detail.html", context)
+    return render(
+        request,
+        "accounts/detail.html",
+        context,
+    )
 
 
 @login_required
 def detail(request, user_id: int):
-    account_user = get_account_user(user_id=user_id)
-    account = get_account_row(user=account_user)
-    activity_rows = list_account_activity_rows(user=account_user)
+    account_user = get_account_user(
+        user_id=user_id
+    )
+    account = get_account_record(
+        user=account_user
+    )
+    activities = list_account_activities(
+        user=account_user
+    )
 
     context = build_account_detail_context(
         account=account,
-        activity_rows=activity_rows,
-        cancel_url=_accounts_url_for_account(account),
+        activity_rows=activities,
+        cancel_url=_accounts_url_for_account(
+            account
+        ),
         role_spec=request.role_spec,
-        edit_url=_internal_account_edit_url(account_user),
+        edit_url=_internal_account_edit_url(
+            account_user
+        ),
     ).as_dict()
 
-    return render(request, "accounts/detail.html", context)
+    return render(
+        request,
+        "accounts/detail.html",
+        context,
+    )
 
 
 @login_required
 def create_internal(request):
     if request.method == "POST":
-        form = InternalAccountCreateForm(request.POST)
+        form = InternalAccountCreateForm(
+            request.POST
+        )
 
         if form.is_valid():
             try:
                 result = create_internal_account(
                     email=form.cleaned_data["email"],
-                    access_level=form.cleaned_data["access_level"],
-                    password=form.cleaned_data["password1"],
+                    access_level=form.cleaned_data[
+                        "access_level"
+                    ],
+                    password=form.cleaned_data[
+                        "password1"
+                    ],
                 )
             except AccountCreationError as error:
-                form.add_error(None, str(error))
+                form.add_error(
+                    None,
+                    str(error),
+                )
             else:
                 messages.success(
                     request,
-                    f"Internal account {result.user.email} created.",
+                    (
+                        f"Internal account "
+                        f"{result.user.email} created."
+                    ),
                 )
-                return redirect(_accounts_internal_url())
+                return redirect(
+                    _accounts_internal_url()
+                )
     else:
         form = InternalAccountCreateForm()
 
@@ -217,37 +277,65 @@ def create_internal(request):
         form=form,
     ).as_dict()
 
-    return render(request, "accounts/account_form.html", context)
+    return render(
+        request,
+        "accounts/account_form.html",
+        context,
+    )
 
 
 @login_required
-def edit_internal(request, user_id: int):
+def edit_internal(
+    request,
+    user_id: int,
+):
     staff_account = get_object_or_404(
-        StaffAccount.objects.select_related("user"),
+        StaffAccount.objects.select_related(
+            "user"
+        ),
         user_id=user_id,
     )
     account_user = staff_account.user
 
     if request.method == "POST":
-        form = InternalAccountEditForm(request.POST)
+        form = InternalAccountEditForm(
+            request.POST
+        )
 
         if form.is_valid():
             try:
                 update_internal_account(
                     user=account_user,
-                    email=form.cleaned_data["email"],
-                    first_name=form.cleaned_data["first_name"],
-                    last_name=form.cleaned_data["last_name"],
-                    access_level=form.cleaned_data["access_level"],
-                    is_active=form.cleaned_data["is_active"],
+                    email=form.cleaned_data[
+                        "email"
+                    ],
+                    first_name=form.cleaned_data[
+                        "first_name"
+                    ],
+                    last_name=form.cleaned_data[
+                        "last_name"
+                    ],
+                    access_level=form.cleaned_data[
+                        "access_level"
+                    ],
+                    is_active=form.cleaned_data[
+                        "is_active"
+                    ],
                     actor=request.user,
                 )
             except AccountCreationError as error:
-                form.add_error(None, str(error))
+                form.add_error(
+                    None,
+                    str(error),
+                )
             else:
                 messages.success(
                     request,
-                    f"Internal account {form.cleaned_data['email']} updated.",
+                    (
+                        f"Internal account "
+                        f"{form.cleaned_data['email']} "
+                        f"updated."
+                    ),
                 )
                 return redirect(
                     "accounts:detail",
@@ -255,7 +343,9 @@ def edit_internal(request, user_id: int):
                 )
     else:
         form = InternalAccountEditForm(
-            initial=_internal_account_edit_initial(staff_account)
+            initial=_internal_account_edit_initial(
+                staff_account
+            )
         )
 
     context = build_edit_internal_account_form_context(
@@ -263,29 +353,49 @@ def edit_internal(request, user_id: int):
         user_id=account_user.pk,
     ).as_dict()
 
-    return render(request, "accounts/account_form.html", context)
+    return render(
+        request,
+        "accounts/account_form.html",
+        context,
+    )
 
 
 @login_required
 def create_customer_account(request):
     if request.method == "POST":
-        form = CustomerAccountCreateForm(request.POST)
+        form = CustomerAccountCreateForm(
+            request.POST
+        )
 
         if form.is_valid():
             try:
                 result = create_customer_login_account(
-                    email=form.cleaned_data["email"],
-                    customer=form.cleaned_data["customer"],
-                    password=form.cleaned_data["password1"],
+                    email=form.cleaned_data[
+                        "email"
+                    ],
+                    customer=form.cleaned_data[
+                        "customer"
+                    ],
+                    password=form.cleaned_data[
+                        "password1"
+                    ],
                 )
             except AccountCreationError as error:
-                form.add_error(None, str(error))
+                form.add_error(
+                    None,
+                    str(error),
+                )
             else:
                 messages.success(
                     request,
-                    f"Customer account {result.user.email} created.",
+                    (
+                        f"Customer account "
+                        f"{result.user.email} created."
+                    ),
                 )
-                return redirect(_accounts_customer_url())
+                return redirect(
+                    _accounts_customer_url()
+                )
     else:
         form = CustomerAccountCreateForm()
 
@@ -293,11 +403,18 @@ def create_customer_account(request):
         form=form,
     ).as_dict()
 
-    return render(request, "accounts/account_form.html", context)
+    return render(
+        request,
+        "accounts/account_form.html",
+        context,
+    )
 
 
 @login_required
-def activate_customer_account(request, user_id: int):
+def activate_customer_account(
+    request,
+    user_id: int,
+):
     return _change_customer_account_status(
         request=request,
         user_id=user_id,
@@ -306,7 +423,10 @@ def activate_customer_account(request, user_id: int):
 
 
 @login_required
-def deactivate_customer_account(request, user_id: int):
+def deactivate_customer_account(
+    request,
+    user_id: int,
+):
     return _change_customer_account_status(
         request=request,
         user_id=user_id,
@@ -321,16 +441,23 @@ def _change_customer_account_status(
     is_active: bool,
 ):
     membership = get_object_or_404(
-        CustomerMembership.objects.select_related("user", "customer"),
+        CustomerMembership.objects.select_related(
+            "user",
+            "customer",
+        ),
         user_id=user_id,
     )
     account_user = membership.user
 
     if not can_manage_customer_account_status(
-        target_account_role=AccountRole.BUSINESS_CUSTOMER,
+        target_account_role=(
+            AccountRole.BUSINESS_CUSTOMER
+        ),
         role_spec=request.role_spec,
     ):
-        raise PermissionDenied("You cannot change this account status.")
+        raise PermissionDenied(
+            "You cannot change this account status."
+        )
 
     if request.method == "POST":
         try:
@@ -340,7 +467,10 @@ def _change_customer_account_status(
                 actor=request.user,
             )
         except AccountCreationError as error:
-            messages.error(request, str(error))
+            messages.error(
+                request,
+                str(error),
+            )
         else:
             messages.success(
                 request,
@@ -350,7 +480,10 @@ def _change_customer_account_status(
                 ),
             )
 
-        return redirect("accounts:detail", user_id=account_user.pk)
+        return redirect(
+            "accounts:detail",
+            user_id=account_user.pk,
+        )
 
     context = build_customer_account_status_context(
         membership=membership,
@@ -364,66 +497,100 @@ def _change_customer_account_status(
     )
 
 
-def _list_account_rows(
+def _list_account_records(
     *,
     active_view: str,
     sort: str,
 ):
     if active_view == ACCOUNT_VIEW_CUSTOMER:
-        return list_customer_account_rows(sort=sort)
+        return (
+            list_business_customer_account_records(
+                sort=sort
+            )
+        )
 
     if active_view == ACCOUNT_VIEW_UNLINKED:
-        return list_unlinked_account_rows(sort=sort)
+        return list_unlinked_account_records(
+            sort=sort
+        )
 
-    return list_internal_account_rows(sort=sort)
+    return list_internal_account_records(
+        sort=sort
+    )
 
 
-def _active_account_view(value: str) -> str:
+def _active_account_view(
+    value: str,
+) -> str:
     if value in ACCOUNT_ALLOWED_VIEWS:
         return value
 
     return ACCOUNT_DEFAULT_VIEW
 
 
-def _internal_account_edit_initial(staff_account: StaffAccount) -> dict:
+def _internal_account_edit_initial(
+    staff_account: StaffAccount,
+) -> dict:
     user = staff_account.user
 
     return {
         "email": user.email,
         "first_name": user.first_name,
         "last_name": user.last_name,
-        "access_level": staff_account.access_level,
+        "access_level": (
+            staff_account.access_level
+        ),
         "is_active": user.is_active,
     }
 
 
-def _internal_account_edit_url(user) -> str:
-    if not hasattr(user, "staff_account"):
+def _internal_account_edit_url(
+    user,
+) -> str:
+    if not hasattr(
+        user,
+        "staff_account",
+    ):
         return ""
 
     return reverse(
         "accounts:edit_internal",
-        kwargs={"user_id": user.pk},
+        kwargs={
+            "user_id": user.pk,
+        },
     )
 
 
-def _accounts_url_for_account(account) -> str:
-    if account.account_role == AccountRole.BUSINESS_CUSTOMER:
-        return _accounts_customer_url()
+def _accounts_url_for_account(
+    account,
+) -> str:
+    match account.account_role:
+        case AccountRole.BUSINESS_CUSTOMER:
+            return _accounts_customer_url()
 
-    if account.account_role == AccountRole.UNKNOWN:
-        return _accounts_unlinked_url()
+        case AccountRole.UNKNOWN:
+            return _accounts_unlinked_url()
 
-    return _accounts_internal_url()
+        case _:
+            return _accounts_internal_url()
 
 
 def _accounts_internal_url() -> str:
-    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_INTERNAL}#accounts-list"
+    return (
+        f"{reverse('accounts:index')}"
+        "?view=internal#accounts-list"
+    )
 
 
 def _accounts_customer_url() -> str:
-    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_CUSTOMER}#accounts-list"
+    return (
+        f"{reverse('accounts:index')}"
+        "?view=customer#accounts-list"
+    )
 
 
 def _accounts_unlinked_url() -> str:
-    return f"{reverse('accounts:index')}?view={ACCOUNT_VIEW_UNLINKED}#accounts-list"
+    return (
+        f"{reverse('accounts:index')}"
+        "?view=unlinked#accounts-list"
+    )

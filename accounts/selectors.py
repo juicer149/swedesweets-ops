@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext as _
 
 from accounts.errors import InvalidAccountIdentity
 from accounts.permissions import resolve_account_role
-from accounts.roles import (
-    AccountRole,
-    StaffAccessLevel,
-    get_role_label,
-    get_role_rank,
-    get_staff_access_level_label,
-)
+from accounts.roles import AccountRole, StaffAccessLevel, get_role_rank
 from customers.models import Customer
 from inventory.models import InventoryBatch
 from orders.models import Order
@@ -38,37 +30,62 @@ INTERNAL_ACCOUNT_ROLES = frozenset(
 ACCOUNT_ACTIVITY_LIMIT = 24
 
 
+class AccountIdentityKind(StrEnum):
+    OWNER = "owner"
+    STAFF = "staff"
+    BUSINESS_CUSTOMER = "business_customer"
+    INVALID_STAFF_AND_CUSTOMER = "invalid_staff_and_customer"
+    INVALID_STAFF = "invalid_staff"
+    INVALID_CUSTOMER = "invalid_customer"
+    UNLINKED = "unlinked"
+
+
+class AccountActivityKind(StrEnum):
+    ORDER_PLACED = "order_placed"
+    ORDER_PACKED = "order_packed"
+    ORDER_DELIVERED = "order_delivered"
+    ORDER_CANCELLED = "order_cancelled"
+    ORDER_EDITED = "order_edited"
+
+    PRODUCT_CREATED = "product_created"
+    PRODUCT_EDITED = "product_edited"
+    PRODUCT_ACTIVATED = "product_activated"
+    PRODUCT_DEACTIVATED = "product_deactivated"
+
+    INVENTORY_ADDED = "inventory_added"
+    INVENTORY_EDITED = "inventory_edited"
+    INVENTORY_CLOSED = "inventory_closed"
+
+    CUSTOMER_CREATED = "customer_created"
+    CUSTOMER_EDITED = "customer_edited"
+    CUSTOMER_ACTIVATED = "customer_activated"
+    CUSTOMER_DEACTIVATED = "customer_deactivated"
+
+
 @dataclass(frozen=True, slots=True)
-class AccountListRow:
+class AccountIdentity:
+    kind: AccountIdentityKind
+    customer_id: int | None = None
+    customer_name: str = ""
+    staff_access_level: StaffAccessLevel | str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AccountRecord:
     user_id: int
     email: str
     account_role: AccountRole
-    role_label: str
-    linked_identity: str
-    linked_identity_href: str
-    status_label: str
+    identity: AccountIdentity
     is_active: bool
     last_login: datetime | None
     date_joined: datetime
 
 
 @dataclass(frozen=True, slots=True)
-class AccountActivityRow:
+class AccountActivity:
     occurred_at: datetime
-    occurred_at_label: str
-    event_label: str
-    target_label: str
-    target_href: str
-    meta: str
-    tone: str
-
-
-@dataclass(frozen=True, slots=True)
-class ResolvedAccountIdentity:
-    account_role: AccountRole
-    role_label: str
-    linked_identity: str
-    linked_identity_href: str = ""
+    kind: AccountActivityKind
+    target: object
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,12 +93,7 @@ class ActivitySpec:
     model: type
     actor_field: str
     occurred_at_field: str
-    event_label: str
-    route_name: str
-    route_kwarg: str
-    target_label: Callable[[object], str]
-    meta: Callable[[object], str]
-    tone: str
+    kind: AccountActivityKind
     select_related: tuple[str, ...] = ()
 
 
@@ -90,60 +102,35 @@ ORDER_ACTIVITY_SPECS = (
         model=Order,
         actor_field="placed_by",
         occurred_at_field="placed_at",
-        event_label=_("Placed order"),
-        route_name="orders:detail",
-        route_kwarg="order_id",
-        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
-        meta=lambda order: order.customer_name,
-        tone="warning",
+        kind=AccountActivityKind.ORDER_PLACED,
         select_related=("customer",),
     ),
     ActivitySpec(
         model=Order,
         actor_field="packed_by",
         occurred_at_field="packed_at",
-        event_label=_("Packed order"),
-        route_name="orders:detail",
-        route_kwarg="order_id",
-        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
-        meta=lambda order: order.customer_name,
-        tone="info",
+        kind=AccountActivityKind.ORDER_PACKED,
         select_related=("customer",),
     ),
     ActivitySpec(
         model=Order,
         actor_field="delivered_by",
         occurred_at_field="delivered_at",
-        event_label=_("Delivered order"),
-        route_name="orders:detail",
-        route_kwarg="order_id",
-        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
-        meta=lambda order: order.customer_name,
-        tone="success",
+        kind=AccountActivityKind.ORDER_DELIVERED,
         select_related=("customer",),
     ),
     ActivitySpec(
         model=Order,
         actor_field="cancelled_by",
         occurred_at_field="cancelled_at",
-        event_label=_("Cancelled order"),
-        route_name="orders:detail",
-        route_kwarg="order_id",
-        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
-        meta=lambda order: order.customer_name,
-        tone="danger",
+        kind=AccountActivityKind.ORDER_CANCELLED,
         select_related=("customer",),
     ),
     ActivitySpec(
         model=Order,
         actor_field="edited_by",
         occurred_at_field="edited_at",
-        event_label=_("Edited order"),
-        route_name="orders:detail",
-        route_kwarg="order_id",
-        target_label=lambda order: _("Order #%(order_id)s") % {"order_id": order.pk},
-        meta=lambda order: order.customer_name,
-        tone="neutral",
+        kind=AccountActivityKind.ORDER_EDITED,
         select_related=("customer",),
     ),
 )
@@ -154,45 +141,25 @@ PRODUCT_ACTIVITY_SPECS = (
         model=Product,
         actor_field="created_by",
         occurred_at_field="created_at",
-        event_label="Created product",
-        route_name="products:detail",
-        route_kwarg="product_pk",
-        target_label=lambda product: product.display_name,
-        meta=lambda product: product.code_label,
-        tone="success",
+        kind=AccountActivityKind.PRODUCT_CREATED,
     ),
     ActivitySpec(
         model=Product,
         actor_field="edited_by",
         occurred_at_field="edited_at",
-        event_label="Edited product",
-        route_name="products:detail",
-        route_kwarg="product_pk",
-        target_label=lambda product: product.display_name,
-        meta=lambda product: product.code_label,
-        tone="neutral",
+        kind=AccountActivityKind.PRODUCT_EDITED,
     ),
     ActivitySpec(
         model=Product,
         actor_field="activated_by",
         occurred_at_field="activated_at",
-        event_label="Activated product",
-        route_name="products:detail",
-        route_kwarg="product_pk",
-        target_label=lambda product: product.display_name,
-        meta=lambda product: product.code_label,
-        tone="success",
+        kind=AccountActivityKind.PRODUCT_ACTIVATED,
     ),
     ActivitySpec(
         model=Product,
         actor_field="deactivated_by",
         occurred_at_field="deactivated_at",
-        event_label="Deactivated product",
-        route_name="products:detail",
-        route_kwarg="product_pk",
-        target_label=lambda product: product.display_name,
-        meta=lambda product: product.code_label,
-        tone="muted",
+        kind=AccountActivityKind.PRODUCT_DEACTIVATED,
     ),
 )
 
@@ -202,36 +169,21 @@ INVENTORY_ACTIVITY_SPECS = (
         model=InventoryBatch,
         actor_field="created_by",
         occurred_at_field="created_at",
-        event_label="Added batch",
-        route_name="inventory:detail",
-        route_kwarg="batch_pk",
-        target_label=lambda batch: batch.batch_id,
-        meta=lambda batch: batch.product.display_name,
-        tone="success",
+        kind=AccountActivityKind.INVENTORY_ADDED,
         select_related=("product",),
     ),
     ActivitySpec(
         model=InventoryBatch,
         actor_field="edited_by",
         occurred_at_field="edited_at",
-        event_label="Edited batch",
-        route_name="inventory:detail",
-        route_kwarg="batch_pk",
-        target_label=lambda batch: batch.batch_id,
-        meta=lambda batch: batch.product.display_name,
-        tone="neutral",
+        kind=AccountActivityKind.INVENTORY_EDITED,
         select_related=("product",),
     ),
     ActivitySpec(
         model=InventoryBatch,
         actor_field="closed_by",
         occurred_at_field="closed_at",
-        event_label="Closed batch",
-        route_name="inventory:detail",
-        route_kwarg="batch_pk",
-        target_label=lambda batch: batch.batch_id,
-        meta=lambda batch: batch.product.display_name,
-        tone="muted",
+        kind=AccountActivityKind.INVENTORY_CLOSED,
         select_related=("product",),
     ),
 )
@@ -242,45 +194,25 @@ CUSTOMER_ACTIVITY_SPECS = (
         model=Customer,
         actor_field="created_by",
         occurred_at_field="created_at",
-        event_label="Created customer",
-        route_name="customers:detail",
-        route_kwarg="customer_pk",
-        target_label=lambda customer: customer.name,
-        meta=lambda customer: customer.email,
-        tone="success",
+        kind=AccountActivityKind.CUSTOMER_CREATED,
     ),
     ActivitySpec(
         model=Customer,
         actor_field="edited_by",
         occurred_at_field="edited_at",
-        event_label="Edited customer",
-        route_name="customers:detail",
-        route_kwarg="customer_pk",
-        target_label=lambda customer: customer.name,
-        meta=lambda customer: customer.email,
-        tone="neutral",
+        kind=AccountActivityKind.CUSTOMER_EDITED,
     ),
     ActivitySpec(
         model=Customer,
         actor_field="activated_by",
         occurred_at_field="activated_at",
-        event_label="Activated customer",
-        route_name="customers:detail",
-        route_kwarg="customer_pk",
-        target_label=lambda customer: customer.name,
-        meta=lambda customer: customer.email,
-        tone="success",
+        kind=AccountActivityKind.CUSTOMER_ACTIVATED,
     ),
     ActivitySpec(
         model=Customer,
         actor_field="deactivated_by",
         occurred_at_field="deactivated_at",
-        event_label="Deactivated customer",
-        route_name="customers:detail",
-        route_kwarg="customer_pk",
-        target_label=lambda customer: customer.name,
-        meta=lambda customer: customer.email,
-        tone="muted",
+        kind=AccountActivityKind.CUSTOMER_DEACTIVATED,
     ),
 )
 
@@ -303,151 +235,148 @@ def get_account_user(*, user_id: int):
     )
 
 
-def get_account_row(*, user) -> AccountListRow:
-    return _build_account_row(user)
+def get_account_record(*, user) -> AccountRecord:
+    return _build_account_record(user)
 
 
-def list_internal_account_rows(*, sort: str) -> tuple[AccountListRow, ...]:
-    return _list_account_rows_for_roles(
+def list_internal_account_records(*, sort: str) -> tuple[AccountRecord, ...]:
+    return _list_account_records_for_roles(
         roles=INTERNAL_ACCOUNT_ROLES,
         sort=sort,
     )
 
 
-def list_customer_account_rows(*, sort: str) -> tuple[AccountListRow, ...]:
-    return _list_account_rows_for_roles(
+def list_business_customer_account_records(
+    *,
+    sort: str,
+) -> tuple[AccountRecord, ...]:
+    return _list_account_records_for_roles(
         roles=frozenset({AccountRole.BUSINESS_CUSTOMER}),
         sort=sort,
     )
 
 
-def list_unlinked_account_rows(*, sort: str) -> tuple[AccountListRow, ...]:
-    return _list_account_rows_for_roles(
+def list_unlinked_account_records(*, sort: str) -> tuple[AccountRecord, ...]:
+    return _list_account_records_for_roles(
         roles=frozenset({AccountRole.UNKNOWN}),
         sort=sort,
     )
 
 
-def list_account_activity_rows(
-    *,
-    user,
-    use_business_portal_links: bool = False,
-) -> tuple[AccountActivityRow, ...]:
-    rows = _activity_rows_from_specs(
+def list_account_activities(*, user) -> tuple[AccountActivity, ...]:
+    activities = _activities_from_specs(
         user=user,
         specs=ACCOUNT_ACTIVITY_SPECS,
-        use_business_portal_links=use_business_portal_links,
     )
 
     return tuple(
         sorted(
-            rows,
-            key=lambda row: row.occurred_at,
+            activities,
+            key=lambda activity: activity.occurred_at,
             reverse=True,
         )[:ACCOUNT_ACTIVITY_LIMIT]
     )
 
 
-def _list_account_rows_for_roles(
+def _list_account_records_for_roles(
     *,
     roles: frozenset[AccountRole],
     sort: str,
-) -> tuple[AccountListRow, ...]:
-    rows = tuple(row for row in _list_all_account_rows() if row.account_role in roles)
+) -> tuple[AccountRecord, ...]:
+    records = tuple(
+        record
+        for record in _list_all_account_records()
+        if record.account_role in roles
+    )
 
-    return _sort_account_rows(rows=rows, sort=sort)
+    return _sort_account_records(
+        records=records,
+        sort=sort,
+    )
 
 
-def _list_all_account_rows() -> tuple[AccountListRow, ...]:
+def _list_all_account_records() -> tuple[AccountRecord, ...]:
     users = User.objects.select_related(
         "staff_account",
         "customer_membership__customer",
-    ).order_by("email", "username")
+    ).order_by(
+        "email",
+        "username",
+    )
 
-    return tuple(_build_account_row(user) for user in users)
+    return tuple(
+        _build_account_record(user)
+        for user in users
+    )
 
 
-def _build_account_row(user) -> AccountListRow:
-    identity = _resolve_account_identity(user)
-
-    return AccountListRow(
+def _build_account_record(user) -> AccountRecord:
+    return AccountRecord(
         user_id=user.pk,
         email=user.email or user.username,
-        account_role=identity.account_role,
-        role_label=identity.role_label,
-        linked_identity=identity.linked_identity,
-        linked_identity_href=identity.linked_identity_href,
-        status_label=_status_label(user=user),
+        account_role=_resolve_safe_account_role(user),
+        identity=_resolve_account_identity(user),
         is_active=user.is_active,
         last_login=user.last_login,
         date_joined=user.date_joined,
     )
 
 
-def _resolve_account_identity(user) -> ResolvedAccountIdentity:
+def _resolve_account_identity(user) -> AccountIdentity:
     account_role = _resolve_safe_account_role(user)
+    has_staff_account = _has_staff_account(user)
+    has_customer_membership = _has_customer_membership(user)
 
     if account_role == AccountRole.OWNER:
-        return ResolvedAccountIdentity(
-            account_role=account_role,
-            role_label=get_role_label(account_role),
-            linked_identity=_("Superuser"),
+        return AccountIdentity(
+            kind=AccountIdentityKind.OWNER,
         )
 
-    if _has_staff_account(user) and _has_customer_membership(user):
+    if has_staff_account and has_customer_membership:
         customer = user.customer_membership.customer
 
-        return ResolvedAccountIdentity(
-            account_role=account_role,
-            role_label=_("Invalid identity"),
-            linked_identity=_("Staff and customer · %(customer)s")
-            % {
-                "customer": customer.name,
-            },
-            linked_identity_href=_customer_detail_href(customer),
+        return AccountIdentity(
+            kind=AccountIdentityKind.INVALID_STAFF_AND_CUSTOMER,
+            customer_id=customer.pk,
+            customer_name=customer.name,
+            staff_access_level=user.staff_account.access_level,
         )
 
     if account_role in {
         AccountRole.FULL_STAFF,
         AccountRole.RESTRICTED_STAFF,
     }:
-        return ResolvedAccountIdentity(
-            account_role=account_role,
-            role_label=get_role_label(account_role),
-            linked_identity=_staff_identity_label(user.staff_account.access_level),
+        return AccountIdentity(
+            kind=AccountIdentityKind.STAFF,
+            staff_access_level=user.staff_account.access_level,
         )
 
     if account_role == AccountRole.BUSINESS_CUSTOMER:
         customer = user.customer_membership.customer
 
-        return ResolvedAccountIdentity(
-            account_role=account_role,
-            role_label=get_role_label(account_role),
-            linked_identity=customer.name,
-            linked_identity_href=_customer_detail_href(customer),
+        return AccountIdentity(
+            kind=AccountIdentityKind.BUSINESS_CUSTOMER,
+            customer_id=customer.pk,
+            customer_name=customer.name,
         )
 
-    if _has_staff_account(user):
-        return ResolvedAccountIdentity(
-            account_role=account_role,
-            role_label=_("Invalid staff account"),
-            linked_identity=_("Internal staff"),
+    if has_staff_account:
+        return AccountIdentity(
+            kind=AccountIdentityKind.INVALID_STAFF,
+            staff_access_level=user.staff_account.access_level,
         )
 
-    if _has_customer_membership(user):
+    if has_customer_membership:
         customer = user.customer_membership.customer
 
-        return ResolvedAccountIdentity(
-            account_role=account_role,
-            role_label=_("Invalid customer account"),
-            linked_identity=customer.name,
-            linked_identity_href=_customer_detail_href(customer),
+        return AccountIdentity(
+            kind=AccountIdentityKind.INVALID_CUSTOMER,
+            customer_id=customer.pk,
+            customer_name=customer.name,
         )
 
-    return ResolvedAccountIdentity(
-        account_role=account_role,
-        role_label=get_role_label(account_role),
-        linked_identity="—",
+    return AccountIdentity(
+        kind=AccountIdentityKind.UNLINKED,
     )
 
 
@@ -458,37 +387,17 @@ def _resolve_safe_account_role(user) -> AccountRole:
         return AccountRole.UNKNOWN
 
 
-def _customer_detail_href(customer: Customer) -> str:
-    return reverse(
-        "customers:detail",
-        kwargs={"customer_pk": customer.pk},
-    )
-
-
-def _staff_identity_label(access_level: StaffAccessLevel | str) -> str:
-    return _("Internal staff · %(access_level)s") % {
-        "access_level": get_staff_access_level_label(access_level),
-    }
-
-
-def _status_label(*, user) -> str:
-    if user.is_active:
-        return _("Active")
-
-    return _("Inactive")
-
-
-def _sort_account_rows(
+def _sort_account_records(
     *,
-    rows: tuple[AccountListRow, ...],
+    records: tuple[AccountRecord, ...],
     sort: str,
-) -> tuple[AccountListRow, ...]:
+) -> tuple[AccountRecord, ...]:
     reverse = sort.startswith("-")
     sort_key = sort.removeprefix("-")
 
     return tuple(
         sorted(
-            rows,
+            records,
             key=_account_sort_key(sort_key),
             reverse=reverse,
         )
@@ -496,74 +405,75 @@ def _sort_account_rows(
 
 
 def _account_sort_key(sort_key: str):
-    if sort_key == "role":
-        return _role_sort_key
+    sort_keys = {
+        "role": _role_sort_key,
+        "linked": _linked_identity_sort_key,
+        "status": _status_sort_key,
+        "last_login": _last_login_sort_key,
+        "joined": _date_joined_sort_key,
+    }
 
-    if sort_key == "linked":
-        return _linked_identity_sort_key
-
-    if sort_key == "status":
-        return _status_sort_key
-
-    if sort_key == "last_login":
-        return _last_login_sort_key
-
-    if sort_key == "joined":
-        return _date_joined_sort_key
-
-    return _email_sort_key
-
-
-def _email_sort_key(row: AccountListRow):
-    return row.email.casefold()
-
-
-def _role_sort_key(row: AccountListRow):
-    return (
-        get_role_rank(row.account_role),
-        row.email.casefold(),
+    return sort_keys.get(
+        sort_key,
+        _email_sort_key,
     )
 
 
-def _linked_identity_sort_key(row: AccountListRow):
+def _email_sort_key(record: AccountRecord):
+    return record.email.casefold()
+
+
+def _role_sort_key(record: AccountRecord):
     return (
-        row.linked_identity.casefold(),
-        row.email.casefold(),
+        get_role_rank(record.account_role),
+        record.email.casefold(),
     )
 
 
-def _status_sort_key(row: AccountListRow):
+def _linked_identity_sort_key(record: AccountRecord):
+    identity = record.identity
+
     return (
-        0 if row.is_active else 1,
-        row.email.casefold(),
+        identity.customer_name.casefold(),
+        str(identity.staff_access_level or "").casefold(),
+        identity.kind.value,
+        record.email.casefold(),
     )
 
 
-def _last_login_sort_key(row: AccountListRow):
+def _status_sort_key(record: AccountRecord):
     return (
-        row.last_login or _oldest_datetime(),
-        row.email.casefold(),
+        0 if record.is_active else 1,
+        record.email.casefold(),
     )
 
 
-def _date_joined_sort_key(row: AccountListRow):
+def _last_login_sort_key(record: AccountRecord):
     return (
-        row.date_joined,
-        row.email.casefold(),
+        record.last_login or _oldest_datetime(),
+        record.email.casefold(),
+    )
+
+
+def _date_joined_sort_key(record: AccountRecord):
+    return (
+        record.date_joined,
+        record.email.casefold(),
     )
 
 
 def _oldest_datetime() -> datetime:
-    return datetime.min.replace(tzinfo=timezone.get_current_timezone())
+    return datetime.min.replace(
+        tzinfo=timezone.get_current_timezone()
+    )
 
 
-def _activity_rows_from_specs(
+def _activities_from_specs(
     *,
     user,
     specs: tuple[ActivitySpec, ...],
-    use_business_portal_links: bool = False,
-) -> list[AccountActivityRow]:
-    rows: list[AccountActivityRow] = []
+) -> list[AccountActivity]:
+    activities: list[AccountActivity] = []
 
     for spec in specs:
         queryset = spec.model.objects.filter(
@@ -574,97 +484,38 @@ def _activity_rows_from_specs(
         )
 
         if spec.select_related:
-            queryset = queryset.select_related(*spec.select_related)
+            queryset = queryset.select_related(
+                *spec.select_related
+            )
 
-        queryset = queryset.order_by(f"-{spec.occurred_at_field}")[
-            :ACCOUNT_ACTIVITY_LIMIT
-        ]
+        queryset = queryset.order_by(
+            f"-{spec.occurred_at_field}"
+        )[:ACCOUNT_ACTIVITY_LIMIT]
 
-        rows.extend(
-            _activity_row_from_spec(
-                item=item,
-                spec=spec,
-                use_business_portal_links=use_business_portal_links,
+        activities.extend(
+            AccountActivity(
+                occurred_at=getattr(
+                    item,
+                    spec.occurred_at_field,
+                ),
+                kind=spec.kind,
+                target=item,
             )
             for item in queryset
         )
 
-    return rows
-
-
-def _activity_row_from_spec(
-    *,
-    item,
-    spec: ActivitySpec,
-    use_business_portal_links: bool = False,
-) -> AccountActivityRow:
-    occurred_at = getattr(item, spec.occurred_at_field)
-
-    return _activity_row(
-        occurred_at=occurred_at,
-        event_label=spec.event_label,
-        target_label=spec.target_label(item),
-        target_href=_activity_target_href(
-            item=item,
-            spec=spec,
-            use_business_portal_links=use_business_portal_links,
-        ),
-        meta=spec.meta(item),
-        tone=spec.tone,
-    )
-
-
-def _activity_target_href(
-    *,
-    item,
-    spec: ActivitySpec,
-    use_business_portal_links: bool,
-) -> str:
-    if use_business_portal_links and isinstance(item, Order):
-        return reverse(
-            "business_portal:order_detail",
-            kwargs={
-                "order_id": item.pk,
-            },
-        )
-
-    return reverse(
-        spec.route_name,
-        kwargs={
-            spec.route_kwarg: item.pk,
-        },
-    )
-
-
-def _activity_row(
-    *,
-    occurred_at: datetime,
-    event_label: str,
-    target_label: str,
-    target_href: str,
-    meta: str,
-    tone: str,
-) -> AccountActivityRow:
-    return AccountActivityRow(
-        occurred_at=occurred_at,
-        occurred_at_label=_datetime_label(occurred_at),
-        event_label=event_label,
-        target_label=target_label,
-        target_href=target_href,
-        meta=meta,
-        tone=tone,
-    )
-
-
-# TODO: Consider creating a common utility for formatting datetimes in the local
-# timezone, due to the same usage in multiple places across the codebase.
-def _datetime_label(value: datetime) -> str:
-    return timezone.localtime(value).strftime("%Y-%m-%d %H:%M")
+    return activities
 
 
 def _has_staff_account(user) -> bool:
-    return hasattr(user, "staff_account")
+    return hasattr(
+        user,
+        "staff_account",
+    )
 
 
 def _has_customer_membership(user) -> bool:
-    return hasattr(user, "customer_membership")
+    return hasattr(
+        user,
+        "customer_membership",
+    )

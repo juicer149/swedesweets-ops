@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -10,8 +10,19 @@ from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 
 from accounts.access import can_manage_customer_account_status
+from accounts.activity_viewmodels import (
+    AccountActivityPresentation,
+    build_account_activity_presentations,
+)
+from accounts.presentation import (
+    AccountPresentation,
+    build_account_presentation,
+)
 from accounts.roles import AccountRole, RoleSpec
-from accounts.selectors import AccountActivityRow, AccountListRow
+from accounts.selectors import (
+    AccountActivity,
+    AccountRecord,
+)
 from common.detail_cards import (
     DetailAction,
     DetailCard,
@@ -21,14 +32,11 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 
-# -----------------------------------------------------------------------------
-# Account detail page context
-
 
 @dataclass(frozen=True, slots=True)
 class AccountDetailContext:
-    account: AccountListRow
-    activity_rows: tuple[AccountActivityRow, ...]
+    account: AccountPresentation
+    activity_rows: tuple[AccountActivityPresentation, ...]
     detail_card: DetailCard
     title: str
     description: str
@@ -70,39 +78,42 @@ class CustomerAccountStatusContext:
         }
 
 
-# -----------------------------------------------------------------------------
-# Public builders
-
-
 def build_account_detail_context(
     *,
-    account: AccountListRow,
-    activity_rows: tuple[AccountActivityRow, ...],
+    account: AccountRecord,
+    activity_rows: tuple[AccountActivity, ...],
     cancel_url: str,
     role_spec: RoleSpec,
     edit_url: str = "",
 ) -> AccountDetailContext:
+    presented_account = build_account_presentation(account)
+    presented_activity_rows = build_account_activity_presentations(
+        activity_rows
+    )
+
     return AccountDetailContext(
-        account=account,
-        activity_rows=activity_rows,
+        account=presented_account,
+        activity_rows=presented_activity_rows,
         detail_card=DetailCard(
             header=_build_account_header(
-                account=account,
+                account=presented_account,
                 eyebrow=_("Account"),
-                title=account.email,
+                title=presented_account.email,
             ),
             panels=_build_account_detail_panels(
-                account=account,
-                activity_count=len(activity_rows),
+                account=presented_account,
+                activity_count=len(presented_activity_rows),
             ),
-            content_card_class=_account_detail_card_class(account),
+            content_card_class=_account_detail_card_class(
+                presented_account
+            ),
             secondary_actions=_build_manager_account_secondary_actions(
-                account=account,
+                account=presented_account,
                 edit_url=edit_url,
                 role_spec=role_spec,
             ),
         ),
-        title=account.email,
+        title=presented_account.email,
         description="",
         cancel_url=cancel_url,
     )
@@ -110,27 +121,38 @@ def build_account_detail_context(
 
 def build_self_account_detail_context(
     *,
-    account: AccountListRow,
-    activity_rows: tuple[AccountActivityRow, ...],
+    account: AccountRecord,
+    activity_rows: tuple[AccountActivity, ...],
     cancel_url: str,
 ) -> AccountDetailContext:
-    account = _self_safe_account_row(account)
+    presented_account = build_account_presentation(
+        account,
+        link_customer=False,
+    )
+    presented_activity_rows = build_account_activity_presentations(
+        activity_rows,
+        include_target_links=False,
+    )
 
     return AccountDetailContext(
-        account=account,
-        activity_rows=activity_rows,
+        account=presented_account,
+        activity_rows=presented_activity_rows,
         detail_card=DetailCard(
             header=_build_account_header(
-                account=account,
+                account=presented_account,
                 eyebrow=_("My account"),
-                title=account.email,
+                title=presented_account.email,
             ),
             panels=_build_account_detail_panels(
-                account=account,
-                activity_count=len(activity_rows),
+                account=presented_account,
+                activity_count=len(presented_activity_rows),
             ),
-            content_card_class=_account_detail_card_class(account),
-            secondary_actions=_build_self_account_secondary_actions(account=account),
+            content_card_class=_account_detail_card_class(
+                presented_account
+            ),
+            secondary_actions=_build_self_account_secondary_actions(
+                account=presented_account
+            ),
         ),
         title=_("My account"),
         description="",
@@ -163,7 +185,9 @@ def build_customer_account_status_context(
         ),
         cancel_url=reverse(
             "accounts:detail",
-            kwargs={"user_id": account_user.pk},
+            kwargs={
+                "user_id": account_user.pk,
+            },
         ),
         account_user=account_user,
         customer=membership.customer,
@@ -192,28 +216,18 @@ def customer_account_status_success_message(
     is_active: bool,
 ) -> str:
     if is_active:
-        return _("Customer account %(email)s activated.") % {"email": email}
+        return _("Customer account %(email)s activated.") % {
+            "email": email,
+        }
 
-    return _("Customer account %(email)s deactivated.") % {"email": email}
-
-
-# -----------------------------------------------------------------------------
-# Detail card builders
-
-
-def _self_safe_account_row(account: AccountListRow) -> AccountListRow:
-    if account.account_role != AccountRole.BUSINESS_CUSTOMER:
-        return account
-
-    return replace(
-        account,
-        linked_identity_href="",
-    )
+    return _("Customer account %(email)s deactivated.") % {
+        "email": email,
+    }
 
 
 def _build_account_header(
     *,
-    account: AccountListRow,
+    account: AccountPresentation,
     eyebrow: str,
     title: str,
 ) -> DetailHeader:
@@ -228,7 +242,7 @@ def _build_account_header(
 
 def _build_account_detail_panels(
     *,
-    account: AccountListRow,
+    account: AccountPresentation,
     activity_count: int,
 ) -> tuple[DetailPanel, ...]:
     return (
@@ -252,7 +266,7 @@ def _build_account_detail_panels(
 
 def _build_manager_account_secondary_actions(
     *,
-    account: AccountListRow,
+    account: AccountPresentation,
     edit_url: str,
     role_spec: RoleSpec,
 ) -> tuple[DetailAction, ...]:
@@ -270,7 +284,9 @@ def _build_manager_account_secondary_actions(
         target_account_role=account.account_role,
         role_spec=role_spec,
     ):
-        actions.append(_build_customer_account_status_action(account))
+        actions.append(
+            _build_customer_account_status_action(account)
+        )
 
     actions.append(
         build_secondary_get_action(
@@ -283,14 +299,16 @@ def _build_manager_account_secondary_actions(
 
 
 def _build_customer_account_status_action(
-    account: AccountListRow,
+    account: AccountPresentation,
 ) -> DetailAction:
     if account.is_active:
         return build_danger_get_action(
             label=_("Deactivate login"),
             href=reverse(
                 "accounts:deactivate_customer_account",
-                kwargs={"user_id": account.user_id},
+                kwargs={
+                    "user_id": account.user_id,
+                },
             ),
         )
 
@@ -298,44 +316,41 @@ def _build_customer_account_status_action(
         label=_("Activate login"),
         href=reverse(
             "accounts:activate_customer_account",
-            kwargs={"user_id": account.user_id},
+            kwargs={
+                "user_id": account.user_id,
+            },
         ),
     )
 
 
 def _build_self_account_secondary_actions(
     *,
-    account: AccountListRow,
+    account: AccountPresentation,
 ) -> tuple[DetailAction, ...]:
-    actions = [
+    return (
         build_secondary_get_action(
             label=_("Change password"),
             href=reverse("password_change"),
         ),
-    ]
-
-    actions.append(
         build_secondary_get_action(
             label=_("Back to start"),
             href=reverse("accounts:after_login"),
-        )
+        ),
     )
 
-    return tuple(actions)
 
-
-# -----------------------------------------------------------------------------
-# Presentation helpers
-
-
-def _account_detail_card_class(account: AccountListRow) -> str:
+def _account_detail_card_class(
+    account: AccountPresentation,
+) -> str:
     if account.is_active:
         return ""
 
     return "content-card--muted"
 
 
-def _account_status_class(account: AccountListRow) -> str:
+def _account_status_class(
+    account: AccountPresentation,
+) -> str:
     if account.is_active:
         return "status-text status-text--success"
 
@@ -347,7 +362,9 @@ def _activity_summary(activity_count: int) -> str:
         "%(count)d event",
         "%(count)d events",
         activity_count,
-    ) % {"count": activity_count}
+    ) % {
+        "count": activity_count,
+    }
 
 
 def _customer_account_status_action_label(
@@ -393,34 +410,47 @@ def _active_status_label(
     return _("Inactive")
 
 
-def account_datetime_label(value: datetime | None) -> str:
+def account_datetime_label(
+    value: datetime | None,
+) -> str:
     if value is None:
         return _("Never")
 
-    return timezone.localtime(value).strftime("%Y-%m-%d %H:%M")
+    return timezone.localtime(value).strftime(
+        "%Y-%m-%d %H:%M"
+    )
 
 
-# -----------------------------------------------------------------------------
-# Navigation helpers
-
-
-def _accounts_url_for_account(account: AccountListRow) -> str:
+def _accounts_url_for_account(
+    account: AccountPresentation,
+) -> str:
     match account.account_role:
         case AccountRole.BUSINESS_CUSTOMER:
             return _accounts_customer_url()
+
         case AccountRole.UNKNOWN:
             return _accounts_unlinked_url()
+
         case _:
             return _accounts_internal_url()
 
 
 def _accounts_internal_url() -> str:
-    return f"{reverse('accounts:index')}?view=internal#accounts-list"
+    return (
+        f"{reverse('accounts:index')}"
+        "?view=internal#accounts-list"
+    )
 
 
 def _accounts_customer_url() -> str:
-    return f"{reverse('accounts:index')}?view=customer#accounts-list"
+    return (
+        f"{reverse('accounts:index')}"
+        "?view=customer#accounts-list"
+    )
 
 
 def _accounts_unlinked_url() -> str:
-    return f"{reverse('accounts:index')}?view=unlinked#accounts-list"
+    return (
+        f"{reverse('accounts:index')}"
+        "?view=unlinked#accounts-list"
+    )
