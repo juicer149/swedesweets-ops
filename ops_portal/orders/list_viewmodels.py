@@ -12,13 +12,13 @@ from common.ui import (
     UiCardRow,
     UiText,
 )
-from orders.access import (
+from ops_portal.orders.access import (
     can_create_order,
     can_deliver_order,
     can_pack_order,
 )
 from orders.models import Order
-from orders.presentation import (
+from ops_portal.orders.presentation import (
     build_order_status_presentation,
     maps_directions_href,
     order_action_link_class,
@@ -226,16 +226,16 @@ def _order_detail_href(
 
 
 def _create_order_href() -> str:
-    return reverse("orders:create")
+    return reverse("ops_orders:create")
 
 
 def _order_detail_base_href(order: Order) -> str:
-    return reverse("orders:detail", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:detail", kwargs={"order_id": order.pk})
 
 
 def _pack_order_href(order: Order) -> str:
-    return reverse("orders:pack", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:pack", kwargs={"order_id": order.pk})
 
 
 def _deliver_order_href(order: Order) -> str:
-    return reverse("orders:deliver", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:deliver", kwargs={"order_id": order.pk})

@@ -26,7 +26,7 @@ from ops_portal.inventory.presentation import (
     batch_detail_status_class,
     batch_status_icon,
 )
-from orders.mini_cards import build_order_usage_mini_card
+from ops_portal.orders.mini_cards import build_order_usage_mini_card
 from ops_portal.products.mini_cards import build_product_mini_card
 from reservations.datatypes import BatchUsage
 
@@ -288,7 +288,7 @@ def _build_usage_rows(
 
     for usage in allocations:
         order_href = reverse(
-            "orders:detail",
+            "ops_orders:detail",
             kwargs={
                 "order_id": usage.order.pk,
             },

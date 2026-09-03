@@ -18,7 +18,7 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
-from orders.access import (
+from ops_portal.orders.access import (
     can_cancel_order,
     can_deliver_order,
     can_edit_order,
@@ -26,7 +26,7 @@ from orders.access import (
 )
 from orders.datatypes import PickLine
 from orders.models import Order, OrderLine
-from orders.presentation import (
+from ops_portal.orders.presentation import (
     contents_summary,
     maps_directions_href,
     order_detail_card_class,
@@ -279,7 +279,7 @@ def _build_order_detail_panels(
             key="order",
             label="Order",
             summary=f"#{order.id}",
-            body_template="orders/includes/detail_panel_order.html",
+            body_template="ops_portal/orders/includes/detail_panel_order.html",
             icon="cart",
             is_active=active_panel == "order",
         ),
@@ -294,7 +294,7 @@ def _build_order_detail_panels(
                     product_count=product_count,
                     total_quantity=total_quantity,
                 ),
-                body_template="orders/includes/detail_panel_contents.html",
+                body_template="ops_portal/orders/includes/detail_panel_contents.html",
                 icon="box",
                 is_active=active_panel == "contents",
             )
@@ -305,7 +305,7 @@ def _build_order_detail_panels(
             key="customer",
             label="Customer",
             summary=order.customer_name,
-            body_template="orders/includes/detail_panel_customer.html",
+            body_template="ops_portal/orders/includes/detail_panel_customer.html",
             icon="users",
             is_active=active_panel == "customer",
         )
@@ -315,23 +315,23 @@ def _build_order_detail_panels(
 
 
 def order_detail_href(order: Order) -> str:
-    return reverse("orders:detail", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:detail", kwargs={"order_id": order.pk})
 
 
 def order_edit_href(order: Order) -> str:
-    return reverse("orders:edit", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:edit", kwargs={"order_id": order.pk})
 
 
 def order_cancel_href(order: Order) -> str:
-    return reverse("orders:cancel", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:cancel", kwargs={"order_id": order.pk})
 
 
 def order_pack_href(order: Order) -> str:
-    return reverse("orders:pack", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:pack", kwargs={"order_id": order.pk})
 
 
 def order_deliver_href(order: Order) -> str:
-    return reverse("orders:deliver", kwargs={"order_id": order.pk})
+    return reverse("ops_orders:deliver", kwargs={"order_id": order.pk})
 
 
 def customer_detail_href(order: Order) -> str:

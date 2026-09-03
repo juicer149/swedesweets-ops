@@ -24,7 +24,7 @@ CUSTOMERS_NAV_ITEM = NavItem(
 
 ORDERS_NAV_ITEM = NavItem(
     label="Orders",
-    route_name="orders:index",
+    route_name="ops_orders:index",
     namespace="orders",
     icon="cart",
     capability=Capability.VIEW_ORDERS,

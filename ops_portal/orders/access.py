@@ -16,13 +16,13 @@ CAPABILITIES = frozenset(
 
 
 VIEW_CAPABILITIES = {
-    "orders:index": Capability.VIEW_ORDERS,
-    "orders:detail": Capability.VIEW_ORDERS,
-    "orders:create": Capability.CREATE_ORDERS,
-    "orders:edit": Capability.EDIT_ORDERS,
-    "orders:cancel": Capability.CANCEL_ORDERS,
-    "orders:pack": Capability.PACK_ORDERS,
-    "orders:deliver": Capability.DELIVER_ORDERS,
+    "ops_orders:index": Capability.VIEW_ORDERS,
+    "ops_orders:detail": Capability.VIEW_ORDERS,
+    "ops_orders:create": Capability.CREATE_ORDERS,
+    "ops_orders:edit": Capability.EDIT_ORDERS,
+    "ops_orders:cancel": Capability.CANCEL_ORDERS,
+    "ops_orders:pack": Capability.PACK_ORDERS,
+    "ops_orders:deliver": Capability.DELIVER_ORDERS,
 }
 
 

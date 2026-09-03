@@ -40,15 +40,15 @@ class DashboardActionSpec:
 
 
 def _place_order_href() -> str:
-    return reverse("orders:create")
+    return reverse("ops_orders:create")
 
 
 def _pack_orders_href() -> str:
-    return f"{reverse('orders:index')}?status={Order.Status.PLACED}#orders-list"
+    return f"{reverse('ops_orders:index')}?status={Order.Status.PLACED}#orders-list"
 
 
 def _deliver_orders_href() -> str:
-    return f"{reverse('orders:index')}?status={Order.Status.PACKED}#orders-list"
+    return f"{reverse('ops_orders:index')}?status={Order.Status.PACKED}#orders-list"
 
 
 def _add_batch_href() -> str:

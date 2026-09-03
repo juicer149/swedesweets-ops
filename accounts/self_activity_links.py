@@ -40,7 +40,7 @@ def _staff_target_href(target: object) -> str:
     match target:
         case Order():
             return reverse(
-                "orders:detail",
+                "ops_orders:detail",
                 kwargs={"order_id": target.pk},
             )
 

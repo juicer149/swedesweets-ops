@@ -23,7 +23,7 @@ from inventory.selectors import (
     list_low_stock_products_for_dashboard,
 )
 from orders.models import Order
-from orders.presentation import (
+from ops_portal.orders.presentation import (
     order_lifecycle_label,
     order_quantity_label,
 )
@@ -133,11 +133,11 @@ def _list_low_stock_products() -> Iterable[object]:
 
 
 def _placed_orders_view_all_href() -> str:
-    return f"{reverse('orders:index')}?status={Order.Status.PLACED}#orders-list"
+    return f"{reverse('ops_orders:index')}?status={Order.Status.PLACED}#orders-list"
 
 
 def _packed_orders_view_all_href() -> str:
-    return f"{reverse('orders:index')}?status={Order.Status.PACKED}#orders-list"
+    return f"{reverse('ops_orders:index')}?status={Order.Status.PACKED}#orders-list"
 
 
 def _expiring_batches_view_all_href() -> str:
@@ -158,7 +158,7 @@ def _placed_order_item(order) -> DashboardQueueItem:
     return DashboardQueueItem(
         title=f"#{order.pk} · {order.customer_name}",
         meta=f"{order_lifecycle_label(order)} · {order_quantity_label(order)}",
-        href=reverse("orders:pack", kwargs={"order_id": order.pk}),
+        href=reverse("ops_orders:pack", kwargs={"order_id": order.pk}),
         action_label="Pack order →",
         tone="warning",
         icon="cart",
@@ -169,7 +169,7 @@ def _packed_order_item(order) -> DashboardQueueItem:
     return DashboardQueueItem(
         title=f"#{order.pk} · {order.customer_name}",
         meta=f"{order_lifecycle_label(order)} · {order_quantity_label(order)}",
-        href=reverse("orders:deliver", kwargs={"order_id": order.pk}),
+        href=reverse("ops_orders:deliver", kwargs={"order_id": order.pk}),
         action_label="Mark delivered →",
         tone="info",
         icon="packed",

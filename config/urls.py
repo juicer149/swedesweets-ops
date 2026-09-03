@@ -47,8 +47,8 @@ urlpatterns = [
     path(
         "orders/",
         include(
-            "orders.urls",
-            namespace="orders",
+            "ops_portal.orders.urls",
+            namespace="ops_orders",
         ),
     ),
     path(

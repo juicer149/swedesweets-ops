@@ -15,9 +15,9 @@ from common.detail_cards import (
 from common.ui import StatusPresentation, UiCard
 from ops_portal.customers.access import can_edit_customer
 from customers.models import Customer
-from orders.mini_cards import build_customer_order_mini_card
+from ops_portal.orders.mini_cards import build_customer_order_mini_card
 from orders.models import Order
-from orders.presentation import (
+from ops_portal.orders.presentation import (
     build_order_status_presentation,
     contents_summary,
     order_lifecycle_label,
@@ -149,7 +149,7 @@ def _build_order_rows(orders: list[Order]) -> list[CustomerOrderRow]:
     rows: list[CustomerOrderRow] = []
 
     for order in orders:
-        order_href = reverse("orders:detail", kwargs={"order_id": order.id})
+        order_href = reverse("ops_orders:detail", kwargs={"order_id": order.id})
         status = build_order_status_presentation(order.status)
         product_count = order_product_count(order)
         quantity = order_total_quantity(order)

@@ -20,13 +20,13 @@ from fulfillment.services import (
     pack_order,
 )
 from inventory.errors import InvalidStockOperation
-from orders.access import (
+from ops_portal.orders.access import (
     can_cancel_order,
     can_deliver_order,
     can_edit_order,
     can_pack_order,
 )
-from orders.detail_viewmodels import (
+from ops_portal.orders.detail_viewmodels import (
     build_deliver_action,
     build_order_detail_context,
     build_order_detail_primary_action,
@@ -36,19 +36,19 @@ from orders.detail_viewmodels import (
     build_post_pack_success_url,
 )
 from orders.errors import InvalidOrderOperation
-from orders.form_viewmodels import (
+from ops_portal.orders.form_viewmodels import (
     build_cancel_order_form_context,
     build_create_order_form_context,
     build_edit_order_form_context,
 )
-from orders.forms import (
+from ops_portal.orders.forms import (
     OrderCancelForm,
     OrderCreateForm,
     OrderLineFormSet,
     build_order_line_initial_data,
     build_order_line_inputs,
 )
-from orders.list_viewmodels import (
+from ops_portal.orders.list_viewmodels import (
     build_order_page_rows,
     build_orders_page_header,
 )
@@ -143,7 +143,7 @@ def index(request):
 
     return render(
         request,
-        "orders/index.html",
+        "ops_portal/orders/index.html",
         context,
     )
 
@@ -171,7 +171,7 @@ def create(request):
                     request,
                     f"Order #{order.id} placed.",
                 )
-                return redirect("orders:index")
+                return redirect("ops_orders:index")
     else:
         form = OrderCreateForm()
         line_formset = OrderLineFormSet(
@@ -185,7 +185,7 @@ def create(request):
 
     return render(
         request,
-        "orders/order_form.html",
+        "ops_portal/orders/order_form.html",
         context,
     )
 
@@ -209,7 +209,7 @@ def edit(
             ),
         )
         return redirect(
-            "orders:detail",
+            "ops_orders:detail",
             order_id=order.id,
         )
 
@@ -262,7 +262,7 @@ def edit(
 
     return render(
         request,
-        "orders/order_form.html",
+        "ops_portal/orders/order_form.html",
         context,
     )
 
@@ -288,7 +288,7 @@ def cancel(
             ),
         )
         return redirect(
-            "orders:detail",
+            "ops_orders:detail",
             order_id=order.id,
         )
 
@@ -315,7 +315,7 @@ def cancel(
                     str(error),
                 )
                 return redirect(
-                    "orders:detail",
+                    "ops_orders:detail",
                     order_id=order.id,
                 )
 
@@ -324,7 +324,7 @@ def cancel(
                 f"Order #{cancelled_order.id} cancelled.",
             )
             return redirect(
-                "orders:detail",
+                "ops_orders:detail",
                 order_id=cancelled_order.id,
             )
 
@@ -339,7 +339,7 @@ def cancel(
 
     return render(
         request,
-        "orders/cancel.html",
+        "ops_portal/orders/cancel.html",
         context,
     )
 
@@ -365,7 +365,7 @@ def pack(
             ),
         )
         return redirect(
-            "orders:detail",
+            "ops_orders:detail",
             order_id=order.id,
         )
 
@@ -381,7 +381,7 @@ def pack(
                 str(error),
             )
             return redirect(
-                "orders:pack",
+                "ops_orders:pack",
                 order_id=order.id,
             )
 
@@ -405,7 +405,7 @@ def pack(
         title=f"Pack order #{order.id}",
         description="",
         cancel_url=reverse(
-            "orders:index"
+            "ops_orders:index"
         ),
         active_panel="",
         include_contents=True,
@@ -421,7 +421,7 @@ def pack(
 
     return render(
         request,
-        "orders/pack.html",
+        "ops_portal/orders/pack.html",
         context,
     )
 
@@ -447,7 +447,7 @@ def deliver(
             ),
         )
         return redirect(
-            "orders:detail",
+            "ops_orders:detail",
             order_id=order.id,
         )
 
@@ -463,7 +463,7 @@ def deliver(
                 str(error),
             )
             return redirect(
-                "orders:deliver",
+                "ops_orders:deliver",
                 order_id=order.id,
             )
 
@@ -472,7 +472,7 @@ def deliver(
             f"Order #{delivered_order.id} delivered.",
         )
         return redirect(
-            "orders:detail",
+            "ops_orders:detail",
             order_id=delivered_order.id,
         )
 
@@ -481,7 +481,7 @@ def deliver(
         title=f"Deliver order #{order.id}",
         description="",
         cancel_url=reverse(
-            "orders:index"
+            "ops_orders:index"
         ),
         active_panel="contents",
         include_contents=True,
@@ -490,7 +490,7 @@ def deliver(
 
     return render(
         request,
-        "orders/deliver.html",
+        "ops_portal/orders/deliver.html",
         context,
     )
 
@@ -515,7 +515,7 @@ def detail(
         title=f"Order #{order.id}",
         description="",
         cancel_url=reverse(
-            "orders:index"
+            "ops_orders:index"
         ),
         active_panel=active_panel,
         include_contents=True,
@@ -531,7 +531,7 @@ def detail(
 
     return render(
         request,
-        "orders/detail.html",
+        "ops_portal/orders/detail.html",
         context,
     )
 

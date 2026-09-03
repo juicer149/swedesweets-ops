@@ -6,14 +6,14 @@ from typing import Any
 from django.urls import reverse
 
 from accounts.roles import RoleSpec
-from orders.access import can_cancel_order
-from orders.detail_viewmodels import (
+from ops_portal.orders.access import can_cancel_order
+from ops_portal.orders.detail_viewmodels import (
     build_order_cancel_back_url,
     build_order_detail_context,
     order_cancel_href,
     order_detail_href,
 )
-from orders.forms import (
+from ops_portal.orders.forms import (
     OrderCancelForm,
     OrderCreateForm,
     OrderLineFormSet,
@@ -83,7 +83,7 @@ def build_create_order_form_context(
         title="Place order",
         description="Create an order and reserve available stock.",
         submit_label="Place order",
-        cancel_url=reverse("orders:index"),
+        cancel_url=reverse("ops_orders:index"),
         is_edit=False,
     )
 

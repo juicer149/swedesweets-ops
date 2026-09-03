@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from common.ui import UiCard, UiCardRow, UiText
 from orders.models import Order
-from orders.presentation import (
+from ops_portal.orders.presentation import (
     build_order_status_presentation,
     contents_summary,
     order_card_css_class,

@@ -18,29 +18,109 @@ from customers.models import (
     Customer,
 )
 from orders.datatypes import OrderLineInput
-from orders.forms import ProductChoiceField
 from orders.models import Order
 from orders.order_limits import (
     MAX_QUANTITY_PER_PRODUCT_PER_ORDER,
     is_unusually_large_order_line,
 )
 from orders.product_choices import build_product_choice_context
-from products.models import Product
 from products.localization import translated_product_name
+from products.models import Product
 
 
 DEFAULT_PORTAL_ORDER_LINE_COUNT = 1
 MIN_PORTAL_ORDER_QUANTITY = 1
 
 
+class PortalProductChoiceField(forms.ModelChoiceField):
+    def __init__(
+        self,
+        *args,
+        available_units_by_product_id: dict[int, int] | None = None,
+        language_code: str | None = None,
+        **kwargs,
+    ) -> None:
+        self.available_units_by_product_id = available_units_by_product_id or {}
+        self.language_code = language_code
+        super().__init__(*args, **kwargs)
+
+    def label_from_instance(self, product: Product) -> str:
+        return _portal_product_label(
+            product,
+            language_code=self.language_code,
+        )
+
+    def create_option(
+        self,
+        name,
+        value,
+        label,
+        selected,
+        index,
+        subindex=None,
+        attrs=None,
+    ):
+        option = super().create_option(
+            name=name,
+            value=value,
+            label=label,
+            selected=selected,
+            index=index,
+            subindex=subindex,
+            attrs=attrs,
+        )
+
+        if not value:
+            return option
+
+        product = value.instance
+        available_units = self.available_units_by_product_id.get(
+            product.id,
+            0,
+        )
+        product_name = _portal_product_name(
+            product,
+            language_code=self.language_code,
+        )
+        product_label = _portal_product_label(
+            product,
+            language_code=self.language_code,
+        )
+
+        option["attrs"].update(
+            {
+                "data-code": product.code_label,
+                "data-brand": product.brand,
+                "data-name": product_name,
+                "data-weight": product.unit_weight_label,
+                "data-available-units": str(available_units),
+                "data-available-quantity": str(available_units),
+                "search": (
+                    f"{product.code_label} "
+                    f"{product.internal_number or ''} "
+                    f"{product.brand} "
+                    f"{product.name} "
+                    f"{product.display_name} "
+                    f"{product_name} "
+                    f"{product_label} "
+                    f"{product.sku}"
+                ),
+            }
+        )
+
+        return option
+
+
 class PortalOrderLineForm(forms.Form):
-    product = ProductChoiceField(
+    product = PortalProductChoiceField(
         queryset=Product.objects.none(),
         required=False,
         label=gettext_lazy("Product"),
         empty_label=gettext_lazy("Choose product"),
         error_messages={
-            "invalid_choice": gettext_lazy("Choose a valid available product."),
+            "invalid_choice": gettext_lazy(
+                "Choose a valid available product."
+            ),
         },
         widget=forms.Select(
             attrs={
@@ -56,9 +136,15 @@ class PortalOrderLineForm(forms.Form):
         max_value=MAX_QUANTITY_PER_PRODUCT_PER_ORDER,
         label=gettext_lazy("Quantity"),
         error_messages={
-            "invalid": gettext_lazy("Enter a whole number of units."),
-            "min_value": gettext_lazy("Quantity must be at least 1."),
-            "max_value": gettext_lazy("Quantity is too large."),
+            "invalid": gettext_lazy(
+                "Enter a whole number of units."
+            ),
+            "min_value": gettext_lazy(
+                "Quantity must be at least 1."
+            ),
+            "max_value": gettext_lazy(
+                "Quantity is too large."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -77,20 +163,28 @@ class PortalOrderLineForm(forms.Form):
         language_code: str | None = None,
         **kwargs,
     ) -> None:
-        self.available_units_by_product_id = available_units_by_product_id or {}
+        self.available_units_by_product_id = (
+            available_units_by_product_id or {}
+        )
         self.language_code = language_code
 
         super().__init__(*args, **kwargs)
 
         product_field = self.fields["product"]
-        product_field.queryset = product_queryset or Product.objects.none()
+        product_field.queryset = (
+            product_queryset
+            if product_queryset is not None
+            else Product.objects.none()
+        )
 
-        if isinstance(product_field, ProductChoiceField):
+        if isinstance(
+            product_field,
+            PortalProductChoiceField,
+        ):
             product_field.available_units_by_product_id = (
                 self.available_units_by_product_id
             )
             product_field.language_code = self.language_code
-            product_field.show_available_units = False
 
         set_form_field_layout(
             self,
@@ -100,7 +194,9 @@ class PortalOrderLineForm(forms.Form):
             ),
         )
 
-        self.fields["quantity"].layout_class = "form-field--portal-order-quantity"
+        self.fields["quantity"].layout_class = (
+            "form-field--portal-order-quantity"
+        )
 
     def clean(self) -> dict:
         cleaned_data = super().clean()
@@ -154,17 +250,28 @@ class BasePortalOrderLineFormSet(BaseFormSet):
         self.order = order
         self.require_lines = require_lines
         self.language_code = language_code
-        self.product_choice_context = build_product_choice_context(order=order)
+        self.product_choice_context = (
+            build_product_choice_context(
+                order=order,
+            )
+        )
+
         super().__init__(*args, **kwargs)
 
-    def get_form_kwargs(self, index: int | None) -> dict[str, Any]:
+    def get_form_kwargs(
+        self,
+        index: int | None,
+    ) -> dict[str, Any]:
         kwargs = super().get_form_kwargs(index)
 
         kwargs.update(
             {
-                "product_queryset": self.product_choice_context.queryset,
+                "product_queryset": (
+                    self.product_choice_context.queryset
+                ),
                 "available_units_by_product_id": (
-                    self.product_choice_context.available_units_by_product_id
+                    self.product_choice_context
+                    .available_units_by_product_id
                 ),
                 "language_code": self.language_code,
             }
@@ -186,19 +293,29 @@ class BasePortalOrderLineFormSet(BaseFormSet):
 
             return
 
-        requested_quantity_by_product_id: dict[int, int] = defaultdict(int)
+        requested_quantity_by_product_id: dict[int, int] = (
+            defaultdict(int)
+        )
         products_by_id: dict[int, Product] = {}
 
         for form in self.order_line_forms:
             product = form.cleaned_data["product"]
             quantity = form.cleaned_data["quantity"]
 
-            requested_quantity_by_product_id[product.id] += quantity
+            requested_quantity_by_product_id[
+                product.id
+            ] += quantity
+
             products_by_id[product.id] = product
 
-        for product_id, requested_quantity in requested_quantity_by_product_id.items():
+        for (
+            product_id,
+            requested_quantity,
+        ) in requested_quantity_by_product_id.items():
             available_quantity = (
-                self.product_choice_context.available_units_by_product_id.get(
+                self.product_choice_context
+                .available_units_by_product_id
+                .get(
                     product_id,
                     0,
                 )
@@ -207,16 +324,26 @@ class BasePortalOrderLineFormSet(BaseFormSet):
 
             if requested_quantity > available_quantity:
                 raise forms.ValidationError(
-                    _("Only %(available)s available for %(product)s.")
+                    _(
+                        "Only %(available)s available "
+                        "for %(product)s."
+                    )
                     % {
-                        "available": product.stock_quantity_label(available_quantity),
+                        "available": (
+                            product.stock_quantity_label(
+                                available_quantity
+                            )
+                        ),
                         "product": _portal_product_name(
-                            product, language_code=self.language_code
+                            product,
+                            language_code=self.language_code,
                         ),
                     }
                 )
 
-            if is_unusually_large_order_line(quantity=requested_quantity):
+            if is_unusually_large_order_line(
+                quantity=requested_quantity,
+            ):
                 raise forms.ValidationError(
                     _(
                         "%(product)s is unusually large. "
@@ -224,17 +351,26 @@ class BasePortalOrderLineFormSet(BaseFormSet):
                     )
                     % {
                         "product": _portal_product_name(
-                            product, language_code=self.language_code
+                            product,
+                            language_code=self.language_code,
                         ),
-                        "maximum": product.stock_quantity_label(
-                            MAX_QUANTITY_PER_PRODUCT_PER_ORDER
+                        "maximum": (
+                            product.stock_quantity_label(
+                                MAX_QUANTITY_PER_PRODUCT_PER_ORDER
+                            )
                         ),
                     }
                 )
 
     @property
-    def order_line_forms(self) -> list[PortalOrderLineForm]:
-        return [form for form in self.forms if form.has_line_data]
+    def order_line_forms(
+        self,
+    ) -> list[PortalOrderLineForm]:
+        return [
+            form
+            for form in self.forms
+            if form.has_line_data
+        ]
 
 
 PortalOrderLineFormSet = formset_factory(
@@ -247,10 +383,15 @@ PortalOrderLineFormSet = formset_factory(
 def build_portal_order_line_inputs(
     formset: BasePortalOrderLineFormSet,
 ) -> list[OrderLineInput]:
-    return [form.to_order_line_input() for form in formset.order_line_forms]
+    return [
+        form.to_order_line_input()
+        for form in formset.order_line_forms
+    ]
 
 
-PORTAL_CUSTOMER_COUNTRY_CHOICES = list(CUSTOMER_COUNTRY_LABELS.items())
+PORTAL_CUSTOMER_COUNTRY_CHOICES = list(
+    CUSTOMER_COUNTRY_LABELS.items()
+)
 
 
 class CustomerProfileForm(forms.Form):
@@ -258,8 +399,12 @@ class CustomerProfileForm(forms.Form):
         max_length=MAX_CUSTOMER_NAME_LENGTH,
         label=gettext_lazy("Store name"),
         error_messages={
-            "required": gettext_lazy("Enter the store name."),
-            "max_length": gettext_lazy("Store name is too long."),
+            "required": gettext_lazy(
+                "Enter the store name."
+            ),
+            "max_length": gettext_lazy(
+                "Store name is too long."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -272,9 +417,15 @@ class CustomerProfileForm(forms.Form):
         max_length=254,
         label=gettext_lazy("Email"),
         error_messages={
-            "required": gettext_lazy("Enter an email address."),
-            "invalid": gettext_lazy("Enter a valid email address."),
-            "max_length": gettext_lazy("Email address is too long."),
+            "required": gettext_lazy(
+                "Enter an email address."
+            ),
+            "invalid": gettext_lazy(
+                "Enter a valid email address."
+            ),
+            "max_length": gettext_lazy(
+                "Email address is too long."
+            ),
         },
         widget=forms.EmailInput(
             attrs={
@@ -287,8 +438,12 @@ class CustomerProfileForm(forms.Form):
         max_length=MAX_CUSTOMER_PHONE_LENGTH,
         label=gettext_lazy("Phone number"),
         error_messages={
-            "required": gettext_lazy("Enter a phone number."),
-            "max_length": gettext_lazy("Phone number is too long."),
+            "required": gettext_lazy(
+                "Enter a phone number."
+            ),
+            "max_length": gettext_lazy(
+                "Phone number is too long."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -301,8 +456,12 @@ class CustomerProfileForm(forms.Form):
         choices=PORTAL_CUSTOMER_COUNTRY_CHOICES,
         label=gettext_lazy("Country"),
         error_messages={
-            "required": gettext_lazy("Choose a country."),
-            "invalid_choice": gettext_lazy("Choose a valid country."),
+            "required": gettext_lazy(
+                "Choose a country."
+            ),
+            "invalid_choice": gettext_lazy(
+                "Choose a valid country."
+            ),
         },
         widget=forms.Select(
             attrs={
@@ -317,8 +476,12 @@ class CustomerProfileForm(forms.Form):
         max_length=MAX_CUSTOMER_CITY_LENGTH,
         label=gettext_lazy("City"),
         error_messages={
-            "required": gettext_lazy("Enter a city."),
-            "max_length": gettext_lazy("City is too long."),
+            "required": gettext_lazy(
+                "Enter a city."
+            ),
+            "max_length": gettext_lazy(
+                "City is too long."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -331,8 +494,12 @@ class CustomerProfileForm(forms.Form):
         max_length=MAX_CUSTOMER_ADDRESS_LINE_LENGTH,
         label=gettext_lazy("Address"),
         error_messages={
-            "required": gettext_lazy("Enter a street address."),
-            "max_length": gettext_lazy("Address is too long."),
+            "required": gettext_lazy(
+                "Enter a street address."
+            ),
+            "max_length": gettext_lazy(
+                "Address is too long."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -341,18 +508,33 @@ class CustomerProfileForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, customer: Customer, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        customer: Customer,
+        **kwargs,
+    ) -> None:
         self.customer = customer
         super().__init__(*args, **kwargs)
 
         set_form_field_layout(
             self,
-            full=("name", "address_line"),
-            half=("email", "phone_number", "country", "city"),
+            full=(
+                "name",
+                "address_line",
+            ),
+            half=(
+                "email",
+                "phone_number",
+                "country",
+                "city",
+            ),
         )
 
 
-def build_customer_profile_initial_data(customer: Customer) -> dict[str, object]:
+def build_customer_profile_initial_data(
+    customer: Customer,
+) -> dict[str, object]:
     return {
         "name": customer.name,
         "email": customer.email,
@@ -371,8 +553,29 @@ def build_portal_order_line_initial_data(
             "product": line.product_id,
             "quantity": line.quantity_in_units,
         }
-        for line in order.lines.select_related("product").order_by("id")
+        for line in (
+            order.lines
+            .select_related("product")
+            .order_by("id")
+        )
     ]
+
+
+def _portal_product_label(
+    product: Product,
+    *,
+    language_code: str | None,
+) -> str:
+    product_name = _portal_product_name(
+        product,
+        language_code=language_code,
+    )
+
+    return (
+        f"{product.code_label} · "
+        f"{product_name} · "
+        f"{product.unit_weight_label}"
+    )
 
 
 def _portal_product_name(

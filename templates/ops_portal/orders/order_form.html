@@ -51,7 +51,7 @@
 
       <div class="order-lines__list" data-order-lines-list>
         {% for line_form in line_formset %}
-          {% include "orders/includes/order_line_form.html" with line_form=line_form line_number=forloop.counter remove_hidden=True only %}
+          {% include "ops_portal/orders/includes/order_line_form.html" with line_form=line_form line_number=forloop.counter remove_hidden=True only %}
         {% endfor %}
       </div>
 
@@ -70,7 +70,7 @@
     </section>
 
     <template id="order-line-empty-form-template">
-      {% include "orders/includes/order_line_form.html" with line_form=line_formset.empty_form line_number="__line_number__" remove_hidden=False only %}
+      {% include "ops_portal/orders/includes/order_line_form.html" with line_form=line_formset.empty_form line_number="__line_number__" remove_hidden=False only %}
     </template>
 
     <div class="form-actions">
