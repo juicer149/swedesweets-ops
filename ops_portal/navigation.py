@@ -16,7 +16,7 @@ from common.navigation import NavItem, filter_nav_items
 
 CUSTOMERS_NAV_ITEM = NavItem(
     label="Customers",
-    route_name="customers:index",
+    route_name="ops_customers:index",
     namespace="customers",
     icon="users",
     capability=Capability.VIEW_CUSTOMERS,

@@ -335,7 +335,7 @@ def order_deliver_href(order: Order) -> str:
 
 
 def customer_detail_href(order: Order) -> str:
-    return reverse("customers:detail", kwargs={"customer_pk": order.customer_id})
+    return reverse("ops_customers:detail", kwargs={"customer_pk": order.customer_id})
 
 
 def product_detail_href(product_id: int) -> str:

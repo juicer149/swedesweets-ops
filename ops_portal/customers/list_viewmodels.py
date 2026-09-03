@@ -15,7 +15,7 @@ from common.ui import (
     maps_search_link,
     tel_link,
 )
-from customers.access import can_create_customer
+from ops_portal.customers.access import can_create_customer
 from customers.models import Customer
 
 
@@ -43,7 +43,7 @@ def _build_add_customer_header_action(
 
     return PageHeaderAction(
         label="Add customer",
-        href=reverse("customers:create"),
+        href=reverse("ops_customers:create"),
         aria_label="Add a new customer",
     )
 
@@ -143,4 +143,4 @@ def _customer_detail_action(detail_href: str) -> UiText:
 
 
 def _customer_detail_href(customer: Customer) -> str:
-    return reverse("customers:detail", kwargs={"customer_pk": customer.pk})
+    return reverse("ops_customers:detail", kwargs={"customer_pk": customer.pk})

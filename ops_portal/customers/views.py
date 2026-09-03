@@ -10,20 +10,7 @@ from common.table_controls import (
     TableControlsTemplate,
     TableSortField,
 )
-from customers.detail_viewmodels import build_customer_detail_context
 from customers.errors import InvalidCustomerData
-from customers.form_viewmodels import (
-    build_create_customer_form_context,
-    build_edit_customer_form_context,
-)
-from customers.forms import (
-    CustomerForm,
-    build_customer_edit_initial_data,
-)
-from customers.list_viewmodels import (
-    build_customer_page_rows,
-    build_customers_page_header,
-)
 from customers.models import Customer
 from customers.selectors import (
     CUSTOMER_SORTS,
@@ -31,10 +18,23 @@ from customers.selectors import (
     list_customers,
 )
 from customers.services import create_customer, update_customer
-from orders.selectors import (
-    get_customer_order_summary,
+from ops_portal.customers.detail_viewmodels import (
+    build_customer_detail_context,
+)
+from ops_portal.customers.form_viewmodels import (
+    build_create_customer_form_context,
+    build_edit_customer_form_context,
+)
+from ops_portal.customers.forms import (
+    CustomerForm,
+    build_customer_edit_initial_data,
+)
+from ops_portal.customers.list_viewmodels import (
+    build_customer_page_rows,
+    build_customers_page_header,
 )
 from orders.selectors import (
+    get_customer_order_summary,
     list_customer_orders as list_orders_for_customer,
 )
 
@@ -74,37 +74,67 @@ def index(request):
     )
 
     context = {
-        "page_header": build_customers_page_header(role_spec=request.role_spec),
+        "page_header": build_customers_page_header(
+            role_spec=request.role_spec,
+        ),
         "customer_rows": build_customer_page_rows(customers),
         "filters": [],
-        "table_sorts": controls.build_table_sort_links(CUSTOMER_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(CUSTOMER_TABLE_SORTS),
-        "mobile_sort_direction": controls.build_mobile_sort_direction(),
-        "table_controls_template": CUSTOMER_TABLE_CONTROLS_TEMPLATE,
+        "table_sorts": controls.build_table_sort_links(
+            CUSTOMER_TABLE_SORTS
+        ),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(
+            CUSTOMER_TABLE_SORTS
+        ),
+        "mobile_sort_direction": (
+            controls.build_mobile_sort_direction()
+        ),
+        "table_controls_template": (
+            CUSTOMER_TABLE_CONTROLS_TEMPLATE
+        ),
         "numeric_table_fields": [],
     }
 
-    return render(request, "customers/index.html", context)
+    return render(
+        request,
+        "ops_portal/customers/index.html",
+        context,
+    )
 
 
 @login_required
-def detail(request, customer_pk: int):
+def detail(
+    request,
+    customer_pk: int,
+):
     customer = _get_customer_or_404(customer_pk)
-    orders = list(list_orders_for_customer(customer=customer))
+    orders = list(
+        list_orders_for_customer(
+            customer=customer,
+        )
+    )
 
     context = build_customer_detail_context(
         customer=customer,
-        order_summary=get_customer_order_summary(customer=customer),
+        order_summary=get_customer_order_summary(
+            customer=customer,
+        ),
         orders=orders,
         role_spec=request.role_spec,
-        cancel_url=reverse("customers:index"),
+        cancel_url=reverse("ops_customers:index"),
     ).as_dict()
 
-    return render(request, "customers/detail.html", context)
+    return render(
+        request,
+        "ops_portal/customers/detail.html",
+        context,
+    )
 
 
 @login_required
-def edit(request, customer_pk: int):
+def edit(
+    request,
+    customer_pk: int,
+):
     customer = _get_customer_or_404(customer_pk)
 
     if request.method == "POST":
@@ -125,12 +155,20 @@ def edit(request, customer_pk: int):
             else:
                 messages.success(
                     request,
-                    f"Customer {updated_customer.name} updated.",
+                    (
+                        f"Customer "
+                        f"{updated_customer.name} updated."
+                    ),
                 )
-                return redirect("customers:detail", customer_pk=updated_customer.pk)
+                return redirect(
+                    "ops_customers:detail",
+                    customer_pk=updated_customer.pk,
+                )
     else:
         form = CustomerForm(
-            initial=build_customer_edit_initial_data(customer),
+            initial=build_customer_edit_initial_data(
+                customer
+            ),
             customer=customer,
         )
 
@@ -139,7 +177,11 @@ def edit(request, customer_pk: int):
         customer=customer,
     ).as_dict()
 
-    return render(request, "customers/customer_form.html", context)
+    return render(
+        request,
+        "ops_portal/customers/customer_form.html",
+        context,
+    )
 
 
 @login_required
@@ -160,7 +202,9 @@ def create(request):
                     request,
                     f"Customer {customer.name} added.",
                 )
-                return redirect("customers:index")
+                return redirect(
+                    "ops_customers:index"
+                )
     else:
         form = CustomerForm()
 
@@ -168,10 +212,16 @@ def create(request):
         form=form,
     ).as_dict()
 
-    return render(request, "customers/customer_form.html", context)
+    return render(
+        request,
+        "ops_portal/customers/customer_form.html",
+        context,
+    )
 
 
-def _get_customer_or_404(customer_pk: int) -> Customer:
+def _get_customer_or_404(
+    customer_pk: int,
+) -> Customer:
     return get_object_or_404(
         Customer.objects,
         pk=customer_pk,

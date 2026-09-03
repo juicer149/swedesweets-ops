@@ -63,7 +63,7 @@ def _target_href(target: object) -> str:
 
         case Customer():
             return reverse(
-                "customers:detail",
+                "ops_customers:detail",
                 kwargs={
                     "customer_pk": target.pk,
                 },

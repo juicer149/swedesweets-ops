@@ -13,10 +13,10 @@ CAPABILITIES = frozenset(
 
 
 VIEW_CAPABILITIES = {
-    "customers:index": Capability.VIEW_CUSTOMERS,
-    "customers:detail": Capability.VIEW_CUSTOMERS,
-    "customers:create": Capability.CREATE_CUSTOMERS,
-    "customers:edit": Capability.EDIT_CUSTOMERS,
+    "ops_customers:index": Capability.VIEW_CUSTOMERS,
+    "ops_customers:detail": Capability.VIEW_CUSTOMERS,
+    "ops_customers:create": Capability.CREATE_CUSTOMERS,
+    "ops_customers:edit": Capability.EDIT_CUSTOMERS,
 }
 
 

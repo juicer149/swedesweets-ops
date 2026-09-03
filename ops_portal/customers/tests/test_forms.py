@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from customers.forms import (
+from customers.tests.factories import customer_factory
+from ops_portal.customers.forms import (
     CUSTOMER_COUNTRY_CHOICES,
     CustomerForm,
     build_customer_edit_initial_data,
@@ -64,14 +65,22 @@ def test_customer_form_rejects_missing_required_fields():
 
 
 def test_customer_form_rejects_invalid_email():
-    form = CustomerForm(data=valid_customer_form_data(email="not-an-email"))
+    form = CustomerForm(
+        data=valid_customer_form_data(
+            email="not-an-email",
+        )
+    )
 
     assert not form.is_valid()
     assert "email" in form.errors
 
 
 def test_customer_form_rejects_invalid_country_choice():
-    form = CustomerForm(data=valid_customer_form_data(country="SE"))
+    form = CustomerForm(
+        data=valid_customer_form_data(
+            country="SE",
+        )
+    )
 
     assert not form.is_valid()
     assert "country" in form.errors
@@ -80,8 +89,18 @@ def test_customer_form_rejects_invalid_country_choice():
 def test_customer_form_configures_country_widget_metadata():
     form = CustomerForm()
 
-    assert form.fields["country"].widget.attrs["data-enhanced-select"] == "true"
-    assert form.fields["country"].widget.attrs["data-enhanced-select-search"] == "false"
+    assert (
+        form.fields["country"].widget.attrs[
+            "data-enhanced-select"
+        ]
+        == "true"
+    )
+    assert (
+        form.fields["country"].widget.attrs[
+            "data-enhanced-select-search"
+        ]
+        == "false"
+    )
 
 
 def test_customer_form_stores_customer_instance():
@@ -92,8 +111,19 @@ def test_customer_form_stores_customer_instance():
     assert form.customer is customer
 
 
-def test_build_customer_edit_initial_data(customer):
-    assert build_customer_edit_initial_data(customer) == {
+def test_build_customer_edit_initial_data(db):
+    customer = customer_factory(
+        name="Nordic Corner Shop",
+        email="ORDERS@EXAMPLE.FR",
+        phone_number="+33 6 12 34 56 78",
+        country="FR",
+        city="Chamonix-Mont-Blanc",
+        address_line="123 Rue du Mont Blanc",
+    )
+
+    assert build_customer_edit_initial_data(
+        customer
+    ) == {
         "name": "Nordic Corner Shop",
         "email": "orders@example.fr",
         "phone_number": "+33612345678",

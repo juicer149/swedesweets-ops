@@ -181,7 +181,7 @@ class CustomerAccountCreateForm(forms.Form):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        create_customer_url = reverse("customers:create")
+        create_customer_url = reverse("ops_customers:create")
         self.fields["customer"].help_text = (
             "Can’t find the customer? "
             f'<a href="{create_customer_url}">Create the customer record</a> '

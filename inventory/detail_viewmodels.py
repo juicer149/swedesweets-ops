@@ -298,7 +298,7 @@ def _build_usage_rows(
 
         if usage.customer_id is not None:
             customer_href = reverse(
-                "customers:detail",
+                "ops_customers:detail",
                 kwargs={
                     "customer_pk": usage.customer_id,
                 },

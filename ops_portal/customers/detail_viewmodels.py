@@ -13,7 +13,7 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import StatusPresentation, UiCard
-from customers.access import can_edit_customer
+from ops_portal.customers.access import can_edit_customer
 from customers.models import Customer
 from orders.mini_cards import build_customer_order_mini_card
 from orders.models import Order
@@ -106,7 +106,7 @@ def build_customer_secondary_actions(
     return (
         build_secondary_get_action(
             label="Edit customer",
-            href=reverse("customers:edit", kwargs={"customer_pk": customer.pk}),
+            href=reverse("ops_customers:edit", kwargs={"customer_pk": customer.pk}),
         ),
     )
 
@@ -131,7 +131,7 @@ def _build_customer_detail_panels(
             key="customer",
             label="Customer",
             summary=customer.name,
-            body_template="customers/includes/detail_panel_customer.html",
+            body_template="ops_portal/customers/includes/detail_panel_customer.html",
             icon="users",
             is_active=True,
         ),
@@ -139,7 +139,7 @@ def _build_customer_detail_panels(
             key="orders",
             label="Orders",
             summary=_order_summary_label(order_summary.total_orders),
-            body_template="customers/includes/detail_panel_orders.html",
+            body_template="ops_portal/customers/includes/detail_panel_orders.html",
             icon="cart",
         ),
     )

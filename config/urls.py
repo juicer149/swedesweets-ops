@@ -68,8 +68,8 @@ urlpatterns = [
     path(
         "customers/",
         include(
-            "customers.urls",
-            namespace="customers",
+            "ops_portal.customers.urls",
+            namespace="ops_customers",
         ),
     ),
     path(

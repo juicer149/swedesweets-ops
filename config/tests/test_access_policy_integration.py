@@ -44,8 +44,8 @@ VIEW_KWARGS = {
     "inventory:close": BATCH_KWARGS,
     "products:detail": PRODUCT_KWARGS,
     "products:edit": PRODUCT_KWARGS,
-    "customers:detail": CUSTOMER_KWARGS,
-    "customers:edit": CUSTOMER_KWARGS,
+    "ops_customers:detail": CUSTOMER_KWARGS,
+    "ops_customers:edit": CUSTOMER_KWARGS,
     "business_portal:order_detail": ORDER_KWARGS,
 }
 

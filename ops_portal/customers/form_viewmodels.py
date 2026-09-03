@@ -5,7 +5,7 @@ from typing import Any
 
 from django.urls import reverse
 
-from customers.forms import CustomerForm
+from ops_portal.customers.forms import CustomerForm
 from customers.models import Customer
 
 
@@ -46,7 +46,7 @@ def build_create_customer_form_context(
         title="Add customer",
         description="",
         submit_label="Add customer",
-        cancel_url=reverse("customers:index"),
+        cancel_url=reverse("ops_customers:index"),
     )
 
 
@@ -62,7 +62,7 @@ def build_edit_customer_form_context(
         title=f"Edit - {customer.name}",
         description="",
         submit_label="Update customer",
-        cancel_url=reverse("customers:detail", kwargs={"customer_pk": customer.pk}),
+        cancel_url=reverse("ops_customers:detail", kwargs={"customer_pk": customer.pk}),
     )
 
 

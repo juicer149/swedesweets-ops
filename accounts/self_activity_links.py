@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from django.urls import reverse
 
-from accounts.roles import Capability, RoleSpec
 from accounts.activity import AccountActivity
+from accounts.roles import Capability, RoleSpec
 from customers.models import Customer
 from inventory.models import InventoryBatch
 from orders.models import Order
@@ -58,7 +58,7 @@ def _staff_target_href(target: object) -> str:
 
         case Customer():
             return reverse(
-                "customers:detail",
+                "ops_customers:detail",
                 kwargs={"customer_pk": target.pk},
             )
 

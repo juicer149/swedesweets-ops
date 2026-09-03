@@ -22,7 +22,7 @@ def build_ops_account_presentation(
     return replace(
         presentation,
         linked_identity_href=reverse(
-            "customers:detail",
+            "ops_customers:detail",
             kwargs={
                 "customer_pk": account.identity.customer_id,
             },
