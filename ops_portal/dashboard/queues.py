@@ -12,7 +12,7 @@ from ops_portal.dashboard.viewmodels import (
     DashboardQueueTab,
 )
 from inventory.expiry import EXPIRY_SOON_DAYS
-from inventory.presentation import (
+from ops_portal.inventory.presentation import (
     batch_quantity_label,
     product_available_quantity_label,
 )
@@ -141,11 +141,11 @@ def _packed_orders_view_all_href() -> str:
 
 
 def _expiring_batches_view_all_href() -> str:
-    return f"{reverse('inventory:index')}?sort=best_before#inventory-list"
+    return f"{reverse('ops_inventory:index')}?sort=best_before#inventory-list"
 
 
 def _low_stock_products_view_all_href() -> str:
-    return f"{reverse('inventory:index')}?view=products&sort=available#inventory-list"
+    return f"{reverse('ops_inventory:index')}?view=products&sort=available#inventory-list"
 
 
 # -----------------------------------------------------------------------------
@@ -185,7 +185,7 @@ def _expiring_batch_item(row) -> DashboardQueueItem:
             f"{batch_quantity_label(batch)} · "
             f"{row.expiry.label} {batch.best_before:%Y-%m-%d}"
         ),
-        href=reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
+        href=reverse("ops_inventory:detail", kwargs={"batch_pk": batch.pk}),
         action_label="Open batch →",
         tone="danger",
         icon="warning",

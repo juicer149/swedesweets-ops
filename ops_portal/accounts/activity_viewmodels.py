@@ -55,7 +55,7 @@ def _target_href(target: object) -> str:
 
         case InventoryBatch():
             return reverse(
-                "inventory:detail",
+                "ops_inventory:detail",
                 kwargs={
                     "batch_pk": target.pk,
                 },

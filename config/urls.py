@@ -54,8 +54,8 @@ urlpatterns = [
     path(
         "inventory/",
         include(
-            "inventory.urls",
-            namespace="inventory",
+            "ops_portal.inventory.urls",
+            namespace="ops_inventory",
         ),
     ),
     path(

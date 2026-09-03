@@ -15,11 +15,11 @@ CAPABILITIES = frozenset(
 
 
 VIEW_CAPABILITIES = {
-    "inventory:index": Capability.VIEW_INVENTORY,
-    "inventory:detail": Capability.VIEW_INVENTORY,
-    "inventory:create": Capability.CREATE_BATCHES,
-    "inventory:edit": Capability.EDIT_BATCHES,
-    "inventory:close": Capability.CLOSE_BATCHES,
+    "ops_inventory:index": Capability.VIEW_INVENTORY,
+    "ops_inventory:detail": Capability.VIEW_INVENTORY,
+    "ops_inventory:create": Capability.CREATE_BATCHES,
+    "ops_inventory:edit": Capability.EDIT_BATCHES,
+    "ops_inventory:close": Capability.CLOSE_BATCHES,
 }
 
 

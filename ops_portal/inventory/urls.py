@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from django.urls import path
 
-from inventory import views
+from ops_portal.inventory import views
 
-app_name = "inventory"
+app_name = "ops_inventory"
 
 urlpatterns = [
     path("", views.index, name="index"),

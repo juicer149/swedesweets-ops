@@ -32,8 +32,8 @@ ORDERS_NAV_ITEM = NavItem(
 
 INVENTORY_NAV_ITEM = NavItem(
     label="Inventory",
-    route_name="inventory:index",
-    namespace="inventory",
+    route_name="ops_inventory:index",
+    namespace="ops_inventory",
     icon="inventory",
     capability=Capability.VIEW_INVENTORY,
 )

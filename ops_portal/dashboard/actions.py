@@ -52,7 +52,7 @@ def _deliver_orders_href() -> str:
 
 
 def _add_batch_href() -> str:
-    return reverse("inventory:create")
+    return reverse("ops_inventory:create")
 
 
 # ------------------------------------------------------------------------------

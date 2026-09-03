@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from common.ui import UiCard, UiCardRow, UiText
 from inventory.models import InventoryBatch
-from inventory.presentation import (
+from ops_portal.inventory.presentation import (
     INVENTORY_CARD_CLASS,
     batch_status_presentation,
 )

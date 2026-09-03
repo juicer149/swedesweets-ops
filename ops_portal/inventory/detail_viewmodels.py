@@ -15,13 +15,13 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
-from inventory.access import (
+from ops_portal.inventory.access import (
     can_close_batch,
     can_edit_batch,
 )
 from inventory.expiry import build_expiry_info
 from inventory.models import InventoryBatch
-from inventory.presentation import (
+from ops_portal.inventory.presentation import (
     batch_detail_card_class,
     batch_detail_status_class,
     batch_status_icon,
@@ -203,7 +203,7 @@ def build_batch_secondary_actions(
             build_secondary_get_action(
                 label="Edit batch",
                 href=reverse(
-                    "inventory:edit",
+                    "ops_inventory:edit",
                     kwargs={
                         "batch_pk": batch.pk,
                     },
@@ -219,7 +219,7 @@ def build_batch_secondary_actions(
             build_danger_get_action(
                 label="Close batch",
                 href=reverse(
-                    "inventory:close",
+                    "ops_inventory:close",
                     kwargs={
                         "batch_pk": batch.pk,
                     },
@@ -260,7 +260,7 @@ def _build_batch_detail_panels(
             label="Batch",
             summary=stock.available_quantity_label,
             body_template=(
-                "inventory/includes/"
+                "ops_portal/inventory/includes/"
                 "detail_panel_batch.html"
             ),
             icon="tag",
@@ -273,7 +273,7 @@ def _build_batch_detail_panels(
                 usage_count
             ),
             body_template=(
-                "inventory/includes/"
+                "ops_portal/inventory/includes/"
                 "detail_panel_usage.html"
             ),
             icon="inventory",

@@ -11,22 +11,22 @@ from common.table_controls import (
     TableFilter,
     TableSortField,
 )
-from inventory.access import can_close_batch, can_edit_batch
-from inventory.detail_viewmodels import (
+from ops_portal.inventory.access import can_close_batch, can_edit_batch
+from ops_portal.inventory.detail_viewmodels import (
     build_batch_detail_context,
 )
 from inventory.errors import InvalidStockOperation
-from inventory.form_viewmodels import (
+from ops_portal.inventory.form_viewmodels import (
     build_close_batch_form_context,
     build_create_batch_form_context,
     build_edit_batch_form_context,
 )
-from inventory.forms import (
+from ops_portal.inventory.forms import (
     BatchEditForm,
     BatchForm,
     build_batch_edit_initial_data,
 )
-from inventory.list_viewmodels import (
+from ops_portal.inventory.list_viewmodels import (
     build_batch_page_rows,
     build_batch_quick_jump_search,
     build_inventory_page_header,
@@ -101,7 +101,7 @@ def index(request):
     else:
         context = _build_batches_index_context(request)
 
-    return render(request, "inventory/index.html", context)
+    return render(request, "ops_portal/inventory/index.html", context)
 
 
 @login_required
@@ -112,11 +112,11 @@ def detail(request, batch_pk: int):
     context = build_batch_detail_context(
         batch=batch,
         allocations=allocations,
-        cancel_url=reverse("inventory:index"),
+        cancel_url=reverse("ops_inventory:index"),
         role_spec=request.role_spec,
     ).as_dict()
 
-    return render(request, "inventory/detail.html", context)
+    return render(request, "ops_portal/inventory/detail.html", context)
 
 
 @login_required
@@ -128,7 +128,7 @@ def edit(request, batch_pk: int):
             request,
             f"Batch {batch.batch_id} cannot be edited.",
         )
-        return redirect("inventory:detail", batch_pk=batch.pk)
+        return redirect("ops_inventory:detail", batch_pk=batch.pk)
 
     if request.method == "POST":
         form = BatchEditForm(
@@ -152,7 +152,7 @@ def edit(request, batch_pk: int):
                     request,
                     f"Batch {updated_batch.batch_id} updated.",
                 )
-                return redirect("inventory:detail", batch_pk=updated_batch.pk)
+                return redirect("ops_inventory:detail", batch_pk=updated_batch.pk)
     else:
         form = BatchEditForm(
             initial=build_batch_edit_initial_data(batch),
@@ -162,10 +162,10 @@ def edit(request, batch_pk: int):
     context = build_edit_batch_form_context(
         form=form,
         batch=batch,
-        cancel_url=reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
+        cancel_url=reverse("ops_inventory:detail", kwargs={"batch_pk": batch.pk}),
     ).as_dict()
 
-    return render(request, "inventory/batch_form.html", context)
+    return render(request, "ops_portal/inventory/batch_form.html", context)
 
 
 @login_required
@@ -186,16 +186,16 @@ def create(request):
                     request,
                     f"Batch {batch.batch_id} added.",
                 )
-                return redirect("inventory:index")
+                return redirect("ops_inventory:index")
     else:
         form = BatchForm()
 
     context = build_create_batch_form_context(
         form=form,
-        cancel_url=reverse("inventory:index"),
+        cancel_url=reverse("ops_inventory:index"),
     ).as_dict()
 
-    return render(request, "inventory/batch_form.html", context)
+    return render(request, "ops_portal/inventory/batch_form.html", context)
 
 
 @login_required
@@ -207,7 +207,7 @@ def close(request, batch_pk: int):
             request,
             f"Batch {batch.batch_id} cannot be closed.",
         )
-        return redirect("inventory:detail", batch_pk=batch.pk)
+        return redirect("ops_inventory:detail", batch_pk=batch.pk)
 
     if request.method == "POST":
         try:
@@ -217,20 +217,20 @@ def close(request, batch_pk: int):
             )
         except InvalidStockOperation as error:
             messages.error(request, str(error))
-            return redirect("inventory:detail", batch_pk=batch.pk)
+            return redirect("ops_inventory:detail", batch_pk=batch.pk)
 
         messages.success(
             request,
             f"Batch {closed_batch.batch_id} closed.",
         )
-        return redirect("inventory:detail", batch_pk=closed_batch.pk)
+        return redirect("ops_inventory:detail", batch_pk=closed_batch.pk)
 
     context = build_close_batch_form_context(
         batch=batch,
-        cancel_url=reverse("inventory:detail", kwargs={"batch_pk": batch.pk}),
+        cancel_url=reverse("ops_inventory:detail", kwargs={"batch_pk": batch.pk}),
     ).as_dict()
 
-    return render(request, "inventory/close.html", context)
+    return render(request, "ops_portal/inventory/close.html", context)
 
 
 def _build_batches_index_context(request) -> dict[str, object]:
@@ -319,8 +319,14 @@ def _inventory_view_links(
 ):
     return build_inventory_view_links(
         active_view=active_view,
-        batches_href=f"{reverse('inventory:index')}?view={INVENTORY_VIEW_BATCHES}",
-        products_href=f"{reverse('inventory:index')}?view={INVENTORY_VIEW_PRODUCTS}",
+        batches_href=(
+            f"{reverse('ops_inventory:index')}"
+            "?view={INVENTORY_VIEW_BATCHES}"
+        ),
+        products_href=(
+            f"{reverse('ops_inventory:index')}"
+            "?view={INVENTORY_VIEW_PRODUCTS}"
+        ),
     )
 
 

@@ -15,7 +15,7 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
-from inventory.mini_cards import build_batch_mini_card
+from ops_portal.inventory.mini_cards import build_batch_mini_card
 from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow
 from ops_portal.products.access import can_edit_product
@@ -302,7 +302,7 @@ def _build_batch_rows(
     rows: list[ProductBatchRow] = []
 
     for batch in batches:
-        batch_href = reverse("inventory:detail", kwargs={"batch_pk": batch.pk})
+        batch_href = reverse("ops_inventory:detail", kwargs={"batch_pk": batch.pk})
 
         rows.append(
             ProductBatchRow(

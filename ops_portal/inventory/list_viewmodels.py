@@ -15,10 +15,10 @@ from common.ui import (
     UiText,
     build_quantity_info,
 )
-from inventory.access import can_create_batch
+from ops_portal.inventory.access import can_create_batch
 from inventory.low_stock import LOW_STOCK_THRESHOLD
 from inventory.models import InventoryBatch
-from inventory.presentation import (
+from ops_portal.inventory.presentation import (
     INVENTORY_CARD_CLASS,
     batch_quantity_label,
     batch_status_presentation,
@@ -224,7 +224,7 @@ def _build_add_batch_header_action(
 
     return PageHeaderAction(
         label="Add batch",
-        href=reverse("inventory:create"),
+        href=reverse("ops_inventory:create"),
         aria_label="Add a new batch",
     )
 
@@ -393,4 +393,4 @@ def _product_stock_card(
 
 
 def _batch_detail_href(batch: InventoryBatch) -> str:
-    return reverse("inventory:detail", kwargs={"batch_pk": batch.pk})
+    return reverse("ops_inventory:detail", kwargs={"batch_pk": batch.pk})

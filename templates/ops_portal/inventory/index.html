@@ -32,9 +32,9 @@
   {% include "includes/table/sort_select.html" %}
 
   {% if active_view == "products" %}
-    {% include "inventory/_product_stock_table.html" %}
+    {% include "ops_portal/inventory/_product_stock_table.html" %}
   {% else %}
-    {% include "inventory/_batch_table.html" %}
+    {% include "ops_portal/inventory/_batch_table.html" %}
   {% endif %}
 </section>
 {% endblock %}
