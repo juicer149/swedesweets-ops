@@ -18,9 +18,9 @@ from common.ui import UiCard
 from inventory.mini_cards import build_batch_mini_card
 from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow
-from products.access import can_edit_product
+from ops_portal.products.access import can_edit_product
 from products.models import Product
-from products.presentation import (
+from ops_portal.products.presentation import (
     ProductTagPresentation,
     product_attribute_tags,
     product_detail_card_class,
@@ -249,7 +249,7 @@ def build_product_secondary_actions(
     return (
         build_secondary_get_action(
             label="Edit product",
-            href=reverse("products:edit", kwargs={"product_pk": product.pk}),
+            href=reverse("ops_products:edit", kwargs={"product_pk": product.pk}),
         ),
     )
 
@@ -275,7 +275,7 @@ def _build_product_detail_panels(
             key="product",
             label="Product",
             summary=product.display_name,
-            body_template="products/includes/detail_panel_product.html",
+            body_template="ops_portal/products/includes/detail_panel_product.html",
             icon="lollipop",
             is_active=True,
         ),
@@ -283,14 +283,14 @@ def _build_product_detail_panels(
             key="inventory",
             label="Inventory",
             summary=product.stock_quantity_label(stock.available_quantity),
-            body_template="products/includes/detail_panel_inventory.html",
+            body_template="ops_portal/products/includes/detail_panel_inventory.html",
             icon="inventory",
         ),
         DetailPanel(
             key="demand",
             label="Demand",
             summary=product.stock_quantity_label(demand.delivered_quantity),
-            body_template="products/includes/detail_panel_demand.html",
+            body_template="ops_portal/products/includes/detail_panel_demand.html",
             icon="truck",
         ),
     )

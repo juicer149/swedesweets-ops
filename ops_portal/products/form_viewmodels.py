@@ -5,7 +5,7 @@ from typing import Any
 
 from django.urls import reverse
 
-from products.forms import ProductEditForm, ProductForm
+from ops_portal.products.forms import ProductEditForm, ProductForm
 from products.models import Product
 
 
@@ -46,7 +46,7 @@ def build_create_product_form_context(
         title="Add product",
         description="",
         submit_label="Add product",
-        cancel_url=reverse("products:index"),
+        cancel_url=reverse("ops_products:index"),
     )
 
 
@@ -62,7 +62,7 @@ def build_edit_product_form_context(
         title=f"Edit - {product.display_name}",
         description="",
         submit_label="Update product",
-        cancel_url=reverse("products:detail", kwargs={"product_pk": product.pk}),
+        cancel_url=reverse("ops_products:detail", kwargs={"product_pk": product.pk}),
     )
 
 

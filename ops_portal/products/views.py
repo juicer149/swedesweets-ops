@@ -15,18 +15,18 @@ from inventory.selectors import (
     available_quantity_by_product,
     list_available_batches_for_product,
 )
-from products.detail_viewmodels import build_product_detail_context
+from ops_portal.products.detail_viewmodels import build_product_detail_context
 from products.errors import InvalidProductData
-from products.form_viewmodels import (
+from ops_portal.products.form_viewmodels import (
     build_create_product_form_context,
     build_edit_product_form_context,
 )
-from products.forms import (
+from ops_portal.products.forms import (
     ProductEditForm,
     ProductForm,
     build_product_edit_initial_data,
 )
-from products.list_viewmodels import (
+from ops_portal.products.list_viewmodels import (
     build_product_page_rows,
     build_product_quick_jump_search,
     build_products_page_header,
@@ -105,7 +105,7 @@ def index(request):
         "numeric_table_fields": ["number", "weight"],
     }
 
-    return render(request, "products/index.html", context)
+    return render(request, "ops_portal/products/index.html", context)
 
 
 @login_required
@@ -118,10 +118,10 @@ def detail(request, product_pk: int):
         active_batches=list(list_available_batches_for_product(product=product)),
         demand_summary=get_product_delivered_demand_summary(product=product),
         role_spec=request.role_spec,
-        cancel_url=reverse("products:index"),
+        cancel_url=reverse("ops_products:index"),
     ).as_dict()
 
-    return render(request, "products/detail.html", context)
+    return render(request, "ops_portal/products/detail.html", context)
 
 
 @login_required
@@ -159,7 +159,7 @@ def edit(request, product_pk: int):
                     request,
                     f"Product {updated_product.sku} updated.",
                 )
-                return redirect("products:detail", product_pk=updated_product.pk)
+                return redirect("ops_products:detail", product_pk=updated_product.pk)
     else:
         form = ProductEditForm(
             initial=build_product_edit_initial_data(product),
@@ -171,7 +171,7 @@ def edit(request, product_pk: int):
         product=product,
     ).as_dict()
 
-    return render(request, "products/product_form.html", context)
+    return render(request, "ops_portal/products/product_form.html", context)
 
 
 @login_required
@@ -193,7 +193,7 @@ def create(request):
                 else:
                     messages.info(request, result.message)
 
-                return redirect("products:index")
+                return redirect("ops_products:index")
     else:
         form = ProductForm()
 
@@ -201,7 +201,7 @@ def create(request):
         form=form,
     ).as_dict()
 
-    return render(request, "products/product_form.html", context)
+    return render(request, "ops_portal/products/product_form.html", context)
 
 
 def _get_product_or_404(product_pk: int) -> Product:

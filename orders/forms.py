@@ -18,7 +18,7 @@ from orders.order_limits import (
 )
 from orders.product_choices import build_product_choice_context
 from products.models import Product
-from products.presentation import (
+from ops_portal.products.presentation import (
     translated_product_catalog_label,
     translated_product_name,
 )

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from products.forms import (
+from ops_portal.products.forms import (
     PRODUCT_STATUS_ACTIVE,
     PRODUCT_STATUS_INACTIVE,
     ProductEditForm,

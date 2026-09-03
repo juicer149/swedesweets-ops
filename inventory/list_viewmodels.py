@@ -144,7 +144,7 @@ def build_product_stock_page_rows(
 
 def _build_product_stock_page_row(row: AvailableStockRow) -> ProductStockPageRow:
     status = product_stock_status_presentation(row)
-    product_href = reverse("products:detail", kwargs={"product_pk": row.product_id})
+    product_href = reverse("ops_products:detail", kwargs={"product_pk": row.product_id})
     available_quantity_info = build_quantity_info(
         quantity=row.available_quantity,
         low_threshold=LOW_STOCK_THRESHOLD,

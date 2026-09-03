@@ -196,7 +196,7 @@ def _low_stock_item(row) -> DashboardQueueItem:
     return DashboardQueueItem(
         title=f"{row.code_label} · {row.product_name}",
         meta=product_available_quantity_label(row),
-        href=reverse("products:detail", kwargs={"product_pk": row.product_id}),
+        href=reverse("ops_products:detail", kwargs={"product_pk": row.product_id}),
         action_label="Open product →",
         tone="warning",
         icon="inventory",

@@ -13,9 +13,9 @@ from common.ui import (
     UiCardRow,
     UiText,
 )
-from products.access import can_create_product
+from ops_portal.products.access import can_create_product
 from products.models import Product
-from products.presentation import (
+from ops_portal.products.presentation import (
     ProductTagPresentation,
     product_attribute_tags,
     product_manufacturer_label,
@@ -50,7 +50,7 @@ def _build_add_product_header_action(
 
     return PageHeaderAction(
         label="Add product",
-        href=reverse("products:create"),
+        href=reverse("ops_products:create"),
         aria_label="Add a new product",
     )
 
@@ -195,4 +195,4 @@ def _product_tag_row(tag: ProductTagPresentation) -> UiCardRow:
 
 
 def _product_detail_href(product: Product) -> str:
-    return reverse("products:detail", kwargs={"product_pk": product.pk})
+    return reverse("ops_products:detail", kwargs={"product_pk": product.pk})

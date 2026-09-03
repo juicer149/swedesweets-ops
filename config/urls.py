@@ -61,8 +61,8 @@ urlpatterns = [
     path(
         "products/",
         include(
-            "products.urls",
-            namespace="products",
+            "ops_portal.products.urls",
+            namespace="ops_products",
         ),
     ),
     path(

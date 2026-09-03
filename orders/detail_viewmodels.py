@@ -34,7 +34,7 @@ from orders.presentation import (
     order_status_icon,
     quantity_label,
 )
-from products.mini_cards import build_product_quantity_mini_card
+from ops_portal.products.mini_cards import build_product_quantity_mini_card
 from products.models import Product
 
 
@@ -339,7 +339,7 @@ def customer_detail_href(order: Order) -> str:
 
 
 def product_detail_href(product_id: int) -> str:
-    return reverse("products:detail", kwargs={"product_pk": product_id})
+    return reverse("ops_products:detail", kwargs={"product_pk": product_id})
 
 
 def _build_content_lines(lines: list[OrderLine]) -> list[OrderContentLine]:

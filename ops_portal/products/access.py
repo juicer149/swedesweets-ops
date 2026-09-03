@@ -13,10 +13,10 @@ CAPABILITIES = frozenset(
 
 
 VIEW_CAPABILITIES = {
-    "products:index": Capability.VIEW_OPS_PRODUCTS,
-    "products:detail": Capability.VIEW_OPS_PRODUCTS,
-    "products:create": Capability.CREATE_PRODUCTS,
-    "products:edit": Capability.EDIT_PRODUCTS,
+    "ops_products:index": Capability.VIEW_OPS_PRODUCTS,
+    "ops_products:detail": Capability.VIEW_OPS_PRODUCTS,
+    "ops_products:create": Capability.CREATE_PRODUCTS,
+    "ops_products:edit": Capability.EDIT_PRODUCTS,
 }
 
 

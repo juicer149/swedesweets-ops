@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from common.ui import UiCard, UiCardRow, UiText
 from products.models import Product
-from products.presentation import product_status_presentation
+from ops_portal.products.presentation import product_status_presentation
 
 
 def build_product_mini_card(

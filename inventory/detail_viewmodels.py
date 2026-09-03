@@ -27,7 +27,7 @@ from inventory.presentation import (
     batch_status_icon,
 )
 from orders.mini_cards import build_order_usage_mini_card
-from products.mini_cards import build_product_mini_card
+from ops_portal.products.mini_cards import build_product_mini_card
 from reservations.datatypes import BatchUsage
 
 
@@ -145,7 +145,7 @@ def build_batch_detail_context(
     )
 
     product_href = reverse(
-        "products:detail",
+        "ops_products:detail",
         kwargs={
             "product_pk": batch.product_id,
         },

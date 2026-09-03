@@ -17,7 +17,7 @@ from common.navigation import NavItem, filter_nav_items
 CUSTOMERS_NAV_ITEM = NavItem(
     label="Customers",
     route_name="ops_customers:index",
-    namespace="customers",
+    namespace="ops_customers",
     icon="users",
     capability=Capability.VIEW_CUSTOMERS,
 )
@@ -40,8 +40,8 @@ INVENTORY_NAV_ITEM = NavItem(
 
 PRODUCTS_NAV_ITEM = NavItem(
     label="Products",
-    route_name="products:index",
-    namespace="products",
+    route_name="ops_products:index",
+    namespace="ops_products",
     icon="lollipop",
     capability=Capability.VIEW_OPS_PRODUCTS,
 )
