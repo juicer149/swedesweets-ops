@@ -17,7 +17,7 @@ from common.ui import (
     UiText,
 )
 from orders.models import Order, OrderLine
-from business_portal.order_presentation import (
+from business_portal.orders.presentation import (
     business_order_status_label,
     contents_summary,
     order_detail_card_class,
@@ -25,7 +25,7 @@ from business_portal.order_presentation import (
     order_status_icon,
     quantity_label,
 )
-from business_portal.product_presentation import (
+from business_portal.orders.product_presentation import (
     business_product_catalog_label,
 )
 from products.localization import translated_product_name
@@ -128,7 +128,7 @@ def _build_order_detail_panels(
             key="order",
             label=_("Order"),
             summary=_("Details"),
-            body_template="business_portal/includes/detail_panel_order.html",
+            body_template="business_portal/orders/includes/detail_panel_order.html",
             icon="cart",
             is_active=order.status == Order.Status.CANCELLED,
         ),
@@ -139,7 +139,7 @@ def _build_order_detail_panels(
                 product_count=product_count,
                 total_quantity=total_quantity,
             ),
-            body_template="business_portal/includes/detail_panel_items.html",
+            body_template="business_portal/orders/includes/detail_panel_items.html",
             icon="box",
             is_active=order.status != Order.Status.CANCELLED,
         ),

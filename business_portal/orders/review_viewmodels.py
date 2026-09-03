@@ -7,12 +7,12 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from orders.models import Order, OrderLine
-from business_portal.order_presentation import (
+from business_portal.orders.presentation import (
     contents_summary,
     quantity_label,
 )
 from products.models import Product
-from business_portal.product_presentation import (
+from business_portal.orders.product_presentation import (
     business_product_catalog_label,
 )
 

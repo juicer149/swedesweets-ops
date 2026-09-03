@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from business_portal.order_presentation import (
+from business_portal.orders.presentation import (
     business_order_status_label,
     order_status_tone,
 )

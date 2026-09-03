@@ -6,7 +6,7 @@ from typing import Any
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from business_portal.forms import PortalOrderLineFormSet
+from business_portal.orders.forms import PortalOrderLineFormSet
 
 
 @dataclass(frozen=True, slots=True)

@@ -10,7 +10,6 @@ from business.services import (
     replace_draft_order_lines,
 )
 from customers.models import Customer
-from customers.services import update_customer
 from inventory.errors import InvalidStockOperation
 from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
@@ -145,31 +144,6 @@ def discard_portal_draft_order(
     return _succeeded(
         draft_order=None,
         status=DraftStatus.CLEARED,
-    )
-
-
-def update_portal_customer_profile(
-    *,
-    customer: Customer,
-    name: str,
-    email: str,
-    phone_number: str,
-    country: str,
-    city: str,
-    address_line: str,
-    user=None,
-) -> Customer:
-    """Update the current portal customer's editable store profile."""
-
-    return update_customer(
-        customer=customer,
-        name=name,
-        email=email,
-        phone_number=phone_number,
-        country=country,
-        city=city,
-        address_line=address_line,
-        user=user,
     )
 
 
