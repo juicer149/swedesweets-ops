@@ -19,8 +19,6 @@ from payments.models import PaymentAttempt
 from retail.models import (
     RetailCheckoutSession,
     RetailOfferSelection,
-    RetailOrder,
-    RetailOrderLine,
 )
 from retail.rules import (
     MAX_RETAIL_LINE_QUANTITY,
@@ -148,36 +146,6 @@ def test_create_pending_retail_order_from_batch_offer():
 
     assert selection.product_offer is None
     assert selection.batch_offer == offer
-
-
-@pytest.mark.django_db
-def test_pending_retail_checkout_does_not_create_legacy_retail_order():
-    retail_postal_area_factory()
-
-    offer = retail_product_offer_factory(
-        enabled=True,
-        price=Decimal("12.50"),
-    )
-
-    create_pending_retail_order(
-        buyer=AnonymousBuyerInput(
-            **retail_buyer_data()
-        ),
-        lines=[
-            RetailOrderLineInput(
-                product_offer_id=offer.pk,
-                quantity=1,
-            ),
-        ],
-    )
-
-    assert RetailOrder.objects.count() == 0
-    assert RetailOrderLine.objects.count() == 0
-
-    assert Order.objects.count() == 1
-    assert OrderLine.objects.count() == 1
-    assert RetailCheckoutSession.objects.count() == 1
-    assert RetailOfferSelection.objects.count() == 1
 
 
 @pytest.mark.django_db

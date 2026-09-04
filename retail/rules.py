@@ -23,10 +23,6 @@ MAX_RETAIL_ORDER_TOTAL = Decimal("1000.00")
 RETAIL_CHECKOUT_WINDOW = timedelta(minutes=90)
 RETAIL_PAYMENT_RESERVATION_WINDOW = timedelta(minutes=35)
 
-# Temporary compatibility alias for legacy RetailOrder tests.
-# Remove together with RetailOrder/RetailOrderLine.
-RETAIL_PAYMENT_WINDOW = RETAIL_CHECKOUT_WINDOW
-
 
 def is_supported_retail_destination(
     *,

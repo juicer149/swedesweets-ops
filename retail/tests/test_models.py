@@ -11,11 +11,9 @@ from retail.models import (
     RetailBatchOffer,
     RetailCheckoutSession,
     RetailOfferSelection,
-    RetailOrder,
-    RetailOrderLine,
     RetailProductOffer,
 )
-from retail.rules import RETAIL_PAYMENT_WINDOW
+from retail.rules import RETAIL_CHECKOUT_WINDOW
 from retail.tests.factories import (
     retail_batch_offer_factory,
     retail_buyer_data,
@@ -178,7 +176,7 @@ def test_retail_checkout_session_owns_retail_order():
 
     checkout = RetailCheckoutSession.objects.create(
         order=order,
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+        expires_at=timezone.now() + RETAIL_CHECKOUT_WINDOW,
     )
 
     assert checkout.order == order
@@ -194,7 +192,7 @@ def test_retail_checkout_session_uses_uuid_primary_key():
 
     checkout = RetailCheckoutSession.objects.create(
         order=order,
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+        expires_at=timezone.now() + RETAIL_CHECKOUT_WINDOW,
     )
 
     assert checkout.pk is not None
@@ -210,14 +208,14 @@ def test_order_can_have_only_one_retail_checkout_session():
 
     RetailCheckoutSession.objects.create(
         order=order,
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+        expires_at=timezone.now() + RETAIL_CHECKOUT_WINDOW,
     )
 
     with pytest.raises(IntegrityError):
         with transaction.atomic():
             RetailCheckoutSession.objects.create(
                 order=order,
-                expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+                expires_at=timezone.now() + RETAIL_CHECKOUT_WINDOW,
             )
 
 
@@ -232,10 +230,10 @@ def test_retail_checkout_session_tracks_expiry():
 
     checkout = RetailCheckoutSession.objects.create(
         order=order,
-        expires_at=before + RETAIL_PAYMENT_WINDOW,
+        expires_at=before + RETAIL_CHECKOUT_WINDOW,
     )
 
-    assert checkout.expires_at == before + RETAIL_PAYMENT_WINDOW
+    assert checkout.expires_at == before + RETAIL_CHECKOUT_WINDOW
 
 
 @pytest.mark.django_db
@@ -247,7 +245,7 @@ def test_deleting_order_deletes_retail_checkout_session():
 
     checkout = RetailCheckoutSession.objects.create(
         order=order,
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
+        expires_at=timezone.now() + RETAIL_CHECKOUT_WINDOW,
     )
 
     checkout_id = checkout.pk
@@ -373,80 +371,6 @@ def test_retail_offer_selection_rejects_two_offers():
                 order_line=line,
                 product_offer=product_offer,
                 batch_offer=batch_offer,
-            )
-
-
-@pytest.mark.django_db
-def test_retail_order_starts_pending_payment():
-    order = RetailOrder.objects.create(
-        **retail_buyer_data(),
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
-    )
-
-    assert order.status == RetailOrder.Status.PENDING_PAYMENT
-
-
-@pytest.mark.django_db
-def test_retail_order_snapshots_buyer_information():
-    buyer = retail_buyer_data()
-
-    order = RetailOrder.objects.create(
-        **buyer,
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
-    )
-
-    assert order.first_name == "Marie"
-    assert order.last_name == "Dupont"
-    assert order.email == "marie@example.com"
-    assert order.phone_number == "+33612345678"
-    assert order.country == "FR"
-    assert order.postal_code == "74000"
-    assert order.city == "Annecy"
-    assert order.address_line == "10 Rue de Test"
-
-
-@pytest.mark.django_db
-def test_retail_order_line_belongs_to_order_and_product():
-    product = retail_product_factory()
-
-    order = RetailOrder.objects.create(
-        **retail_buyer_data(),
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
-    )
-
-    line = RetailOrderLine.objects.create(
-        order=order,
-        product=product,
-        quantity=2,
-        unit_price_snapshot=Decimal("12.50"),
-        line_total=Decimal("25.00"),
-    )
-
-    assert line.order == order
-    assert line.product == product
-    assert line.quantity == 2
-    assert line.unit_price_snapshot == Decimal("12.50")
-    assert line.line_total == Decimal("25.00")
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize("quantity", [0, -1])
-def test_retail_order_line_quantity_must_be_positive(quantity):
-    product = retail_product_factory()
-
-    order = RetailOrder.objects.create(
-        **retail_buyer_data(),
-        expires_at=timezone.now() + RETAIL_PAYMENT_WINDOW,
-    )
-
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            RetailOrderLine.objects.create(
-                order=order,
-                product=product,
-                quantity=quantity,
-                unit_price_snapshot=Decimal("12.50"),
-                line_total=Decimal("0.00"),
             )
 
 
