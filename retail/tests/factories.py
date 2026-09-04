@@ -8,13 +8,10 @@ from django.utils import timezone
 
 from inventory.models import InventoryBatch
 from inventory.tests.factories import batch_factory
+from pricing.models import CommercialPrice, PriceAmount
 from products.models import Product
 from products.tests.factories import product_factory
-from retail.models import (
-    RetailBatchOffer,
-    RetailPostalArea,
-    RetailProductOffer,
-)
+from retail.models import RetailPostalArea
 
 
 @dataclass(frozen=True)
@@ -61,21 +58,6 @@ def retail_product_factory(**overrides) -> Product:
     return product_factory(**(defaults | overrides))
 
 
-def retail_product_offer_factory(
-    *,
-    product: Product | None = None,
-    enabled: bool = False,
-    price: Decimal | None = None,
-) -> RetailProductOffer:
-    product = product or retail_product_factory()
-
-    return RetailProductOffer.objects.create(
-        product=product,
-        enabled=enabled,
-        price=price,
-    )
-
-
 def retail_inventory_batch_factory(
     *,
     product: Product | None = None,
@@ -98,16 +80,61 @@ def retail_inventory_batch_factory(
     )
 
 
-def retail_batch_offer_factory(
+def retail_product_price_factory(
+    *,
+    product: Product | None = None,
+    enabled: bool = False,
+    price: Decimal | None = None,
+    currency: str = PriceAmount.Currency.EUR,
+    original_price: Decimal | None = None,
+    reason: str = "",
+) -> CommercialPrice:
+    product = product or retail_product_factory()
+
+    commercial_price = CommercialPrice.objects.create(
+        product=product,
+        batch=None,
+        channel=CommercialPrice.Channel.RETAIL,
+        reason=reason,
+        enabled=enabled,
+    )
+
+    if price is not None:
+        PriceAmount.objects.create(
+            commercial_price=commercial_price,
+            currency=currency,
+            price=price,
+            original_price=original_price,
+        )
+
+    return commercial_price
+
+
+def retail_batch_price_factory(
     *,
     batch: InventoryBatch | None = None,
     enabled: bool = False,
     price: Decimal | None = None,
-) -> RetailBatchOffer:
+    currency: str = PriceAmount.Currency.EUR,
+    original_price: Decimal | None = None,
+    reason: str = CommercialPrice.Reason.SHORT_DATED,
+) -> CommercialPrice:
     batch = batch or retail_inventory_batch_factory()
 
-    return RetailBatchOffer.objects.create(
+    commercial_price = CommercialPrice.objects.create(
+        product=batch.product,
         batch=batch,
+        channel=CommercialPrice.Channel.RETAIL,
+        reason=reason,
         enabled=enabled,
-        price=price,
     )
+
+    if price is not None:
+        PriceAmount.objects.create(
+            commercial_price=commercial_price,
+            currency=currency,
+            price=price,
+            original_price=original_price,
+        )
+
+    return commercial_price

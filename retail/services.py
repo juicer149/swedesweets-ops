@@ -10,13 +10,8 @@ from django.utils import timezone
 from inventory.errors import InsufficientStockError
 from inventory.models import InventoryBatch
 from orders.datatypes import BuyerInput
-from orders.models import (
-    Order,
-    OrderLine,
-)
-from orders.services import (
-    place_order as place_shared_order,
-)
+from orders.models import Order, OrderLine
+from orders.services import place_order as place_shared_order
 from payments.models import PaymentAttempt
 from payments.services import (
     InvalidPaymentAttempt,
@@ -24,10 +19,9 @@ from payments.services import (
     mark_payment_attempt_failed,
     mark_payment_attempt_succeeded,
 )
+from pricing.models import CommercialPrice, PriceAmount
 from products.models import Product
-from reservations.planning import (
-    InsufficientReservationCapacity,
-)
+from reservations.planning import InsufficientReservationCapacity
 from reservations.policies import (
     make_order_reservations_permanent_before_placement,
 )
@@ -36,12 +30,10 @@ from reservations.services import (
     reserve_order_line_from_pool,
 )
 from retail.models import (
-    RetailBatchOffer,
     RetailCart,
     RetailCartLine,
     RetailCheckoutSession,
     RetailOfferSelection,
-    RetailProductOffer,
 )
 from retail.rules import (
     MAX_RETAIL_LINE_QUANTITY,
@@ -50,14 +42,9 @@ from retail.rules import (
     MIN_RETAIL_LINE_QUANTITY,
     RETAIL_CHECKOUT_WINDOW,
     RETAIL_PAYMENT_RESERVATION_WINDOW,
-    is_retail_batch_sellable,
-    is_retail_product_sellable,
     is_supported_retail_destination,
 )
-from retail.selectors import (
-    list_batches_for_batch_offer,
-    list_batches_for_product_offer,
-)
+from retail.selectors import list_batches_for_retail_price
 
 
 class InvalidRetailCart(ValueError):
@@ -75,50 +62,32 @@ def create_retail_cart() -> RetailCart:
 def add_retail_cart_line(
     *,
     cart: RetailCart,
+    commercial_price_id: int,
     quantity: int,
-    product_offer_id: int | None = None,
-    batch_offer_id: int | None = None,
 ) -> RetailCartLine:
-    """Add a retail offer to a cart, merging with an existing matching line."""
+    """Add one retail CommercialPrice, merging an existing matching line."""
 
-    _validate_cart_line_input(
+    _validate_cart_quantity(
         quantity=quantity,
-        product_offer_id=product_offer_id,
-        batch_offer_id=batch_offer_id,
     )
 
     cart = _lock_retail_cart(
         cart=cart,
     )
 
-    if product_offer_id is not None:
-        product_offer = _get_retail_product_offer(
-            offer_id=product_offer_id,
-        )
-        batch_offer = None
-        existing_line = (
-            RetailCartLine.objects
-            .filter(
-                cart=cart,
-                product_offer=product_offer,
-            )
-            .first()
-        )
-    else:
-        assert batch_offer_id is not None
+    commercial_price, _ = _get_retail_price_and_amount(
+        commercial_price_id=commercial_price_id,
+        currency=PriceAmount.Currency.EUR,
+    )
 
-        product_offer = None
-        batch_offer = _get_retail_batch_offer(
-            offer_id=batch_offer_id,
+    existing_line = (
+        RetailCartLine.objects
+        .filter(
+            cart=cart,
+            commercial_price=commercial_price,
         )
-        existing_line = (
-            RetailCartLine.objects
-            .filter(
-                cart=cart,
-                batch_offer=batch_offer,
-            )
-            .first()
-        )
+        .first()
+    )
 
     if existing_line is not None:
         new_quantity = existing_line.quantity + quantity
@@ -138,8 +107,7 @@ def add_retail_cart_line(
 
     return RetailCartLine.objects.create(
         cart=cart,
-        product_offer=product_offer,
-        batch_offer=batch_offer,
+        commercial_price=commercial_price,
         quantity=quantity,
     )
 
@@ -228,20 +196,18 @@ class AnonymousBuyerInput:
 
 @dataclass(frozen=True, slots=True)
 class RetailOrderLineInput:
+    commercial_price_id: int
     quantity: int
-    product_offer_id: int | None = None
-    batch_offer_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class ResolvedRetailOrderLine:
-    """Validated retail line with commercial origin resolved server-side."""
+    """Validated retail line with commercial pricing resolved server-side."""
 
     product: Product
     quantity: int
     unit_price: Decimal
-    product_offer: RetailProductOffer | None = None
-    batch_offer: RetailBatchOffer | None = None
+    commercial_price: CommercialPrice
 
     @property
     def line_total(self) -> Decimal:
@@ -289,23 +255,14 @@ def create_retail_checkout_from_cart(
     cart: RetailCart,
     buyer: AnonymousBuyerInput,
 ) -> RetailCheckoutSession:
-    """Convert one mutable retail cart into a validated retail checkout.
-
-    The cart is locked and translated into retail order-line input. Existing
-    checkout validation then re-resolves every offer and snapshots current
-    commercial state into the order.
-
-    The cart is deleted only after checkout creation succeeds. Any validation
-    failure rolls the whole conversion back and leaves the cart intact.
-    """
+    """Convert one mutable retail cart into a validated retail checkout."""
 
     cart = _lock_retail_cart(
         cart=cart,
     )
 
     cart_lines = list(
-        cart.lines
-        .order_by("id")
+        cart.lines.order_by("id")
     )
 
     if not cart_lines:
@@ -317,9 +274,8 @@ def create_retail_checkout_from_cart(
         buyer=buyer,
         lines=[
             RetailOrderLineInput(
+                commercial_price_id=line.commercial_price_id,
                 quantity=line.quantity,
-                product_offer_id=line.product_offer_id,
-                batch_offer_id=line.batch_offer_id,
             )
             for line in cart_lines
         ],
@@ -336,27 +292,27 @@ def create_pending_retail_order(
     buyer: AnonymousBuyerInput,
     lines: list[RetailOrderLineInput],
 ) -> RetailCheckoutSession:
-    """Start an anonymous retail checkout.
-
-    Every line references exactly one commercial retail offer.
-
-    The generic OrderLine stores product, quantity and price snapshot.
-    RetailOfferSelection preserves the retail-specific offer identity.
-
-    Creating a checkout does not reserve physical stock.
-    """
+    """Create a validated retail checkout without reserving stock."""
 
     _validate_buyer_destination(buyer)
     _validate_lines(lines)
 
-    resolved_lines = _resolve_retail_lines(lines=lines)
+    resolved_lines = _resolve_retail_lines(
+        lines=lines,
+        currency=PriceAmount.Currency.EUR,
+    )
+    _validate_unique_commercial_prices(
+        lines=resolved_lines,
+    )
 
-    _validate_unique_products(lines=resolved_lines)
-
-    total = _calculate_order_total(lines=resolved_lines)
+    total = _calculate_order_total(
+        lines=resolved_lines,
+    )
 
     if total > MAX_RETAIL_ORDER_TOTAL:
-        raise InvalidRetailOrder("order total exceeds maximum allowed amount")
+        raise InvalidRetailOrder(
+            "order total exceeds maximum allowed amount"
+        )
 
     order = Order(
         channel=Order.Channel.RETAIL,
@@ -383,8 +339,7 @@ def create_pending_retail_order(
 
         RetailOfferSelection.objects.create(
             order_line=order_line,
-            product_offer=resolved_line.product_offer,
-            batch_offer=resolved_line.batch_offer,
+            commercial_price=resolved_line.commercial_price,
         )
 
     return RetailCheckoutSession.objects.create(
@@ -466,8 +421,8 @@ def start_retail_payment(
         order.lines
         .select_related(
             "product",
-            "retail_offer_selection__product_offer__product",
-            "retail_offer_selection__batch_offer__batch__product",
+            "retail_offer_selection__commercial_price__product",
+            "retail_offer_selection__commercial_price__batch__product",
         )
         .order_by("id")
     )
@@ -493,6 +448,7 @@ def start_retail_payment(
 
         batches = _eligible_batches_for_selection(
             selection=selection,
+            currency=order.currency,
         )
 
         try:
@@ -633,6 +589,7 @@ def fail_retail_payment(
     )
 
 
+
 def _lock_retail_cart(
     *,
     cart: RetailCart,
@@ -669,25 +626,6 @@ def _get_locked_cart_line(
         ) from exc
 
 
-def _validate_cart_line_input(
-    *,
-    quantity: int,
-    product_offer_id: int | None,
-    batch_offer_id: int | None,
-) -> None:
-    _validate_cart_quantity(
-        quantity=quantity,
-    )
-
-    has_product_offer = product_offer_id is not None
-    has_batch_offer = batch_offer_id is not None
-
-    if has_product_offer == has_batch_offer:
-        raise InvalidRetailCart(
-            "retail cart line must reference exactly one offer"
-        )
-
-
 def _validate_cart_quantity(
     *,
     quantity: int,
@@ -717,30 +655,11 @@ def _get_offer_selection(
 def _eligible_batches_for_selection(
     *,
     selection: RetailOfferSelection,
+    currency: str,
 ) -> QuerySet[InventoryBatch]:
-    """Return the commercial stock pool selected by one retail offer."""
-
-    if selection.product_offer_id is not None:
-        offer = selection.product_offer
-
-        assert offer is not None
-
-        return list_batches_for_product_offer(
-            offer=offer,
-        )
-
-    if selection.batch_offer_id is not None:
-        offer = selection.batch_offer
-
-        assert offer is not None
-
-        return list_batches_for_batch_offer(
-            offer=offer,
-        )
-
-    raise InvalidRetailOrder(
-        f"retail offer selection {selection.pk} "
-        "has no offer"
+    return list_batches_for_retail_price(
+        commercial_price=selection.commercial_price,
+        currency=currency,
     )
 
 
@@ -780,26 +699,16 @@ def _validate_lines(
                 "invalid retail line quantity"
             )
 
-        has_product_offer = (
-            line.product_offer_id is not None
-        )
-        has_batch_offer = (
-            line.batch_offer_id is not None
-        )
-
-        if has_product_offer == has_batch_offer:
-            raise InvalidRetailOrder(
-                "retail line must reference exactly one offer"
-            )
-
 
 def _resolve_retail_lines(
     *,
     lines: list[RetailOrderLineInput],
+    currency: str,
 ) -> list[ResolvedRetailOrderLine]:
     return [
         _resolve_retail_line(
             line=line,
+            currency=currency,
         )
         for line in lines
     ]
@@ -808,53 +717,92 @@ def _resolve_retail_lines(
 def _resolve_retail_line(
     *,
     line: RetailOrderLineInput,
+    currency: str,
 ) -> ResolvedRetailOrderLine:
-    if line.product_offer_id is not None:
-        offer = _get_retail_product_offer(
-            offer_id=line.product_offer_id,
-        )
-
-        assert offer.price is not None
-
-        return ResolvedRetailOrderLine(
-            product=offer.product,
-            quantity=line.quantity,
-            unit_price=offer.price,
-            product_offer=offer,
-        )
-
-    assert line.batch_offer_id is not None
-
-    offer = _get_retail_batch_offer(
-        offer_id=line.batch_offer_id,
+    commercial_price, amount = _get_retail_price_and_amount(
+        commercial_price_id=line.commercial_price_id,
+        currency=currency,
     )
 
-    assert offer.price is not None
+    if (
+        commercial_price.batch_id is not None
+        and not list_batches_for_retail_price(
+            commercial_price=commercial_price,
+            currency=currency,
+        ).exists()
+    ):
+        raise InvalidRetailOrder(
+            "batch retail price is not currently sellable"
+        )
 
     return ResolvedRetailOrderLine(
-        product=offer.batch.product,
+        product=commercial_price.product,
         quantity=line.quantity,
-        unit_price=offer.price,
-        batch_offer=offer,
+        unit_price=amount.price,
+        commercial_price=commercial_price,
     )
 
 
-def _validate_unique_products(
+def _get_retail_price_and_amount(
+    *,
+    commercial_price_id: int,
+    currency: str,
+) -> tuple[CommercialPrice, PriceAmount]:
+    try:
+        commercial_price = (
+            CommercialPrice.objects
+            .select_related(
+                "product",
+                "batch__product",
+            )
+            .get(pk=commercial_price_id)
+        )
+    except CommercialPrice.DoesNotExist as exc:
+        raise InvalidRetailOrder(
+            "retail commercial price does not exist"
+        ) from exc
+
+    if commercial_price.channel != CommercialPrice.Channel.RETAIL:
+        raise InvalidRetailOrder(
+            "commercial price does not belong to retail"
+        )
+
+    if not commercial_price.enabled:
+        raise InvalidRetailOrder(
+            "commercial price is not enabled for retail"
+        )
+
+    if not commercial_price.product.active:
+        raise InvalidRetailOrder(
+            "product is not enabled for retail"
+        )
+
+    try:
+        amount = commercial_price.amounts.get(
+            currency=currency,
+        )
+    except PriceAmount.DoesNotExist as exc:
+        raise InvalidRetailOrder(
+            f"commercial price has no {currency} amount"
+        ) from exc
+
+    return commercial_price, amount
+
+
+def _validate_unique_commercial_prices(
     *,
     lines: list[ResolvedRetailOrderLine],
 ) -> None:
-    """Protect the current generic OrderLine product uniqueness constraint."""
-
-    product_ids: set[int] = set()
+    price_ids: set[int] = set()
 
     for line in lines:
-        if line.product.pk in product_ids:
+        if line.commercial_price.pk in price_ids:
             raise InvalidRetailOrder(
-                "duplicate retail product lines are not allowed"
+                "duplicate retail commercial price lines are not allowed"
             )
 
-        product_ids.add(
-            line.product.pk,
+        price_ids.add(
+            line.commercial_price.pk,
         )
 
 
@@ -869,57 +817,3 @@ def _calculate_order_total(
         ),
         start=Decimal("0.00"),
     )
-
-
-def _get_retail_product_offer(
-    *,
-    offer_id: int,
-) -> RetailProductOffer:
-    try:
-        offer = (
-            RetailProductOffer.objects
-            .select_related("product")
-            .get(pk=offer_id)
-        )
-    except RetailProductOffer.DoesNotExist as exc:
-        raise InvalidRetailOrder(
-            "product retail offer does not exist"
-        ) from exc
-
-    if not is_retail_product_sellable(
-        offer,
-    ):
-        raise InvalidRetailOrder(
-            "product is not enabled for retail"
-        )
-
-    assert offer.price is not None
-
-    return offer
-
-
-def _get_retail_batch_offer(
-    *,
-    offer_id: int,
-) -> RetailBatchOffer:
-    try:
-        offer = (
-            RetailBatchOffer.objects
-            .select_related("batch__product")
-            .get(pk=offer_id)
-        )
-    except RetailBatchOffer.DoesNotExist as exc:
-        raise InvalidRetailOrder(
-            "batch retail offer does not exist"
-        ) from exc
-
-    if not is_retail_batch_sellable(
-        offer,
-    ):
-        raise InvalidRetailOrder(
-            "batch is not enabled for retail"
-        )
-
-    assert offer.price is not None
-
-    return offer

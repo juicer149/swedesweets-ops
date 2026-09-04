@@ -1,7 +1,6 @@
-from __future__ import annotations
+
 
 import uuid
-from decimal import Decimal
 
 from django.db import models
 from django.db.models import Q
@@ -81,100 +80,8 @@ class RetailPostalArea(models.Model):
         return f"{self.postal_code} {self.city}, {self.country_code}"
 
 
-class RetailProductOffer(models.Model):
-    """General retail offer for one product SKU.
-
-    The offer owns commercial eligibility and price for the ordinary retail
-    product pool.
-
-    Physical batches with an enabled RetailBatchOffer form separate commercial
-    offers and are excluded from this offer's stock pool.
-    """
-
-    product = models.OneToOneField(
-        "products.Product",
-        on_delete=models.PROTECT,
-        related_name="retail_offer",
-    )
-    enabled = models.BooleanField(default=False)
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["enabled"]),
-        ]
-        constraints = [
-            models.CheckConstraint(
-                condition=Q(price__isnull=True) | Q(price__gt=Decimal("0.00")),
-                name="retail_product_offer_price_positive_or_null",
-            ),
-            models.CheckConstraint(
-                condition=Q(enabled=False) | Q(price__isnull=False),
-                name="retail_product_offer_enabled_requires_price",
-            ),
-        ]
-
-    def __str__(self) -> str:
-        state = "enabled" if self.enabled else "disabled"
-        return f"{self.product}: retail {state}"
-
-
-class RetailBatchOffer(models.Model):
-    """Retail offer for one exact physical inventory batch.
-
-    A batch offer is a separate commercial offer, not an override of a product
-    offer. Its stock pool consists only of the configured physical batch.
-    """
-
-    batch = models.OneToOneField(
-        "inventory.InventoryBatch",
-        on_delete=models.CASCADE,
-        related_name="retail_offer",
-    )
-    enabled = models.BooleanField(default=False)
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["enabled"]),
-        ]
-        constraints = [
-            models.CheckConstraint(
-                condition=Q(price__isnull=True) | Q(price__gt=Decimal("0.00")),
-                name="retail_batch_offer_price_positive_or_null",
-            ),
-            models.CheckConstraint(
-                condition=Q(enabled=False) | Q(price__isnull=False),
-                name="retail_batch_offer_enabled_requires_price",
-            ),
-        ]
-
-    def __str__(self) -> str:
-        state = "enabled" if self.enabled else "disabled"
-        return f"{self.batch.batch_id}: retail {state}"
-
-
 class RetailCart(models.Model):
     """Mutable retail purchase intent before an Order exists.
-
-    A cart is deliberately weaker than an order:
-    it owns only the selected retail offers and quantities.
 
     Buyer data, price snapshots, stock reservations and payment state belong
     to later checkout/order stages.
@@ -194,12 +101,10 @@ class RetailCart(models.Model):
 
 
 class RetailCartLine(models.Model):
-    """One selected retail offer in a mutable cart.
+    """One selected retail CommercialPrice in a mutable cart.
 
-    Exactly one of product_offer and batch_offer must be present.
-
-    Price is intentionally not snapshotted here. The selected offer is
-    re-resolved when the cart is converted into an order.
+    The cart stores commercial selection identity and quantity only.
+    Price is re-resolved when checkout creates the durable Order snapshot.
     """
 
     cart = models.ForeignKey(
@@ -208,20 +113,10 @@ class RetailCartLine(models.Model):
         related_name="lines",
     )
 
-    product_offer = models.ForeignKey(
-        RetailProductOffer,
-        null=True,
-        blank=True,
+    commercial_price = models.ForeignKey(
+        "pricing.CommercialPrice",
         on_delete=models.CASCADE,
-        related_name="cart_lines",
-    )
-
-    batch_offer = models.ForeignKey(
-        RetailBatchOffer,
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="cart_lines",
+        related_name="retail_cart_lines",
     )
 
     quantity = models.PositiveIntegerField()
@@ -232,52 +127,24 @@ class RetailCartLine(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                condition=(
-                    Q(
-                        product_offer__isnull=False,
-                        batch_offer__isnull=True,
-                    )
-                    | Q(
-                        product_offer__isnull=True,
-                        batch_offer__isnull=False,
-                    )
-                ),
-                name="retail_cart_line_exactly_one_offer",
-            ),
-            models.CheckConstraint(
                 condition=Q(quantity__gt=0),
                 name="retail_cart_line_quantity_positive",
             ),
             models.UniqueConstraint(
-                fields=["cart", "product_offer"],
-                condition=Q(product_offer__isnull=False),
-                name="unique_retail_product_offer_per_cart",
-            ),
-            models.UniqueConstraint(
-                fields=["cart", "batch_offer"],
-                condition=Q(batch_offer__isnull=False),
-                name="unique_retail_batch_offer_per_cart",
+                fields=["cart", "commercial_price"],
+                name="unique_retail_commercial_price_per_cart",
             ),
         ]
 
     def __str__(self) -> str:
-        if self.product_offer_id is not None:
-            offer = f"product offer {self.product_offer_id}"
-        else:
-            offer = f"batch offer {self.batch_offer_id}"
-
-        return f"Cart {self.cart_id}: {self.quantity} × {offer}"
+        return (
+            f"Cart {self.cart_id}: {self.quantity} "
+            f"× commercial price {self.commercial_price_id}"
+        )
 
 
 class RetailCheckoutSession(models.Model):
-    """Short-lived ownership of a retail checkout.
-
-    The related Order owns buyer snapshot, order lines, commercial price
-    snapshots and fulfillment lifecycle.
-
-    This model owns only checkout-specific state that should not become part of
-    the channel-agnostic order model.
-    """
+    """Short-lived ownership of a retail checkout."""
 
     id = models.UUIDField(
         primary_key=True,
@@ -306,14 +173,11 @@ class RetailCheckoutSession(models.Model):
 
 
 class RetailOfferSelection(models.Model):
-    """Retail commercial origin for one generic order line.
+    """Commercial pricing origin for one retail OrderLine.
 
-    OrderLine owns durable product, quantity and price snapshot.
-
-    RetailOfferSelection owns only the retail-specific information needed to
-    determine which stock pool may satisfy that line.
-
-    Exactly one of product_offer and batch_offer must be present.
+    OrderLine owns the durable product, quantity and price snapshot.
+    This row preserves the CommercialPrice identity used for retail stock-pool
+    semantics.
     """
 
     order_line = models.OneToOneField(
@@ -322,47 +186,14 @@ class RetailOfferSelection(models.Model):
         related_name="retail_offer_selection",
     )
 
-    product_offer = models.ForeignKey(
-        RetailProductOffer,
-        null=True,
-        blank=True,
+    commercial_price = models.ForeignKey(
+        "pricing.CommercialPrice",
         on_delete=models.PROTECT,
-        related_name="order_line_selections",
+        related_name="retail_order_line_selections",
     )
-
-    batch_offer = models.ForeignKey(
-        RetailBatchOffer,
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="order_line_selections",
-    )
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=(
-                    Q(
-                        product_offer__isnull=False,
-                        batch_offer__isnull=True,
-                    )
-                    | Q(
-                        product_offer__isnull=True,
-                        batch_offer__isnull=False,
-                    )
-                ),
-                name="retail_offer_selection_exactly_one_offer",
-            ),
-        ]
 
     def __str__(self) -> str:
-        if self.product_offer_id is not None:
-            return (
-                f"Order line {self.order_line_id} "
-                f"-> product offer {self.product_offer_id}"
-            )
-
         return (
             f"Order line {self.order_line_id} "
-            f"-> batch offer {self.batch_offer_id}"
+            f"-> commercial price {self.commercial_price_id}"
         )

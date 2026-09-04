@@ -180,9 +180,11 @@ def set_commercial_price_enabled(
     commercial_price: CommercialPrice,
     enabled: bool,
 ) -> CommercialPrice:
-    """Enable or disable commercial pricing.
+    """Enable or disable a commercial pricing definition.
 
-    An enabled commercial price must expose at least one currency amount.
+    Enabled means the pricing definition is active for its channel and scope.
+    It does not guarantee that a concrete PriceAmount exists; channel-specific
+    application policy decides whether the definition is currently sellable.
     """
 
     commercial_price = (
@@ -190,11 +192,6 @@ def set_commercial_price_enabled(
         .select_for_update()
         .get(pk=commercial_price.pk)
     )
-
-    if enabled and not commercial_price.amounts.exists():
-        raise InvalidCommercialPrice(
-            "commercial price requires at least one amount before enabling"
-        )
 
     commercial_price.enabled = enabled
     commercial_price.save(
@@ -205,4 +202,3 @@ def set_commercial_price_enabled(
     )
 
     return commercial_price
-

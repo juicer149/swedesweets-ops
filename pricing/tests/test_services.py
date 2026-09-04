@@ -1,5 +1,3 @@
-
-
 from decimal import Decimal
 
 import pytest
@@ -185,23 +183,22 @@ def test_set_price_amount_rejects_invalid_amounts(
 
 
 @pytest.mark.django_db
-def test_commercial_price_cannot_be_enabled_without_amount():
+def test_commercial_price_can_be_enabled_without_amount():
     commercial_price = commercial_price_factory(
         enabled=False,
     )
 
-    with pytest.raises(
-        InvalidCommercialPrice,
-        match="requires at least one amount",
-    ):
-        set_commercial_price_enabled(
-            commercial_price=commercial_price,
-            enabled=True,
-        )
+    commercial_price = set_commercial_price_enabled(
+        commercial_price=commercial_price,
+        enabled=True,
+    )
+
+    assert commercial_price.enabled
+    assert commercial_price.amounts.count() == 0
 
 
 @pytest.mark.django_db
-def test_commercial_price_can_be_enabled_after_amount_is_configured():
+def test_commercial_price_can_be_enabled_with_amount():
     commercial_price = commercial_price_factory(
         enabled=False,
     )
@@ -218,6 +215,9 @@ def test_commercial_price_can_be_enabled_after_amount_is_configured():
     )
 
     assert commercial_price.enabled
+    assert commercial_price.amounts.get(
+        currency=PriceAmount.Currency.EUR,
+    ).price == Decimal("9.00")
 
 
 @pytest.mark.django_db

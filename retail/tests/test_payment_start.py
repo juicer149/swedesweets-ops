@@ -23,14 +23,14 @@ from retail.services import (
 from retail.tests.factories import (
     retail_buyer_data,
     retail_postal_area_factory,
-    retail_product_offer_factory,
+    retail_product_price_factory,
 )
 
 
 def _create_checkout():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -52,7 +52,7 @@ def _create_checkout():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=2,
             ),
         ],

@@ -16,6 +16,7 @@ from inventory.services import (
 )
 from orders.models import Allocation, Order, OrderLine
 from payments.models import PaymentAttempt
+from pricing.models import CommercialPrice, PriceAmount
 from retail.models import (
     RetailCart,
     RetailCartLine,
@@ -45,12 +46,12 @@ from retail.services import (
     update_retail_cart_line_quantity,
 )
 from retail.tests.factories import (
-    retail_batch_offer_factory,
+    retail_batch_price_factory,
     retail_buyer_data,
     retail_inventory_batch_factory,
     retail_postal_area_factory,
     retail_product_factory,
-    retail_product_offer_factory,
+    retail_product_price_factory,
 )
 
 
@@ -63,61 +64,75 @@ def test_create_retail_cart_creates_empty_cart():
 
 
 @pytest.mark.django_db
-def test_add_product_offer_to_retail_cart():
+def test_add_product_price_to_retail_cart():
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
 
     line = add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
     assert line.cart == cart
-    assert line.product_offer == offer
-    assert line.batch_offer is None
+    assert line.commercial_price == offer
+    assert line.commercial_price.product == offer.product
+    assert line.commercial_price.channel == CommercialPrice.Channel.RETAIL
+    assert (
+        line.commercial_price.amounts.get(
+            currency=PriceAmount.Currency.EUR,
+        ).price
+        == Decimal("12.50")
+    )
     assert line.quantity == 2
 
 
 @pytest.mark.django_db
-def test_add_batch_offer_to_retail_cart():
+def test_add_batch_price_to_retail_cart():
     cart = create_retail_cart()
-    offer = retail_batch_offer_factory(
+    offer = retail_batch_price_factory(
         enabled=True,
         price=Decimal("4.90"),
     )
 
     line = add_retail_cart_line(
         cart=cart,
-        batch_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
     assert line.cart == cart
-    assert line.product_offer is None
-    assert line.batch_offer == offer
+    assert line.commercial_price == offer
+    assert line.commercial_price.batch == offer.batch
+    assert line.commercial_price.channel == CommercialPrice.Channel.RETAIL
+    assert (
+        line.commercial_price.amounts.get(
+            currency=PriceAmount.Currency.EUR,
+        ).price
+        == Decimal("4.90")
+    )
     assert line.quantity == 2
 
 
 @pytest.mark.django_db
-def test_adding_same_offer_again_increments_existing_cart_line():
+def test_adding_same_commercial_price_again_increments_existing_cart_line():
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
 
     first = add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
     second = add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=3,
     )
 
@@ -129,16 +144,16 @@ def test_adding_same_offer_again_increments_existing_cart_line():
 
 
 @pytest.mark.django_db
-def test_adding_same_offer_rejects_quantity_above_retail_limit():
+def test_adding_same_commercial_price_rejects_quantity_above_retail_limit():
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
 
     line = add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=MAX_RETAIL_LINE_QUANTITY,
     )
 
@@ -148,7 +163,7 @@ def test_adding_same_offer_rejects_quantity_above_retail_limit():
     ):
         add_retail_cart_line(
             cart=cart,
-            product_offer_id=offer.pk,
+            commercial_price_id=offer.pk,
             quantity=1,
         )
 
@@ -156,43 +171,8 @@ def test_adding_same_offer_rejects_quantity_above_retail_limit():
     assert line.quantity == MAX_RETAIL_LINE_QUANTITY
 
 
-@pytest.mark.django_db
-def test_add_retail_cart_line_requires_exactly_one_offer():
-    cart = create_retail_cart()
-
-    with pytest.raises(
-        InvalidRetailCart,
-        match="exactly one offer",
-    ):
-        add_retail_cart_line(
-            cart=cart,
-            quantity=1,
-        )
 
 
-@pytest.mark.django_db
-def test_add_retail_cart_line_rejects_two_offers():
-    cart = create_retail_cart()
-    cart_id = cart.pk
-    product_offer = retail_product_offer_factory(
-        enabled=True,
-        price=Decimal("12.50"),
-    )
-    batch_offer = retail_batch_offer_factory(
-        enabled=True,
-        price=Decimal("4.90"),
-    )
-
-    with pytest.raises(
-        InvalidRetailCart,
-        match="exactly one offer",
-    ):
-        add_retail_cart_line(
-            cart=cart,
-            product_offer_id=product_offer.pk,
-            batch_offer_id=batch_offer.pk,
-            quantity=1,
-        )
 
 
 @pytest.mark.django_db
@@ -205,7 +185,7 @@ def test_add_retail_cart_line_rejects_two_offers():
 )
 def test_add_retail_cart_line_rejects_invalid_quantity(quantity: int):
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -216,7 +196,7 @@ def test_add_retail_cart_line_rejects_invalid_quantity(quantity: int):
     ):
         add_retail_cart_line(
             cart=cart,
-            product_offer_id=offer.pk,
+            commercial_price_id=offer.pk,
             quantity=quantity,
         )
 
@@ -231,7 +211,7 @@ def test_add_retail_cart_line_rejects_missing_offer():
     ):
         add_retail_cart_line(
             cart=cart,
-            product_offer_id=999_999,
+            commercial_price_id=999_999,
             quantity=1,
         )
 
@@ -239,7 +219,7 @@ def test_add_retail_cart_line_rejects_missing_offer():
 @pytest.mark.django_db
 def test_add_retail_cart_line_rejects_disabled_offer():
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=False,
         price=Decimal("12.50"),
     )
@@ -250,7 +230,7 @@ def test_add_retail_cart_line_rejects_disabled_offer():
     ):
         add_retail_cart_line(
             cart=cart,
-            product_offer_id=offer.pk,
+            commercial_price_id=offer.pk,
             quantity=1,
         )
 
@@ -258,13 +238,13 @@ def test_add_retail_cart_line_rejects_disabled_offer():
 @pytest.mark.django_db
 def test_update_retail_cart_line_quantity():
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
     line = add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
@@ -281,13 +261,13 @@ def test_update_retail_cart_line_quantity():
 def test_update_retail_cart_line_rejects_line_from_other_cart():
     first_cart = create_retail_cart()
     second_cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
     line = add_retail_cart_line(
         cart=first_cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
@@ -308,13 +288,13 @@ def test_update_retail_cart_line_rejects_line_from_other_cart():
 @pytest.mark.django_db
 def test_remove_retail_cart_line():
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
     line = add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
@@ -330,13 +310,13 @@ def test_remove_retail_cart_line():
 def test_remove_retail_cart_line_rejects_line_from_other_cart():
     first_cart = create_retail_cart()
     second_cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
     line = add_retail_cart_line(
         cart=first_cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
@@ -355,23 +335,23 @@ def test_remove_retail_cart_line_rejects_line_from_other_cart():
 @pytest.mark.django_db
 def test_clear_retail_cart_removes_all_lines():
     cart = create_retail_cart()
-    first_offer = retail_product_offer_factory(
+    first_offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
-    second_offer = retail_batch_offer_factory(
+    second_offer = retail_batch_price_factory(
         enabled=True,
         price=Decimal("4.90"),
     )
 
     add_retail_cart_line(
         cart=cart,
-        product_offer_id=first_offer.pk,
+        commercial_price_id=first_offer.pk,
         quantity=1,
     )
     add_retail_cart_line(
         cart=cart,
-        batch_offer_id=second_offer.pk,
+        commercial_price_id=second_offer.pk,
         quantity=2,
     )
 
@@ -393,7 +373,7 @@ def test_create_retail_checkout_from_cart_converts_and_consumes_cart():
     product = retail_product_factory(
         name="Product Offer Product",
     )
-    product_offer = retail_product_offer_factory(
+    product_price = retail_product_price_factory(
         product=product,
         enabled=True,
         price=Decimal("12.50"),
@@ -406,7 +386,7 @@ def test_create_retail_checkout_from_cart_converts_and_consumes_cart():
         product=batch_product,
         batch_id="CART-BATCH-001",
     )
-    batch_offer = retail_batch_offer_factory(
+    batch_price = retail_batch_price_factory(
         batch=batch,
         enabled=True,
         price=Decimal("4.90"),
@@ -414,12 +394,12 @@ def test_create_retail_checkout_from_cart_converts_and_consumes_cart():
 
     add_retail_cart_line(
         cart=cart,
-        product_offer_id=product_offer.pk,
+        commercial_price_id=product_price.pk,
         quantity=2,
     )
     add_retail_cart_line(
         cart=cart,
-        batch_offer_id=batch_offer.pk,
+        commercial_price_id=batch_price.pk,
         quantity=3,
     )
 
@@ -448,16 +428,20 @@ def test_create_retail_checkout_from_cart_converts_and_consumes_cart():
     assert lines[0].quantity_in_units == 2
     assert lines[0].unit_price_snapshot == Decimal("12.50")
     assert (
-        lines[0].retail_offer_selection.product_offer_id
-        == product_offer.pk
+        lines[0].retail_offer_selection.commercial_price
+        == product_price
+    )
+    assert (
+        lines[0].retail_offer_selection.commercial_price.batch_id
+        is None
     )
 
     assert lines[1].product == batch_product
     assert lines[1].quantity_in_units == 3
     assert lines[1].unit_price_snapshot == Decimal("4.90")
     assert (
-        lines[1].retail_offer_selection.batch_offer_id
-        == batch_offer.pk
+        lines[1].retail_offer_selection.commercial_price
+        == batch_price
     )
 
     assert not RetailCart.objects.filter(
@@ -467,13 +451,13 @@ def test_create_retail_checkout_from_cart_converts_and_consumes_cart():
 
 
 @pytest.mark.django_db
-def test_create_retail_checkout_from_cart_rejects_two_offers_for_same_product():
+def test_create_retail_checkout_from_cart_allows_two_prices_for_same_product():
     retail_postal_area_factory()
 
     cart = create_retail_cart()
     product = retail_product_factory()
 
-    product_offer = retail_product_offer_factory(
+    product_price = retail_product_price_factory(
         product=product,
         enabled=True,
         price=Decimal("12.50"),
@@ -482,7 +466,7 @@ def test_create_retail_checkout_from_cart_rejects_two_offers_for_same_product():
         product=product,
         batch_id="CART-BATCH-SAME-PRODUCT",
     )
-    batch_offer = retail_batch_offer_factory(
+    batch_price = retail_batch_price_factory(
         batch=batch,
         enabled=True,
         price=Decimal("4.90"),
@@ -490,52 +474,64 @@ def test_create_retail_checkout_from_cart_rejects_two_offers_for_same_product():
 
     add_retail_cart_line(
         cart=cart,
-        product_offer_id=product_offer.pk,
+        commercial_price_id=product_price.pk,
         quantity=1,
     )
     add_retail_cart_line(
         cart=cart,
-        batch_offer_id=batch_offer.pk,
+        commercial_price_id=batch_price.pk,
         quantity=1,
     )
 
-    with pytest.raises(
-        InvalidRetailOrder,
-        match="duplicate retail product lines are not allowed",
-    ):
-        create_retail_checkout_from_cart(
-            cart=cart,
-            buyer=AnonymousBuyerInput(
-                **retail_buyer_data()
-            ),
-        )
+    checkout = create_retail_checkout_from_cart(
+        cart=cart,
+        buyer=AnonymousBuyerInput(
+            **retail_buyer_data()
+        ),
+    )
 
-    assert RetailCart.objects.filter(
-        pk=cart.pk,
-    ).exists()
-    assert cart.lines.count() == 2
-    assert Order.objects.count() == 0
-    assert RetailCheckoutSession.objects.count() == 0
+    lines = list(
+        checkout.order.lines
+        .select_related("retail_offer_selection__commercial_price")
+        .order_by("id")
+    )
+
+    assert len(lines) == 2
+    assert lines[0].product == product
+    assert lines[1].product == product
+    assert (
+        lines[0].retail_offer_selection.commercial_price
+        == product_price
+    )
+    assert (
+        lines[1].retail_offer_selection.commercial_price
+        == batch_price
+    )
+    assert lines[0].unit_price_snapshot == Decimal("12.50")
+    assert lines[1].unit_price_snapshot == Decimal("4.90")
 
 
 @pytest.mark.django_db
-def test_create_retail_checkout_from_cart_reprices_offer_at_conversion():
+def test_create_retail_checkout_from_cart_reprices_at_conversion():
     retail_postal_area_factory()
 
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
 
     add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
-    offer.price = Decimal("14.25")
-    offer.save(
+    amount = offer.amounts.get(
+        currency=PriceAmount.Currency.EUR,
+    )
+    amount.price = Decimal("14.25")
+    amount.save(
         update_fields=[
             "price",
             "updated_at",
@@ -581,14 +577,14 @@ def test_create_retail_checkout_from_cart_preserves_cart_on_validation_failure()
     retail_postal_area_factory()
 
     cart = create_retail_cart()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
 
     add_retail_cart_line(
         cart=cart,
-        product_offer_id=offer.pk,
+        commercial_price_id=offer.pk,
         quantity=2,
     )
 
@@ -616,7 +612,7 @@ def test_create_retail_checkout_from_cart_preserves_cart_on_validation_failure()
     ).exists()
     assert RetailCartLine.objects.filter(
         cart=cart,
-        product_offer=offer,
+        commercial_price=offer,
         quantity=2,
     ).exists()
     assert Order.objects.count() == 0
@@ -624,11 +620,11 @@ def test_create_retail_checkout_from_cart_preserves_cart_on_validation_failure()
 
 
 @pytest.mark.django_db
-def test_create_pending_retail_order_from_product_offer():
+def test_create_pending_retail_order_from_product_price():
     retail_postal_area_factory()
 
     product = retail_product_factory()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         product=product,
         enabled=True,
         price=Decimal("12.50"),
@@ -642,7 +638,7 @@ def test_create_pending_retail_order_from_product_offer():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=2,
             ),
         ],
@@ -681,8 +677,7 @@ def test_create_pending_retail_order_from_product_offer():
 
     selection = line.retail_offer_selection
 
-    assert selection.product_offer == offer
-    assert selection.batch_offer is None
+    assert selection.commercial_price == offer
 
     assert order.total == Decimal("25.00")
 
@@ -697,10 +692,10 @@ def test_create_pending_retail_order_from_product_offer():
 
 
 @pytest.mark.django_db
-def test_create_pending_retail_order_from_batch_offer():
+def test_create_pending_retail_order_from_batch_price():
     retail_postal_area_factory()
 
-    offer = retail_batch_offer_factory(
+    offer = retail_batch_price_factory(
         enabled=True,
         price=Decimal("4.90"),
     )
@@ -711,7 +706,7 @@ def test_create_pending_retail_order_from_batch_offer():
         ),
         lines=[
             RetailOrderLineInput(
-                batch_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=2,
             ),
         ],
@@ -724,15 +719,14 @@ def test_create_pending_retail_order_from_batch_offer():
     assert line.unit_price_snapshot == Decimal("4.90")
     assert line.line_total == Decimal("9.80")
 
-    assert selection.product_offer is None
-    assert selection.batch_offer == offer
+    assert selection.commercial_price == offer
 
 
 @pytest.mark.django_db
-def test_existing_order_keeps_original_price_after_product_offer_changes():
+def test_existing_order_keeps_original_price_after_product_price_changes():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -743,15 +737,18 @@ def test_existing_order_keeps_original_price_after_product_offer_changes():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=2,
             ),
         ],
     )
 
-    offer.price = Decimal("20.00")
-    offer.save(
-        update_fields=["price"],
+    amount = offer.amounts.get(
+        currency=PriceAmount.Currency.EUR,
+    )
+    amount.price = Decimal("20.00")
+    amount.save(
+        update_fields=["price", "updated_at"],
     )
 
     line = checkout.order.lines.get()
@@ -762,10 +759,10 @@ def test_existing_order_keeps_original_price_after_product_offer_changes():
 
 
 @pytest.mark.django_db
-def test_existing_order_keeps_original_price_after_batch_offer_changes():
+def test_existing_order_keeps_original_price_after_batch_price_changes():
     retail_postal_area_factory()
 
-    offer = retail_batch_offer_factory(
+    offer = retail_batch_price_factory(
         enabled=True,
         price=Decimal("4.90"),
     )
@@ -776,15 +773,18 @@ def test_existing_order_keeps_original_price_after_batch_offer_changes():
         ),
         lines=[
             RetailOrderLineInput(
-                batch_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=2,
             ),
         ],
     )
 
-    offer.price = Decimal("2.90")
-    offer.save(
-        update_fields=["price"],
+    amount = offer.amounts.get(
+        currency=PriceAmount.Currency.EUR,
+    )
+    amount.price = Decimal("2.90")
+    amount.save(
+        update_fields=["price", "updated_at"],
     )
 
     line = checkout.order.lines.get()
@@ -835,60 +835,13 @@ def test_pending_retail_order_requires_at_least_one_line():
         )
 
 
-@pytest.mark.django_db
-def test_retail_line_requires_exactly_one_offer():
-    retail_postal_area_factory()
-
-    with pytest.raises(
-        InvalidRetailOrder,
-        match="exactly one offer",
-    ):
-        create_pending_retail_order(
-            buyer=AnonymousBuyerInput(
-                **retail_buyer_data()
-            ),
-            lines=[
-                RetailOrderLineInput(
-                    quantity=1,
-                ),
-            ],
-        )
 
 
-@pytest.mark.django_db
-def test_retail_line_rejects_product_and_batch_offer_together():
-    retail_postal_area_factory()
-
-    product_offer = retail_product_offer_factory(
-        enabled=True,
-        price=Decimal("12.50"),
-    )
-    batch_offer = retail_batch_offer_factory(
-        enabled=True,
-        price=Decimal("4.90"),
-    )
-
-    with pytest.raises(
-        InvalidRetailOrder,
-        match="exactly one offer",
-    ):
-        create_pending_retail_order(
-            buyer=AnonymousBuyerInput(
-                **retail_buyer_data()
-            ),
-            lines=[
-                RetailOrderLineInput(
-                    quantity=1,
-                    product_offer_id=product_offer.pk,
-                    batch_offer_id=batch_offer.pk,
-                ),
-            ],
-        )
 
 
 @pytest.mark.django_db
 def test_pending_retail_order_requires_supported_destination():
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -908,7 +861,7 @@ def test_pending_retail_order_requires_supported_destination():
             buyer=buyer,
             lines=[
                 RetailOrderLineInput(
-                    product_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=1,
                 ),
             ],
@@ -916,7 +869,7 @@ def test_pending_retail_order_requires_supported_destination():
 
 
 @pytest.mark.django_db
-def test_pending_retail_order_rejects_missing_product_offer():
+def test_pending_retail_order_rejects_missing_commercial_price():
     retail_postal_area_factory()
 
     with pytest.raises(
@@ -929,7 +882,7 @@ def test_pending_retail_order_rejects_missing_product_offer():
             ),
             lines=[
                 RetailOrderLineInput(
-                    product_offer_id=999_999,
+                    commercial_price_id=999_999,
                     quantity=1,
                 ),
             ],
@@ -937,10 +890,10 @@ def test_pending_retail_order_rejects_missing_product_offer():
 
 
 @pytest.mark.django_db
-def test_pending_retail_order_rejects_disabled_product_offer():
+def test_pending_retail_order_rejects_disabled_product_price():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=False,
         price=Decimal("12.50"),
     )
@@ -955,7 +908,7 @@ def test_pending_retail_order_rejects_disabled_product_offer():
             ),
             lines=[
                 RetailOrderLineInput(
-                    product_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=1,
                 ),
             ],
@@ -963,10 +916,10 @@ def test_pending_retail_order_rejects_disabled_product_offer():
 
 
 @pytest.mark.django_db
-def test_pending_retail_order_rejects_disabled_batch_offer():
+def test_pending_retail_order_rejects_disabled_batch_price():
     retail_postal_area_factory()
 
-    offer = retail_batch_offer_factory(
+    offer = retail_batch_price_factory(
         enabled=False,
         price=Decimal("4.90"),
     )
@@ -981,7 +934,7 @@ def test_pending_retail_order_rejects_disabled_batch_offer():
             ),
             lines=[
                 RetailOrderLineInput(
-                    batch_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=1,
                 ),
             ],
@@ -993,7 +946,7 @@ def test_pending_retail_order_rejects_inactive_product():
     retail_postal_area_factory()
 
     product = retail_product_factory()
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         product=product,
         enabled=True,
         price=Decimal("12.50"),
@@ -1014,7 +967,7 @@ def test_pending_retail_order_rejects_inactive_product():
             ),
             lines=[
                 RetailOrderLineInput(
-                    product_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=1,
                 ),
             ],
@@ -1025,7 +978,7 @@ def test_pending_retail_order_rejects_inactive_product():
 def test_pending_retail_order_rejects_quantity_above_retail_limit():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1040,7 +993,7 @@ def test_pending_retail_order_rejects_quantity_above_retail_limit():
             ),
             lines=[
                 RetailOrderLineInput(
-                    product_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=MAX_RETAIL_LINE_QUANTITY + 1,
                 ),
             ],
@@ -1048,10 +1001,10 @@ def test_pending_retail_order_rejects_quantity_above_retail_limit():
 
 
 @pytest.mark.django_db
-def test_pending_retail_order_rejects_duplicate_product_lines():
+def test_pending_retail_order_rejects_duplicate_commercial_price_lines():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1066,11 +1019,11 @@ def test_pending_retail_order_rejects_duplicate_product_lines():
             ),
             lines=[
                 RetailOrderLineInput(
-                    product_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=1,
                 ),
                 RetailOrderLineInput(
-                    product_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=1,
                 ),
             ],
@@ -1081,7 +1034,7 @@ def test_pending_retail_order_rejects_duplicate_product_lines():
 def test_retail_order_total_limit_rolls_back_checkout():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=MAX_RETAIL_ORDER_TOTAL + Decimal("1.00"),
     )
@@ -1096,7 +1049,7 @@ def test_retail_order_total_limit_rolls_back_checkout():
             ),
             lines=[
                 RetailOrderLineInput(
-                    product_offer_id=offer.pk,
+                    commercial_price_id=offer.pk,
                     quantity=1,
                 ),
             ],
@@ -1109,10 +1062,10 @@ def test_retail_order_total_limit_rolls_back_checkout():
 
 
 @pytest.mark.django_db
-def test_start_retail_payment_reserves_product_offer_stock():
+def test_start_retail_payment_reserves_product_price_stock():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1131,7 +1084,7 @@ def test_start_retail_payment_reserves_product_offer_stock():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=4,
             ),
         ],
@@ -1167,14 +1120,14 @@ def test_start_retail_payment_reserves_product_offer_stock():
 
 
 @pytest.mark.django_db
-def test_product_offer_cannot_use_stock_owned_by_batch_offer():
+def test_product_price_cannot_use_stock_owned_by_batch_price():
     retail_postal_area_factory()
 
-    product_offer = retail_product_offer_factory(
+    product_price = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
-    product = product_offer.product
+    product = product_price.product
 
     create_batch(
         batch_id="A-001",
@@ -1192,7 +1145,7 @@ def test_product_offer_cannot_use_stock_owned_by_batch_offer():
         location="Shelf B1",
     )
 
-    retail_batch_offer_factory(
+    retail_batch_price_factory(
         batch=special_batch,
         enabled=True,
         price=Decimal("4.90"),
@@ -1204,7 +1157,7 @@ def test_product_offer_cannot_use_stock_owned_by_batch_offer():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=product_offer.pk,
+                commercial_price_id=product_price.pk,
                 quantity=4,
             ),
         ],
@@ -1225,7 +1178,7 @@ def test_product_offer_cannot_use_stock_owned_by_batch_offer():
 
 
 @pytest.mark.django_db
-def test_batch_offer_cannot_use_other_batches_of_same_product():
+def test_batch_price_cannot_use_other_batches_of_same_product():
     retail_postal_area_factory()
 
     product = retail_product_factory()
@@ -1246,7 +1199,7 @@ def test_batch_offer_cannot_use_other_batches_of_same_product():
         location="Shelf B1",
     )
 
-    batch_offer = retail_batch_offer_factory(
+    batch_price = retail_batch_price_factory(
         batch=special_batch,
         enabled=True,
         price=Decimal("4.90"),
@@ -1258,7 +1211,7 @@ def test_batch_offer_cannot_use_other_batches_of_same_product():
         ),
         lines=[
             RetailOrderLineInput(
-                batch_offer_id=batch_offer.pk,
+                commercial_price_id=batch_price.pk,
                 quantity=4,
             ),
         ],
@@ -1282,7 +1235,7 @@ def test_batch_offer_cannot_use_other_batches_of_same_product():
 def test_second_checkout_cannot_reserve_stock_held_by_first_checkout():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1301,7 +1254,7 @@ def test_second_checkout_cannot_reserve_stock_held_by_first_checkout():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=3,
             ),
         ],
@@ -1313,7 +1266,7 @@ def test_second_checkout_cannot_reserve_stock_held_by_first_checkout():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=1,
             ),
         ],
@@ -1347,7 +1300,7 @@ def test_second_checkout_cannot_reserve_stock_held_by_first_checkout():
 def test_expired_payment_reservation_does_not_block_new_checkout():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1366,7 +1319,7 @@ def test_expired_payment_reservation_does_not_block_new_checkout():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=3,
             ),
         ],
@@ -1388,7 +1341,7 @@ def test_expired_payment_reservation_does_not_block_new_checkout():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=3,
             ),
         ],
@@ -1410,7 +1363,7 @@ def test_expired_payment_reservation_does_not_block_new_checkout():
 def test_expired_checkout_cannot_start_retail_payment():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1429,7 +1382,7 @@ def test_expired_checkout_cannot_start_retail_payment():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=1,
             ),
         ],
@@ -1455,10 +1408,10 @@ def test_expired_checkout_cannot_start_retail_payment():
 
 
 @pytest.mark.django_db
-def test_product_offer_payment_reservation_uses_fefo():
+def test_product_price_payment_reservation_uses_fefo():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1485,7 +1438,7 @@ def test_product_offer_payment_reservation_uses_fefo():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=5,
             ),
         ],
@@ -1520,7 +1473,7 @@ def test_product_offer_payment_reservation_uses_fefo():
 def test_starting_payment_again_preserves_existing_temporary_hold():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1542,7 +1495,7 @@ def test_starting_payment_again_preserves_existing_temporary_hold():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=4,
             ),
         ],
@@ -1596,7 +1549,7 @@ def test_starting_payment_again_preserves_existing_temporary_hold():
 def test_retail_payment_reservation_prevents_inventory_reduction_below_hold():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1615,7 +1568,7 @@ def test_retail_payment_reservation_prevents_inventory_reduction_below_hold():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=4,
             ),
         ],
@@ -1648,12 +1601,12 @@ def test_start_retail_payment_rolls_back_all_lines_when_one_line_lacks_stock():
         name="Product B",
     )
 
-    first_offer = retail_product_offer_factory(
+    first_offer = retail_product_price_factory(
         product=first_product,
         enabled=True,
         price=Decimal("12.50"),
     )
-    second_offer = retail_product_offer_factory(
+    second_offer = retail_product_price_factory(
         product=second_product,
         enabled=True,
         price=Decimal("8.50"),
@@ -1681,11 +1634,11 @@ def test_start_retail_payment_rolls_back_all_lines_when_one_line_lacks_stock():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=first_offer.pk,
+                commercial_price_id=first_offer.pk,
                 quantity=4,
             ),
             RetailOrderLineInput(
-                product_offer_id=second_offer.pk,
+                commercial_price_id=second_offer.pk,
                 quantity=2,
             ),
         ],
@@ -1701,10 +1654,10 @@ def test_start_retail_payment_rolls_back_all_lines_when_one_line_lacks_stock():
     assert checkout.order.allocations.count() == 0
 
 @pytest.mark.django_db
-def test_product_offer_reservation_can_span_multiple_eligible_batches():
+def test_product_price_reservation_can_span_multiple_eligible_batches():
     retail_postal_area_factory()
 
-    offer = retail_product_offer_factory(
+    offer = retail_product_price_factory(
         enabled=True,
         price=Decimal("12.50"),
     )
@@ -1731,7 +1684,7 @@ def test_product_offer_reservation_can_span_multiple_eligible_batches():
         ),
         lines=[
             RetailOrderLineInput(
-                product_offer_id=offer.pk,
+                commercial_price_id=offer.pk,
                 quantity=6,
             ),
         ],

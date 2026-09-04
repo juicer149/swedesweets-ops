@@ -660,3 +660,65 @@ def test_allocation_string_contains_order_batch_and_quantity(customer, apple):
     )
 
     assert str(allocation) == f"{order.id} -> {batch.id}: 10"
+
+
+@pytest.mark.django_db
+def test_order_can_have_multiple_lines_for_same_product(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        customer=customer,
+    )
+
+    first = OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=2,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=2,
+        unit_price_snapshot=Decimal("8.50"),
+    )
+
+    second = OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=1,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=1,
+        unit_price_snapshot=Decimal("5.00"),
+    )
+
+    assert first.pk != second.pk
+    assert first.product == second.product
+    assert order.lines.count() == 2
+
+
+@pytest.mark.django_db
+def test_order_total_includes_multiple_lines_for_same_product(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        customer=customer,
+    )
+
+    OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=2,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=2,
+        unit_price_snapshot=Decimal("8.50"),
+    )
+
+    OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=1,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=1,
+        unit_price_snapshot=Decimal("5.00"),
+    )
+
+    assert order.total == Decimal("22.00")

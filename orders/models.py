@@ -496,10 +496,6 @@ class OrderLine(models.Model):
             models.Index(fields=["product"]),
         ]
         constraints = [
-            models.UniqueConstraint(
-                fields=["order", "product"],
-                name="unique_product_per_order",
-            ),
             models.CheckConstraint(
                 condition=models.Q(quantity__gt=0),
                 name="orderline_quantity_gt_0",
