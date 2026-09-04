@@ -7,9 +7,16 @@ import pytest
 from django.utils import timezone
 
 from inventory.models import InventoryBatch
+from pricing.models import CommercialPrice, PriceAmount
+from pricing.tests.factories import (
+    commercial_price_factory,
+    price_amount_factory,
+)
 from retail.selectors import (
     get_batch_for_batch_offer,
+    get_batch_for_retail_price,
     list_batches_for_product_offer,
+    list_batches_for_retail_price,
 )
 from retail.tests.factories import (
     retail_batch_offer_factory,
@@ -463,3 +470,282 @@ def test_expired_batch_offer_has_no_batch():
         )
         is None
     )
+
+
+
+@pytest.mark.django_db
+def test_product_wide_retail_price_returns_eligible_product_batches():
+    today = timezone.localdate()
+    product = retail_product_factory()
+
+    commercial_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("6.90"),
+    )
+
+    batch = retail_inventory_batch_factory(
+        product=product,
+        today=today,
+        batch_id="PRICE-RET-001",
+        quantity=10,
+        best_before=today + timedelta(days=30),
+    )
+
+    assert list(
+        list_batches_for_retail_price(
+            commercial_price=commercial_price,
+            currency=PriceAmount.Currency.EUR,
+            today=today,
+        )
+    ) == [batch]
+
+
+@pytest.mark.django_db
+def test_product_wide_retail_price_excludes_batch_with_own_retail_price():
+    today = timezone.localdate()
+    product = retail_product_factory()
+
+    product_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=product_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("6.90"),
+    )
+
+    ordinary_batch = retail_inventory_batch_factory(
+        product=product,
+        today=today,
+        batch_id="PRICE-RET-ORDINARY",
+        best_before=today + timedelta(days=30),
+    )
+    special_batch = retail_inventory_batch_factory(
+        product=product,
+        today=today,
+        batch_id="PRICE-RET-SPECIAL",
+        best_before=today + timedelta(days=10),
+    )
+
+    batch_price = commercial_price_factory(
+        product=product,
+        batch=special_batch,
+        channel=CommercialPrice.Channel.RETAIL,
+        reason=CommercialPrice.Reason.SHORT_DATED,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=batch_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("3.90"),
+        original_price=Decimal("6.90"),
+    )
+
+    assert list(
+        list_batches_for_retail_price(
+            commercial_price=product_price,
+            currency=PriceAmount.Currency.EUR,
+            today=today,
+        )
+    ) == [ordinary_batch]
+
+
+@pytest.mark.django_db
+def test_product_wide_retail_price_keeps_batch_without_requested_currency():
+    today = timezone.localdate()
+    product = retail_product_factory()
+
+    product_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=product_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("6.90"),
+    )
+
+    batch = retail_inventory_batch_factory(
+        product=product,
+        today=today,
+        batch_id="PRICE-RET-SEK-ONLY",
+    )
+
+    batch_price = commercial_price_factory(
+        product=product,
+        batch=batch,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=batch_price,
+        currency=PriceAmount.Currency.SEK,
+        price=Decimal("39.00"),
+    )
+
+    assert list(
+        list_batches_for_retail_price(
+            commercial_price=product_price,
+            currency=PriceAmount.Currency.EUR,
+            today=today,
+        )
+    ) == [batch]
+
+
+@pytest.mark.django_db
+def test_product_wide_retail_price_does_not_exclude_business_batch_price():
+    today = timezone.localdate()
+    product = retail_product_factory()
+
+    retail_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=retail_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("6.90"),
+    )
+
+    batch = retail_inventory_batch_factory(
+        product=product,
+        today=today,
+        batch_id="PRICE-BUSINESS-BATCH",
+    )
+
+    business_batch_price = commercial_price_factory(
+        product=product,
+        batch=batch,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=business_batch_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("4.90"),
+    )
+
+    assert list(
+        list_batches_for_retail_price(
+            commercial_price=retail_price,
+            currency=PriceAmount.Currency.EUR,
+            today=today,
+        )
+    ) == [batch]
+
+
+@pytest.mark.django_db
+def test_batch_specific_retail_price_returns_exact_batch():
+    today = timezone.localdate()
+    product = retail_product_factory()
+    batch = retail_inventory_batch_factory(
+        product=product,
+        today=today,
+        batch_id="PRICE-BATCH-EXACT",
+    )
+
+    commercial_price = commercial_price_factory(
+        product=product,
+        batch=batch,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+        reason=CommercialPrice.Reason.SHORT_DATED,
+    )
+    price_amount_factory(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("3.90"),
+    )
+
+    assert (
+        get_batch_for_retail_price(
+            commercial_price=commercial_price,
+            currency=PriceAmount.Currency.EUR,
+            today=today,
+        )
+        == batch
+    )
+
+
+@pytest.mark.django_db
+def test_product_wide_retail_price_has_no_exact_batch():
+    product = retail_product_factory()
+    commercial_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("6.90"),
+    )
+
+    assert get_batch_for_retail_price(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+    ) is None
+
+
+@pytest.mark.django_db
+def test_retail_price_requires_requested_currency():
+    product = retail_product_factory()
+    commercial_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.SEK,
+        price=Decimal("69.00"),
+    )
+
+    retail_inventory_batch_factory(
+        product=product,
+        batch_id="PRICE-NO-EUR",
+    )
+
+    assert list(
+        list_batches_for_retail_price(
+            commercial_price=commercial_price,
+            currency=PriceAmount.Currency.EUR,
+        )
+    ) == []
+
+
+@pytest.mark.django_db
+def test_retail_stock_pool_rejects_business_commercial_price():
+    product = retail_product_factory()
+    commercial_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+    price_amount_factory(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("5.90"),
+    )
+
+    retail_inventory_batch_factory(
+        product=product,
+        batch_id="PRICE-BUSINESS-ONLY",
+    )
+
+    assert list(
+        list_batches_for_retail_price(
+            commercial_price=commercial_price,
+            currency=PriceAmount.Currency.EUR,
+        )
+    ) == []
