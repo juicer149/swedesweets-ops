@@ -39,6 +39,7 @@ from retail.services import (
     clear_retail_cart,
     create_pending_retail_order,
     create_retail_cart,
+    create_retail_checkout_from_cart,
     remove_retail_cart_line,
     start_retail_payment,
     update_retail_cart_line_quantity,
@@ -46,6 +47,7 @@ from retail.services import (
 from retail.tests.factories import (
     retail_batch_offer_factory,
     retail_buyer_data,
+    retail_inventory_batch_factory,
     retail_postal_area_factory,
     retail_product_factory,
     retail_product_offer_factory,
@@ -171,6 +173,7 @@ def test_add_retail_cart_line_requires_exactly_one_offer():
 @pytest.mark.django_db
 def test_add_retail_cart_line_rejects_two_offers():
     cart = create_retail_cart()
+    cart_id = cart.pk
     product_offer = retail_product_offer_factory(
         enabled=True,
         price=Decimal("12.50"),
@@ -378,6 +381,246 @@ def test_clear_retail_cart_removes_all_lines():
 
     assert returned_cart.pk == cart.pk
     assert cart.lines.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_retail_checkout_from_cart_converts_and_consumes_cart():
+    retail_postal_area_factory()
+
+    cart = create_retail_cart()
+    cart_id = cart.pk
+
+    product = retail_product_factory(
+        name="Product Offer Product",
+    )
+    product_offer = retail_product_offer_factory(
+        product=product,
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    batch_product = retail_product_factory(
+        name="Batch Offer Product",
+    )
+    batch = retail_inventory_batch_factory(
+        product=batch_product,
+        batch_id="CART-BATCH-001",
+    )
+    batch_offer = retail_batch_offer_factory(
+        batch=batch,
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    add_retail_cart_line(
+        cart=cart,
+        product_offer_id=product_offer.pk,
+        quantity=2,
+    )
+    add_retail_cart_line(
+        cart=cart,
+        batch_offer_id=batch_offer.pk,
+        quantity=3,
+    )
+
+    checkout = create_retail_checkout_from_cart(
+        cart=cart,
+        buyer=AnonymousBuyerInput(
+            **retail_buyer_data()
+        ),
+    )
+
+    order = checkout.order
+    lines = list(
+        order.lines
+        .select_related(
+            "retail_offer_selection",
+        )
+        .order_by("id")
+    )
+
+    assert order.channel == Order.Channel.RETAIL
+    assert order.status == Order.Status.DRAFT
+    assert order.buyer_name == "Marie Dupont"
+    assert len(lines) == 2
+
+    assert lines[0].product == product
+    assert lines[0].quantity_in_units == 2
+    assert lines[0].unit_price_snapshot == Decimal("12.50")
+    assert (
+        lines[0].retail_offer_selection.product_offer_id
+        == product_offer.pk
+    )
+
+    assert lines[1].product == batch_product
+    assert lines[1].quantity_in_units == 3
+    assert lines[1].unit_price_snapshot == Decimal("4.90")
+    assert (
+        lines[1].retail_offer_selection.batch_offer_id
+        == batch_offer.pk
+    )
+
+    assert not RetailCart.objects.filter(
+        pk=cart_id,
+    ).exists()
+    assert order.allocations.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_retail_checkout_from_cart_rejects_two_offers_for_same_product():
+    retail_postal_area_factory()
+
+    cart = create_retail_cart()
+    product = retail_product_factory()
+
+    product_offer = retail_product_offer_factory(
+        product=product,
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+    batch = retail_inventory_batch_factory(
+        product=product,
+        batch_id="CART-BATCH-SAME-PRODUCT",
+    )
+    batch_offer = retail_batch_offer_factory(
+        batch=batch,
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    add_retail_cart_line(
+        cart=cart,
+        product_offer_id=product_offer.pk,
+        quantity=1,
+    )
+    add_retail_cart_line(
+        cart=cart,
+        batch_offer_id=batch_offer.pk,
+        quantity=1,
+    )
+
+    with pytest.raises(
+        InvalidRetailOrder,
+        match="duplicate retail product lines are not allowed",
+    ):
+        create_retail_checkout_from_cart(
+            cart=cart,
+            buyer=AnonymousBuyerInput(
+                **retail_buyer_data()
+            ),
+        )
+
+    assert RetailCart.objects.filter(
+        pk=cart.pk,
+    ).exists()
+    assert cart.lines.count() == 2
+    assert Order.objects.count() == 0
+    assert RetailCheckoutSession.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_retail_checkout_from_cart_reprices_offer_at_conversion():
+    retail_postal_area_factory()
+
+    cart = create_retail_cart()
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    add_retail_cart_line(
+        cart=cart,
+        product_offer_id=offer.pk,
+        quantity=2,
+    )
+
+    offer.price = Decimal("14.25")
+    offer.save(
+        update_fields=[
+            "price",
+            "updated_at",
+        ],
+    )
+
+    checkout = create_retail_checkout_from_cart(
+        cart=cart,
+        buyer=AnonymousBuyerInput(
+            **retail_buyer_data()
+        ),
+    )
+
+    line = checkout.order.lines.get()
+
+    assert line.unit_price_snapshot == Decimal("14.25")
+
+
+@pytest.mark.django_db
+def test_create_retail_checkout_from_cart_rejects_empty_cart():
+    retail_postal_area_factory()
+    cart = create_retail_cart()
+
+    with pytest.raises(
+        InvalidRetailCart,
+        match="empty",
+    ):
+        create_retail_checkout_from_cart(
+            cart=cart,
+            buyer=AnonymousBuyerInput(
+                **retail_buyer_data()
+            ),
+        )
+
+    assert RetailCart.objects.filter(
+        pk=cart.pk,
+    ).exists()
+    assert Order.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_retail_checkout_from_cart_preserves_cart_on_validation_failure():
+    retail_postal_area_factory()
+
+    cart = create_retail_cart()
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    add_retail_cart_line(
+        cart=cart,
+        product_offer_id=offer.pk,
+        quantity=2,
+    )
+
+    offer.enabled = False
+    offer.save(
+        update_fields=[
+            "enabled",
+            "updated_at",
+        ],
+    )
+
+    with pytest.raises(
+        InvalidRetailOrder,
+        match="not enabled",
+    ):
+        create_retail_checkout_from_cart(
+            cart=cart,
+            buyer=AnonymousBuyerInput(
+                **retail_buyer_data()
+            ),
+        )
+
+    assert RetailCart.objects.filter(
+        pk=cart.pk,
+    ).exists()
+    assert RetailCartLine.objects.filter(
+        cart=cart,
+        product_offer=offer,
+        quantity=2,
+    ).exists()
+    assert Order.objects.count() == 0
+    assert RetailCheckoutSession.objects.count() == 0
 
 
 @pytest.mark.django_db

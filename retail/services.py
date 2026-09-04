@@ -284,6 +284,53 @@ def buyer_from_anonymous_retail_input(
 
 
 @transaction.atomic
+def create_retail_checkout_from_cart(
+    *,
+    cart: RetailCart,
+    buyer: AnonymousBuyerInput,
+) -> RetailCheckoutSession:
+    """Convert one mutable retail cart into a validated retail checkout.
+
+    The cart is locked and translated into retail order-line input. Existing
+    checkout validation then re-resolves every offer and snapshots current
+    commercial state into the order.
+
+    The cart is deleted only after checkout creation succeeds. Any validation
+    failure rolls the whole conversion back and leaves the cart intact.
+    """
+
+    cart = _lock_retail_cart(
+        cart=cart,
+    )
+
+    cart_lines = list(
+        cart.lines
+        .order_by("id")
+    )
+
+    if not cart_lines:
+        raise InvalidRetailCart(
+            "retail cart is empty"
+        )
+
+    checkout = create_pending_retail_order(
+        buyer=buyer,
+        lines=[
+            RetailOrderLineInput(
+                quantity=line.quantity,
+                product_offer_id=line.product_offer_id,
+                batch_offer_id=line.batch_offer_id,
+            )
+            for line in cart_lines
+        ],
+    )
+
+    cart.delete()
+
+    return checkout
+
+
+@transaction.atomic
 def create_pending_retail_order(
     *,
     buyer: AnonymousBuyerInput,
