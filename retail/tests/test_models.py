@@ -9,6 +9,8 @@ from django.utils import timezone
 from orders.models import Order, OrderLine
 from retail.models import (
     RetailBatchOffer,
+    RetailCart,
+    RetailCartLine,
     RetailCheckoutSession,
     RetailOfferSelection,
     RetailProductOffer,
@@ -165,6 +167,182 @@ def test_enabled_retail_product_offer_accepts_positive_price():
 
     assert offer.enabled is True
     assert offer.price == Decimal("12.50")
+
+
+@pytest.mark.django_db
+def test_retail_cart_can_be_created_empty():
+    cart = RetailCart.objects.create()
+
+    assert cart.pk is not None
+    assert cart.lines.count() == 0
+
+
+@pytest.mark.django_db
+def test_retail_cart_uses_uuid_primary_key():
+    cart = RetailCart.objects.create()
+
+    assert cart.pk.version == 4
+
+
+@pytest.mark.django_db
+def test_retail_cart_line_can_reference_product_offer():
+    cart = RetailCart.objects.create()
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    line = RetailCartLine.objects.create(
+        cart=cart,
+        product_offer=offer,
+        quantity=2,
+    )
+
+    assert line.cart == cart
+    assert line.product_offer == offer
+    assert line.batch_offer is None
+    assert line.quantity == 2
+
+
+@pytest.mark.django_db
+def test_retail_cart_line_can_reference_batch_offer():
+    cart = RetailCart.objects.create()
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    line = RetailCartLine.objects.create(
+        cart=cart,
+        batch_offer=offer,
+        quantity=2,
+    )
+
+    assert line.cart == cart
+    assert line.product_offer is None
+    assert line.batch_offer == offer
+    assert line.quantity == 2
+
+
+@pytest.mark.django_db
+def test_retail_cart_line_requires_an_offer():
+    cart = RetailCart.objects.create()
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailCartLine.objects.create(
+                cart=cart,
+                quantity=1,
+            )
+
+
+@pytest.mark.django_db
+def test_retail_cart_line_rejects_two_offers():
+    cart = RetailCart.objects.create()
+    product_offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+    batch_offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailCartLine.objects.create(
+                cart=cart,
+                product_offer=product_offer,
+                batch_offer=batch_offer,
+                quantity=1,
+            )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("quantity", [0, -1])
+def test_retail_cart_line_quantity_must_be_positive(quantity: int):
+    cart = RetailCart.objects.create()
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailCartLine.objects.create(
+                cart=cart,
+                product_offer=offer,
+                quantity=quantity,
+            )
+
+
+@pytest.mark.django_db
+def test_product_offer_can_appear_only_once_per_cart():
+    cart = RetailCart.objects.create()
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    RetailCartLine.objects.create(
+        cart=cart,
+        product_offer=offer,
+        quantity=1,
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailCartLine.objects.create(
+                cart=cart,
+                product_offer=offer,
+                quantity=2,
+            )
+
+
+@pytest.mark.django_db
+def test_batch_offer_can_appear_only_once_per_cart():
+    cart = RetailCart.objects.create()
+    offer = retail_batch_offer_factory(
+        enabled=True,
+        price=Decimal("4.90"),
+    )
+
+    RetailCartLine.objects.create(
+        cart=cart,
+        batch_offer=offer,
+        quantity=1,
+    )
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RetailCartLine.objects.create(
+                cart=cart,
+                batch_offer=offer,
+                quantity=2,
+            )
+
+
+@pytest.mark.django_db
+def test_same_offer_can_appear_in_different_carts():
+    first_cart = RetailCart.objects.create()
+    second_cart = RetailCart.objects.create()
+    offer = retail_product_offer_factory(
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    first_line = RetailCartLine.objects.create(
+        cart=first_cart,
+        product_offer=offer,
+        quantity=1,
+    )
+    second_line = RetailCartLine.objects.create(
+        cart=second_cart,
+        product_offer=offer,
+        quantity=2,
+    )
+
+    assert first_line.pk != second_line.pk
 
 
 @pytest.mark.django_db

@@ -170,6 +170,105 @@ class RetailBatchOffer(models.Model):
         return f"{self.batch.batch_id}: retail {state}"
 
 
+class RetailCart(models.Model):
+    """Mutable retail purchase intent before an Order exists.
+
+    A cart is deliberately weaker than an order:
+    it owns only the selected retail offers and quantities.
+
+    Buyer data, price snapshots, stock reservations and payment state belong
+    to later checkout/order stages.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"Retail cart {self.pk}"
+
+
+class RetailCartLine(models.Model):
+    """One selected retail offer in a mutable cart.
+
+    Exactly one of product_offer and batch_offer must be present.
+
+    Price is intentionally not snapshotted here. The selected offer is
+    re-resolved when the cart is converted into an order.
+    """
+
+    cart = models.ForeignKey(
+        RetailCart,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+
+    product_offer = models.ForeignKey(
+        RetailProductOffer,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="cart_lines",
+    )
+
+    batch_offer = models.ForeignKey(
+        RetailBatchOffer,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="cart_lines",
+    )
+
+    quantity = models.PositiveIntegerField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        product_offer__isnull=False,
+                        batch_offer__isnull=True,
+                    )
+                    | Q(
+                        product_offer__isnull=True,
+                        batch_offer__isnull=False,
+                    )
+                ),
+                name="retail_cart_line_exactly_one_offer",
+            ),
+            models.CheckConstraint(
+                condition=Q(quantity__gt=0),
+                name="retail_cart_line_quantity_positive",
+            ),
+            models.UniqueConstraint(
+                fields=["cart", "product_offer"],
+                condition=Q(product_offer__isnull=False),
+                name="unique_retail_product_offer_per_cart",
+            ),
+            models.UniqueConstraint(
+                fields=["cart", "batch_offer"],
+                condition=Q(batch_offer__isnull=False),
+                name="unique_retail_batch_offer_per_cart",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.product_offer_id is not None:
+            offer = f"product offer {self.product_offer_id}"
+        else:
+            offer = f"batch offer {self.batch_offer_id}"
+
+        return f"Cart {self.cart_id}: {self.quantity} × {offer}"
+
+
 class RetailCheckoutSession(models.Model):
     """Short-lived ownership of a retail checkout.
 

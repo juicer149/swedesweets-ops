@@ -37,6 +37,8 @@ from reservations.services import (
 )
 from retail.models import (
     RetailBatchOffer,
+    RetailCart,
+    RetailCartLine,
     RetailCheckoutSession,
     RetailOfferSelection,
     RetailProductOffer,
@@ -56,6 +58,156 @@ from retail.selectors import (
     list_batches_for_batch_offer,
     list_batches_for_product_offer,
 )
+
+
+class InvalidRetailCart(ValueError):
+    """Raised when a retail cart mutation violates a cart invariant."""
+
+
+@transaction.atomic
+def create_retail_cart() -> RetailCart:
+    """Create an empty mutable retail cart."""
+
+    return RetailCart.objects.create()
+
+
+@transaction.atomic
+def add_retail_cart_line(
+    *,
+    cart: RetailCart,
+    quantity: int,
+    product_offer_id: int | None = None,
+    batch_offer_id: int | None = None,
+) -> RetailCartLine:
+    """Add a retail offer to a cart, merging with an existing matching line."""
+
+    _validate_cart_line_input(
+        quantity=quantity,
+        product_offer_id=product_offer_id,
+        batch_offer_id=batch_offer_id,
+    )
+
+    cart = _lock_retail_cart(
+        cart=cart,
+    )
+
+    if product_offer_id is not None:
+        product_offer = _get_retail_product_offer(
+            offer_id=product_offer_id,
+        )
+        batch_offer = None
+        existing_line = (
+            RetailCartLine.objects
+            .filter(
+                cart=cart,
+                product_offer=product_offer,
+            )
+            .first()
+        )
+    else:
+        assert batch_offer_id is not None
+
+        product_offer = None
+        batch_offer = _get_retail_batch_offer(
+            offer_id=batch_offer_id,
+        )
+        existing_line = (
+            RetailCartLine.objects
+            .filter(
+                cart=cart,
+                batch_offer=batch_offer,
+            )
+            .first()
+        )
+
+    if existing_line is not None:
+        new_quantity = existing_line.quantity + quantity
+
+        _validate_cart_quantity(
+            quantity=new_quantity,
+        )
+
+        existing_line.quantity = new_quantity
+        existing_line.save(
+            update_fields=[
+                "quantity",
+                "updated_at",
+            ],
+        )
+        return existing_line
+
+    return RetailCartLine.objects.create(
+        cart=cart,
+        product_offer=product_offer,
+        batch_offer=batch_offer,
+        quantity=quantity,
+    )
+
+
+@transaction.atomic
+def update_retail_cart_line_quantity(
+    *,
+    cart: RetailCart,
+    line: RetailCartLine,
+    quantity: int,
+) -> RetailCartLine:
+    """Set the quantity of one line that belongs to the given cart."""
+
+    _validate_cart_quantity(
+        quantity=quantity,
+    )
+
+    cart = _lock_retail_cart(
+        cart=cart,
+    )
+    line = _get_locked_cart_line(
+        cart=cart,
+        line=line,
+    )
+
+    line.quantity = quantity
+    line.save(
+        update_fields=[
+            "quantity",
+            "updated_at",
+        ],
+    )
+
+    return line
+
+
+@transaction.atomic
+def remove_retail_cart_line(
+    *,
+    cart: RetailCart,
+    line: RetailCartLine,
+) -> None:
+    """Remove one line that belongs to the given cart."""
+
+    cart = _lock_retail_cart(
+        cart=cart,
+    )
+    line = _get_locked_cart_line(
+        cart=cart,
+        line=line,
+    )
+
+    line.delete()
+
+
+@transaction.atomic
+def clear_retail_cart(
+    *,
+    cart: RetailCart,
+) -> RetailCart:
+    """Remove every line from a retail cart."""
+
+    cart = _lock_retail_cart(
+        cart=cart,
+    )
+    cart.lines.all().delete()
+
+    return cart
 
 
 class InvalidRetailOrder(ValueError):
@@ -147,28 +299,17 @@ def create_pending_retail_order(
     Creating a checkout does not reserve physical stock.
     """
 
-    _validate_buyer_destination(
-        buyer,
-    )
-    _validate_lines(
-        lines,
-    )
+    _validate_buyer_destination(buyer)
+    _validate_lines(lines)
 
-    resolved_lines = _resolve_retail_lines(
-        lines=lines,
-    )
-    _validate_unique_products(
-        lines=resolved_lines,
-    )
+    resolved_lines = _resolve_retail_lines(lines=lines)
 
-    total = _calculate_order_total(
-        lines=resolved_lines,
-    )
+    _validate_unique_products(lines=resolved_lines)
+
+    total = _calculate_order_total(lines=resolved_lines)
 
     if total > MAX_RETAIL_ORDER_TOTAL:
-        raise InvalidRetailOrder(
-            "order total exceeds maximum allowed amount"
-        )
+        raise InvalidRetailOrder("order total exceeds maximum allowed amount")
 
     order = Order(
         channel=Order.Channel.RETAIL,
@@ -443,6 +584,75 @@ def fail_retail_payment(
     return mark_payment_attempt_failed(
         attempt=attempt,
     )
+
+
+def _lock_retail_cart(
+    *,
+    cart: RetailCart,
+) -> RetailCart:
+    try:
+        return (
+            RetailCart.objects
+            .select_for_update()
+            .get(pk=cart.pk)
+        )
+    except RetailCart.DoesNotExist as exc:
+        raise InvalidRetailCart(
+            "retail cart does not exist"
+        ) from exc
+
+
+def _get_locked_cart_line(
+    *,
+    cart: RetailCart,
+    line: RetailCartLine,
+) -> RetailCartLine:
+    try:
+        return (
+            RetailCartLine.objects
+            .select_for_update()
+            .get(
+                pk=line.pk,
+                cart=cart,
+            )
+        )
+    except RetailCartLine.DoesNotExist as exc:
+        raise InvalidRetailCart(
+            "retail cart line does not belong to cart"
+        ) from exc
+
+
+def _validate_cart_line_input(
+    *,
+    quantity: int,
+    product_offer_id: int | None,
+    batch_offer_id: int | None,
+) -> None:
+    _validate_cart_quantity(
+        quantity=quantity,
+    )
+
+    has_product_offer = product_offer_id is not None
+    has_batch_offer = batch_offer_id is not None
+
+    if has_product_offer == has_batch_offer:
+        raise InvalidRetailCart(
+            "retail cart line must reference exactly one offer"
+        )
+
+
+def _validate_cart_quantity(
+    *,
+    quantity: int,
+) -> None:
+    if not (
+        MIN_RETAIL_LINE_QUANTITY
+        <= quantity
+        <= MAX_RETAIL_LINE_QUANTITY
+    ):
+        raise InvalidRetailCart(
+            "invalid retail cart line quantity"
+        )
 
 
 def _get_offer_selection(
