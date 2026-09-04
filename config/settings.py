@@ -111,6 +111,7 @@ INSTALLED_APPS = [
     "products",
     "inventory",
     "orders",
+    "pricing",
     "customers",
     "business_portal",
     "retail",
