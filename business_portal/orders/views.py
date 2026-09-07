@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import StrEnum
 
 from django.contrib import messages
@@ -24,12 +23,7 @@ from business_portal.orders.detail_viewmodels import (
     build_portal_order_detail_context,
 )
 from business_portal.orders.form_viewmodels import (
-    build_portal_place_order_context,
-)
-from business_portal.orders.forms import (
-    PortalOrderLineFormSet,
-    build_portal_order_line_initial_data,
-    build_portal_order_line_inputs,
+    build_portal_current_order_context,
 )
 from business_portal.orders.list_viewmodels import (
     build_portal_order_page_rows,
@@ -44,7 +38,6 @@ from business_portal.orders.selectors import (
 from business_portal.orders.services import (
     DraftStatus,
     discard_portal_draft_order,
-    save_or_clear_portal_draft_order,
 )
 from business_portal.selectors import (
     get_portal_customer_for_user,
@@ -78,7 +71,6 @@ class PortalOrderIntent(StrEnum):
 
 PORTAL_ORDERS_LIST_ANCHOR = "portal-orders-list"
 PORTAL_ORDER_FILTER_QUERY_KEY = "status"
-ORDER_LINE_FORMSET_PREFIX = "lines"
 
 ORDER_OPERATION_ERRORS = (
     InvalidOrderOperation,
@@ -108,59 +100,6 @@ PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 )
 
 
-@dataclass(frozen=True, slots=True)
-class PortalDraftFormResult:
-    line_formset: object
-    draft_order: object | None
-    form_errors: tuple[str, ...]
-    succeeded: bool
-    status: DraftStatus
-
-
-def _handle_portal_draft_form_post(
-    *,
-    request,
-    customer,
-    draft_order,
-    require_lines: bool,
-) -> PortalDraftFormResult:
-    line_formset = PortalOrderLineFormSet(
-        request.POST,
-        prefix=ORDER_LINE_FORMSET_PREFIX,
-        order=draft_order,
-        require_lines=require_lines,
-        language_code=request.LANGUAGE_CODE,
-    )
-
-    if not line_formset.is_valid():
-        return PortalDraftFormResult(
-            line_formset=line_formset,
-            draft_order=draft_order,
-            form_errors=(),
-            succeeded=False,
-            status=DraftStatus.UNCHANGED,
-        )
-
-    line_inputs = build_portal_order_line_inputs(
-        line_formset
-    )
-
-    result = save_or_clear_portal_draft_order(
-        customer=customer,
-        draft_order=draft_order,
-        line_inputs=line_inputs,
-        user=request.user,
-    )
-
-    return PortalDraftFormResult(
-        line_formset=line_formset,
-        draft_order=result.draft_order,
-        form_errors=result.errors,
-        succeeded=result.succeeded,
-        status=result.status,
-    )
-
-
 def _add_service_errors(
     request,
     errors: tuple[str, ...],
@@ -170,28 +109,6 @@ def _add_service_errors(
             request,
             error,
         )
-
-
-def _add_draft_save_message(
-    request,
-    status: DraftStatus,
-) -> None:
-    match status:
-        case DraftStatus.SAVED:
-            messages.success(
-                request,
-                _("Draft order saved."),
-            )
-        case DraftStatus.CLEARED:
-            messages.success(
-                request,
-                _("Draft cleared."),
-            )
-        case DraftStatus.UNCHANGED:
-            messages.info(
-                request,
-                _("Nothing to save."),
-            )
 
 
 def _get_portal_draft_line(
@@ -241,7 +158,7 @@ def set_draft_line_quantity(
             _("Quantity must be a whole number."),
         )
         return redirect(
-            "business_portal:place_order"
+            "business_portal:current_order"
         )
 
     try:
@@ -263,7 +180,7 @@ def set_draft_line_quantity(
         )
 
     return redirect(
-        "business_portal:place_order"
+        "business_portal:current_order"
     )
 
 
@@ -296,7 +213,7 @@ def remove_draft_line(
         )
 
     return redirect(
-        "business_portal:place_order"
+        "business_portal:current_order"
     )
 
 
@@ -370,7 +287,7 @@ def orders(request):
 
 
 @login_required
-def place_order(request):
+def current_order(request):
     customer = get_portal_customer_for_user(
         user=request.user,
     )
@@ -378,8 +295,6 @@ def place_order(request):
     draft_order = get_active_draft_order_for_customer(
         customer=customer,
     )
-
-    form_errors: tuple[str, ...] = ()
 
     if request.method == "POST":
         try:
@@ -395,7 +310,7 @@ def place_order(request):
                 _("Unknown order action."),
             )
             return redirect(
-                "business_portal:place_order"
+                "business_portal:current_order"
             )
 
         match intent:
@@ -411,7 +326,7 @@ def place_order(request):
                         result.errors,
                     )
                     return redirect(
-                        "business_portal:place_order"
+                        "business_portal:current_order"
                     )
 
                 if result.status == DraftStatus.CLEARED:
@@ -424,42 +339,39 @@ def place_order(request):
                     "accounts:after_login"
                 )
 
-            case (
-                PortalOrderIntent.REVIEW_ORDER
-                | PortalOrderIntent.SAVE_DRAFT
-            ):
-                result = _handle_portal_draft_form_post(
-                    request=request,
-                    customer=customer,
-                    draft_order=draft_order,
-                    require_lines=(
-                        intent
-                        == PortalOrderIntent.REVIEW_ORDER
-                    ),
+            case PortalOrderIntent.REVIEW_ORDER:
+                if (
+                    draft_order is None
+                    or not draft_order.lines.exists()
+                ):
+                    messages.error(
+                        request,
+                        _("Add at least one product."),
+                    )
+                    return redirect(
+                        "business_portal:current_order"
+                    )
+
+                return redirect(
+                    "business_portal:review_order"
                 )
 
-                line_formset = result.line_formset
-                draft_order = result.draft_order
-                form_errors = result.form_errors
-
-                if result.succeeded:
-                    if (
-                        intent
-                        == PortalOrderIntent.REVIEW_ORDER
-                    ):
-                        return redirect(
-                            "business_portal:review_order"
-                        )
-
-                    _add_draft_save_message(
+            case PortalOrderIntent.SAVE_DRAFT:
+                if draft_order is None:
+                    messages.info(
                         request,
-                        result.status,
+                        _("No draft order to save."),
+                    )
+                else:
+                    messages.success(
+                        request,
+                        _("Draft order saved."),
                     )
 
-                    return redirect(
-                        _safe_next_url(request)
-                        or "accounts:after_login"
-                    )
+                return redirect(
+                    _safe_next_url(request)
+                    or "accounts:after_login"
+                )
 
             case _:
                 messages.error(
@@ -467,33 +379,17 @@ def place_order(request):
                     _("Unknown order action."),
                 )
                 return redirect(
-                    "business_portal:place_order"
+                    "business_portal:current_order"
                 )
 
-    else:
-        initial = ()
-
-        if draft_order is not None:
-            initial = build_portal_order_line_initial_data(
-                draft_order
-            )
-
-        line_formset = PortalOrderLineFormSet(
-            initial=initial,
-            prefix=ORDER_LINE_FORMSET_PREFIX,
-            order=draft_order,
-            language_code=request.LANGUAGE_CODE,
-        )
-
-    context = build_portal_place_order_context(
-        line_formset=line_formset,
-        form_errors=form_errors,
-        has_active_draft=draft_order is not None,
+    context = build_portal_current_order_context(
+        draft_order=draft_order,
+        language_code=request.LANGUAGE_CODE,
     ).as_dict()
 
     return render(
         request,
-        "business_portal/orders/place.html",
+        "business_portal/orders/current.html",
         context,
     )
 
@@ -514,7 +410,7 @@ def review_order(request):
             _("No draft order to review."),
         )
         return redirect(
-            "business_portal:place_order"
+            "business_portal:current_order"
         )
 
     if request.method == "POST":

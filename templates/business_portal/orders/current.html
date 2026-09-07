@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Order" %} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="portal-place-order-title" title=_("Order") %}
+
+<section
+  class="form-section form-section--wide"
+  aria-labelledby="portal-place-order-title"
+>
+  <div class="form-card form-card--wide portal-place-order-card">
+    <section
+      class="order-lines"
+      aria-labelledby="portal-order-lines-title"
+    >
+      {% if draft_lines %}
+        <div class="order-lines__header order-lines__header--with-action">
+          <h2 id="portal-order-lines-title">
+            {% trans "Items" %}
+          </h2>
+
+          <a
+            class="button button--text button--tone-neutral"
+            href="{{ continue_shopping_url }}"
+          >
+            {{ continue_shopping_label }}
+          </a>
+        </div>
+
+        <div class="portal-cart">
+          <div
+            class="portal-cart__header"
+            aria-hidden="true"
+          >
+            <span>
+              {% trans "Product" %}
+            </span>
+
+            <span>
+              {% trans "Quantity" %}
+            </span>
+
+            <span></span>
+          </div>
+
+          <div class="portal-cart__lines">
+            {% for line in draft_lines %}
+              <article class="portal-cart-line">
+                <div class="portal-cart-line__product">
+                  <span class="portal-cart-line__product-label">
+                    {{ line.product_label }}
+                  </span>
+                </div>
+
+                <div class="portal-cart-line__quantity">
+                  <div class="quantity-stepper">
+                    <form
+                      method="post"
+                      action="{{ line.quantity_url }}"
+                      class="quantity-stepper__form"
+                    >
+                      {% csrf_token %}
+
+                      <button
+                        class="quantity-stepper__button quantity-stepper__button--decrease"
+                        type="submit"
+                        name="quantity"
+                        value="{{ line.quantity|add:'-1' }}"
+                        {% if line.quantity <= 1 %}disabled{% endif %}
+                      >
+                        <span aria-hidden="true">−</span>
+
+                        <span class="visually-hidden">
+                          {% trans "Decrease quantity" %}
+                        </span>
+                      </button>
+                    </form>
+
+                    <form
+                      method="post"
+                      action="{{ line.quantity_url }}"
+                      class="quantity-stepper__form quantity-stepper__form--value"
+                    >
+                      {% csrf_token %}
+
+                      <label
+                        class="visually-hidden"
+                        for="quantity-{{ line.order_line_id }}"
+                      >
+                        {% trans "Quantity" %}
+                      </label>
+
+                      <input
+                        id="quantity-{{ line.order_line_id }}"
+                        class="quantity-stepper__input"
+                        type="number"
+                        name="quantity"
+                        value="{{ line.quantity }}"
+                        min="1"
+                        step="1"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        required
+                      >
+                    </form>
+
+                    <form
+                      method="post"
+                      action="{{ line.quantity_url }}"
+                      class="quantity-stepper__form"
+                    >
+                      {% csrf_token %}
+
+                      <button
+                        class="quantity-stepper__button quantity-stepper__button--increase"
+                        type="submit"
+                        name="quantity"
+                        value="{{ line.quantity|add:'1' }}"
+                      >
+                        <span aria-hidden="true">+</span>
+
+                        <span class="visually-hidden">
+                          {% trans "Increase quantity" %}
+                        </span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                <div class="portal-cart-line__action">
+                  <form
+                    method="post"
+                    action="{{ line.remove_url }}"
+                  >
+                    {% csrf_token %}
+
+                    <button
+                      class="portal-cart-line__remove-button"
+                      type="submit"
+                      aria-label="{% trans 'Remove product' %}"
+                    >
+                      {% include "includes/ui/icon_block.html" with name="trash" size="sm" only %}
+
+                      <span class="visually-hidden">
+                        {% trans "Remove product" %}
+                      </span>
+                    </button>
+                  </form>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="portal-place-order-actions">
+          <form method="post">
+            {% csrf_token %}
+
+            <button
+              class="button button--md button--solid button--tone-place"
+              type="submit"
+              name="intent"
+              value="review_order"
+            >
+              {{ submit_label }}
+            </button>
+          </form>
+
+          <form method="post">
+            {% csrf_token %}
+
+            <button
+              class="button button--md button--ghost button--tone-danger"
+              type="submit"
+              name="intent"
+              value="discard_draft"
+            >
+              {{ discard_draft_label }}
+            </button>
+          </form>
+        </div>
+      {% else %}
+        <div class="order-lines__header">
+          <h2 id="portal-order-lines-title">
+            {% trans "Items" %}
+          </h2>
+        </div>
+
+        <div class="portal-cart-empty">
+          <p>
+            {% trans "Your order is empty." %}
+          </p>
+
+          <a
+            class="button button--md button--solid button--tone-place"
+            href="{{ continue_shopping_url }}"
+          >
+            {{ continue_shopping_label }}
+          </a>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endblock %}

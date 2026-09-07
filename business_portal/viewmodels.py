@@ -137,7 +137,7 @@ def _build_home_actions(
     return (
         PortalHomeAction(
             label=order_action_label,
-            href=reverse("business_portal:place_order"),
+            href=reverse("business_portal:current_order"),
             css_class=(
                 "button button--hero-action button--tone-place button--with-icon"
             ),

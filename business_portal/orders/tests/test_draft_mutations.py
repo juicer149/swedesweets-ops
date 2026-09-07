@@ -85,7 +85,7 @@ def test_customer_can_set_draft_line_quantity(
 
     assert response.status_code == 302
     assert response["Location"] == reverse(
-        "business_portal:place_order"
+        "business_portal:current_order"
     )
 
     line.refresh_from_db()
@@ -130,7 +130,7 @@ def test_set_draft_line_quantity_rejects_invalid_quantity(
 
     assert response.status_code == 302
     assert response["Location"] == reverse(
-        "business_portal:place_order"
+        "business_portal:current_order"
     )
 
     line.refresh_from_db()
@@ -190,7 +190,7 @@ def test_set_draft_line_quantity_shows_business_validation_error(
 
     assert response.status_code == 302
     assert response["Location"] == reverse(
-        "business_portal:place_order"
+        "business_portal:current_order"
     )
 
     line.refresh_from_db()
@@ -347,7 +347,7 @@ def test_customer_can_remove_draft_line(
 
     assert response.status_code == 302
     assert response["Location"] == reverse(
-        "business_portal:place_order"
+        "business_portal:current_order"
     )
 
     assert not OrderLine.objects.filter(

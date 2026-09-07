@@ -198,6 +198,7 @@
 
 .portal-order-item__action {
   justify-self: end;
+
   white-space: nowrap;
 }
 
@@ -270,6 +271,7 @@
   font-size: var(--font-size-16);
 }
 
+
 /* =============================================================================
    Portal order detail
    ============================================================================= */
@@ -297,9 +299,19 @@
   line-height: 1.3;
 }
 
+
 /* =============================================================================
    Portal place order
    ============================================================================= */
+
+.portal-place-order-card {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.portal-place-order-card .order-lines {
+  gap: var(--space-5);
+}
 
 .portal-place-order-card .order-lines__header--with-action {
   display: flex;
@@ -308,45 +320,30 @@
   gap: var(--space-4);
 }
 
-.portal-place-order-card .order-lines__header--with-action .text-link {
-  margin-top: 0.35rem;
+.portal-place-order-card .order-lines__header--with-action .button--text {
   flex: 0 0 auto;
+
+  margin-top: 0.35rem;
 }
 
-.portal-place-order-card .order-line__grid {
-  grid-template-columns: minmax(0, 1fr) minmax(5.5rem, 7rem);
-  align-items: start;
-}
-
-.portal-place-order-card .form-field--portal-order-quantity {
-  max-width: 7rem;
-}
-
-@media (max-width: 900px) {
-  .portal-place-order-card .order-line__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .portal-place-order-card .form-field--portal-order-quantity {
-    max-width: none;
-  }
-}
-
-.portal-place-order-card .form-actions--split {
+.portal-place-order-actions {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-4);
+
+  padding-top: var(--space-2);
 }
 
-.portal-place-order-card .form-actions__primary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+.portal-place-order-actions form {
+  margin: 0;
 }
+
 
 /* =============================================================================
    Dirty form dialog
    ============================================================================= */
+
 .dirty-form-dialog {
   width: min(calc(100vw - 2rem), 38rem);
   padding: 0;
@@ -442,7 +439,9 @@
 .dirty-form-dialog__actions .button {
   width: 100%;
   min-width: 0;
+
   justify-content: center;
+
   white-space: nowrap;
 }
 
@@ -472,7 +471,7 @@
 
 /* =============================================================================
    Contact page
-    ============================================================================= */
+   ============================================================================= */
 
 .portal-contact-card {
   max-width: 48rem;
@@ -482,6 +481,7 @@
 .portal-contact-card .detail-list {
   gap: 1.25rem;
 }
+
 
 /* =============================================================================
    Responsive
@@ -500,11 +500,13 @@
 
   .portal-hero h1 {
     margin-bottom: var(--space-4);
+
     font-size: clamp(var(--font-size-32), 10vw, var(--font-size-40));
   }
 
   .portal-hero__description {
     margin-bottom: var(--space-4);
+
     font-size: var(--font-size-14);
     line-height: 1.35;
   }
@@ -513,18 +515,19 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
+
     width: min(100%, 44rem);
     margin-inline: auto;
   }
 
   .portal-hero__nav .button--hero-action {
-    min-width: 0;
+    justify-content: center;
+
     width: 100%;
+    min-width: 0;
     height: clamp(2.75rem, 10vw, 3.35rem);
     min-height: 0;
     padding-inline: clamp(0.45rem, 2vw, var(--space-3));
-
-    justify-content: center;
 
     font-size: clamp(0.78rem, 3vw, var(--font-size-14));
     line-height: 1.05;
@@ -551,16 +554,19 @@
   .portal-hero__account {
     display: grid;
     gap: var(--space-1);
+
     margin-top: var(--space-5);
   }
 
   .portal-hero__account span:not(:last-child)::after {
     content: "";
+
     margin-left: 0;
   }
 
   .portal-section {
     gap: var(--space-4);
+
     padding-top: var(--space-4);
   }
 
@@ -607,6 +613,25 @@
   .portal-history-card__action {
     font-size: var(--font-size-14);
   }
+
+  .portal-place-order-card .order-lines__header--with-action {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .portal-place-order-card .order-lines__header--with-action .button--text {
+    justify-self: start;
+
+    margin-top: 0;
+  }
+
+  .portal-place-order-actions {
+    align-items: stretch;
+  }
+
+  .portal-place-order-actions .button {
+    min-width: 8rem;
+  }
 }
 
 @media (max-width: 560px) {
@@ -616,7 +641,18 @@
 
   .portal-hero__nav .button--hero-action {
     justify-self: center;
+
     width: min(100%, 24rem);
+  }
+
+  .portal-place-order-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-place-order-actions form,
+  .portal-place-order-actions .button {
+    width: 100%;
   }
 }
 

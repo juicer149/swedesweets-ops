@@ -23,22 +23,22 @@ urlpatterns = [
         name="orders",
     ),
     path(
-        "orders/place/",
-        order_views.place_order,
-        name="place_order",
+        "order/",
+        order_views.current_order,
+        name="current_order",
     ),
     path(
-        "orders/review/",
+        "order/review/",
         order_views.review_order,
         name="review_order",
     ),
     path(
-        "orders/lines/<int:order_line_id>/quantity/",
+        "order/lines/<int:order_line_id>/quantity/",
         order_views.set_draft_line_quantity,
         name="set_draft_line_quantity",
     ),
     path(
-        "orders/lines/<int:order_line_id>/remove/",
+        "order/lines/<int:order_line_id>/remove/",
         order_views.remove_draft_line,
         name="remove_draft_line",
     ),
