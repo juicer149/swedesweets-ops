@@ -16,7 +16,7 @@ from customers.models import Customer
 from inventory.selectors import orderable_quantity_by_product_id
 from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
-from orders.models import Order, OrderLine
+from orders.models import Order
 from orders.order_limits import (
     MAX_QUANTITY_PER_PRODUCT_PER_ORDER,
     is_unusually_large_order_line,
@@ -25,14 +25,16 @@ from orders.services import (
     create_draft_order as create_shared_draft_order,
     discard_draft_order as discard_shared_draft_order,
     place_order as place_shared_order,
+    remove_draft_order_line as remove_shared_draft_order_line,
     replace_draft_order_lines as replace_shared_draft_order_lines,
+    set_draft_order_line_quantity as set_shared_draft_order_line_quantity,
     update_placed_order as update_shared_placed_order,
 )
+from products.models import Product
 from reservations.policies import (
     clear_order_reservations_before_line_replacement,
     require_order_without_reservations_before_discard,
 )
-from products.models import Product
 
 
 @transaction.atomic
@@ -139,6 +141,107 @@ def add_product_to_draft_order(
     return replace_draft_order_lines(
         order=order,
         lines=current_lines,
+        user=user,
+    )
+
+
+@transaction.atomic
+def set_draft_product_quantity(
+    *,
+    order: Order,
+    product: Product,
+    quantity: int,
+    user=None,
+) -> Order:
+    """Set the quantity of one existing product in a business draft."""
+
+    if quantity <= 0:
+        raise InvalidOrderOperation(
+            "quantity must be positive"
+        )
+
+    if order.channel != Order.Channel.BUSINESS:
+        raise InvalidOrderOperation(
+            "requires a business order"
+        )
+
+    if is_unusually_large_order_line(
+        quantity=quantity,
+    ):
+        raise InvalidOrderOperation(
+            f"maximum quantity per product is "
+            f"{MAX_QUANTITY_PER_PRODUCT_PER_ORDER}"
+        )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
+
+    line = (
+        order.lines
+        .filter(product=product)
+        .first()
+    )
+
+    if line is None:
+        raise InvalidOrderOperation(
+            "product is not part of the draft order"
+        )
+
+    available_units = (
+        orderable_quantity_by_product_id()
+        .get(product.id, 0)
+    )
+
+    if quantity > available_units:
+        raise InvalidOrderOperation(
+            f"only {available_units} units are currently available"
+        )
+
+    return set_shared_draft_order_line_quantity(
+        order=order,
+        order_line_id=line.id,
+        quantity_in_units=quantity,
+        user=user,
+    )
+
+
+@transaction.atomic
+def remove_product_from_draft_order(
+    *,
+    order: Order,
+    product: Product,
+    user=None,
+) -> Order:
+    """Remove one product from a business draft."""
+
+    if order.channel != Order.Channel.BUSINESS:
+        raise InvalidOrderOperation(
+            "requires a business order"
+        )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .get(pk=order.pk)
+    )
+
+    line = (
+        order.lines
+        .filter(product=product)
+        .first()
+    )
+
+    if line is None:
+        raise InvalidOrderOperation(
+            "product is not part of the draft order"
+        )
+
+    return remove_shared_draft_order_line(
+        order=order,
+        order_line_id=line.id,
         user=user,
     )
 

@@ -99,6 +99,16 @@ def _require_cancellable(
         )
 
 
+def _require_positive_quantity(
+    *,
+    quantity_in_units: int,
+) -> None:
+    if quantity_in_units <= 0:
+        raise InvalidOrderOperation(
+            "order line quantity must be positive"
+        )
+
+
 @transaction.atomic
 def create_draft_order(
     *,
@@ -153,6 +163,92 @@ def replace_draft_order_lines(
             order=order,
             lines=resolved_lines,
         )
+
+    order.updated_at = timezone.now()
+    order.save(
+        update_fields=[
+            "updated_at",
+        ],
+    )
+
+    return order
+
+
+@locked_order(
+    guard=_require_draft_for_edit,
+)
+def set_draft_order_line_quantity(
+    *,
+    order: Order,
+    order_line_id: int,
+    quantity_in_units: int,
+    user=None,
+) -> Order:
+    """Set an already-resolved quantity on one draft order line."""
+
+    _require_positive_quantity(
+        quantity_in_units=quantity_in_units,
+    )
+
+    line = (
+        order.lines
+        .filter(
+            pk=order_line_id,
+        )
+        .first()
+    )
+
+    if line is None:
+        raise InvalidOrderOperation(
+            "order line does not belong to this draft order"
+        )
+
+    line.quantity = quantity_in_units
+    line.unit = OrderLine.Unit.STOCK_UNIT
+    line.quantity_in_units = quantity_in_units
+    line.save(
+        update_fields=[
+            "quantity",
+            "unit",
+            "quantity_in_units",
+        ]
+    )
+
+    order.updated_at = timezone.now()
+    order.save(
+        update_fields=[
+            "updated_at",
+        ],
+    )
+
+    return order
+
+
+@locked_order(
+    guard=_require_draft_for_edit,
+)
+def remove_draft_order_line(
+    *,
+    order: Order,
+    order_line_id: int,
+    user=None,
+) -> Order:
+    """Remove one line from a draft order."""
+
+    line = (
+        order.lines
+        .filter(
+            pk=order_line_id,
+        )
+        .first()
+    )
+
+    if line is None:
+        raise InvalidOrderOperation(
+            "order line does not belong to this draft order"
+        )
+
+    line.delete()
 
     order.updated_at = timezone.now()
     order.save(

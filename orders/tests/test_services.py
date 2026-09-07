@@ -21,6 +21,8 @@ from orders.services import (
     deliver_order,
     pack_order,
     place_order,
+    remove_draft_order_line,
+    set_draft_order_line_quantity,
     update_placed_order,
 )
 
@@ -38,6 +40,346 @@ def _create_order_line(
         unit=OrderLine.Unit.STOCK_UNIT,
         quantity_in_units=quantity,
     )
+
+
+@pytest.mark.django_db
+def test_set_draft_order_line_quantity_updates_exact_line(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=1,
+    )
+
+    updated = set_draft_order_line_quantity(
+        order=order,
+        order_line_id=line.id,
+        quantity_in_units=5,
+    )
+
+    line.refresh_from_db()
+
+    assert updated.pk == order.pk
+    assert line.pk is not None
+    assert line.quantity == 5
+    assert line.quantity_in_units == 5
+    assert line.unit == OrderLine.Unit.STOCK_UNIT
+
+
+@pytest.mark.django_db
+def test_set_draft_order_line_quantity_preserves_other_lines(
+    customer,
+    apple,
+    banana,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    apple_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=1,
+    )
+    banana_line = _create_order_line(
+        order=order,
+        product=banana,
+        quantity=7,
+    )
+
+    set_draft_order_line_quantity(
+        order=order,
+        order_line_id=apple_line.id,
+        quantity_in_units=5,
+    )
+
+    apple_line.refresh_from_db()
+    banana_line.refresh_from_db()
+
+    assert apple_line.quantity_in_units == 5
+    assert banana_line.quantity_in_units == 7
+
+
+@pytest.mark.django_db
+def test_set_draft_order_line_quantity_preserves_line_identity_and_price(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.RETAIL,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    line = OrderLine.objects.create(
+        order=order,
+        product=apple,
+        quantity=2,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=2,
+        unit_price_snapshot=Decimal("12.50"),
+    )
+
+    original_line_id = line.id
+
+    set_draft_order_line_quantity(
+        order=order,
+        order_line_id=line.id,
+        quantity_in_units=4,
+    )
+
+    line.refresh_from_db()
+
+    assert line.id == original_line_id
+    assert line.quantity_in_units == 4
+    assert line.unit_price_snapshot == Decimal("12.50")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "quantity",
+    [
+        0,
+        -1,
+    ],
+)
+def test_set_draft_order_line_quantity_rejects_non_positive_quantity(
+    customer,
+    apple,
+    quantity,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=3,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="order line quantity must be positive",
+    ):
+        set_draft_order_line_quantity(
+            order=order,
+            order_line_id=line.id,
+            quantity_in_units=quantity,
+        )
+
+    line.refresh_from_db()
+
+    assert line.quantity_in_units == 3
+
+
+@pytest.mark.django_db
+def test_set_draft_order_line_quantity_rejects_line_from_other_order(
+    customer,
+    other_customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    other_order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=other_customer,
+        status=Order.Status.DRAFT,
+    )
+    other_line = _create_order_line(
+        order=other_order,
+        product=apple,
+        quantity=3,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="order line does not belong to this draft order",
+    ):
+        set_draft_order_line_quantity(
+            order=order,
+            order_line_id=other_line.id,
+            quantity_in_units=5,
+        )
+
+    other_line.refresh_from_db()
+
+    assert other_line.quantity_in_units == 3
+
+
+@pytest.mark.django_db
+def test_set_draft_order_line_quantity_rejects_non_draft_order(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=3,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Only draft orders can be edited",
+    ):
+        set_draft_order_line_quantity(
+            order=order,
+            order_line_id=line.id,
+            quantity_in_units=5,
+        )
+
+    line.refresh_from_db()
+
+    assert line.quantity_in_units == 3
+
+
+@pytest.mark.django_db
+def test_remove_draft_order_line_removes_exact_line(
+    customer,
+    apple,
+    banana,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    apple_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=3,
+    )
+    banana_line = _create_order_line(
+        order=order,
+        product=banana,
+        quantity=7,
+    )
+
+    updated = remove_draft_order_line(
+        order=order,
+        order_line_id=apple_line.id,
+    )
+
+    assert updated.pk == order.pk
+    assert not OrderLine.objects.filter(
+        pk=apple_line.id,
+    ).exists()
+
+    banana_line.refresh_from_db()
+
+    assert banana_line.quantity_in_units == 7
+
+
+@pytest.mark.django_db
+def test_remove_draft_order_line_allows_empty_draft(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=3,
+    )
+
+    remove_draft_order_line(
+        order=order,
+        order_line_id=line.id,
+    )
+
+    assert order.lines.count() == 0
+    assert Order.objects.filter(
+        pk=order.pk,
+        status=Order.Status.DRAFT,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_remove_draft_order_line_rejects_line_from_other_order(
+    customer,
+    other_customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    other_order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=other_customer,
+        status=Order.Status.DRAFT,
+    )
+    other_line = _create_order_line(
+        order=other_order,
+        product=apple,
+        quantity=3,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="order line does not belong to this draft order",
+    ):
+        remove_draft_order_line(
+            order=order,
+            order_line_id=other_line.id,
+        )
+
+    assert OrderLine.objects.filter(
+        pk=other_line.id,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_remove_draft_order_line_rejects_non_draft_order(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+    line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=3,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="Only draft orders can be edited",
+    ):
+        remove_draft_order_line(
+            order=order,
+            order_line_id=line.id,
+        )
+
+    assert OrderLine.objects.filter(
+        pk=line.id,
+    ).exists()
 
 
 @pytest.mark.django_db
