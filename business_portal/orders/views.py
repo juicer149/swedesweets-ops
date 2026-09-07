@@ -9,7 +9,6 @@ from django.shortcuts import (
     redirect,
     render,
 )
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_POST
@@ -65,7 +64,6 @@ from orders.selectors import (
 class PortalOrderIntent(StrEnum):
     REVIEW_ORDER = "review_order"
     PLACE_ORDER = "place_order"
-    SAVE_DRAFT = "save_draft"
     DISCARD_DRAFT = "discard_draft"
 
 
@@ -79,17 +77,41 @@ ORDER_OPERATION_ERRORS = (
 
 PORTAL_ORDER_FILTERS = [
     TableFilter("", gettext_lazy("All")),
-    TableFilter(Order.Status.PLACED, Order.Status.PLACED.label),
-    TableFilter(Order.Status.PACKED, Order.Status.PACKED.label),
-    TableFilter(Order.Status.DELIVERED, Order.Status.DELIVERED.label),
-    TableFilter(Order.Status.CANCELLED, Order.Status.CANCELLED.label),
+    TableFilter(
+        Order.Status.PLACED,
+        Order.Status.PLACED.label,
+    ),
+    TableFilter(
+        Order.Status.PACKED,
+        Order.Status.PACKED.label,
+    ),
+    TableFilter(
+        Order.Status.DELIVERED,
+        Order.Status.DELIVERED.label,
+    ),
+    TableFilter(
+        Order.Status.CANCELLED,
+        Order.Status.CANCELLED.label,
+    ),
 ]
 
 PORTAL_ORDER_TABLE_SORTS = [
-    TableSortField("order", gettext_lazy("Order")),
-    TableSortField("created", gettext_lazy("Created")),
-    TableSortField("status", gettext_lazy("Status")),
-    TableSortField("quantity", gettext_lazy("Quantity")),
+    TableSortField(
+        "order",
+        gettext_lazy("Order"),
+    ),
+    TableSortField(
+        "created",
+        gettext_lazy("Created"),
+    ),
+    TableSortField(
+        "status",
+        gettext_lazy("Status"),
+    ),
+    TableSortField(
+        "quantity",
+        gettext_lazy("Quantity"),
+    ),
 ]
 
 PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
@@ -356,23 +378,6 @@ def current_order(request):
                     "business_portal:review_order"
                 )
 
-            case PortalOrderIntent.SAVE_DRAFT:
-                if draft_order is None:
-                    messages.info(
-                        request,
-                        _("No draft order to save."),
-                    )
-                else:
-                    messages.success(
-                        request,
-                        _("Draft order saved."),
-                    )
-
-                return redirect(
-                    _safe_next_url(request)
-                    or "accounts:after_login"
-                )
-
             case _:
                 messages.error(
                     request,
@@ -431,16 +436,6 @@ def review_order(request):
             )
 
         match intent:
-            case PortalOrderIntent.SAVE_DRAFT:
-                messages.success(
-                    request,
-                    _("Draft order saved."),
-                )
-                return redirect(
-                    _safe_next_url(request)
-                    or "accounts:after_login"
-                )
-
             case PortalOrderIntent.DISCARD_DRAFT:
                 result = discard_portal_draft_order(
                     customer=customer,
@@ -537,26 +532,3 @@ def order_detail(
         "business_portal/orders/detail.html",
         context,
     )
-
-
-def _safe_next_url(
-    request,
-) -> str | None:
-    next_url = request.POST.get(
-        "next",
-        "",
-    ).strip()
-
-    if not next_url:
-        return None
-
-    if url_has_allowed_host_and_scheme(
-        url=next_url,
-        allowed_hosts={
-            request.get_host(),
-        },
-        require_https=request.is_secure(),
-    ):
-        return next_url
-
-    return None
