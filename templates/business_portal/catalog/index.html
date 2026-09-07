@@ -48,14 +48,21 @@
                 </div>
 
                 <div class="product-card__actions">
-                  <button
-                    class="{{ card.primary_action.css_class }}"
-                    type="button"
-                    disabled
-                    aria-label="{{ card.primary_action.aria_label }}"
+                  <form
+                    class="product-card__order"
+                    method="post"
+                    action="{{ card.primary_action.href }}"
                   >
-                    {{ card.primary_action.text }}
-                  </button>
+                    {% csrf_token %}
+
+                    <button
+                      class="{{ card.primary_action.css_class }}"
+                      type="submit"
+                      aria-label="{{ card.primary_action.aria_label }}"
+                    >
+                      {{ card.primary_action.text }}
+                    </button>
+                  </form>
 
                   <span
                     class="product-card__link"
@@ -69,7 +76,7 @@
           {% endfor %}
         </section>
       {% else %}
-        <p>
+        <p class="catalog__empty">
           No products are currently available.
         </p>
       {% endif %}

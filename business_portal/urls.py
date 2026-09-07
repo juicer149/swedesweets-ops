@@ -43,6 +43,11 @@ urlpatterns = [
         name="catalog",
     ),
     path(
+        "catalog/<int:product_id>/add/",
+        catalog_views.add_product,
+        name="catalog_add_product",
+    ),
+    path(
         "profile/",
         profile_views.profile,
         name="profile",

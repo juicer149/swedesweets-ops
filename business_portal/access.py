@@ -10,6 +10,7 @@ VIEW_CAPABILITIES = {
     "business_portal:place_order": Capability.PLACE_BUSINESS_ORDERS,
     "business_portal:review_order": Capability.PLACE_BUSINESS_ORDERS,
     "business_portal:catalog": Capability.VIEW_BUSINESS_PORTAL,
+    "business_portal:catalog_add_product": Capability.PLACE_BUSINESS_ORDERS,
     "business_portal:profile": Capability.VIEW_OWN_ACCOUNT,
     "business_portal:edit_profile": Capability.EDIT_OWN_ACCOUNT,
     "business_portal:contact": Capability.VIEW_BUSINESS_PORTAL,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from business.selectors import BusinessCatalogEntry
@@ -41,12 +42,17 @@ def _build_business_product_card(
         name=product_name,
         package_label=product.unit_weight_label,
         badge_label=_("Available"),
+
         primary_action=UiText(
             text=_("Add to order"),
+            href=reverse(
+                "business_portal:catalog_add_product",
+                kwargs={
+                    "product_id": product.id,
+                },
+            ),
             css_class="product-card__button",
-            aria_label=_(
-                "Add %(product)s to order"
-            )
+            aria_label=_("Add %(product)s to order")
             % {
                 "product": product_name,
             },

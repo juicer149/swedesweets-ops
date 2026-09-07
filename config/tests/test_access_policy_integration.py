@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 from django.urls import reverse
 
-from config.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from accounts.roles import (
     BUSINESS_CUSTOMER_SPEC,
     FULL_STAFF_SPEC,
@@ -19,15 +18,31 @@ from accounts.tests.factories import (
     superuser_factory,
     user_factory,
 )
+from config.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
 from customers.tests.factories import customer_factory
+
 
 MISSING_OBJECT_ID = 999999
 
-ACCOUNT_USER_KWARGS = {"user_id": MISSING_OBJECT_ID}
-ORDER_KWARGS = {"order_id": MISSING_OBJECT_ID}
-BATCH_KWARGS = {"batch_pk": MISSING_OBJECT_ID}
-PRODUCT_KWARGS = {"product_pk": MISSING_OBJECT_ID}
-CUSTOMER_KWARGS = {"customer_pk": MISSING_OBJECT_ID}
+ACCOUNT_USER_KWARGS = {
+    "user_id": MISSING_OBJECT_ID,
+}
+ORDER_KWARGS = {
+    "order_id": MISSING_OBJECT_ID,
+}
+BATCH_KWARGS = {
+    "batch_pk": MISSING_OBJECT_ID,
+}
+PRODUCT_KWARGS = {
+    "product_pk": MISSING_OBJECT_ID,
+}
+CUSTOMER_KWARGS = {
+    "customer_pk": MISSING_OBJECT_ID,
+}
+CATALOG_PRODUCT_KWARGS = {
+    "product_id": MISSING_OBJECT_ID,
+}
+
 
 VIEW_KWARGS = {
     "ops_accounts:detail": ACCOUNT_USER_KWARGS,
@@ -47,6 +62,7 @@ VIEW_KWARGS = {
     "ops_customers:detail": CUSTOMER_KWARGS,
     "ops_customers:edit": CUSTOMER_KWARGS,
     "business_portal:order_detail": ORDER_KWARGS,
+    "business_portal:catalog_add_product": CATALOG_PRODUCT_KWARGS,
 }
 
 
@@ -61,9 +77,14 @@ REDIRECT_VIEW_NAMES = {
     "business_portal:edit_profile",
 }
 
+POST_ONLY_VIEW_NAMES = {
+    "business_portal:catalog_add_product",
+}
+
 DENIED_STATUS_CODE = 403
 LOGIN_REDIRECT_STATUS_CODE = 302
 REDIRECT_STATUS_CODE = 302
+METHOD_NOT_ALLOWED_STATUS_CODE = 405
 
 
 def _url_for_view_name(view_name: str) -> str:
@@ -73,7 +94,9 @@ def _url_for_view_name(view_name: str) -> str:
     )
 
 
-def _expected_access_by_view(role_spec) -> dict[str, bool]:
+def _expected_access_by_view(
+    role_spec,
+) -> dict[str, bool]:
     return {
         view_name: role_spec.allows(capability)
         for view_name, capability in VIEW_CAPABILITIES.items()
@@ -89,40 +112,68 @@ def _assert_allowed_get_response(
         assert response.status_code == REDIRECT_STATUS_CODE
         return
 
+    if view_name in POST_ONLY_VIEW_NAMES:
+        assert response.status_code == METHOD_NOT_ALLOWED_STATUS_CODE
+        return
+
     assert response.status_code in ALLOWED_GET_STATUS_CODES
 
 
-def _assert_redirects_to_login(response) -> None:
+def _assert_redirects_to_login(
+    response,
+) -> None:
     assert response.status_code == LOGIN_REDIRECT_STATUS_CODE
-    assert response["Location"].startswith(f"{reverse('login')}?next=")
+    assert response["Location"].startswith(
+        f"{reverse('login')}?next="
+    )
 
 
 @pytest.mark.django_db
-def test_anonymous_user_is_redirected_for_all_protected_views(client):
+def test_anonymous_user_is_redirected_for_all_protected_views(
+    client,
+):
     for view_name in VIEW_CAPABILITIES:
-        response = client.get(_url_for_view_name(view_name))
+        response = client.get(
+            _url_for_view_name(view_name)
+        )
 
-        _assert_redirects_to_login(response)
+        _assert_redirects_to_login(
+            response
+        )
 
 
 @pytest.mark.django_db
-def test_anonymous_post_is_redirected_for_all_protected_views(client):
+def test_anonymous_post_is_redirected_for_all_protected_views(
+    client,
+):
     for view_name in VIEW_CAPABILITIES:
-        response = client.post(_url_for_view_name(view_name))
+        response = client.post(
+            _url_for_view_name(view_name)
+        )
 
-        _assert_redirects_to_login(response)
+        _assert_redirects_to_login(
+            response
+        )
 
 
 @pytest.mark.django_db
-def test_owner_access_matches_declared_capabilities(client):
+def test_owner_access_matches_declared_capabilities(
+    client,
+):
     user = superuser_factory()
 
-    client.force_login(user)
+    client.force_login(
+        user
+    )
 
-    expected_access = _expected_access_by_view(OWNER_SPEC)
+    expected_access = _expected_access_by_view(
+        OWNER_SPEC
+    )
 
     for view_name, should_allow in expected_access.items():
-        response = client.get(_url_for_view_name(view_name))
+        response = client.get(
+            _url_for_view_name(view_name)
+        )
 
         if should_allow:
             _assert_allowed_get_response(
@@ -134,15 +185,23 @@ def test_owner_access_matches_declared_capabilities(client):
 
 
 @pytest.mark.django_db
-def test_full_staff_access_matches_declared_capabilities(client):
+def test_full_staff_access_matches_declared_capabilities(
+    client,
+):
     user = full_staff_user_factory()
 
-    client.force_login(user)
+    client.force_login(
+        user
+    )
 
-    expected_access = _expected_access_by_view(FULL_STAFF_SPEC)
+    expected_access = _expected_access_by_view(
+        FULL_STAFF_SPEC
+    )
 
     for view_name, should_allow in expected_access.items():
-        response = client.get(_url_for_view_name(view_name))
+        response = client.get(
+            _url_for_view_name(view_name)
+        )
 
         if should_allow:
             _assert_allowed_get_response(
@@ -154,15 +213,23 @@ def test_full_staff_access_matches_declared_capabilities(client):
 
 
 @pytest.mark.django_db
-def test_restricted_staff_access_matches_declared_capabilities(client):
+def test_restricted_staff_access_matches_declared_capabilities(
+    client,
+):
     user = restricted_staff_user_factory()
 
-    client.force_login(user)
+    client.force_login(
+        user
+    )
 
-    expected_access = _expected_access_by_view(RESTRICTED_STAFF_SPEC)
+    expected_access = _expected_access_by_view(
+        RESTRICTED_STAFF_SPEC
+    )
 
     for view_name, should_allow in expected_access.items():
-        response = client.get(_url_for_view_name(view_name))
+        response = client.get(
+            _url_for_view_name(view_name)
+        )
 
         if should_allow:
             _assert_allowed_get_response(
@@ -174,8 +241,12 @@ def test_restricted_staff_access_matches_declared_capabilities(client):
 
 
 @pytest.mark.django_db
-def test_customer_user_access_matches_declared_capabilities(client):
-    user = user_factory(username="customer@example.com")
+def test_customer_user_access_matches_declared_capabilities(
+    client,
+):
+    user = user_factory(
+        username="customer@example.com"
+    )
     customer = customer_factory()
 
     customer_membership_factory(
@@ -183,12 +254,18 @@ def test_customer_user_access_matches_declared_capabilities(client):
         customer=customer,
     )
 
-    client.force_login(user)
+    client.force_login(
+        user
+    )
 
-    expected_access = _expected_access_by_view(BUSINESS_CUSTOMER_SPEC)
+    expected_access = _expected_access_by_view(
+        BUSINESS_CUSTOMER_SPEC
+    )
 
     for view_name, should_allow in expected_access.items():
-        response = client.get(_url_for_view_name(view_name))
+        response = client.get(
+            _url_for_view_name(view_name)
+        )
 
         if should_allow:
             _assert_allowed_get_response(
@@ -200,15 +277,25 @@ def test_customer_user_access_matches_declared_capabilities(client):
 
 
 @pytest.mark.django_db
-def test_unknown_user_access_matches_declared_capabilities(client):
-    user = user_factory(username="unknown@example.com")
+def test_unknown_user_access_matches_declared_capabilities(
+    client,
+):
+    user = user_factory(
+        username="unknown@example.com"
+    )
 
-    client.force_login(user)
+    client.force_login(
+        user
+    )
 
-    expected_access = _expected_access_by_view(UNKNOWN_SPEC)
+    expected_access = _expected_access_by_view(
+        UNKNOWN_SPEC
+    )
 
     for view_name, should_allow in expected_access.items():
-        response = client.get(_url_for_view_name(view_name))
+        response = client.get(
+            _url_for_view_name(view_name)
+        )
 
         if should_allow:
             _assert_allowed_get_response(
@@ -221,14 +308,22 @@ def test_unknown_user_access_matches_declared_capabilities(client):
 
 def test_every_policy_view_can_be_reversed():
     for view_name in VIEW_CAPABILITIES:
-        assert _url_for_view_name(view_name)
+        assert _url_for_view_name(
+            view_name
+        )
 
 
 def test_auth_exempt_views_are_not_also_protected():
-    protected_view_names = set(VIEW_CAPABILITIES)
-    auth_exempt_view_names = set(AUTH_EXEMPT_VIEWS)
+    protected_view_names = set(
+        VIEW_CAPABILITIES
+    )
+    auth_exempt_view_names = set(
+        AUTH_EXEMPT_VIEWS
+    )
 
-    assert protected_view_names.isdisjoint(auth_exempt_view_names)
+    assert protected_view_names.isdisjoint(
+        auth_exempt_view_names
+    )
 
 
 def test_role_specs_cover_expected_policy_shape():
@@ -241,7 +336,11 @@ def test_role_specs_cover_expected_policy_shape():
     }
 
     for role, role_spec in role_specs.items():
-        expected_access = _expected_access_by_view(role_spec)
+        expected_access = _expected_access_by_view(
+            role_spec
+        )
 
-        assert set(expected_access) == set(VIEW_CAPABILITIES)
+        assert set(expected_access) == set(
+            VIEW_CAPABILITIES
+        )
         assert role in AccountRole
