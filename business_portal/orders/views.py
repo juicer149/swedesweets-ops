@@ -5,13 +5,20 @@ from enum import StrEnum
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+    render,
+)
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
+from django.views.decorators.http import require_POST
 
 from business.services import (
     place_order as place_draft_order,
+    remove_product_from_draft_order,
+    set_draft_product_quantity,
 )
 from business_portal.orders.detail_viewmodels import (
     build_portal_order_detail_context,
@@ -50,7 +57,10 @@ from common.table_controls import (
 )
 from inventory.errors import InvalidStockOperation
 from orders.errors import InvalidOrderOperation
-from orders.models import Order
+from orders.models import (
+    Order,
+    OrderLine,
+)
 from orders.selectors import (
     CUSTOMER_ORDER_SORTS,
     DEFAULT_CUSTOMER_ORDER_SORT,
@@ -182,6 +192,112 @@ def _add_draft_save_message(
                 request,
                 _("Nothing to save."),
             )
+
+
+def _get_portal_draft_line(
+    *,
+    user,
+    order_line_id: int,
+) -> OrderLine:
+    customer = get_portal_customer_for_user(
+        user=user,
+    )
+
+    return get_object_or_404(
+        OrderLine.objects.select_related(
+            "order",
+            "product",
+        ),
+        pk=order_line_id,
+        order__channel=Order.Channel.BUSINESS,
+        order__customer=customer,
+        order__status=Order.Status.DRAFT,
+    )
+
+
+@login_required
+@require_POST
+def set_draft_line_quantity(
+    request,
+    order_line_id: int,
+):
+    line = _get_portal_draft_line(
+        user=request.user,
+        order_line_id=order_line_id,
+    )
+
+    raw_quantity = request.POST.get(
+        "quantity",
+        "",
+    ).strip()
+
+    try:
+        quantity = int(
+            raw_quantity
+        )
+    except ValueError:
+        messages.error(
+            request,
+            _("Quantity must be a whole number."),
+        )
+        return redirect(
+            "business_portal:place_order"
+        )
+
+    try:
+        set_draft_product_quantity(
+            order=line.order,
+            product=line.product,
+            quantity=quantity,
+            user=request.user,
+        )
+    except ORDER_OPERATION_ERRORS as error:
+        messages.error(
+            request,
+            str(error),
+        )
+    else:
+        messages.success(
+            request,
+            _("Quantity updated."),
+        )
+
+    return redirect(
+        "business_portal:place_order"
+    )
+
+
+@login_required
+@require_POST
+def remove_draft_line(
+    request,
+    order_line_id: int,
+):
+    line = _get_portal_draft_line(
+        user=request.user,
+        order_line_id=order_line_id,
+    )
+
+    try:
+        remove_product_from_draft_order(
+            order=line.order,
+            product=line.product,
+            user=request.user,
+        )
+    except ORDER_OPERATION_ERRORS as error:
+        messages.error(
+            request,
+            str(error),
+        )
+    else:
+        messages.success(
+            request,
+            _("Product removed from your order."),
+        )
+
+    return redirect(
+        "business_portal:place_order"
+    )
 
 
 @login_required

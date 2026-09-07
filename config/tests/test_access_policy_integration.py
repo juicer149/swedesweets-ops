@@ -18,7 +18,10 @@ from accounts.tests.factories import (
     superuser_factory,
     user_factory,
 )
-from config.policies import AUTH_EXEMPT_VIEWS, VIEW_CAPABILITIES
+from config.policies import (
+    AUTH_EXEMPT_VIEWS,
+    VIEW_CAPABILITIES,
+)
 from customers.tests.factories import customer_factory
 
 
@@ -27,20 +30,29 @@ MISSING_OBJECT_ID = 999999
 ACCOUNT_USER_KWARGS = {
     "user_id": MISSING_OBJECT_ID,
 }
+
 ORDER_KWARGS = {
     "order_id": MISSING_OBJECT_ID,
 }
+
 BATCH_KWARGS = {
     "batch_pk": MISSING_OBJECT_ID,
 }
+
 PRODUCT_KWARGS = {
     "product_pk": MISSING_OBJECT_ID,
 }
+
 CUSTOMER_KWARGS = {
     "customer_pk": MISSING_OBJECT_ID,
 }
+
 CATALOG_PRODUCT_KWARGS = {
     "product_id": MISSING_OBJECT_ID,
+}
+
+DRAFT_LINE_KWARGS = {
+    "order_line_id": MISSING_OBJECT_ID,
 }
 
 
@@ -63,6 +75,8 @@ VIEW_KWARGS = {
     "ops_customers:edit": CUSTOMER_KWARGS,
     "business_portal:order_detail": ORDER_KWARGS,
     "business_portal:catalog_add_product": CATALOG_PRODUCT_KWARGS,
+    "business_portal:set_draft_line_quantity": DRAFT_LINE_KWARGS,
+    "business_portal:remove_draft_line": DRAFT_LINE_KWARGS,
 }
 
 
@@ -79,6 +93,8 @@ REDIRECT_VIEW_NAMES = {
 
 POST_ONLY_VIEW_NAMES = {
     "business_portal:catalog_add_product",
+    "business_portal:set_draft_line_quantity",
+    "business_portal:remove_draft_line",
 }
 
 DENIED_STATUS_CODE = 403
@@ -87,10 +103,15 @@ REDIRECT_STATUS_CODE = 302
 METHOD_NOT_ALLOWED_STATUS_CODE = 405
 
 
-def _url_for_view_name(view_name: str) -> str:
+def _url_for_view_name(
+    view_name: str,
+) -> str:
     return reverse(
         view_name,
-        kwargs=VIEW_KWARGS.get(view_name, {}),
+        kwargs=VIEW_KWARGS.get(
+            view_name,
+            {},
+        ),
     )
 
 
@@ -98,7 +119,9 @@ def _expected_access_by_view(
     role_spec,
 ) -> dict[str, bool]:
     return {
-        view_name: role_spec.allows(capability)
+        view_name: role_spec.allows(
+            capability
+        )
         for view_name, capability in VIEW_CAPABILITIES.items()
     }
 
@@ -109,20 +132,32 @@ def _assert_allowed_get_response(
     response,
 ) -> None:
     if view_name in REDIRECT_VIEW_NAMES:
-        assert response.status_code == REDIRECT_STATUS_CODE
+        assert (
+            response.status_code
+            == REDIRECT_STATUS_CODE
+        )
         return
 
     if view_name in POST_ONLY_VIEW_NAMES:
-        assert response.status_code == METHOD_NOT_ALLOWED_STATUS_CODE
+        assert (
+            response.status_code
+            == METHOD_NOT_ALLOWED_STATUS_CODE
+        )
         return
 
-    assert response.status_code in ALLOWED_GET_STATUS_CODES
+    assert (
+        response.status_code
+        in ALLOWED_GET_STATUS_CODES
+    )
 
 
 def _assert_redirects_to_login(
     response,
 ) -> None:
-    assert response.status_code == LOGIN_REDIRECT_STATUS_CODE
+    assert (
+        response.status_code
+        == LOGIN_REDIRECT_STATUS_CODE
+    )
     assert response["Location"].startswith(
         f"{reverse('login')}?next="
     )
@@ -134,7 +169,9 @@ def test_anonymous_user_is_redirected_for_all_protected_views(
 ):
     for view_name in VIEW_CAPABILITIES:
         response = client.get(
-            _url_for_view_name(view_name)
+            _url_for_view_name(
+                view_name
+            )
         )
 
         _assert_redirects_to_login(
@@ -148,7 +185,9 @@ def test_anonymous_post_is_redirected_for_all_protected_views(
 ):
     for view_name in VIEW_CAPABILITIES:
         response = client.post(
-            _url_for_view_name(view_name)
+            _url_for_view_name(
+                view_name
+            )
         )
 
         _assert_redirects_to_login(
@@ -172,7 +211,9 @@ def test_owner_access_matches_declared_capabilities(
 
     for view_name, should_allow in expected_access.items():
         response = client.get(
-            _url_for_view_name(view_name)
+            _url_for_view_name(
+                view_name
+            )
         )
 
         if should_allow:
@@ -181,7 +222,10 @@ def test_owner_access_matches_declared_capabilities(
                 response=response,
             )
         else:
-            assert response.status_code == DENIED_STATUS_CODE
+            assert (
+                response.status_code
+                == DENIED_STATUS_CODE
+            )
 
 
 @pytest.mark.django_db
@@ -200,7 +244,9 @@ def test_full_staff_access_matches_declared_capabilities(
 
     for view_name, should_allow in expected_access.items():
         response = client.get(
-            _url_for_view_name(view_name)
+            _url_for_view_name(
+                view_name
+            )
         )
 
         if should_allow:
@@ -209,7 +255,10 @@ def test_full_staff_access_matches_declared_capabilities(
                 response=response,
             )
         else:
-            assert response.status_code == DENIED_STATUS_CODE
+            assert (
+                response.status_code
+                == DENIED_STATUS_CODE
+            )
 
 
 @pytest.mark.django_db
@@ -228,7 +277,9 @@ def test_restricted_staff_access_matches_declared_capabilities(
 
     for view_name, should_allow in expected_access.items():
         response = client.get(
-            _url_for_view_name(view_name)
+            _url_for_view_name(
+                view_name
+            )
         )
 
         if should_allow:
@@ -237,7 +288,10 @@ def test_restricted_staff_access_matches_declared_capabilities(
                 response=response,
             )
         else:
-            assert response.status_code == DENIED_STATUS_CODE
+            assert (
+                response.status_code
+                == DENIED_STATUS_CODE
+            )
 
 
 @pytest.mark.django_db
@@ -264,7 +318,9 @@ def test_customer_user_access_matches_declared_capabilities(
 
     for view_name, should_allow in expected_access.items():
         response = client.get(
-            _url_for_view_name(view_name)
+            _url_for_view_name(
+                view_name
+            )
         )
 
         if should_allow:
@@ -273,7 +329,10 @@ def test_customer_user_access_matches_declared_capabilities(
                 response=response,
             )
         else:
-            assert response.status_code == DENIED_STATUS_CODE
+            assert (
+                response.status_code
+                == DENIED_STATUS_CODE
+            )
 
 
 @pytest.mark.django_db
@@ -294,7 +353,9 @@ def test_unknown_user_access_matches_declared_capabilities(
 
     for view_name, should_allow in expected_access.items():
         response = client.get(
-            _url_for_view_name(view_name)
+            _url_for_view_name(
+                view_name
+            )
         )
 
         if should_allow:
@@ -303,7 +364,10 @@ def test_unknown_user_access_matches_declared_capabilities(
                 response=response,
             )
         else:
-            assert response.status_code == DENIED_STATUS_CODE
+            assert (
+                response.status_code
+                == DENIED_STATUS_CODE
+            )
 
 
 def test_every_policy_view_can_be_reversed():
@@ -340,7 +404,10 @@ def test_role_specs_cover_expected_policy_shape():
             role_spec
         )
 
-        assert set(expected_access) == set(
+        assert set(
+            expected_access
+        ) == set(
             VIEW_CAPABILITIES
         )
+
         assert role in AccountRole

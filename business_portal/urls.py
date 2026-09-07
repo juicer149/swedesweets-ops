@@ -33,6 +33,16 @@ urlpatterns = [
         name="review_order",
     ),
     path(
+        "orders/lines/<int:order_line_id>/quantity/",
+        order_views.set_draft_line_quantity,
+        name="set_draft_line_quantity",
+    ),
+    path(
+        "orders/lines/<int:order_line_id>/remove/",
+        order_views.remove_draft_line,
+        name="remove_draft_line",
+    ),
+    path(
         "orders/<int:order_id>/",
         order_views.order_detail,
         name="order_detail",
