@@ -1,7 +1,7 @@
 /* =============================================================================
    Order line formset
 
-   Order-specific product rows used by the place-order form.
+   Shared order-line formset styling used by operational order forms.
    ============================================================================= */
 
 .order-lines {
@@ -76,12 +76,10 @@
     minmax(7rem, 10rem);
 }
 
-.form-field--portal-order-quantity,
 .order-line__grid .form-field:has(input[name$="-quantity"]) {
   max-width: 10rem;
 }
 
-.form-field--portal-order-quantity input,
 .order-line__grid .form-field:has(input[name$="-quantity"]) input {
   width: 100%;
 }
