@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog{% endblock %}
+
+{% block content %}
+  <main class="page">
+    <section
+      class="catalog"
+      aria-labelledby="business-catalog-title"
+    >
+      <header class="catalog__header">
+        <h1
+          id="business-catalog-title"
+          class="catalog__title"
+        >
+          Catalog
+        </h1>
+
+        <p class="catalog__intro">
+          Choose products for your next order.
+        </p>
+      </header>
+
+      {% if product_cards %}
+        <section
+          class="product-grid"
+          aria-label="Products"
+        >
+          {% for card in product_cards %}
+            <article class="product-card">
+              <div class="product-card__media">
+                {% if card.badge_label %}
+                  <span class="product-card__badge">
+                    {{ card.badge_label }}
+                  </span>
+                {% endif %}
+              </div>
+
+              <div class="product-card__body">
+                <div class="product-card__content">
+                  <h2 class="product-card__title">
+                    {{ card.name }}
+                  </h2>
+
+                  <p class="product-card__meta">
+                    {{ card.package_label }}
+                  </p>
+                </div>
+
+                <div class="product-card__actions">
+                  <button
+                    class="{{ card.primary_action.css_class }}"
+                    type="button"
+                    disabled
+                    aria-label="{{ card.primary_action.aria_label }}"
+                  >
+                    {{ card.primary_action.text }}
+                  </button>
+
+                  <span
+                    class="product-card__link"
+                    aria-disabled="true"
+                  >
+                    Details →
+                  </span>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </section>
+      {% else %}
+        <p>
+          No products are currently available.
+        </p>
+      {% endif %}
+    </section>
+  </main>
+{% endblock %}

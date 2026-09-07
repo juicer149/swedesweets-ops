@@ -19,6 +19,7 @@ def test_business_customer_sees_business_portal_navigation():
 
     assert _labels(items) == (
         "Orders",
+        "Catalog",
         "Store profile",
         "Contact",
     )
@@ -31,6 +32,7 @@ def test_business_navigation_uses_business_portal_routes():
 
     assert _route_names(items) == (
         "business_portal:orders",
+        "business_portal:catalog",
         "business_portal:profile",
         "business_portal:contact",
     )

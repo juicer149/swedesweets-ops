@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
 from django.shortcuts import render
-from django.utils.translation import gettext as _
 
 from business_portal.selectors import (
     get_portal_customer_for_user,
@@ -46,13 +44,6 @@ def index(request):
         request,
         "business_portal/index.html",
         context,
-    )
-
-
-@login_required
-def catalog(request):
-    return HttpResponse(
-        _("Customer catalog")
     )
 
 

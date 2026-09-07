@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.urls import path
 
 from business_portal import views
+from business_portal.catalog import views as catalog_views
 from business_portal.orders import views as order_views
 from business_portal.profile import views as profile_views
 
@@ -38,7 +39,7 @@ urlpatterns = [
     ),
     path(
         "catalog/",
-        views.catalog,
+        catalog_views.catalog,
         name="catalog",
     ),
     path(
