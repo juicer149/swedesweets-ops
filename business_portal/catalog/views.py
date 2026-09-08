@@ -2,11 +2,21 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
+from django.http import (
+    Http404,
+    HttpResponse,
+    JsonResponse,
+)
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+    render,
+)
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from business.selectors import (
+    get_business_catalog_entry,
     list_business_catalog_entries,
 )
 from business.services import add_product_to_draft_order
@@ -20,9 +30,22 @@ from orders.errors import InvalidOrderOperation
 from products.models import Product
 
 
+def _wants_json(request) -> bool:
+    return (
+        "application/json"
+        in request.headers.get(
+            "Accept",
+            "",
+        )
+    )
+
+
 @login_required
 @require_POST
-def add_product(request, product_id: int):
+def add_product(
+    request,
+    product_id: int,
+):
     customer = get_portal_customer_for_user(
         user=request.user,
     )
@@ -40,17 +63,39 @@ def add_product(request, product_id: int):
             user=request.user,
         )
     except InvalidOrderOperation as error:
+        message = str(error)
+
+        if _wants_json(request):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": message,
+                },
+                status=400,
+            )
+
         messages.error(
             request,
-            str(error),
+            message,
         )
     else:
+        message = _(
+            "%(product)s added to your order."
+        ) % {
+            "product": product.display_name,
+        }
+
+        if _wants_json(request):
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "message": message,
+                }
+            )
+
         messages.success(
             request,
-            _("%(product)s added to your order.")
-            % {
-                "product": product.display_name,
-            },
+            message,
         )
 
     return redirect(
@@ -79,4 +124,29 @@ def catalog(request):
         {
             "product_cards": product_cards,
         },
+    )
+
+
+@login_required
+def product_detail(
+    request,
+    product_id: int,
+):
+    """Temporary business catalog product detail endpoint."""
+
+    get_portal_customer_for_user(
+        user=request.user,
+    )
+
+    entry = get_business_catalog_entry(
+        product_id=product_id,
+    )
+
+    if entry is None:
+        raise Http404(
+            "Product is not available in the business catalog."
+        )
+
+    return HttpResponse(
+        entry.product.display_name
     )

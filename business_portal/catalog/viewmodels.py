@@ -41,8 +41,7 @@ def _build_business_product_card(
         product_id=product.id,
         name=product_name,
         package_label=product.unit_weight_label,
-        badge_label=_("Available"),
-
+        badge_label=None,
         primary_action=UiText(
             text=_("Add to order"),
             href=reverse(
@@ -51,8 +50,25 @@ def _build_business_product_card(
                     "product_id": product.id,
                 },
             ),
-            css_class="product-card__button",
+            css_class=(
+                "button button--sm button--soft "
+                "button--tone-positive"
+            ),
             aria_label=_("Add %(product)s to order")
+            % {
+                "product": product_name,
+            },
+        ),
+        secondary_action=UiText(
+            text=_("Details"),
+            href=reverse(
+                "business_portal:catalog_product",
+                kwargs={
+                    "product_id": product.id,
+                },
+            ),
+            css_class="text-link",
+            aria_label=_("View details for %(product)s")
             % {
                 "product": product_name,
             },

@@ -65,3 +65,46 @@ def list_business_catalog_entries(
         )
         for product in products
     )
+
+
+def get_business_catalog_entry(
+    *,
+    product_id: int,
+) -> BusinessCatalogEntry | None:
+    """Return one currently orderable business catalog entry."""
+
+    available_units_by_product_id = (
+        orderable_quantity_by_product_id()
+    )
+
+    available_units = available_units_by_product_id.get(
+        product_id,
+        0,
+    )
+
+    if available_units <= 0:
+        return None
+
+    product = (
+        Product.objects
+        .filter(
+            pk=product_id,
+            active=True,
+        )
+        .prefetch_related(
+            Prefetch(
+                "translations",
+                queryset=ProductTranslation.objects.all(),
+                to_attr="prefetched_translations",
+            )
+        )
+        .first()
+    )
+
+    if product is None:
+        return None
+
+    return BusinessCatalogEntry(
+        product=product,
+        available_units=available_units,
+    )

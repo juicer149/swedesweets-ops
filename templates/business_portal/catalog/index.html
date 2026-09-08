@@ -1,85 +1,94 @@
 {% extends "base.html" %}
+{% load i18n static %}
 
-{% block title %}Catalog{% endblock %}
+{% block title %}{% trans "Catalog" %} | SwedeSweets{% endblock %}
 
 {% block content %}
-  <main class="page">
-    <section
-      class="catalog"
-      aria-labelledby="business-catalog-title"
-    >
-      <header class="catalog__header">
-        <h1
-          id="business-catalog-title"
-          class="catalog__title"
-        >
-          Catalog
-        </h1>
+  {% include "includes/ui/page_header.html" with title_id="business-catalog-title" title=_("Catalog") %}
 
-        <p class="catalog__intro">
-          Choose products for your next order.
-        </p>
-      </header>
+  <section
+    class="catalog"
+    aria-labelledby="business-catalog-title"
+  >
+    <p
+      class="catalog__feedback"
+      data-catalog-feedback
+      role="status"
+      aria-live="polite"
+    ></p>
 
-      {% if product_cards %}
-        <section
-          class="product-grid"
-          aria-label="Products"
-        >
-          {% for card in product_cards %}
-            <article class="product-card">
-              <div class="product-card__media">
-                {% if card.badge_label %}
-                  <span class="product-card__badge">
-                    {{ card.badge_label }}
-                  </span>
+    {% if product_cards %}
+      <div
+        class="product-grid"
+        aria-label="{% trans 'Products' %}"
+      >
+        {% for card in product_cards %}
+          <article class="product-card">
+            <div class="product-card__media">
+              {% if card.badge_label %}
+                <span class="product-card__badge">
+                  {{ card.badge_label }}
+                </span>
+              {% endif %}
+            </div>
+
+            <div class="product-card__body">
+              <div class="product-card__content">
+                <h2 class="product-card__title">
+                  {{ card.name }}
+                </h2>
+
+                <p class="product-card__meta">
+                  {{ card.package_label }}
+                </p>
+              </div>
+
+              <div class="product-card__actions">
+                <form
+                  class="product-card__order"
+                  method="post"
+                  action="{{ card.primary_action.href }}"
+                  data-catalog-add-form
+                >
+                  {% csrf_token %}
+
+                  <button
+                    class="{{ card.primary_action.css_class }}"
+                    type="submit"
+                    aria-label="{{ card.primary_action.aria_label }}"
+                    data-catalog-add-button
+                  >
+                    {{ card.primary_action.text }}
+                  </button>
+                </form>
+
+                {% if card.secondary_action %}
+                  <a
+                    class="{{ card.secondary_action.css_class }}"
+                    href="{{ card.secondary_action.href }}"
+                    aria-label="{{ card.secondary_action.aria_label }}"
+                  >
+                    {{ card.secondary_action.text }}
+                    <span aria-hidden="true">→</span>
+                  </a>
                 {% endif %}
               </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="catalog__empty">
+        {% trans "No products are currently available." %}
+      </p>
+    {% endif %}
+  </section>
+{% endblock %}
 
-              <div class="product-card__body">
-                <div class="product-card__content">
-                  <h2 class="product-card__title">
-                    {{ card.name }}
-                  </h2>
-
-                  <p class="product-card__meta">
-                    {{ card.package_label }}
-                  </p>
-                </div>
-
-                <div class="product-card__actions">
-                  <form
-                    class="product-card__order"
-                    method="post"
-                    action="{{ card.primary_action.href }}"
-                  >
-                    {% csrf_token %}
-
-                    <button
-                      class="{{ card.primary_action.css_class }}"
-                      type="submit"
-                      aria-label="{{ card.primary_action.aria_label }}"
-                    >
-                      {{ card.primary_action.text }}
-                    </button>
-                  </form>
-
-                  <span
-                    class="product-card__link"
-                    aria-disabled="true"
-                  >
-                    Details →
-                  </span>
-                </div>
-              </div>
-            </article>
-          {% endfor %}
-        </section>
-      {% else %}
-        <p class="catalog__empty">
-          No products are currently available.
-        </p>
-      {% endif %}
-    </section>
-  </main>
+{% block scripts %}
+  {{ block.super }}
+  <script
+    src="{% static 'js/catalog.js' %}"
+    defer
+  ></script>
 {% endblock %}
