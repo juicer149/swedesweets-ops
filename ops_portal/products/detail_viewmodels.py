@@ -15,11 +15,10 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
-from ops_portal.inventory.mini_cards import build_batch_mini_card
 from inventory.models import InventoryBatch
 from inventory.selectors import AvailableStockRow
+from ops_portal.inventory.mini_cards import build_batch_mini_card
 from ops_portal.products.access import can_edit_product
-from products.models import Product
 from ops_portal.products.presentation import (
     ProductTagPresentation,
     product_attribute_tags,
@@ -27,6 +26,7 @@ from ops_portal.products.presentation import (
     product_detail_status_class,
     product_status_icon,
 )
+from products.models import Product
 from products.selectors import ProductDeliveredDemandSummary
 
 
@@ -40,18 +40,28 @@ class ProductStockSummary:
 
     @property
     def physical_quantity_label(self) -> str:
-        return self.product.stock_quantity_label(self.physical_quantity)
+        return self.product.stock_quantity_label(
+            self.physical_quantity
+        )
 
     @property
     def reserved_quantity_label(self) -> str:
-        return self.product.stock_quantity_label(self.reserved_quantity)
+        return self.product.stock_quantity_label(
+            self.reserved_quantity
+        )
 
     @property
     def available_quantity_label(self) -> str:
-        return self.product.stock_quantity_label(self.available_quantity)
+        return self.product.stock_quantity_label(
+            self.available_quantity
+        )
 
     @classmethod
-    def empty(cls, *, product: Product) -> ProductStockSummary:
+    def empty(
+        cls,
+        *,
+        product: Product,
+    ) -> ProductStockSummary:
         return cls(
             product=product,
             batch_count=0,
@@ -68,7 +78,9 @@ class ProductStockSummary:
         row: AvailableStockRow | None,
     ) -> ProductStockSummary:
         if row is None:
-            return cls.empty(product=product)
+            return cls.empty(
+                product=product,
+            )
 
         return cls(
             product=product,
@@ -81,18 +93,29 @@ class ProductStockSummary:
 
 @dataclass(frozen=True, slots=True)
 class ProductProfileSummary:
+    category: str
+    category_label: str
     description: str
     ingredients: str
     image_url: str
 
     @classmethod
-    def from_product(cls, product: Product) -> ProductProfileSummary:
+    def from_product(
+        cls,
+        product: Product,
+    ) -> ProductProfileSummary:
         try:
             profile = product.profile
         except Product.profile.RelatedObjectDoesNotExist:
             return cls.empty()
 
         return cls(
+            category=profile.category,
+            category_label=(
+                profile.get_category_display()
+                if profile.category
+                else ""
+            ),
             description=profile.description,
             ingredients=profile.ingredients,
             image_url=profile.image_url,
@@ -101,6 +124,8 @@ class ProductProfileSummary:
     @classmethod
     def empty(cls) -> ProductProfileSummary:
         return cls(
+            category="",
+            category_label="",
             description="",
             ingredients="",
             image_url="",
@@ -129,16 +154,27 @@ class ProductDemandSummary:
 
     @property
     def delivered_quantity_label(self) -> str:
-        return self.product.stock_quantity_label(self.delivered_quantity)
+        return self.product.stock_quantity_label(
+            self.delivered_quantity
+        )
 
     @property
-    def average_quantity_per_delivered_order_label(self) -> str:
-        value = self.average_quantity_per_delivered_order.normalize()
+    def average_quantity_per_delivered_order_label(
+        self,
+    ) -> str:
+        value = (
+            self.average_quantity_per_delivered_order
+            .normalize()
+        )
 
         if value == value.to_integral_value():
             display_value = str(int(value))
         else:
-            display_value = format(value, "f").rstrip("0").rstrip(".")
+            display_value = (
+                format(value, "f")
+                .rstrip("0")
+                .rstrip(".")
+            )
 
         unit = (
             self.product.stock_unit_singular
@@ -157,12 +193,18 @@ class ProductDemandSummary:
     ) -> ProductDemandSummary:
         return cls(
             product=product,
-            delivered_order_count=summary.delivered_order_count,
-            delivered_quantity=summary.delivered_quantity,
+            delivered_order_count=(
+                summary.delivered_order_count
+            ),
+            delivered_quantity=(
+                summary.delivered_quantity
+            ),
             average_quantity_per_delivered_order=(
                 summary.average_quantity_per_delivered_order
             ),
-            last_delivered_at=summary.last_delivered_at,
+            last_delivered_at=(
+                summary.last_delivered_at
+            ),
         )
 
 
@@ -170,7 +212,10 @@ class ProductDemandSummary:
 class ProductDetailContext:
     product: Product
     profile: ProductProfileSummary
-    attribute_tags: tuple[ProductTagPresentation, ...]
+    attribute_tags: tuple[
+        ProductTagPresentation,
+        ...,
+    ]
     stock: ProductStockSummary
     batch_rows: list[ProductBatchRow]
     demand: ProductDemandSummary
@@ -207,29 +252,47 @@ def build_product_detail_context(
         product=product,
         row=stock_row,
     )
-    demand = ProductDemandSummary.from_delivered_demand_summary(
-        product=product,
-        summary=demand_summary,
+
+    demand = (
+        ProductDemandSummary
+        .from_delivered_demand_summary(
+            product=product,
+            summary=demand_summary,
+        )
     )
 
     return ProductDetailContext(
         product=product,
-        profile=ProductProfileSummary.from_product(product),
-        attribute_tags=product_attribute_tags(product),
+        profile=ProductProfileSummary.from_product(
+            product
+        ),
+        attribute_tags=product_attribute_tags(
+            product
+        ),
         stock=stock,
-        batch_rows=_build_batch_rows(active_batches),
+        batch_rows=_build_batch_rows(
+            active_batches
+        ),
         demand=demand,
         detail_card=DetailCard(
-            header=_build_product_header(product),
+            header=_build_product_header(
+                product
+            ),
             panels=_build_product_detail_panels(
                 product=product,
                 stock=stock,
                 demand=demand,
             ),
-            content_card_class=product_detail_card_class(product),
-            secondary_actions=build_product_secondary_actions(
-                product=product,
-                role_spec=role_spec,
+            content_card_class=(
+                product_detail_card_class(
+                    product
+                )
+            ),
+            secondary_actions=(
+                build_product_secondary_actions(
+                    product=product,
+                    role_spec=role_spec,
+                )
             ),
         ),
         title=product.display_name,
@@ -243,24 +306,40 @@ def build_product_secondary_actions(
     product: Product,
     role_spec: RoleSpec,
 ) -> tuple[DetailAction, ...]:
-    if not can_edit_product(product=product, role_spec=role_spec):
+    if not can_edit_product(
+        product=product,
+        role_spec=role_spec,
+    ):
         return ()
 
     return (
         build_secondary_get_action(
             label="Edit product",
-            href=reverse("ops_products:edit", kwargs={"product_pk": product.pk}),
+            href=reverse(
+                "ops_products:edit",
+                kwargs={
+                    "product_pk": product.pk,
+                },
+            ),
         ),
     )
 
 
-def _build_product_header(product: Product) -> DetailHeader:
+def _build_product_header(
+    product: Product,
+) -> DetailHeader:
     return DetailHeader(
         eyebrow=product.code_label,
         title=product.display_name,
-        status_label=_product_status_label(product),
-        status_class=product_detail_status_class(product),
-        status_icon=product_status_icon(product),
+        status_label=_product_status_label(
+            product
+        ),
+        status_class=product_detail_status_class(
+            product
+        ),
+        status_icon=product_status_icon(
+            product
+        ),
     )
 
 
@@ -275,22 +354,35 @@ def _build_product_detail_panels(
             key="product",
             label="Product",
             summary=product.display_name,
-            body_template="ops_portal/products/includes/detail_panel_product.html",
+            body_template=(
+                "ops_portal/products/includes/"
+                "detail_panel_product.html"
+            ),
             icon="lollipop",
             is_active=True,
         ),
         DetailPanel(
             key="inventory",
             label="Inventory",
-            summary=product.stock_quantity_label(stock.available_quantity),
-            body_template="ops_portal/products/includes/detail_panel_inventory.html",
+            summary=product.stock_quantity_label(
+                stock.available_quantity
+            ),
+            body_template=(
+                "ops_portal/products/includes/"
+                "detail_panel_inventory.html"
+            ),
             icon="inventory",
         ),
         DetailPanel(
             key="demand",
             label="Demand",
-            summary=product.stock_quantity_label(demand.delivered_quantity),
-            body_template="ops_portal/products/includes/detail_panel_demand.html",
+            summary=product.stock_quantity_label(
+                demand.delivered_quantity
+            ),
+            body_template=(
+                "ops_portal/products/includes/"
+                "detail_panel_demand.html"
+            ),
             icon="truck",
         ),
     )
@@ -302,14 +394,24 @@ def _build_batch_rows(
     rows: list[ProductBatchRow] = []
 
     for batch in batches:
-        batch_href = reverse("ops_inventory:detail", kwargs={"batch_pk": batch.pk})
+        batch_href = reverse(
+            "ops_inventory:detail",
+            kwargs={
+                "batch_pk": batch.pk,
+            },
+        )
 
         rows.append(
             ProductBatchRow(
                 batch_id=batch.batch_id,
                 batch_href=batch_href,
                 quantity=batch.quantity,
-                quantity_label=batch.product.stock_quantity_label(batch.quantity),
+                quantity_label=(
+                    batch.product
+                    .stock_quantity_label(
+                        batch.quantity
+                    )
+                ),
                 best_before=batch.best_before,
                 location=batch.location,
                 status=batch.get_status_display(),
@@ -323,5 +425,11 @@ def _build_batch_rows(
     return rows
 
 
-def _product_status_label(product: Product) -> str:
-    return "Active" if product.active else "Inactive"
+def _product_status_label(
+    product: Product,
+) -> str:
+    return (
+        "Active"
+        if product.active
+        else "Inactive"
+    )

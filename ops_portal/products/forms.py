@@ -9,7 +9,8 @@ from products.catalog import (
     MAX_WEIGHT_PER_UNIT,
     MIN_WEIGHT_PER_UNIT,
 )
-from products.models import Product
+from products.models import Product, ProductProfile
+
 
 PRODUCT_STATUS_ACTIVE = "active"
 PRODUCT_STATUS_INACTIVE = "inactive"
@@ -30,7 +31,7 @@ def _customer_facing_name_fr_field() -> forms.CharField:
         required=False,
         max_length=MAX_NAME_LENGTH,
         label="Customer-facing French name",
-        help_text=("Optional. Used in the customer portal when French is selected."),
+        help_text="Optional. Used in the customer portal when French is selected.",
         error_messages={
             "max_length": (
                 f"Customer-facing French name cannot exceed "
@@ -40,6 +41,64 @@ def _customer_facing_name_fr_field() -> forms.CharField:
         widget=forms.TextInput(
             attrs={
                 "placeholder": "e.g. Tutti Frutti Acidulé",
+            }
+        ),
+    )
+
+
+def _category_field() -> forms.ChoiceField:
+    return forms.ChoiceField(
+        required=False,
+        choices=(
+            ("", "Select category"),
+            *ProductProfile.Category.choices,
+        ),
+        label="Category",
+        help_text="Primary category used in the customer catalog.",
+    )
+
+
+def _description_field() -> forms.CharField:
+    return forms.CharField(
+        required=False,
+        label="Description",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "Optional product description.",
+            }
+        ),
+    )
+
+
+def _ingredients_field() -> forms.CharField:
+    return forms.CharField(
+        required=False,
+        label="Ingredients",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "Optional ingredients text.",
+            }
+        ),
+    )
+
+
+def _image_url_field() -> forms.URLField:
+    return forms.URLField(
+        required=False,
+        max_length=MAX_IMAGE_URL_LENGTH,
+        label="Image URL",
+        error_messages={
+            "invalid": "Enter a valid image URL.",
+            "max_length": (
+                f"Image URL cannot exceed {MAX_IMAGE_URL_LENGTH} characters."
+            ),
+        },
+        widget=forms.URLInput(
+            attrs={
+                "placeholder": "https://example.com/product.jpg",
+                "autocomplete": "url",
             }
         ),
     )
@@ -72,7 +131,9 @@ class ProductForm(forms.Form):
         label="Manufacturer",
         help_text="Optional producer, e.g. Fazer, Cloetta, BUBS.",
         error_messages={
-            "max_length": (f"Manufacturer cannot exceed {MAX_NAME_LENGTH} characters."),
+            "max_length": (
+                f"Manufacturer cannot exceed {MAX_NAME_LENGTH} characters."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -87,7 +148,9 @@ class ProductForm(forms.Form):
         label="Brand",
         error_messages={
             "required": "Please enter the brand of the product.",
-            "max_length": (f"Brand name cannot exceed {MAX_NAME_LENGTH} characters."),
+            "max_length": (
+                f"Brand name cannot exceed {MAX_NAME_LENGTH} characters."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -103,7 +166,9 @@ class ProductForm(forms.Form):
         help_text="Swedish/internal MVP product name.",
         error_messages={
             "required": "Please enter the name of the product.",
-            "max_length": (f"Product name cannot exceed {MAX_NAME_LENGTH} characters."),
+            "max_length": (
+                f"Product name cannot exceed {MAX_NAME_LENGTH} characters."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -138,10 +203,12 @@ class ProductForm(forms.Form):
         error_messages={
             "required": "Please enter the weight per unit in grams.",
             "min_value": (
-                f"Weight per unit must be at least {MIN_WEIGHT_PER_UNIT} grams."
+                f"Weight per unit must be at least "
+                f"{MIN_WEIGHT_PER_UNIT} grams."
             ),
             "max_value": (
-                f"Weight per unit must be at most {MAX_WEIGHT_PER_UNIT} grams."
+                f"Weight per unit must be at most "
+                f"{MAX_WEIGHT_PER_UNIT} grams."
             ),
             "invalid": "Please enter a valid number for weight per unit.",
         },
@@ -155,6 +222,8 @@ class ProductForm(forms.Form):
         ),
     )
 
+    category = _category_field()
+
     vegan = forms.BooleanField(
         required=False,
         label="Product attributes",
@@ -165,6 +234,10 @@ class ProductForm(forms.Form):
         ),
     )
 
+    description = _description_field()
+    ingredients = _ingredients_field()
+    image_url = _image_url_field()
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -174,7 +247,9 @@ class ProductForm(forms.Form):
             self,
             full=(
                 "customer_facing_name_fr",
-                "vegan",
+                "description",
+                "ingredients",
+                "image_url",
             ),
             half=(
                 "internal_number",
@@ -183,6 +258,8 @@ class ProductForm(forms.Form):
                 "name",
                 "stock_unit",
                 "weight_per_unit",
+                "category",
+                "vegan",
             ),
         )
 
@@ -215,7 +292,9 @@ class ProductEditForm(forms.Form):
         max_length=MAX_NAME_LENGTH,
         label="Manufacturer",
         error_messages={
-            "max_length": (f"Manufacturer cannot exceed {MAX_NAME_LENGTH} characters."),
+            "max_length": (
+                f"Manufacturer cannot exceed {MAX_NAME_LENGTH} characters."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -230,7 +309,9 @@ class ProductEditForm(forms.Form):
         label="Brand",
         error_messages={
             "required": "Please enter the brand of the product.",
-            "max_length": (f"Brand name cannot exceed {MAX_NAME_LENGTH} characters."),
+            "max_length": (
+                f"Brand name cannot exceed {MAX_NAME_LENGTH} characters."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -246,7 +327,9 @@ class ProductEditForm(forms.Form):
         help_text="Swedish/internal MVP product name.",
         error_messages={
             "required": "Please enter the name of the product.",
-            "max_length": (f"Product name cannot exceed {MAX_NAME_LENGTH} characters."),
+            "max_length": (
+                f"Product name cannot exceed {MAX_NAME_LENGTH} characters."
+            ),
         },
         widget=forms.TextInput(
             attrs={
@@ -274,6 +357,8 @@ class ProductEditForm(forms.Form):
         ),
     )
 
+    category = _category_field()
+
     vegan = forms.BooleanField(
         required=False,
         label="Product attributes",
@@ -284,47 +369,16 @@ class ProductEditForm(forms.Form):
         ),
     )
 
-    description = forms.CharField(
-        required=False,
-        label="Description",
-        widget=forms.Textarea(
-            attrs={
-                "rows": 3,
-                "placeholder": "Optional product description.",
-            }
-        ),
-    )
+    description = _description_field()
+    ingredients = _ingredients_field()
+    image_url = _image_url_field()
 
-    ingredients = forms.CharField(
-        required=False,
-        label="Ingredients",
-        widget=forms.Textarea(
-            attrs={
-                "rows": 3,
-                "placeholder": "Optional ingredients text.",
-            }
-        ),
-    )
-
-    image_url = forms.URLField(
-        required=False,
-        max_length=MAX_IMAGE_URL_LENGTH,
-        label="Image URL",
-        error_messages={
-            "invalid": "Enter a valid image URL.",
-            "max_length": (
-                f"Image URL cannot exceed {MAX_IMAGE_URL_LENGTH} characters."
-            ),
-        },
-        widget=forms.URLInput(
-            attrs={
-                "placeholder": "https://example.com/product.jpg",
-                "autocomplete": "url",
-            }
-        ),
-    )
-
-    def __init__(self, *args, product: Product | None = None, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        product: Product | None = None,
+        **kwargs,
+    ) -> None:
         self.product = product
         super().__init__(*args, **kwargs)
 
@@ -344,6 +398,7 @@ class ProductEditForm(forms.Form):
                 "brand",
                 "name",
                 "active",
+                "category",
                 "vegan",
             ),
         )
@@ -353,7 +408,9 @@ class ProductEditForm(forms.Form):
         return self.cleaned_data["active"] == PRODUCT_STATUS_ACTIVE
 
 
-def build_product_edit_initial_data(product: Product) -> dict[str, object]:
+def build_product_edit_initial_data(
+    product: Product,
+) -> dict[str, object]:
     profile = getattr(product, "profile", None)
 
     return {
@@ -366,12 +423,31 @@ def build_product_edit_initial_data(product: Product) -> dict[str, object]:
             language_code=CUSTOMER_FACING_LANGUAGE_CODE,
         ),
         "active": (
-            PRODUCT_STATUS_ACTIVE if product.active else PRODUCT_STATUS_INACTIVE
+            PRODUCT_STATUS_ACTIVE
+            if product.active
+            else PRODUCT_STATUS_INACTIVE
+        ),
+        "category": (
+            profile.category
+            if profile is not None
+            else ""
         ),
         "vegan": product.vegan,
-        "description": profile.description if profile is not None else "",
-        "ingredients": profile.ingredients if profile is not None else "",
-        "image_url": profile.image_url if profile is not None else "",
+        "description": (
+            profile.description
+            if profile is not None
+            else ""
+        ),
+        "ingredients": (
+            profile.ingredients
+            if profile is not None
+            else ""
+        ),
+        "image_url": (
+            profile.image_url
+            if profile is not None
+            else ""
+        ),
     }
 
 
@@ -380,7 +456,11 @@ def _product_translation_name(
     *,
     language_code: str,
 ) -> str:
-    translation = product.translations.filter(language_code=language_code).first()
+    translation = (
+        product.translations
+        .filter(language_code=language_code)
+        .first()
+    )
 
     if translation is None:
         return ""

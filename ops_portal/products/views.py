@@ -15,8 +15,9 @@ from inventory.selectors import (
     available_quantity_by_product,
     list_available_batches_for_product,
 )
-from ops_portal.products.detail_viewmodels import build_product_detail_context
-from products.errors import InvalidProductData
+from ops_portal.products.detail_viewmodels import (
+    build_product_detail_context,
+)
 from ops_portal.products.form_viewmodels import (
     build_create_product_form_context,
     build_edit_product_form_context,
@@ -31,6 +32,7 @@ from ops_portal.products.list_viewmodels import (
     build_product_quick_jump_search,
     build_products_page_header,
 )
+from products.errors import InvalidProductData
 from products.models import Product
 from products.selectors import (
     DEFAULT_PRODUCT_SORT,
@@ -42,6 +44,7 @@ from products.selectors import (
     list_products,
 )
 from products.services import create_product, update_product
+
 
 PRODUCT_FILTERS = [
     TableFilter(PRODUCT_FILTER_ALL, "All"),
@@ -76,7 +79,10 @@ def index(request):
     controls = TableControls.from_request_values(
         base_path=request.path,
         anchor=PRODUCTS_LIST_ANCHOR,
-        requested_filter=request.GET.get(PRODUCT_FILTER_QUERY_KEY, ""),
+        requested_filter=request.GET.get(
+            PRODUCT_FILTER_QUERY_KEY,
+            "",
+        ),
         requested_sort=request.GET.get("sort", ""),
         filters=PRODUCT_FILTERS,
         allowed_sorts=PRODUCT_SORTS,
@@ -94,38 +100,75 @@ def index(request):
     product_rows = build_product_page_rows(products)
 
     context = {
-        "page_header": build_products_page_header(role_spec=request.role_spec),
+        "page_header": build_products_page_header(
+            role_spec=request.role_spec,
+        ),
         "product_rows": product_rows,
-        "quick_jump_search": build_product_quick_jump_search(product_rows),
-        "filters": controls.build_filter_links(PRODUCT_FILTERS),
-        "table_sorts": controls.build_table_sort_links(PRODUCT_TABLE_SORTS),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(PRODUCT_TABLE_SORTS),
-        "mobile_sort_direction": controls.build_mobile_sort_direction(),
-        "table_controls_template": PRODUCT_TABLE_CONTROLS_TEMPLATE,
-        "numeric_table_fields": ["number", "weight"],
+        "quick_jump_search": build_product_quick_jump_search(
+            product_rows,
+        ),
+        "filters": controls.build_filter_links(
+            PRODUCT_FILTERS,
+        ),
+        "table_sorts": controls.build_table_sort_links(
+            PRODUCT_TABLE_SORTS,
+        ),
+        "mobile_sort_fields": controls.build_mobile_sort_fields(
+            PRODUCT_TABLE_SORTS,
+        ),
+        "mobile_sort_direction": (
+            controls.build_mobile_sort_direction()
+        ),
+        "table_controls_template": (
+            PRODUCT_TABLE_CONTROLS_TEMPLATE
+        ),
+        "numeric_table_fields": [
+            "number",
+            "weight",
+        ],
     }
 
-    return render(request, "ops_portal/products/index.html", context)
+    return render(
+        request,
+        "ops_portal/products/index.html",
+        context,
+    )
 
 
 @login_required
-def detail(request, product_pk: int):
+def detail(
+    request,
+    product_pk: int,
+):
     product = _get_product_or_404(product_pk)
 
     context = build_product_detail_context(
         product=product,
         stock_row=_get_stock_row_for_product(product),
-        active_batches=list(list_available_batches_for_product(product=product)),
-        demand_summary=get_product_delivered_demand_summary(product=product),
+        active_batches=list(
+            list_available_batches_for_product(
+                product=product,
+            )
+        ),
+        demand_summary=get_product_delivered_demand_summary(
+            product=product,
+        ),
         role_spec=request.role_spec,
         cancel_url=reverse("ops_products:index"),
     ).as_dict()
 
-    return render(request, "ops_portal/products/detail.html", context)
+    return render(
+        request,
+        "ops_portal/products/detail.html",
+        context,
+    )
 
 
 @login_required
-def edit(request, product_pk: int):
+def edit(
+    request,
+    product_pk: int,
+):
     product = _get_product_or_404(product_pk)
 
     if request.method == "POST":
@@ -138,31 +181,55 @@ def edit(request, product_pk: int):
             try:
                 updated_product = update_product(
                     product=product,
-                    internal_number=form.cleaned_data["internal_number"],
-                    manufacturer=form.cleaned_data["manufacturer"],
+                    internal_number=(
+                        form.cleaned_data["internal_number"]
+                    ),
+                    manufacturer=(
+                        form.cleaned_data["manufacturer"]
+                    ),
                     brand=form.cleaned_data["brand"],
                     name=form.cleaned_data["name"],
                     active=form.active_value,
                     vegan=form.cleaned_data["vegan"],
                     customer_facing_name_fr=(
-                        form.cleaned_data["customer_facing_name_fr"]
+                        form.cleaned_data[
+                            "customer_facing_name_fr"
+                        ]
                     ),
-                    description=form.cleaned_data["description"],
-                    ingredients=form.cleaned_data["ingredients"],
-                    image_url=form.cleaned_data["image_url"],
+                    category=form.cleaned_data["category"],
+                    description=(
+                        form.cleaned_data["description"]
+                    ),
+                    ingredients=(
+                        form.cleaned_data["ingredients"]
+                    ),
+                    image_url=(
+                        form.cleaned_data["image_url"]
+                    ),
                     user=request.user,
                 )
             except InvalidProductData as error:
-                form.add_error(None, str(error))
+                form.add_error(
+                    None,
+                    str(error),
+                )
             else:
                 messages.success(
                     request,
-                    f"Product {updated_product.sku} updated.",
+                    (
+                        f"Product "
+                        f"{updated_product.sku} updated."
+                    ),
                 )
-                return redirect("ops_products:detail", product_pk=updated_product.pk)
+                return redirect(
+                    "ops_products:detail",
+                    product_pk=updated_product.pk,
+                )
     else:
         form = ProductEditForm(
-            initial=build_product_edit_initial_data(product),
+            initial=build_product_edit_initial_data(
+                product,
+            ),
             product=product,
         )
 
@@ -171,7 +238,11 @@ def edit(request, product_pk: int):
         product=product,
     ).as_dict()
 
-    return render(request, "ops_portal/products/product_form.html", context)
+    return render(
+        request,
+        "ops_portal/products/product_form.html",
+        context,
+    )
 
 
 @login_required
@@ -186,14 +257,25 @@ def create(request):
                     user=request.user,
                 )
             except InvalidProductData as error:
-                form.add_error(None, str(error))
+                form.add_error(
+                    None,
+                    str(error),
+                )
             else:
                 if result.created:
-                    messages.success(request, result.message)
+                    messages.success(
+                        request,
+                        result.message,
+                    )
                 else:
-                    messages.info(request, result.message)
+                    messages.info(
+                        request,
+                        result.message,
+                    )
 
-                return redirect("ops_products:index")
+                return redirect(
+                    "ops_products:index",
+                )
     else:
         form = ProductForm()
 
@@ -201,17 +283,27 @@ def create(request):
         form=form,
     ).as_dict()
 
-    return render(request, "ops_portal/products/product_form.html", context)
+    return render(
+        request,
+        "ops_portal/products/product_form.html",
+        context,
+    )
 
 
-def _get_product_or_404(product_pk: int) -> Product:
+def _get_product_or_404(
+    product_pk: int,
+) -> Product:
     return get_object_or_404(
-        Product.objects.select_related("profile"),
+        Product.objects.select_related(
+            "profile",
+        ),
         pk=product_pk,
     )
 
 
-def _get_stock_row_for_product(product: Product):
+def _get_stock_row_for_product(
+    product: Product,
+):
     for row in available_quantity_by_product():
         if row.product_id == product.pk:
             return row

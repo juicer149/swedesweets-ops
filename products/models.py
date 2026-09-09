@@ -467,10 +467,23 @@ class ProductProfile(models.Model):
     presentation/catalog data, not inventory/order identity.
     """
 
+    class Category(models.TextChoices):
+        CANDY = "candy", _("Candy")
+        CHIPS = "chips", _("Chips")
+        DIP_MIX = "dip_mix", _("Dip mix")
+
     product = models.OneToOneField(
         Product,
         on_delete=models.CASCADE,
         related_name="profile",
+    )
+
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+        blank=True,
+        default="",
+        help_text="Primary customer catalog category.",
     )
 
     description = models.TextField(blank=True)

@@ -37,6 +37,17 @@
   </div>
 
   <div>
+    <dt>Category</dt>
+    <dd>
+      {% if profile.category_label %}
+        {{ profile.category_label }}
+      {% else %}
+        —
+      {% endif %}
+    </dd>
+  </div>
+
+  <div>
     <dt>Unit weight</dt>
     <dd>{{ product.unit_weight_label }}</dd>
   </div>
