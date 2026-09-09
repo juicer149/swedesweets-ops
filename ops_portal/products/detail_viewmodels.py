@@ -26,6 +26,7 @@ from ops_portal.products.presentation import (
     product_detail_status_class,
     product_status_icon,
 )
+from pricing.models import CommercialPrice
 from products.models import Product
 from products.selectors import ProductDeliveredDemandSummary
 
@@ -133,6 +134,116 @@ class ProductProfileSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class ProductPriceAmountSummary:
+    currency: str
+    label: str
+
+
+@dataclass(frozen=True, slots=True)
+class ProductChannelPricingSummary:
+    label: str
+    configured: bool
+    enabled: bool
+    amounts: tuple[
+        ProductPriceAmountSummary,
+        ...,
+    ]
+
+    @property
+    def status_label(self) -> str:
+        if not self.configured:
+            return "Not configured"
+
+        return (
+            "Active"
+            if self.enabled
+            else "Inactive"
+        )
+
+    @classmethod
+    def from_commercial_price(
+        cls,
+        *,
+        label: str,
+        commercial_price: CommercialPrice | None,
+    ) -> ProductChannelPricingSummary:
+        if commercial_price is None:
+            return cls(
+                label=label,
+                configured=False,
+                enabled=False,
+                amounts=(),
+            )
+
+        amounts = tuple(
+            ProductPriceAmountSummary(
+                currency=amount.currency,
+                label=(
+                    f"{amount.price:.2f} "
+                    f"{amount.currency}"
+                ),
+            )
+            for amount in commercial_price.amounts.all()
+        )
+
+        return cls(
+            label=label,
+            configured=True,
+            enabled=commercial_price.enabled,
+            amounts=amounts,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ProductPricingSummary:
+    business: ProductChannelPricingSummary
+    retail: ProductChannelPricingSummary
+
+    @property
+    def configured_count(self) -> int:
+        return sum(
+            (
+                self.business.configured,
+                self.retail.configured,
+            )
+        )
+
+    @property
+    def summary_label(self) -> str:
+        if self.configured_count == 0:
+            return "Not configured"
+
+        if self.configured_count == 1:
+            return "1 channel configured"
+
+        return "2 channels configured"
+
+    @classmethod
+    def from_commercial_prices(
+        cls,
+        *,
+        business_price: CommercialPrice | None,
+        retail_price: CommercialPrice | None,
+    ) -> ProductPricingSummary:
+        return cls(
+            business=(
+                ProductChannelPricingSummary
+                .from_commercial_price(
+                    label="Business",
+                    commercial_price=business_price,
+                )
+            ),
+            retail=(
+                ProductChannelPricingSummary
+                .from_commercial_price(
+                    label="Retail",
+                    commercial_price=retail_price,
+                )
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class ProductBatchRow:
     batch_id: str
     batch_href: str
@@ -212,6 +323,7 @@ class ProductDemandSummary:
 class ProductDetailContext:
     product: Product
     profile: ProductProfileSummary
+    pricing: ProductPricingSummary
     attribute_tags: tuple[
         ProductTagPresentation,
         ...,
@@ -228,6 +340,7 @@ class ProductDetailContext:
         return {
             "product": self.product,
             "profile": self.profile,
+            "pricing": self.pricing,
             "attribute_tags": self.attribute_tags,
             "stock": self.stock,
             "batch_rows": self.batch_rows,
@@ -245,6 +358,8 @@ def build_product_detail_context(
     stock_row: AvailableStockRow | None,
     active_batches: list[InventoryBatch],
     demand_summary: ProductDeliveredDemandSummary,
+    business_price: CommercialPrice | None,
+    retail_price: CommercialPrice | None,
     role_spec: RoleSpec,
     cancel_url: str,
 ) -> ProductDetailContext:
@@ -261,11 +376,20 @@ def build_product_detail_context(
         )
     )
 
+    pricing = (
+        ProductPricingSummary
+        .from_commercial_prices(
+            business_price=business_price,
+            retail_price=retail_price,
+        )
+    )
+
     return ProductDetailContext(
         product=product,
         profile=ProductProfileSummary.from_product(
             product
         ),
+        pricing=pricing,
         attribute_tags=product_attribute_tags(
             product
         ),
@@ -282,6 +406,7 @@ def build_product_detail_context(
                 product=product,
                 stock=stock,
                 demand=demand,
+                pricing=pricing,
             ),
             content_card_class=(
                 product_detail_card_class(
@@ -348,6 +473,7 @@ def _build_product_detail_panels(
     product: Product,
     stock: ProductStockSummary,
     demand: ProductDemandSummary,
+    pricing: ProductPricingSummary,
 ) -> tuple[DetailPanel, ...]:
     return (
         DetailPanel(
@@ -360,6 +486,16 @@ def _build_product_detail_panels(
             ),
             icon="lollipop",
             is_active=True,
+        ),
+        DetailPanel(
+            key="pricing",
+            label="Pricing",
+            summary=pricing.summary_label,
+            body_template=(
+                "ops_portal/products/includes/"
+                "detail_panel_pricing.html"
+            ),
+            icon="tag",
         ),
         DetailPanel(
             key="inventory",

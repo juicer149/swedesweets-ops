@@ -6,6 +6,7 @@ from pricing.errors import InvalidCommercialPrice
 from pricing.models import CommercialPrice, PriceAmount
 from pricing.services import (
     create_commercial_price,
+    remove_price_amount,
     set_commercial_price_enabled,
     set_commercial_price_reason,
     set_price_amount,
@@ -28,7 +29,10 @@ def test_create_commercial_price_creates_disabled_product_price():
 
     assert commercial_price.product == product
     assert commercial_price.batch_id is None
-    assert commercial_price.channel == CommercialPrice.Channel.RETAIL
+    assert (
+        commercial_price.channel
+        == CommercialPrice.Channel.RETAIL
+    )
     assert commercial_price.reason == ""
     assert not commercial_price.enabled
 
@@ -49,7 +53,10 @@ def test_create_commercial_price_can_target_exact_batch():
 
     assert commercial_price.product == product
     assert commercial_price.batch == batch
-    assert commercial_price.reason == CommercialPrice.Reason.SHORT_DATED
+    assert (
+        commercial_price.reason
+        == CommercialPrice.Reason.SHORT_DATED
+    )
 
 
 @pytest.mark.django_db
@@ -147,20 +154,80 @@ def test_set_price_amount_allows_multiple_currencies():
         price="99.00",
     )
 
-    assert {eur.currency, sek.currency} == {
+    assert {
+        eur.currency,
+        sek.currency,
+    } == {
         PriceAmount.Currency.EUR,
         PriceAmount.Currency.SEK,
     }
 
 
 @pytest.mark.django_db
+def test_remove_price_amount_removes_requested_currency_only():
+    commercial_price = commercial_price_factory()
+
+    set_price_amount(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+        price="9.00",
+    )
+    sek = set_price_amount(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.SEK,
+        price="99.00",
+    )
+
+    remove_price_amount(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+    )
+
+    assert not commercial_price.amounts.filter(
+        currency=PriceAmount.Currency.EUR,
+    ).exists()
+
+    assert commercial_price.amounts.get(
+        currency=PriceAmount.Currency.SEK,
+    ) == sek
+
+
+@pytest.mark.django_db
+def test_remove_price_amount_is_idempotent_when_currency_is_missing():
+    commercial_price = commercial_price_factory()
+
+    remove_price_amount(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+    )
+
+    assert commercial_price.amounts.count() == 0
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("price", "original_price", "message"),
     [
-        ("0.00", None, "price must be greater than zero"),
-        ("-1.00", None, "price must be greater than zero"),
-        ("9.00", "0.00", "original price must be greater than zero"),
-        ("9.00", "5.00", "original price cannot be below current price"),
+        (
+            "0.00",
+            None,
+            "price must be greater than zero",
+        ),
+        (
+            "-1.00",
+            None,
+            "price must be greater than zero",
+        ),
+        (
+            "9.00",
+            "0.00",
+            "original price must be greater than zero",
+        ),
+        (
+            "9.00",
+            "5.00",
+            "original price cannot be below current price",
+        ),
     ],
 )
 def test_set_price_amount_rejects_invalid_amounts(
@@ -215,9 +282,12 @@ def test_commercial_price_can_be_enabled_with_amount():
     )
 
     assert commercial_price.enabled
-    assert commercial_price.amounts.get(
-        currency=PriceAmount.Currency.EUR,
-    ).price == Decimal("9.00")
+    assert (
+        commercial_price.amounts.get(
+            currency=PriceAmount.Currency.EUR,
+        ).price
+        == Decimal("9.00")
+    )
 
 
 @pytest.mark.django_db
@@ -245,7 +315,10 @@ def test_commercial_price_reason_can_be_changed():
         reason=CommercialPrice.Reason.PROMOTION,
     )
 
-    assert commercial_price.reason == CommercialPrice.Reason.PROMOTION
+    assert (
+        commercial_price.reason
+        == CommercialPrice.Reason.PROMOTION
+    )
 
 
 @pytest.mark.django_db

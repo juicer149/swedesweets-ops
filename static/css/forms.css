@@ -235,6 +235,52 @@
   box-shadow: var(--shadow-focus-danger);
 }
 
+/* =============================================================================
+   Form sections
+
+   Local grouping inside a larger form, for example product pricing channels.
+   ============================================================================= */
+
+.form-section-heading {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.form-section-heading h2,
+.form-section-heading__title {
+  margin: 0;
+
+  font-family: var(--font-heading);
+  font-size: var(--font-size-28);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  color: var(--color-primary-900);
+}
+
+.form-section-heading .form-help {
+  margin: 0;
+}
+
+.pricing-channel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.pricing-channel + .pricing-channel {
+  margin-top: var(--space-8);
+}
+
+.pricing-channel__title {
+  margin: 0;
+
+  font-family: var(--font-body);
+  font-size: var(--font-size-20);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--color-primary-900);
+}
+
 
 /* =============================================================================
    Form actions

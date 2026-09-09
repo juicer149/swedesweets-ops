@@ -7,6 +7,7 @@ import pytest
 from pricing.models import CommercialPrice, PriceAmount
 from pricing.selectors import (
     get_batch_price_amount,
+    get_product_commercial_price,
     get_product_price_amount,
     list_commercial_prices,
     list_commercial_prices_for_product,
@@ -18,6 +19,123 @@ from pricing.tests.factories import (
     pricing_batch_factory,
     pricing_product_factory,
 )
+
+
+@pytest.mark.django_db
+def test_get_product_commercial_price_returns_product_wide_definition():
+    product = pricing_product_factory()
+
+    commercial_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=False,
+    )
+
+    resolved = get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    )
+
+    assert resolved == commercial_price
+
+
+@pytest.mark.django_db
+def test_get_product_commercial_price_includes_disabled_pricing():
+    product = pricing_product_factory()
+
+    commercial_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=False,
+    )
+
+    resolved = get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    )
+
+    assert resolved == commercial_price
+    assert resolved.enabled is False
+
+
+@pytest.mark.django_db
+def test_get_product_commercial_price_ignores_batch_pricing():
+    product = pricing_product_factory()
+    batch = pricing_batch_factory(
+        product=product,
+    )
+
+    commercial_price_factory(
+        product=product,
+        batch=batch,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+
+    resolved = get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    )
+
+    assert resolved is None
+
+
+@pytest.mark.django_db
+def test_get_product_commercial_price_respects_channel():
+    product = pricing_product_factory()
+
+    retail_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    )
+    business_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+    )
+
+    assert get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    ) == retail_price
+
+    assert get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+    ) == business_price
+
+
+@pytest.mark.django_db
+def test_get_product_commercial_price_prefetches_amounts(
+    django_assert_num_queries,
+):
+    product = pricing_product_factory()
+
+    commercial_price = commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    )
+    price_amount_factory(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("9.00"),
+    )
+    price_amount_factory(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.SEK,
+        price=Decimal("99.00"),
+    )
+
+    with django_assert_num_queries(2):
+        resolved = get_product_commercial_price(
+            product=product,
+            channel=CommercialPrice.Channel.RETAIL,
+        )
+
+        amounts = list(
+            resolved.amounts.all()
+        )
+
+    assert len(amounts) == 2
 
 
 @pytest.mark.django_db
@@ -111,7 +229,10 @@ def test_get_batch_price_amount_returns_exact_batch_pricing():
     )
 
     assert resolved == amount
-    assert resolved.commercial_price.reason == CommercialPrice.Reason.SHORT_DATED
+    assert (
+        resolved.commercial_price.reason
+        == CommercialPrice.Reason.SHORT_DATED
+    )
 
 
 @pytest.mark.django_db

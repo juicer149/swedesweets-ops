@@ -22,6 +22,29 @@ def _filter_channels(
     )
 
 
+def get_product_commercial_price(
+    *,
+    product: Product,
+    channel: str,
+) -> CommercialPrice | None:
+    """Return the product-wide pricing definition for one sales channel.
+
+    Disabled pricing is deliberately included because ops needs to edit the
+    configured definition, not only resolve currently sellable pricing.
+    """
+
+    return (
+        CommercialPrice.objects
+        .prefetch_related("amounts")
+        .filter(
+            product=product,
+            batch__isnull=True,
+            channel=channel,
+        )
+        .first()
+    )
+
+
 def get_product_price_amount(
     *,
     product: Product,

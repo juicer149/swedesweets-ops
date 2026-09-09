@@ -11,7 +11,9 @@ from pricing.models import CommercialPrice, PriceAmount
 from products.models import Product
 
 
-def _to_decimal(value: Decimal | int | float | str) -> Decimal:
+def _to_decimal(
+    value: Decimal | int | float | str,
+) -> Decimal:
     if isinstance(value, Decimal):
         return value
 
@@ -122,7 +124,7 @@ def set_price_amount(
         original_price=normalized_original,
     )
 
-    amount, _ = PriceAmount.objects.update_or_create(
+    amount, _created = PriceAmount.objects.update_or_create(
         commercial_price=locked_price,
         currency=currency,
         defaults={
@@ -139,6 +141,26 @@ def set_price_amount(
         ) from exc
 
     return amount
+
+
+@transaction.atomic
+def remove_price_amount(
+    *,
+    commercial_price: CommercialPrice,
+    currency: str,
+) -> None:
+    """Remove one configured currency amount from a commercial price."""
+
+    locked_price = (
+        CommercialPrice.objects
+        .select_for_update()
+        .get(pk=commercial_price.pk)
+    )
+
+    PriceAmount.objects.filter(
+        commercial_price=locked_price,
+        currency=currency,
+    ).delete()
 
 
 @transaction.atomic

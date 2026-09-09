@@ -471,6 +471,7 @@ class ProductProfile(models.Model):
         CANDY = "candy", _("Candy")
         CHIPS = "chips", _("Chips")
         DIP_MIX = "dip_mix", _("Dip mix")
+        MERCHANDISE = "merchandise", _("Merchandise")
 
     product = models.OneToOneField(
         Product,

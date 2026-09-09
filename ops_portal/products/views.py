@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
+from django.db import transaction
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+    render,
+)
 from django.urls import reverse
 
 from common.table_controls import (
@@ -32,6 +37,18 @@ from ops_portal.products.list_viewmodels import (
     build_product_quick_jump_search,
     build_products_page_header,
 )
+from ops_portal.products.pricing_forms import (
+    ProductPricingForm,
+    build_product_pricing_initial_data,
+)
+from ops_portal.products.pricing_services import (
+    update_product_standard_pricing,
+)
+from pricing.errors import InvalidCommercialPrice
+from pricing.models import CommercialPrice
+from pricing.selectors import (
+    get_product_commercial_price,
+)
 from products.errors import InvalidProductData
 from products.models import Product
 from products.selectors import (
@@ -43,7 +60,10 @@ from products.selectors import (
     get_product_delivered_demand_summary,
     list_products,
 )
-from products.services import create_product, update_product
+from products.services import (
+    create_product,
+    update_product,
+)
 
 
 PRODUCT_FILTERS = [
@@ -83,7 +103,10 @@ def index(request):
             PRODUCT_FILTER_QUERY_KEY,
             "",
         ),
-        requested_sort=request.GET.get("sort", ""),
+        requested_sort=request.GET.get(
+            "sort",
+            "",
+        ),
         filters=PRODUCT_FILTERS,
         allowed_sorts=PRODUCT_SORTS,
         default_sort=DEFAULT_PRODUCT_SORT,
@@ -97,24 +120,32 @@ def index(request):
         )
     )
 
-    product_rows = build_product_page_rows(products)
+    product_rows = build_product_page_rows(
+        products
+    )
 
     context = {
         "page_header": build_products_page_header(
             role_spec=request.role_spec,
         ),
         "product_rows": product_rows,
-        "quick_jump_search": build_product_quick_jump_search(
-            product_rows,
+        "quick_jump_search": (
+            build_product_quick_jump_search(
+                product_rows
+            )
         ),
         "filters": controls.build_filter_links(
-            PRODUCT_FILTERS,
+            PRODUCT_FILTERS
         ),
-        "table_sorts": controls.build_table_sort_links(
-            PRODUCT_TABLE_SORTS,
+        "table_sorts": (
+            controls.build_table_sort_links(
+                PRODUCT_TABLE_SORTS
+            )
         ),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(
-            PRODUCT_TABLE_SORTS,
+        "mobile_sort_fields": (
+            controls.build_mobile_sort_fields(
+                PRODUCT_TABLE_SORTS
+            )
         ),
         "mobile_sort_direction": (
             controls.build_mobile_sort_direction()
@@ -140,21 +171,41 @@ def detail(
     request,
     product_pk: int,
 ):
-    product = _get_product_or_404(product_pk)
+    product = _get_product_or_404(
+        product_pk
+    )
+
+    business_price = get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+    )
+
+    retail_price = get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    )
 
     context = build_product_detail_context(
         product=product,
-        stock_row=_get_stock_row_for_product(product),
+        stock_row=_get_stock_row_for_product(
+            product
+        ),
         active_batches=list(
             list_available_batches_for_product(
                 product=product,
             )
         ),
-        demand_summary=get_product_delivered_demand_summary(
-            product=product,
+        demand_summary=(
+            get_product_delivered_demand_summary(
+                product=product,
+            )
         ),
+        business_price=business_price,
+        retail_price=retail_price,
         role_spec=request.role_spec,
-        cancel_url=reverse("ops_products:index"),
+        cancel_url=reverse(
+            "ops_products:index"
+        ),
     ).as_dict()
 
     return render(
@@ -169,7 +220,19 @@ def edit(
     request,
     product_pk: int,
 ):
-    product = _get_product_or_404(product_pk)
+    product = _get_product_or_404(
+        product_pk
+    )
+
+    business_price = get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+    )
+
+    retail_price = get_product_commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    )
 
     if request.method == "POST":
         form = ProductEditForm(
@@ -177,42 +240,92 @@ def edit(
             product=product,
         )
 
-        if form.is_valid():
+        pricing_form = ProductPricingForm(
+            request.POST,
+        )
+
+        product_form_is_valid = form.is_valid()
+        pricing_form_is_valid = pricing_form.is_valid()
+
+        if (
+            product_form_is_valid
+            and pricing_form_is_valid
+        ):
             try:
-                updated_product = update_product(
-                    product=product,
-                    internal_number=(
-                        form.cleaned_data["internal_number"]
-                    ),
-                    manufacturer=(
-                        form.cleaned_data["manufacturer"]
-                    ),
-                    brand=form.cleaned_data["brand"],
-                    name=form.cleaned_data["name"],
-                    active=form.active_value,
-                    vegan=form.cleaned_data["vegan"],
-                    customer_facing_name_fr=(
-                        form.cleaned_data[
-                            "customer_facing_name_fr"
-                        ]
-                    ),
-                    category=form.cleaned_data["category"],
-                    description=(
-                        form.cleaned_data["description"]
-                    ),
-                    ingredients=(
-                        form.cleaned_data["ingredients"]
-                    ),
-                    image_url=(
-                        form.cleaned_data["image_url"]
-                    ),
-                    user=request.user,
-                )
+                with transaction.atomic():
+                    updated_product = update_product(
+                        product=product,
+                        internal_number=(
+                            form.cleaned_data[
+                                "internal_number"
+                            ]
+                        ),
+                        manufacturer=(
+                            form.cleaned_data[
+                                "manufacturer"
+                            ]
+                        ),
+                        brand=(
+                            form.cleaned_data[
+                                "brand"
+                            ]
+                        ),
+                        name=(
+                            form.cleaned_data[
+                                "name"
+                            ]
+                        ),
+                        active=form.active_value,
+                        vegan=(
+                            form.cleaned_data[
+                                "vegan"
+                            ]
+                        ),
+                        customer_facing_name_fr=(
+                            form.cleaned_data[
+                                "customer_facing_name_fr"
+                            ]
+                        ),
+                        category=(
+                            form.cleaned_data[
+                                "category"
+                            ]
+                        ),
+                        description=(
+                            form.cleaned_data[
+                                "description"
+                            ]
+                        ),
+                        ingredients=(
+                            form.cleaned_data[
+                                "ingredients"
+                            ]
+                        ),
+                        image_url=(
+                            form.cleaned_data[
+                                "image_url"
+                            ]
+                        ),
+                        user=request.user,
+                    )
+
+                    update_product_standard_pricing(
+                        product=updated_product,
+                        **pricing_form.pricing_values(),
+                    )
+
             except InvalidProductData as error:
                 form.add_error(
                     None,
                     str(error),
                 )
+
+            except InvalidCommercialPrice as error:
+                pricing_form.add_error(
+                    None,
+                    str(error),
+                )
+
             else:
                 messages.success(
                     request,
@@ -221,20 +334,30 @@ def edit(
                         f"{updated_product.sku} updated."
                     ),
                 )
+
                 return redirect(
                     "ops_products:detail",
                     product_pk=updated_product.pk,
                 )
+
     else:
         form = ProductEditForm(
             initial=build_product_edit_initial_data(
-                product,
+                product
             ),
             product=product,
         )
 
+        pricing_form = ProductPricingForm(
+            initial=build_product_pricing_initial_data(
+                business_price=business_price,
+                retail_price=retail_price,
+            )
+        )
+
     context = build_edit_product_form_context(
         form=form,
+        pricing_form=pricing_form,
         product=product,
     ).as_dict()
 
@@ -248,19 +371,46 @@ def edit(
 @login_required
 def create(request):
     if request.method == "POST":
-        form = ProductForm(request.POST)
+        form = ProductForm(
+            request.POST
+        )
 
-        if form.is_valid():
+        pricing_form = ProductPricingForm(
+            request.POST
+        )
+
+        product_form_is_valid = form.is_valid()
+        pricing_form_is_valid = pricing_form.is_valid()
+
+        if (
+            product_form_is_valid
+            and pricing_form_is_valid
+        ):
             try:
-                result = create_product(
-                    **form.cleaned_data,
-                    user=request.user,
-                )
+                with transaction.atomic():
+                    result = create_product(
+                        **form.cleaned_data,
+                        user=request.user,
+                    )
+
+                    if result.created:
+                        update_product_standard_pricing(
+                            product=result.item,
+                            **pricing_form.pricing_values(),
+                        )
+
             except InvalidProductData as error:
                 form.add_error(
                     None,
                     str(error),
                 )
+
+            except InvalidCommercialPrice as error:
+                pricing_form.add_error(
+                    None,
+                    str(error),
+                )
+
             else:
                 if result.created:
                     messages.success(
@@ -274,13 +424,16 @@ def create(request):
                     )
 
                 return redirect(
-                    "ops_products:index",
+                    "ops_products:index"
                 )
+
     else:
         form = ProductForm()
+        pricing_form = ProductPricingForm()
 
     context = build_create_product_form_context(
         form=form,
+        pricing_form=pricing_form,
     ).as_dict()
 
     return render(
@@ -295,7 +448,7 @@ def _get_product_or_404(
 ) -> Product:
     return get_object_or_404(
         Product.objects.select_related(
-            "profile",
+            "profile"
         ),
         pk=product_pk,
     )

@@ -1,15 +1,188 @@
 {% extends "base.html" %}
+{% load i18n static %}
 
 {% block title %}{{ title }} | SwedeSweets{% endblock %}
 
 {% block content %}
 {% include "includes/ui/page_header.html" with title_id="product-form-title" title=title description=description %}
 
-<section class="form-section" aria-labelledby="product-form-title">
+<section
+  class="form-section"
+  aria-labelledby="product-form-title"
+>
   {% if product %}
     {% include "includes/ui/form_context_card.html" with aria_label="Product summary" eyebrow="Product identity" heading=product.display_name items=product_context_items only %}
   {% endif %}
 
-  {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}
+  <form
+    method="post"
+    class="form-card"
+    novalidate
+    data-tabs
+    data-dirty-form
+  >
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div
+        class="form-errors"
+        role="alert"
+      >
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <nav
+      class="section-nav"
+      aria-label="Product form sections"
+      role="tablist"
+    >
+      {% include "includes/ui/section_tab.html" with key="product" label="Product" is_active=True tab_id="product-form-tab-product" panel_id="product-form-panel-product" only %}
+
+      {% include "includes/ui/section_tab.html" with key="catalog" label="Catalog" is_active=False tab_id="product-form-tab-catalog" panel_id="product-form-panel-catalog" only %}
+
+      {% include "includes/ui/section_tab.html" with key="pricing" label="Pricing" is_active=False tab_id="product-form-tab-pricing" panel_id="product-form-panel-pricing" only %}
+    </nav>
+
+    <section
+      id="product-form-panel-product"
+      role="tabpanel"
+      aria-labelledby="product-form-tab-product"
+      data-tab-panel="product"
+    >
+      <div class="form-grid">
+        {% include "includes/ui/form_field.html" with field=form.internal_number only %}
+        {% include "includes/ui/form_field.html" with field=form.manufacturer only %}
+
+        {% include "includes/ui/form_field.html" with field=form.brand only %}
+        {% include "includes/ui/form_field.html" with field=form.name only %}
+
+        {% if product %}
+          {% include "includes/ui/form_field.html" with field=form.active only %}
+        {% else %}
+          {% include "includes/ui/form_field.html" with field=form.stock_unit only %}
+          {% include "includes/ui/form_field.html" with field=form.weight_per_unit only %}
+        {% endif %}
+      </div>
+    </section>
+
+    <section
+      id="product-form-panel-catalog"
+      role="tabpanel"
+      aria-labelledby="product-form-tab-catalog"
+      data-tab-panel="catalog"
+      hidden
+    >
+      <div class="form-grid">
+        {% include "includes/ui/form_field.html" with field=form.customer_facing_name_fr only %}
+
+        {% include "includes/ui/form_field.html" with field=form.category only %}
+        {% include "includes/ui/form_field.html" with field=form.vegan only %}
+
+        {% include "includes/ui/form_field.html" with field=form.description only %}
+        {% include "includes/ui/form_field.html" with field=form.ingredients only %}
+        {% include "includes/ui/form_field.html" with field=form.image_url only %}
+      </div>
+    </section>
+
+    <section
+      id="product-form-panel-pricing"
+      role="tabpanel"
+      aria-labelledby="product-form-tab-pricing"
+      data-tab-panel="pricing"
+      hidden
+    >
+      <header class="form-section-heading">
+        <h2 class="form-section-heading__title">
+          Standard pricing
+        </h2>
+
+        <p class="form-help">
+          Product-wide prices used for ordinary business and retail sales.
+        </p>
+      </header>
+
+      {% if pricing_form.non_field_errors %}
+        <div
+          class="form-errors"
+          role="alert"
+        >
+          {% for error in pricing_form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <section
+        class="pricing-channel"
+        aria-labelledby="business-pricing-title"
+      >
+        <h3
+          class="pricing-channel__title"
+          id="business-pricing-title"
+        >
+          Business
+        </h3>
+
+        <div class="form-grid">
+          {% include "includes/ui/form_field.html" with field=pricing_form.business_eur only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.business_sek only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.business_status only %}
+        </div>
+      </section>
+
+      <section
+        class="pricing-channel"
+        aria-labelledby="retail-pricing-title"
+      >
+        <h3
+          class="pricing-channel__title"
+          id="retail-pricing-title"
+        >
+          Retail
+        </h3>
+
+        <div class="form-grid">
+          {% include "includes/ui/form_field.html" with field=pricing_form.retail_eur only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.retail_sek only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.retail_status only %}
+        </div>
+      </section>
+    </section>
+
+    <div class="form-actions">
+      <button
+        class="button button--md button--solid button--tone-place"
+        type="submit"
+      >
+        {{ submit_label }}
+      </button>
+
+      {% if cancel_url %}
+        <a
+          class="button button--md button--ghost button--tone-neutral"
+          href="{{ cancel_url }}"
+        >
+          {% trans "Cancel" %}
+        </a>
+      {% endif %}
+    </div>
+  </form>
 </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/dirty_form.js' %}"
+    defer
+  ></script>
 {% endblock %}

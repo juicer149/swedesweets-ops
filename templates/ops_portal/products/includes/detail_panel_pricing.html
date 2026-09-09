@@ -1,0 +1,45 @@
+<dl class="detail-data-list">
+  <div>
+    <dt>Business status</dt>
+    <dd>{{ pricing.business.status_label }}</dd>
+  </div>
+
+  <div>
+    <dt>Business prices</dt>
+    <dd>
+      {% if pricing.business.amounts %}
+        {% for amount in pricing.business.amounts %}
+          {% if not forloop.first %}
+            ·
+          {% endif %}
+
+          {{ amount.label }}
+        {% endfor %}
+      {% else %}
+        —
+      {% endif %}
+    </dd>
+  </div>
+
+  <div>
+    <dt>Retail status</dt>
+    <dd>{{ pricing.retail.status_label }}</dd>
+  </div>
+
+  <div>
+    <dt>Retail prices</dt>
+    <dd>
+      {% if pricing.retail.amounts %}
+        {% for amount in pricing.retail.amounts %}
+          {% if not forloop.first %}
+            ·
+          {% endif %}
+
+          {{ amount.label }}
+        {% endfor %}
+      {% else %}
+        —
+      {% endif %}
+    </dd>
+  </div>
+</dl>
