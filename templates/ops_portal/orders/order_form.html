@@ -6,12 +6,26 @@
 {% block content %}
 {% include "includes/ui/page_header.html" with title_id="order-form-title" title=title description=description %}
 
-<section class="form-section form-section--wide" aria-labelledby="order-form-title">
-  <form method="post" class="form-card form-card--wide" novalidate>
+<section
+  class="form-section form-section--wide"
+  aria-labelledby="order-form-title"
+>
+  {% if is_edit and order %}
+    {% include "includes/ui/form_context_card.html" with aria_label="Order summary" eyebrow="Order identity" heading="Order #"|add:order.id items=order_context_items only %}
+  {% endif %}
+
+  <form
+    method="post"
+    class="form-card form-card--wide"
+    novalidate
+  >
     {% csrf_token %}
 
     {% if form and form.non_field_errors %}
-      <div class="form-errors" role="alert">
+      <div
+        class="form-errors"
+        role="alert"
+      >
         {% for error in form.non_field_errors %}
           <p>{{ error }}</p>
         {% endfor %}
@@ -19,7 +33,10 @@
     {% endif %}
 
     {% if line_formset.non_form_errors %}
-      <div class="form-errors" role="alert">
+      <div
+        class="form-errors"
+        role="alert"
+      >
         {% for error in line_formset.non_form_errors %}
           <p>{{ error }}</p>
         {% endfor %}
@@ -30,26 +47,28 @@
       <div class="form-grid">
         {% include "includes/ui/form_field.html" with field=form.customer only %}
       </div>
-    {% elif order %}
-      <div class="form-grid">
-        <div class="form-field form-field--full">
-          <span class="form-label">{% trans "Customer" %}</span>
-          <p class="form-static-value">
-            {{ order.customer_name }}
-          </p>
-        </div>
-      </div>
     {% endif %}
 
-    <section class="order-lines" aria-labelledby="order-lines-title">
+    <section
+      class="order-lines"
+      aria-labelledby="order-lines-title"
+    >
       <div class="order-lines__header">
-        <h2 id="order-lines-title">{% trans "Order products" %}</h2>
-        <p>{% trans "Add at least one product. Empty products are ignored." %}</p>
+        <h2 id="order-lines-title">
+          {% trans "Order products" %}
+        </h2>
+
+        <p>
+          {% trans "Add at least one product. Empty products are ignored." %}
+        </p>
       </div>
 
       {{ line_formset.management_form }}
 
-      <div class="order-lines__list" data-order-lines-list>
+      <div
+        class="order-lines__list"
+        data-order-lines-list
+      >
         {% for line_form in line_formset %}
           {% include "ops_portal/orders/includes/order_line_form.html" with line_form=line_form line_number=forloop.counter remove_hidden=True only %}
         {% endfor %}
@@ -61,10 +80,16 @@
           type="button"
           data-add-order-line
         >
-          <span class="button__icon" aria-hidden="true">
+          <span
+            class="button__icon"
+            aria-hidden="true"
+          >
             {% include "includes/ui/icon.html" with name="plus" only %}
           </span>
-          <span class="button__label">{% trans "Add product" %}</span>
+
+          <span class="button__label">
+            {% trans "Add product" %}
+          </span>
         </button>
       </div>
     </section>
@@ -74,17 +99,26 @@
     </template>
 
     <div class="form-actions">
-      <button class="button button--md button--solid button--tone-place" type="submit">
+      <button
+        class="button button--md button--solid button--tone-place"
+        type="submit"
+      >
         {{ submit_label }}
       </button>
 
       {% if cancel_order_url %}
-        <a class="button button--md button--ghost button--tone-danger" href="{{ cancel_order_url }}">
+        <a
+          class="button button--md button--ghost button--tone-danger"
+          href="{{ cancel_order_url }}"
+        >
           {% trans "Cancel order" %}
         </a>
       {% endif %}
 
-      <a class="button button--md button--ghost button--tone-neutral" href="{{ cancel_url }}">
+      <a
+        class="button button--md button--ghost button--tone-neutral"
+        href="{{ cancel_url }}"
+      >
         {% trans "Back" %}
       </a>
     </div>
@@ -94,5 +128,8 @@
 
 {% block scripts %}
   {{ block.super }}
-  <script src="{% static 'js/order_lines.js' %}" defer></script>
+  <script
+    src="{% static 'js/order_lines.js' %}"
+    defer
+  ></script>
 {% endblock %}

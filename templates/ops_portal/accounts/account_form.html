@@ -5,7 +5,14 @@
 {% block content %}
 {% include "includes/ui/page_header.html" with title_id="account-form-title" title=title description=description %}
 
-<section class="form-section" aria-labelledby="account-form-title">
+<section
+  class="form-section"
+  aria-labelledby="account-form-title"
+>
+  {% if staff_account %}
+    {% include "includes/ui/form_context_card.html" with aria_label="Account summary" eyebrow="Account identity" heading=staff_account.user.email items=account_context_items only %}
+  {% endif %}
+
   {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}
 </section>
 {% endblock %}

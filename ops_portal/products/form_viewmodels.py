@@ -73,7 +73,7 @@ def build_edit_product_form_context(
         product_context_items=build_product_context_items(
             product
         ),
-        title=f"Edit - {product.display_name}",
+        title="Edit product",
         description="",
         submit_label="Update product",
         cancel_url=reverse(

@@ -317,7 +317,7 @@ def edit_internal(
 
     context = build_edit_internal_account_form_context(
         form=form,
-        user_id=account_user.pk,
+        staff_account=staff_account,
     ).as_dict()
 
     return render(

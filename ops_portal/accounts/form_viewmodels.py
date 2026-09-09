@@ -5,6 +5,7 @@ from typing import Any
 
 from django.urls import reverse
 
+from accounts.models import StaffAccount
 from ops_portal.accounts.list_viewmodels import (
     ACCOUNT_VIEW_CUSTOMER,
     ACCOUNT_VIEW_INTERNAL,
@@ -14,6 +15,12 @@ from ops_portal.accounts.forms import (
     InternalAccountCreateForm,
     InternalAccountEditForm,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class FormContextItem:
+    label: str
+    value: Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +34,8 @@ class AccountFormContext:
         | InternalAccountCreateForm
         | InternalAccountEditForm
     )
+    staff_account: StaffAccount | None = None
+    account_context_items: list[FormContextItem] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -35,6 +44,10 @@ class AccountFormContext:
             "submit_label": self.submit_label,
             "cancel_url": self.cancel_url,
             "form": self.form,
+            "staff_account": self.staff_account,
+            "account_context_items": (
+                self.account_context_items or []
+            ),
         }
 
 
@@ -71,10 +84,14 @@ def build_create_internal_account_form_context(
 def build_edit_internal_account_form_context(
     *,
     form: InternalAccountEditForm,
-    user_id: int,
+    staff_account: StaffAccount,
 ) -> AccountFormContext:
     return AccountFormContext(
         form=form,
+        staff_account=staff_account,
+        account_context_items=build_account_context_items(
+            staff_account
+        ),
         title="Edit internal account",
         description=(
             "Update account email, staff access level and login status."
@@ -83,10 +100,29 @@ def build_edit_internal_account_form_context(
         cancel_url=reverse(
             "ops_accounts:detail",
             kwargs={
-                "user_id": user_id,
+                "user_id": staff_account.user_id,
             },
         ),
     )
+
+
+def build_account_context_items(
+    staff_account: StaffAccount,
+) -> list[FormContextItem]:
+    return [
+        FormContextItem(
+            label="Access level",
+            value=staff_account.get_access_level_display(),
+        ),
+        FormContextItem(
+            label="Status",
+            value=(
+                "Active"
+                if staff_account.user.is_active
+                else "Inactive"
+            ),
+        ),
+    ]
 
 
 def _accounts_customer_url() -> str:

@@ -21,6 +21,12 @@ from ops_portal.orders.forms import (
 from orders.models import Order
 
 
+@dataclass(frozen=True, slots=True)
+class FormContextItem:
+    label: str
+    value: Any
+
+
 @dataclass(frozen=True)
 class OrderFormContext:
     title: str
@@ -30,6 +36,7 @@ class OrderFormContext:
     line_formset: OrderLineFormSet
     form: OrderCreateForm | None = None
     order: Order | None = None
+    order_context_items: list[FormContextItem] | None = None
     is_edit: bool = False
     cancel_order_url: str = ""
 
@@ -38,6 +45,9 @@ class OrderFormContext:
             "form": self.form,
             "line_formset": self.line_formset,
             "order": self.order,
+            "order_context_items": (
+                self.order_context_items or []
+            ),
             "title": self.title,
             "description": self.description,
             "submit_label": self.submit_label,
@@ -96,8 +106,11 @@ def build_edit_order_form_context(
 ) -> OrderFormContext:
     return OrderFormContext(
         order=order,
+        order_context_items=build_order_context_items(
+            order
+        ),
         line_formset=line_formset,
-        title=f"Edit order #{order.id}",
+        title="Edit order",
         description=(
             "Update this placed order before it is packed. "
             "Reservations will be rebuilt."
@@ -107,7 +120,10 @@ def build_edit_order_form_context(
         is_edit=True,
         cancel_order_url=(
             order_cancel_href(order)
-            if can_cancel_order(order=order, role_spec=role_spec)
+            if can_cancel_order(
+                order=order,
+                role_spec=role_spec,
+            )
             else ""
         ),
     )
@@ -122,7 +138,7 @@ def build_cancel_order_form_context(
     return CancelOrderFormContext(
         order=order,
         form=form,
-        title=f"Cancel order #{order.id}",
+        title="Cancel order",
         description="",
         submit_label="Cancel order",
         cancel_url=build_order_cancel_back_url(
@@ -130,3 +146,18 @@ def build_cancel_order_form_context(
             role_spec=role_spec,
         ),
     )
+
+
+def build_order_context_items(
+    order: Order,
+) -> list[FormContextItem]:
+    return [
+        FormContextItem(
+            label="Customer",
+            value=order.customer_name,
+        ),
+        FormContextItem(
+            label="Status",
+            value=order.get_status_display(),
+        ),
+    ]

@@ -59,7 +59,7 @@ def build_edit_customer_form_context(
         form=form,
         customer=customer,
         customer_context_items=build_customer_context_items(customer),
-        title=f"Edit - {customer.name}",
+        title="Edit customer",
         description="",
         submit_label="Update customer",
         cancel_url=reverse("ops_customers:detail", kwargs={"customer_pk": customer.pk}),
