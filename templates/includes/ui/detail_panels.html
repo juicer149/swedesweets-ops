@@ -1,65 +1,31 @@
-{% comment %}
-Reusable detail panels.
-
-Expected context:
-  detail_panels
-
-Each panel should have:
-  key
-  label
-  summary
-  body_template
-  icon
-  is_active
-{% endcomment %}
-
 {% if detail_panels %}
-  <section
+  <div
     class="detail-panels"
-    data-detail-panels
-    aria-label="Details"
+    data-tabs
   >
-    <div class="detail-panels__triggers">
+    <nav
+      class="section-nav"
+      aria-label="Detail sections"
+      role="tablist"
+    >
       {% for panel in detail_panels %}
-        <button
-          class="detail-panel-trigger{% if panel.is_active %} detail-panel-trigger--active{% endif %}"
-          type="button"
-          data-detail-panel-trigger
-          data-detail-panel-key="{{ panel.key }}"
-          aria-expanded="{% if panel.is_active %}true{% else %}false{% endif %}"
-          aria-controls="detail-panel-body-{{ panel.key }}"
-        >
-          <span class="detail-panel-trigger__label">
-            {% if panel.icon %}
-              {% include "includes/ui/icon_block.html" with name=panel.icon size="md" class_name="detail-panel-trigger__icon" only %}
-            {% endif %}
-
-            {{ panel.label }}
-          </span>
-
-          <strong class="detail-panel-trigger__summary">
-            {{ panel.summary }}
-          </strong>
-
-          <span class="detail-panel-trigger__chevron" aria-hidden="true">
-            ⌄
-          </span>
-        </button>
+        {% include "includes/ui/section_tab.html" with key=panel.key label=panel.label icon=panel.icon is_active=panel.is_active tab_id="detail-panel-tab-"|add:panel.key panel_id="detail-panel-body-"|add:panel.key only %}
       {% endfor %}
-    </div>
+    </nav>
 
     <div class="detail-panels__bodies">
       {% for panel in detail_panels %}
         <section
           id="detail-panel-body-{{ panel.key }}"
-          class="detail-panel-body{% if panel.is_active %} detail-panel-body--active{% endif %}"
-          data-detail-panel-body
-          data-detail-panel-key="{{ panel.key }}"
+          class="detail-panel-body"
+          role="tabpanel"
+          aria-labelledby="detail-panel-tab-{{ panel.key }}"
+          data-tab-panel="{{ panel.key }}"
           {% if not panel.is_active %}hidden{% endif %}
         >
           {% include panel.body_template %}
         </section>
       {% endfor %}
     </div>
-  </section>
+  </div>
 {% endif %}

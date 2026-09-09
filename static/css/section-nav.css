@@ -1,11 +1,18 @@
 /* =============================================================================
    Section navigation
 
-   Local page navigation for switching between sibling views, for example:
-   Inventory: Batches / Product stock.
+   Shared local navigation language.
 
-   This follows the main navigation language:
-   muted link text + accent underline for the active view.
+   It supports two related use cases:
+
+     links:
+       Inventory: Batches / Product stock
+       Uses aria-current="page".
+
+     in-page tabs:
+       Product form: Product / Catalog / Pricing
+       Detail pages: Product / Pricing / Inventory / Demand
+       Uses aria-selected="true".
 
    Global navigation is .site-nav.
    Local page navigation is .section-nav.
@@ -29,6 +36,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-2);
 
   min-height: var(--size-control-md);
   padding: 0 var(--space-1);
@@ -43,6 +51,8 @@
   line-height: 1;
   text-align: center;
   text-decoration: none;
+
+  cursor: pointer;
 
   transition:
     color var(--motion-fast),
@@ -65,10 +75,15 @@
   transition: width var(--motion-fast);
 }
 
+.section-nav__icon {
+  color: currentColor;
+}
+
 .section-nav__link:hover,
 .section-nav__link:focus-visible,
 .section-nav__link--active,
-.section-nav__link[aria-current="page"] {
+.section-nav__link[aria-current="page"],
+.section-nav__link[aria-selected="true"] {
   color: var(--color-primary-900);
 }
 
@@ -80,7 +95,8 @@
 .section-nav__link:hover::after,
 .section-nav__link:focus-visible::after,
 .section-nav__link--active::after,
-.section-nav__link[aria-current="page"]::after {
+.section-nav__link[aria-current="page"]::after,
+.section-nav__link[aria-selected="true"]::after {
   width: 100%;
 }
 
@@ -89,7 +105,21 @@
   outline-offset: 5px;
 }
 
-/* Touch devices should not keep hover lift stuck. */
+
+/* =============================================================================
+   In-page tab panels
+   ============================================================================= */
+
+[data-tab-panel][hidden] {
+  display: none;
+}
+
+
+/* =============================================================================
+   Touch devices
+
+   Touch devices should not keep a hover lift stuck.
+   ============================================================================= */
 
 @media (hover: none), (pointer: coarse) {
   .section-nav__link:hover {
@@ -102,15 +132,22 @@
   }
 
   .section-nav__link--active:hover,
-  .section-nav__link[aria-current="page"]:hover {
+  .section-nav__link[aria-current="page"]:hover,
+  .section-nav__link[aria-selected="true"]:hover {
     color: var(--color-primary-900);
   }
 
   .section-nav__link--active:hover::after,
-  .section-nav__link[aria-current="page"]:hover::after {
+  .section-nav__link[aria-current="page"]:hover::after,
+  .section-nav__link[aria-selected="true"]:hover::after {
     width: 100%;
   }
 }
+
+
+/* =============================================================================
+   Responsive
+   ============================================================================= */
 
 @media (max-width: 720px) {
   .section-nav {
@@ -135,10 +172,16 @@
     height: 3px;
   }
 
+  .section-nav__icon {
+    width: var(--size-icon-sm);
+    height: var(--size-icon-sm);
+  }
+
   .section-nav__link:hover::after,
   .section-nav__link:focus-visible::after,
   .section-nav__link--active::after,
-  .section-nav__link[aria-current="page"]::after {
+  .section-nav__link[aria-current="page"]::after,
+  .section-nav__link[aria-selected="true"]::after {
     width: min(72%, 9rem);
   }
 }

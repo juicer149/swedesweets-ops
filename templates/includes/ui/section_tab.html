@@ -1,0 +1,15 @@
+<button
+  class="section-nav__link{% if is_active %} section-nav__link--active{% endif %}"
+  id="{{ tab_id }}"
+  type="button"
+  role="tab"
+  aria-selected="{% if is_active %}true{% else %}false{% endif %}"
+  aria-controls="{{ panel_id }}"
+  data-tab="{{ key }}"
+>
+  {% if icon %}
+    {% include "includes/ui/icon_block.html" with name=icon size="sm" class_name="section-nav__icon" only %}
+  {% endif %}
+
+  <span>{{ label }}</span>
+</button>

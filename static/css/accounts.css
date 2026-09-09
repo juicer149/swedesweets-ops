@@ -96,6 +96,9 @@
 
    Account detail can contain long emails and long activity labels. Keep those
    values inside the card so they do not create page-level horizontal overflow.
+
+   Detail section navigation is now shared through section-nav.css.
+   Account-specific styling only protects the detail content from overflow.
    ============================================================================= */
 
 .account-detail-card {
@@ -120,28 +123,15 @@
   word-break: break-word;
 }
 
+.account-detail-card .section-nav,
 .account-detail-card .detail-panels,
-.account-detail-card .detail-panels__triggers,
 .account-detail-card .detail-panels__bodies,
-.account-detail-card .detail-panel,
-.account-detail-card .detail-panel__body,
 .account-detail-card .detail-panel-body,
 .account-detail-card .detail-data-list,
 .account-detail-card .table-card,
 .account-detail-card .data-table {
   min-width: 0;
   max-width: 100%;
-}
-
-.account-detail-card .detail-panel-trigger {
-  min-width: 0;
-}
-
-.account-detail-card .detail-panel-trigger__summary {
-  max-width: 100%;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 .account-detail-card .detail-data-list dd {
@@ -215,6 +205,7 @@
   text-align: right;
 }
 
+
 /* =============================================================================
    Account activity mobile tone accents
    ============================================================================= */
@@ -246,9 +237,16 @@
 }
 
 
+/* =============================================================================
+   Responsive
+   ============================================================================= */
+
 @media (max-width: 760px) {
   .account-detail-card {
-    width: min(100%, calc(100vw - (2 * var(--space-3))));
+    width: min(
+      100%,
+      calc(100vw - (2 * var(--space-3)))
+    );
     overflow: hidden;
   }
 
@@ -258,11 +256,14 @@
   }
 
   .account-detail-card .content-card__header h2 {
-    font-size: clamp(1.55rem, 8vw, var(--font-size-28));
+    font-size: clamp(
+      1.55rem,
+      8vw,
+      var(--font-size-28)
+    );
     line-height: 1.05;
   }
 
-  .account-detail-card .detail-panel__body,
   .account-detail-card .detail-panel-body {
     padding: var(--space-4);
     overflow: hidden;
@@ -281,14 +282,20 @@
 
 @media (max-width: 420px) {
   .account-detail-card {
-    width: min(100%, calc(100vw - (2 * var(--space-2))));
+    width: min(
+      100%,
+      calc(100vw - (2 * var(--space-2)))
+    );
   }
 
   .account-detail-card .content-card__header h2 {
-    font-size: clamp(1.35rem, 7vw, 2rem);
+    font-size: clamp(
+      1.35rem,
+      7vw,
+      2rem
+    );
   }
 
-  .account-detail-card .detail-panel__body,
   .account-detail-card .detail-panel-body {
     padding: var(--space-3);
   }
