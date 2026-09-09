@@ -1,0 +1,86 @@
+{% if pricing.is_configured %}
+  <dl class="detail-data-list">
+    <div>
+      <dt>Pricing type</dt>
+      <dd>Batch-specific</dd>
+    </div>
+
+    <div>
+      <dt>Reason</dt>
+      <dd>
+        {% if pricing.reason_label %}
+          {{ pricing.reason_label }}
+        {% else %}
+          —
+        {% endif %}
+      </dd>
+    </div>
+  </dl>
+
+  <section
+    class="pricing-channel"
+    aria-labelledby="batch-detail-business-pricing"
+  >
+    <h3
+      class="pricing-channel__title"
+      id="batch-detail-business-pricing"
+    >
+      Business
+    </h3>
+
+    <dl class="detail-data-list">
+      <div>
+        <dt>Status</dt>
+        <dd>{{ pricing.business.status_label }}</dd>
+      </div>
+
+      {% for amount in pricing.business.amounts %}
+        <div>
+          <dt>{{ amount.currency }}</dt>
+          <dd>{{ amount.price_label }}</dd>
+        </div>
+      {% empty %}
+        <div>
+          <dt>Price</dt>
+          <dd>Not configured</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </section>
+
+  <section
+    class="pricing-channel"
+    aria-labelledby="batch-detail-retail-pricing"
+  >
+    <h3
+      class="pricing-channel__title"
+      id="batch-detail-retail-pricing"
+    >
+      Retail
+    </h3>
+
+    <dl class="detail-data-list">
+      <div>
+        <dt>Status</dt>
+        <dd>{{ pricing.retail.status_label }}</dd>
+      </div>
+
+      {% for amount in pricing.retail.amounts %}
+        <div>
+          <dt>{{ amount.currency }}</dt>
+          <dd>{{ amount.price_label }}</dd>
+        </div>
+      {% empty %}
+        <div>
+          <dt>Price</dt>
+          <dd>Not configured</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </section>
+{% else %}
+  <p class="form-help">
+    No batch-specific pricing is configured.
+    Standard product pricing applies.
+  </p>
+{% endif %}

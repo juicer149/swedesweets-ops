@@ -44,6 +44,27 @@ def get_product_commercial_price(
         .first()
     )
 
+def get_batch_commercial_price(
+    *,
+    batch: InventoryBatch,
+    channel: str,
+) -> CommercialPrice | None:
+    """Return the batch-specific pricing definition for one sales channel.
+
+    Disabled pricing is deliberately included because ops needs to edit the
+    configured definition, not only resolve currently sellable pricing.
+    """
+
+    return (
+        CommercialPrice.objects
+        .prefetch_related("amounts")
+        .filter(
+            batch=batch,
+            channel=channel,
+        )
+        .first()
+    )
+
 
 def get_product_price_amount(
     *,

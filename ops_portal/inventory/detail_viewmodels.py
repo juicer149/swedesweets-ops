@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 from django.urls import reverse
 from django.utils import timezone
@@ -15,19 +16,24 @@ from common.detail_cards import (
     build_secondary_get_action,
 )
 from common.ui import UiCard
+from inventory.expiry import build_expiry_info
+from inventory.models import InventoryBatch
 from ops_portal.inventory.access import (
     can_close_batch,
     can_edit_batch,
 )
-from inventory.expiry import build_expiry_info
-from inventory.models import InventoryBatch
 from ops_portal.inventory.presentation import (
     batch_detail_card_class,
     batch_detail_status_class,
     batch_status_icon,
 )
-from ops_portal.orders.mini_cards import build_order_usage_mini_card
-from ops_portal.products.mini_cards import build_product_mini_card
+from ops_portal.orders.mini_cards import (
+    build_order_usage_mini_card,
+)
+from ops_portal.products.mini_cards import (
+    build_product_mini_card,
+)
+from pricing.models import CommercialPrice, PriceAmount
 from reservations.datatypes import BatchUsage
 
 
@@ -88,6 +94,63 @@ class BatchStockSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class BatchPriceAmountSummary:
+    currency: str
+    price: Decimal
+
+    @property
+    def price_label(self) -> str:
+        return f"{self.price:.2f}"
+
+
+@dataclass(frozen=True, slots=True)
+class BatchChannelPricingSummary:
+    label: str
+    enabled: bool
+    amounts: tuple[BatchPriceAmountSummary, ...]
+
+    @property
+    def status_label(self) -> str:
+        return (
+            "Active"
+            if self.enabled
+            else "Inactive"
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class BatchPricingSummary:
+    reason: str
+    reason_label: str
+    business: BatchChannelPricingSummary
+    retail: BatchChannelPricingSummary
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(
+            self.business.amounts
+            or self.retail.amounts
+        )
+
+    @property
+    def has_active_offer(self) -> bool:
+        return (
+            self.business.enabled
+            or self.retail.enabled
+        )
+
+    @property
+    def panel_summary(self) -> str:
+        if not self.is_configured:
+            return "Standard pricing"
+
+        if self.reason_label:
+            return self.reason_label
+
+        return "Special pricing"
+
+
+@dataclass(frozen=True, slots=True)
 class BatchUsageRow:
     order_id: int
     order_href: str
@@ -104,6 +167,7 @@ class BatchUsageRow:
 class BatchDetailContext:
     batch: InventoryBatch
     stock: BatchStockSummary
+    pricing: BatchPricingSummary
     product_href: str
     product_card: UiCard
     usage_rows: list[BatchUsageRow]
@@ -117,6 +181,7 @@ class BatchDetailContext:
         return {
             "batch": self.batch,
             "stock": self.stock,
+            "pricing": self.pricing,
             "product_href": self.product_href,
             "product_card": self.product_card,
             "usage_rows": self.usage_rows,
@@ -132,6 +197,8 @@ def build_batch_detail_context(
     *,
     batch: InventoryBatch,
     allocations: list[BatchUsage],
+    business_price: CommercialPrice | None,
+    retail_price: CommercialPrice | None,
     cancel_url: str,
     role_spec: RoleSpec,
 ) -> BatchDetailContext:
@@ -144,6 +211,11 @@ def build_batch_detail_context(
         allocations=allocations,
     )
 
+    pricing = _build_batch_pricing_summary(
+        business_price=business_price,
+        retail_price=retail_price,
+    )
+
     product_href = reverse(
         "ops_products:detail",
         kwargs={
@@ -154,6 +226,7 @@ def build_batch_detail_context(
     return BatchDetailContext(
         batch=batch,
         stock=stock,
+        pricing=pricing,
         product_href=product_href,
         product_card=build_product_mini_card(
             product=batch.product,
@@ -166,8 +239,8 @@ def build_batch_detail_context(
                 batch,
             ),
             panels=_build_batch_detail_panels(
-                batch=batch,
                 stock=stock,
+                pricing=pricing,
                 usage_count=len(usage_rows),
             ),
             content_card_class=(
@@ -227,9 +300,7 @@ def build_batch_secondary_actions(
             )
         )
 
-    return tuple(
-        actions
-    )
+    return tuple(actions)
 
 
 def _build_batch_header(
@@ -250,8 +321,8 @@ def _build_batch_header(
 
 def _build_batch_detail_panels(
     *,
-    batch: InventoryBatch,
     stock: BatchStockSummary,
+    pricing: BatchPricingSummary,
     usage_count: int,
 ) -> tuple[DetailPanel, ...]:
     return (
@@ -267,6 +338,16 @@ def _build_batch_detail_panels(
             is_active=True,
         ),
         DetailPanel(
+            key="pricing",
+            label="Pricing",
+            summary=pricing.panel_summary,
+            body_template=(
+                "ops_portal/inventory/includes/"
+                "detail_panel_pricing.html"
+            ),
+            icon="tag",
+        ),
+        DetailPanel(
             key="usage",
             label="Usage",
             summary=_usage_summary(
@@ -279,6 +360,90 @@ def _build_batch_detail_panels(
             icon="inventory",
         ),
     )
+
+
+def _build_batch_pricing_summary(
+    *,
+    business_price: CommercialPrice | None,
+    retail_price: CommercialPrice | None,
+) -> BatchPricingSummary:
+    reason = _pricing_reason(
+        business_price=business_price,
+        retail_price=retail_price,
+    )
+
+    return BatchPricingSummary(
+        reason=reason,
+        reason_label=_reason_label(
+            reason
+        ),
+        business=_build_channel_pricing_summary(
+            label="Business",
+            commercial_price=business_price,
+        ),
+        retail=_build_channel_pricing_summary(
+            label="Retail",
+            commercial_price=retail_price,
+        ),
+    )
+
+
+def _build_channel_pricing_summary(
+    *,
+    label: str,
+    commercial_price: CommercialPrice | None,
+) -> BatchChannelPricingSummary:
+    if commercial_price is None:
+        return BatchChannelPricingSummary(
+            label=label,
+            enabled=False,
+            amounts=(),
+        )
+
+    amounts = tuple(
+        BatchPriceAmountSummary(
+            currency=amount.currency,
+            price=amount.price,
+        )
+        for amount in commercial_price.amounts.all()
+    )
+
+    return BatchChannelPricingSummary(
+        label=label,
+        enabled=commercial_price.enabled,
+        amounts=amounts,
+    )
+
+
+def _pricing_reason(
+    *,
+    business_price: CommercialPrice | None,
+    retail_price: CommercialPrice | None,
+) -> str:
+    if (
+        business_price is not None
+        and business_price.reason
+    ):
+        return business_price.reason
+
+    if (
+        retail_price is not None
+        and retail_price.reason
+    ):
+        return retail_price.reason
+
+    return ""
+
+
+def _reason_label(
+    reason: str,
+) -> str:
+    if not reason:
+        return ""
+
+    return CommercialPrice.Reason(
+        reason
+    ).label
 
 
 def _build_usage_rows(

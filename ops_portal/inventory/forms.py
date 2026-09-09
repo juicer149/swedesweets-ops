@@ -36,7 +36,7 @@ class BatchForm(forms.Form):
 
     quantity = forms.IntegerField(
         min_value=1,
-        label="Quantity",
+        label="Physical quantity",
         help_text="Number of product stock units received for this batch.",
         error_messages={
             "required": "Enter quantity.",

@@ -262,6 +262,14 @@
   margin: 0;
 }
 
+.form-section-heading + .form-grid {
+  margin-bottom: var(--space-6);
+}
+
+.form-grid + .pricing-channel {
+  margin-top: var(--space-6);
+}
+
 .pricing-channel {
   display: grid;
   gap: var(--space-4);

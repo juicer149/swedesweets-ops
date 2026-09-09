@@ -1,15 +1,166 @@
 {% extends "base.html" %}
+{% load i18n static %}
 
 {% block title %}{{ title }} | SwedeSweets{% endblock %}
 
 {% block content %}
 {% include "includes/ui/page_header.html" with title_id="batch-form-title" title=title description=description %}
 
-<section class="form-section" aria-labelledby="batch-form-title">
+<section
+  class="form-section"
+  aria-labelledby="batch-form-title"
+>
   {% if batch %}
-    {% include "includes/ui/form_context_card.html" with aria_label="Batch summary" eyebrow="Locked batch context" heading=batch.batch_id items=batch_context_items only %}
+    {% include "includes/ui/form_context_card.html" with aria_label="Batch summary" eyebrow="Batch identity" heading=batch.batch_id items=batch_context_items only %}
   {% endif %}
 
-  {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}
+  <form
+    method="post"
+    class="form-card"
+    novalidate
+    data-tabs
+    data-dirty-form
+  >
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div
+        class="form-errors"
+        role="alert"
+      >
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <nav
+      class="section-nav"
+      aria-label="Batch form sections"
+      role="tablist"
+    >
+      {% include "includes/ui/section_tab.html" with key="batch" label="Batch" is_active=True tab_id="batch-form-tab-batch" panel_id="batch-form-panel-batch" only %}
+
+      {% include "includes/ui/section_tab.html" with key="pricing" label="Pricing" is_active=False tab_id="batch-form-tab-pricing" panel_id="batch-form-panel-pricing" only %}
+    </nav>
+
+    <section
+      id="batch-form-panel-batch"
+      role="tabpanel"
+      aria-labelledby="batch-form-tab-batch"
+      data-tab-panel="batch"
+    >
+      <div class="form-grid">
+        {% if not batch %}
+          {% include "includes/ui/form_field.html" with field=form.product only %}
+        {% endif %}
+
+        {% include "includes/ui/form_field.html" with field=form.quantity only %}
+        {% include "includes/ui/form_field.html" with field=form.best_before only %}
+        {% include "includes/ui/form_field.html" with field=form.location only %}
+      </div>
+    </section>
+
+    <section
+      id="batch-form-panel-pricing"
+      role="tabpanel"
+      aria-labelledby="batch-form-tab-pricing"
+      data-tab-panel="pricing"
+      hidden
+    >
+      <header class="form-section-heading">
+        <h2 class="form-section-heading__title">
+          Special pricing
+        </h2>
+
+        <p class="form-help">
+          Batch-specific prices used instead of the product's standard price when this batch offer is active.
+        </p>
+      </header>
+
+      {% if pricing_form.non_field_errors %}
+        <div
+          class="form-errors"
+          role="alert"
+        >
+          {% for error in pricing_form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="form-grid">
+        {% include "includes/ui/form_field.html" with field=pricing_form.reason only %}
+      </div>
+
+      <section
+        class="pricing-channel"
+        aria-labelledby="batch-business-pricing-title"
+      >
+        <h3
+          class="pricing-channel__title"
+          id="batch-business-pricing-title"
+        >
+          Business
+        </h3>
+
+        <div class="form-grid">
+          {% include "includes/ui/form_field.html" with field=pricing_form.business_eur only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.business_sek only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.business_status only %}
+        </div>
+      </section>
+
+      <section
+        class="pricing-channel"
+        aria-labelledby="batch-retail-pricing-title"
+      >
+        <h3
+          class="pricing-channel__title"
+          id="batch-retail-pricing-title"
+        >
+          Retail
+        </h3>
+
+        <div class="form-grid">
+          {% include "includes/ui/form_field.html" with field=pricing_form.retail_eur only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.retail_sek only %}
+          {% include "includes/ui/form_field.html" with field=pricing_form.retail_status only %}
+        </div>
+      </section>
+    </section>
+
+    <div class="form-actions">
+      <button
+        class="button button--md button--solid button--tone-place"
+        type="submit"
+      >
+        {{ submit_label }}
+      </button>
+
+      {% if cancel_url %}
+        <a
+          class="button button--md button--ghost button--tone-neutral"
+          href="{{ cancel_url }}"
+        >
+          {% trans "Cancel" %}
+        </a>
+      {% endif %}
+    </div>
+  </form>
 </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/dirty_form.js' %}"
+    defer
+  ></script>
 {% endblock %}
