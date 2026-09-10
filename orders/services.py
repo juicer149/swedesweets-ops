@@ -144,6 +144,44 @@ def create_draft_order(
 @locked_order(
     guard=_require_draft_for_edit,
 )
+def add_draft_order_line(
+    *,
+    order: Order,
+    line: ResolvedOrderLine,
+    user=None,
+) -> OrderLine:
+    """Persist one already-resolved line on a mutable draft order.
+
+    Sales-channel code resolves commercial eligibility before calling this
+    function. Orders owns only durable OrderLine persistence.
+    """
+
+    _require_positive_quantity(
+        quantity_in_units=line.quantity_in_units,
+    )
+
+    order_line = OrderLine.objects.create(
+        order=order,
+        product=line.product,
+        quantity=line.quantity_in_units,
+        unit=OrderLine.Unit.STOCK_UNIT,
+        quantity_in_units=line.quantity_in_units,
+        unit_price_snapshot=line.unit_price_snapshot,
+    )
+
+    order.updated_at = timezone.now()
+    order.save(
+        update_fields=[
+            "updated_at",
+        ],
+    )
+
+    return order_line
+
+
+@locked_order(
+    guard=_require_draft_for_edit,
+)
 def replace_draft_order_lines(
     *,
     order: Order,

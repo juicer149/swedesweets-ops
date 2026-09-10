@@ -15,8 +15,8 @@ from django.views.decorators.http import require_POST
 
 from business.services import (
     place_order as place_draft_order,
-    remove_product_from_draft_order,
-    set_draft_product_quantity,
+    remove_draft_line as remove_business_draft_line,
+    set_draft_line_quantity as set_business_draft_line_quantity,
 )
 from business_portal.orders.detail_viewmodels import (
     build_portal_order_detail_context,
@@ -184,9 +184,9 @@ def set_draft_line_quantity(
         )
 
     try:
-        set_draft_product_quantity(
+        set_business_draft_line_quantity(
             order=line.order,
-            product=line.product,
+            order_line_id=line.id,
             quantity=quantity,
             user=request.user,
         )
@@ -218,9 +218,9 @@ def remove_draft_line(
     )
 
     try:
-        remove_product_from_draft_order(
+        remove_business_draft_line(
             order=line.order,
-            product=line.product,
+            order_line_id=line.id,
             user=request.user,
         )
     except ORDER_OPERATION_ERRORS as error:

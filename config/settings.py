@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     "pricing",
     "customers",
     "business_portal",
+    "business",
     "retail",
     "payments",
     "storefront",

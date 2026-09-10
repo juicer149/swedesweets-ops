@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.utils import timezone
 
+from business.models import BusinessOfferSelection
 from business.policies import (
     prepare_business_order_for_placement,
 )
 from business.services import (
+    add_catalog_offer_to_draft_order,
     create_draft_order,
     create_order,
     place_order,
@@ -24,6 +27,34 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from pricing.models import (
+    CommercialPrice,
+    PriceAmount,
+)
+
+
+def _business_price(
+    *,
+    product,
+    price: str,
+    batch=None,
+    reason: str = "",
+) -> CommercialPrice:
+    commercial_price = CommercialPrice.objects.create(
+        product=product,
+        batch=batch,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+        reason=reason,
+    )
+
+    PriceAmount.objects.create(
+        commercial_price=commercial_price,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal(price),
+    )
+
+    return commercial_price
 
 
 @pytest.mark.django_db
@@ -625,3 +656,223 @@ def test_update_placed_order_rejects_non_placed_order(
                 ),
             ],
         )
+
+
+@pytest.mark.django_db
+def test_explicit_standard_offer_excludes_special_batch_from_reservation(
+    customer,
+    apple,
+):
+    ordinary_batch = create_batch(
+        batch_id="A-ORDINARY",
+        product=apple,
+        quantity=6,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    special_batch = create_batch(
+        batch_id="A-SPECIAL",
+        product=apple,
+        quantity=4,
+        best_before=TODAY + timedelta(days=30),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    _business_price(
+        product=apple,
+        batch=special_batch,
+        price="8.50",
+        reason=CommercialPrice.Reason.SHORT_DATED,
+    )
+
+    order = add_catalog_offer_to_draft_order(
+        customer=customer,
+        product=apple,
+        commercial_price_id=None,
+        quantity=5,
+    )
+
+    line = order.lines.get()
+
+    assert (
+        line.business_offer_selection.commercial_price_id
+        is None
+    )
+
+    placed = place_order(
+        order=order,
+    )
+
+    allocations = list(
+        placed.allocations
+        .order_by("id")
+    )
+
+    assert len(allocations) == 1
+    assert allocations[0].batch == ordinary_batch
+    assert allocations[0].quantity == 5
+
+    assert not placed.allocations.filter(
+        batch=special_batch,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_batch_offer_reserves_exact_selected_batch(
+    customer,
+    apple,
+):
+    ordinary_batch = create_batch(
+        batch_id="A-ORDINARY",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=20),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    special_batch = create_batch(
+        batch_id="A-SPECIAL",
+        product=apple,
+        quantity=5,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    special_price = _business_price(
+        product=apple,
+        batch=special_batch,
+        price="8.50",
+        reason=CommercialPrice.Reason.PROMOTION,
+    )
+
+    order = add_catalog_offer_to_draft_order(
+        customer=customer,
+        product=apple,
+        commercial_price_id=special_price.pk,
+        quantity=3,
+    )
+
+    line = order.lines.get()
+
+    assert (
+        line.business_offer_selection.commercial_price
+        == special_price
+    )
+    assert line.unit_price_snapshot == Decimal("8.50")
+
+    placed = place_order(
+        order=order,
+    )
+
+    allocation = placed.allocations.get()
+
+    assert allocation.order_line == line
+    assert allocation.batch == special_batch
+    assert allocation.quantity == 3
+
+    assert not placed.allocations.filter(
+        batch=ordinary_batch,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_standard_and_batch_offer_for_same_product_reserve_disjoint_pools(
+    customer,
+    apple,
+):
+    ordinary_batch = create_batch(
+        batch_id="A-ORDINARY",
+        product=apple,
+        quantity=6,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+
+    special_batch = create_batch(
+        batch_id="A-SPECIAL",
+        product=apple,
+        quantity=4,
+        best_before=TODAY + timedelta(days=30),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    special_price = _business_price(
+        product=apple,
+        batch=special_batch,
+        price="8.50",
+        reason=CommercialPrice.Reason.SHORT_DATED,
+    )
+
+    order = add_catalog_offer_to_draft_order(
+        customer=customer,
+        product=apple,
+        commercial_price_id=None,
+        quantity=5,
+    )
+
+    order = add_catalog_offer_to_draft_order(
+        customer=customer,
+        product=apple,
+        commercial_price_id=special_price.pk,
+        quantity=3,
+    )
+
+    assert order.lines.count() == 2
+
+    placed = place_order(
+        order=order,
+    )
+
+    allocations = list(
+        placed.allocations
+        .select_related(
+            "order_line",
+            "batch",
+        )
+        .order_by("batch__batch_id")
+    )
+
+    assert [
+        (
+            allocation.batch.batch_id,
+            allocation.quantity,
+        )
+        for allocation in allocations
+    ] == [
+        (
+            ordinary_batch.batch_id,
+            5,
+        ),
+        (
+            special_batch.batch_id,
+            3,
+        ),
+    ]
+
+    standard_line = (
+        placed.lines
+        .filter(
+            business_offer_selection__commercial_price__isnull=True,
+        )
+        .get()
+    )
+
+    special_line = (
+        placed.lines
+        .filter(
+            business_offer_selection__commercial_price=special_price,
+        )
+        .get()
+    )
+
+    assert standard_line.product == apple
+    assert special_line.product == apple
+
+    assert standard_line.pk != special_line.pk
