@@ -16,27 +16,47 @@
 
     <article class="catalog-detail__hero">
       <div class="catalog-detail__media">
-        {% if image_url %}
-          <img
-            class="catalog-detail__image"
-            src="{{ image_url }}"
-            alt="{{ product_name }}"
-          >
-        {% else %}
-          <div
-            class="catalog-detail__image-placeholder"
-            aria-hidden="true"
-          ></div>
-        {% endif %}
+        <div class="catalog-detail__image-frame">
+          {% if image_url %}
+            <img
+              class="catalog-detail__image"
+              src="{{ image_url }}"
+              alt="{{ product_name }}"
+            >
+          {% else %}
+            <div
+              class="catalog-detail__image-placeholder"
+              aria-hidden="true"
+            ></div>
+          {% endif %}
+        </div>
       </div>
 
       <div class="catalog-detail__content">
         <header class="catalog-detail__header">
-          {% if category_label %}
-            <p class="catalog-detail__category">
-              {{ category_label }}
-            </p>
-          {% endif %}
+          <div class="catalog-detail__header-meta">
+            {% if category_label %}
+              <p class="catalog-detail__category">
+                {{ category_label }}
+              </p>
+            {% endif %}
+
+            {% if initial_offer.availability_label %}
+              <p
+                class="catalog-detail__stock"
+                data-catalog-detail-stock-container
+              >
+                <span
+                  class="catalog-detail__stock-dot"
+                  aria-hidden="true"
+                ></span>
+
+                <span data-catalog-detail-stock>
+                  {{ initial_offer.availability_label }}
+                </span>
+              </p>
+            {% endif %}
+          </div>
 
           <h1 class="catalog-detail__title">
             {{ product_name }}
@@ -58,32 +78,6 @@
             </div>
           {% endif %}
         </header>
-
-        {% if description %}
-          <div
-            class="catalog-detail__description"
-            data-expandable-text
-          >
-            <p
-              class="catalog-detail__summary"
-              data-expandable-content
-            >
-              {{ description }}
-            </p>
-
-            <button
-              class="button button--text button--tone-neutral catalog-detail__description-toggle"
-              type="button"
-              aria-expanded="false"
-              data-expandable-toggle
-              data-more-label="{% trans 'Read more' %}"
-              data-less-label="{% trans 'Show less' %}"
-              hidden
-            >
-              {% trans "Read more" %}
-            </button>
-          </div>
-        {% endif %}
 
         <form
           class="catalog-detail__purchase"
@@ -127,6 +121,7 @@
 
                   {% if initial_offer.price_label %}
                     <span aria-hidden="true"> · </span>
+
                     <span>
                       {{ initial_offer.price_label }}
                     </span>
@@ -187,54 +182,87 @@
             </div>
           </div>
 
-          <button
-            class="button button--md button--soft button--tone-positive catalog-detail__add-button"
-            type="submit"
-          >
-            {% trans "Add to order" %}
-          </button>
-
-          <p class="catalog-detail__stock">
-            <span
-              class="catalog-detail__stock-dot"
-              aria-hidden="true"
-            ></span>
-
-            <span data-catalog-detail-stock>
-              {{ initial_offer.availability_label }}
-            </span>
-          </p>
+          <div class="catalog-detail__purchase-footer">
+            <button
+              class="button button--md button--soft button--tone-positive catalog-detail__add-button"
+              type="submit"
+            >
+              {% trans "Add to order" %}
+            </button>
+          </div>
         </form>
 
-        {% if ingredients %}
-          <details class="catalog-detail__disclosure">
-            <summary class="catalog-detail__disclosure-summary">
-              <span>
-                {% trans "Ingredients" %}
-              </span>
+        <div class="catalog-detail__mobile-information">
+          {% if description %}
+            <details
+              class="catalog-detail__disclosure"
+              open
+            >
+              <summary class="catalog-detail__disclosure-summary">
+                <span>
+                  {% trans "Description" %}
+                </span>
 
-              <span
-                class="catalog-detail__disclosure-icon"
-                aria-hidden="true"
-              >
-                ↓
-              </span>
-            </summary>
+                <span
+                  class="catalog-detail__disclosure-icon"
+                  aria-hidden="true"
+                >
+                  ↓
+                </span>
+              </summary>
 
-            <div class="catalog-detail__disclosure-content">
-              <p>
-                {{ ingredients }}
-              </p>
-            </div>
-          </details>
-        {% endif %}
+              <div class="catalog-detail__disclosure-content">
+                <p>
+                  {{ description }}
+                </p>
+              </div>
+            </details>
+          {% endif %}
+
+          {% if ingredients %}
+            <details class="catalog-detail__disclosure">
+              <summary class="catalog-detail__disclosure-summary">
+                <span>
+                  {% trans "Ingredients" %}
+                </span>
+
+                <span
+                  class="catalog-detail__disclosure-icon"
+                  aria-hidden="true"
+                >
+                  ↓
+                </span>
+              </summary>
+
+              <div class="catalog-detail__disclosure-content">
+                <p>
+                  {{ ingredients }}
+                </p>
+              </div>
+            </details>
+          {% endif %}
+        </div>
       </div>
     </article>
+
+    {% if detail_panels %}
+      <section
+        class="catalog-detail__desktop-information"
+        aria-label="{% trans 'Product information' %}"
+      >
+        {% include "includes/ui/detail_panels.html" with detail_panels=detail_panels %}
+      </section>
+    {% endif %}
   </section>
 {% endblock %}
 
 {% block scripts %}
   {{ block.super }}
+
+  <script
+    src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
 
   <script
     src="{% static 'js/catalog_detail.js' %}"

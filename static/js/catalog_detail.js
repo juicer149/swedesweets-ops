@@ -1,65 +1,6 @@
 "use strict";
 
 
-function initializeExpandableText() {
-  const containers = document.querySelectorAll(
-    "[data-expandable-text]"
-  );
-
-  for (const container of containers) {
-    const content = container.querySelector(
-      "[data-expandable-content]"
-    );
-
-    const toggle = container.querySelector(
-      "[data-expandable-toggle]"
-    );
-
-    if (!content || !toggle) {
-      continue;
-    }
-
-    const updateToggleVisibility = () => {
-      if (container.classList.contains("is-expanded")) {
-        toggle.hidden = false;
-        return;
-      }
-
-      toggle.hidden = (
-        content.scrollHeight <= content.clientHeight + 1
-      );
-    };
-
-    requestAnimationFrame(
-      updateToggleVisibility
-    );
-
-    toggle.addEventListener(
-      "click",
-      () => {
-        const isExpanded = container.classList.toggle(
-          "is-expanded"
-        );
-
-        toggle.setAttribute(
-          "aria-expanded",
-          String(isExpanded)
-        );
-
-        toggle.textContent = isExpanded
-          ? toggle.dataset.lessLabel
-          : toggle.dataset.moreLabel;
-      }
-    );
-
-    window.addEventListener(
-      "resize",
-      updateToggleVisibility
-    );
-  }
-}
-
-
 function initializeOfferStockHint() {
   const select = document.querySelector(
     "[data-catalog-detail-offer]"
@@ -69,9 +10,15 @@ function initializeOfferStockHint() {
     "[data-catalog-detail-stock]"
   );
 
-  if (!select || !stock) {
+  const stockContainer = document.querySelector(
+    "[data-catalog-detail-stock-container]"
+  );
+
+  if (!select || !stock || !stockContainer) {
     return;
   }
+
+  const initialStockLabel = stock.textContent.trim();
 
   const renderStock = () => {
     const option = select.options[
@@ -82,9 +29,15 @@ function initializeOfferStockHint() {
       return;
     }
 
-    stock.textContent = (
+    const stockLabel = (
       option.dataset.stockLabel
-      || ""
+      || initialStockLabel
+    ).trim();
+
+    stock.textContent = stockLabel;
+
+    stockContainer.hidden = (
+      stockLabel.length === 0
     );
   };
 
@@ -98,7 +51,6 @@ function initializeOfferStockHint() {
 
 
 function initializeCatalogDetail() {
-  initializeExpandableText();
   initializeOfferStockHint();
 }
 

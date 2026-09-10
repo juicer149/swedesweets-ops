@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from common.catalog.contracts import CatalogProduct
 from common.catalog.viewmodels import CatalogOfferVM
+from common.detail_cards import DetailPanel
 from products.localization import translated_product_name
 from products.models import ProductProfile
 
@@ -24,6 +26,7 @@ class BusinessCatalogProductDetailContext:
     ingredients: str
     offers: tuple[CatalogOfferVM, ...]
     initial_offer: CatalogOfferVM
+    detail_panels: tuple[DetailPanel, ...]
     title: str
     cancel_url: str
 
@@ -38,6 +41,7 @@ class BusinessCatalogProductDetailContext:
             "ingredients": self.ingredients,
             "offers": self.offers,
             "initial_offer": self.initial_offer,
+            "detail_panels": self.detail_panels,
             "title": self.title,
             "cancel_url": self.cancel_url,
         }
@@ -71,6 +75,13 @@ def build_business_catalog_product_detail_context(
             "Business catalog product must have at least one offer"
         )
 
+    description = _description(
+        profile=profile,
+    )
+    ingredients = _ingredients(
+        profile=profile,
+    )
+
     return BusinessCatalogProductDetailContext(
         catalog_product=catalog_product,
         product_name=product_name,
@@ -80,14 +91,14 @@ def build_business_catalog_product_detail_context(
         image_url=_image_url(
             profile=profile,
         ),
-        description=_description(
-            profile=profile,
-        ),
-        ingredients=_ingredients(
-            profile=profile,
-        ),
+        description=description,
+        ingredients=ingredients,
         offers=offers,
         initial_offer=offers[0],
+        detail_panels=_build_detail_panels(
+            description=description,
+            ingredients=ingredients,
+        ),
         title=product_name,
         cancel_url=reverse(
             "business_portal:catalog"
@@ -152,3 +163,43 @@ def _ingredients(
         return ""
 
     return profile.ingredients
+
+
+def _build_detail_panels(
+    *,
+    description: str,
+    ingredients: str,
+) -> tuple[DetailPanel, ...]:
+    panels: list[DetailPanel] = []
+
+    if description:
+        panels.append(
+            DetailPanel(
+                key="description",
+                label=_("Description"),
+                summary=_("Product description"),
+                body_template=(
+                    "business_portal/catalog/includes/"
+                    "detail_panel_description.html"
+                ),
+                is_active=True,
+            )
+        )
+
+    if ingredients:
+        panels.append(
+            DetailPanel(
+                key="ingredients",
+                label=_("Ingredients"),
+                summary=_("Ingredients"),
+                body_template=(
+                    "business_portal/catalog/includes/"
+                    "detail_panel_ingredients.html"
+                ),
+                is_active=not panels,
+            )
+        )
+
+    return tuple(
+        panels
+    )

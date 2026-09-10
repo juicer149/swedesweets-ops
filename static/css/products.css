@@ -267,11 +267,18 @@
   width: fit-content;
 }
 
+
+/* =============================================================================
+   Product detail hero
+   ============================================================================= */
+
 .catalog-detail__hero {
   display: grid;
   grid-template-columns:
     minmax(18rem, 0.9fr)
     minmax(0, 1.1fr);
+  align-items: stretch;
+  gap: 0;
 
   min-width: 0;
   overflow: hidden;
@@ -285,11 +292,18 @@
     0 1px 0 rgb(255 255 255 / 0.9) inset;
 }
 
+
+/* =============================================================================
+   Product detail media
+   ============================================================================= */
+
 .catalog-detail__media {
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   min-width: 0;
-  min-height: 30rem;
+  padding: var(--space-5);
 
   background:
     linear-gradient(
@@ -297,20 +311,29 @@
       var(--color-primary-50),
       var(--color-neutral-100)
     );
+
+  border-right: 2px solid var(--color-accent-600);
+}
+
+.catalog-detail__image-frame {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+
+  overflow: hidden;
+
+  background: var(--color-white);
+  border-radius: var(--radius-card-inner);
 }
 
 .catalog-detail__image,
 .catalog-detail__image-placeholder {
+  display: block;
+
   width: 100%;
   height: 100%;
-  min-height: 30rem;
 }
 
 .catalog-detail__image {
-  display: block;
-
-  padding: var(--space-6);
-
   object-fit: contain;
   object-position: center;
 }
@@ -329,12 +352,18 @@
     );
 }
 
+
+/* =============================================================================
+   Product detail content
+   ============================================================================= */
+
 .catalog-detail__content {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
 
   min-width: 0;
+  min-height: 100%;
   padding: clamp(
     var(--space-5),
     5vw,
@@ -342,13 +371,21 @@
   );
 
   background: var(--color-accent-100);
-  border-left: 2px solid var(--color-accent-600);
 }
 
 .catalog-detail__header {
   display: grid;
-  justify-items: start;
+  justify-items: stretch;
   gap: var(--space-2);
+}
+
+.catalog-detail__header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+
+  min-width: 0;
 }
 
 .catalog-detail__category {
@@ -389,52 +426,52 @@
 
 
 /* =============================================================================
-   Detail description
+   Detail stock state
    ============================================================================= */
 
-.catalog-detail__description {
-  display: grid;
-  justify-items: start;
+.catalog-detail__stock {
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-2);
-}
 
-.catalog-detail__summary {
-  display: -webkit-box;
-
+  flex: 0 0 auto;
+  width: fit-content;
   margin: 0;
 
-  overflow: hidden;
-
-  color: var(--color-neutral-700);
-  font-size: var(--font-size-16);
-  font-weight: 450;
-  line-height: 1.55;
-
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.catalog-detail__description.is-expanded .catalog-detail__summary {
-  display: block;
-  overflow: visible;
-
-  -webkit-line-clamp: unset;
-}
-
-.catalog-detail__description-toggle {
+  color: var(--color-status-success-text);
   font-size: var(--font-size-14);
+  font-weight: 750;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.catalog-detail__stock[hidden] {
+  display: none;
+}
+
+.catalog-detail__stock-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+
+  flex: 0 0 auto;
+
+  background: var(--color-action-deliver);
+  border-radius: 50%;
 }
 
 
 /* =============================================================================
    Detail purchase controls
+
+   Product identity remains at the top. The purchase controls use a deliberate
+   fixed spacing rather than consuming all remaining vertical space.
    ============================================================================= */
 
 .catalog-detail__purchase {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
 
-  margin-top: auto;
+  margin-top: var(--space-8);
 }
 
 .catalog-detail__purchase-fields {
@@ -487,43 +524,64 @@
   line-height: 1.25;
 }
 
+.catalog-detail__purchase-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
 .catalog-detail__add-button {
   width: fit-content;
   min-width: 11rem;
 }
 
-.catalog-detail__stock {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
 
-  width: fit-content;
-  margin: 0;
+/* =============================================================================
+   Desktop product information
+   ============================================================================= */
 
-  color: var(--color-status-success-text);
-  font-size: var(--font-size-14);
-  font-weight: 750;
-  line-height: 1.3;
+.catalog-detail__desktop-information {
+  min-width: 0;
+  padding: var(--space-4);
+
+  background: var(--color-white);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+
+  box-shadow:
+    0 8px 22px rgb(var(--color-row-shadow) / 0.05);
 }
 
-.catalog-detail__stock-dot {
-  width: 0.55rem;
-  height: 0.55rem;
+.catalog-detail__desktop-information .detail-panel-body {
+  min-height: 8rem;
+}
 
-  flex: 0 0 auto;
+.catalog-detail-copy {
+  max-width: 54rem;
+}
 
-  background: var(--color-action-deliver);
-  border-radius: 50%;
+.catalog-detail-copy p {
+  margin: 0;
+
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  font-weight: 450;
+  line-height: 1.65;
 }
 
 
 /* =============================================================================
-   Detail disclosure
+   Mobile product information
    ============================================================================= */
 
+.catalog-detail__mobile-information {
+  display: none;
+}
+
 .catalog-detail__disclosure {
-  border-top: 1px solid var(--color-neutral-300);
   padding-top: var(--space-4);
+
+  border-top: 1px solid var(--color-neutral-300);
 }
 
 .catalog-detail__disclosure-summary {
@@ -555,6 +613,7 @@
 
 .catalog-detail__disclosure-summary:focus-visible {
   outline: none;
+
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-focus-info);
 }
@@ -638,6 +697,7 @@
 
 .mobile-card--product {
   gap: 0;
+
   background: var(--color-primary-50);
 }
 
@@ -768,19 +828,35 @@
   }
 
   .catalog-detail__media {
-    min-height: 20rem;
+    padding: var(--space-5);
+
+    border-right: 0;
+    border-bottom: 2px solid var(--color-accent-600);
   }
 
-  .catalog-detail__image,
-  .catalog-detail__image-placeholder {
-    min-height: 20rem;
+  .catalog-detail__image-frame {
+    width: min(100%, 34rem);
+    margin-inline: auto;
   }
 
   .catalog-detail__content {
-    border-top: 2px solid var(--color-accent-600);
-    border-left: 0;
+    min-height: auto;
+  }
+
+  .catalog-detail__purchase {
+    margin-top: var(--space-5);
+  }
+
+  .catalog-detail__desktop-information {
+    display: none;
+  }
+
+  .catalog-detail__mobile-information {
+    display: grid;
+    gap: 0;
   }
 }
+
 
 @media (max-width: 720px) {
   .catalog {
@@ -800,6 +876,10 @@
     grid-template-rows: 11rem auto;
   }
 
+  .catalog-detail__header-meta {
+    align-items: flex-start;
+  }
+
   .catalog-detail__purchase-fields {
     grid-template-columns: 1fr;
   }
@@ -809,10 +889,16 @@
     max-width: none;
   }
 
+  .catalog-detail__purchase-footer {
+    display: grid;
+    gap: var(--space-3);
+  }
+
   .catalog-detail__add-button {
     width: 100%;
   }
 }
+
 
 @media (max-width: 560px) {
   .product-grid {
@@ -838,16 +924,11 @@
   }
 
   .catalog-detail__media {
-    min-height: 16rem;
-  }
-
-  .catalog-detail__image,
-  .catalog-detail__image-placeholder {
-    min-height: 16rem;
-  }
-
-  .catalog-detail__image {
     padding: var(--space-4);
+  }
+
+  .catalog-detail__image-frame {
+    border-radius: var(--radius-control);
   }
 
   .catalog-detail__content {
@@ -855,13 +936,12 @@
     padding: var(--space-5) var(--space-4);
   }
 
-  .catalog-detail__summary {
-    -webkit-line-clamp: 2;
+  .catalog-detail__header-meta {
+    flex-wrap: wrap;
   }
 
-  .catalog-detail__description.is-expanded
-  .catalog-detail__summary {
-    -webkit-line-clamp: unset;
+  .catalog-detail__purchase {
+    margin-top: var(--space-4);
   }
 
   .catalog-detail__purchase .quantity-stepper {
