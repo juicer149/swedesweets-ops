@@ -1,0 +1,191 @@
+/* =============================================================================
+   Quantity stepper
+
+   Shared quantity control used wherever a user selects or edits a positive
+   integer quantity.
+
+   The component owns presentation only. Individual views decide what changing
+   the quantity means and whether controls submit immediately or update local
+   form state.
+   ============================================================================= */
+
+.quantity-stepper {
+  display: grid;
+  grid-template-columns:
+    var(--size-control-sm)
+    minmax(3.5rem, 4.5rem)
+    var(--size-control-sm);
+
+  width: fit-content;
+
+  background: var(--color-white);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-pill);
+
+  overflow: hidden;
+}
+
+
+/* =============================================================================
+   Optional form wrappers
+
+   Some server-rendered flows use one form per stepper action. display: contents
+   keeps those forms semantically present without changing the visual grid.
+   ============================================================================= */
+
+.quantity-stepper__form {
+  display: contents;
+  margin: 0;
+}
+
+
+/* =============================================================================
+   Increment / decrement buttons
+   ============================================================================= */
+
+.quantity-stepper__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: var(--size-control-sm);
+  min-height: var(--size-control-sm);
+  padding: 0;
+
+  color: var(--color-primary-900);
+  background: var(--color-white);
+  border: 0;
+
+  font-family: var(--font-body);
+  font-size: var(--font-size-20);
+  font-weight: 800;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    color var(--motion-fast),
+    background var(--motion-fast),
+    box-shadow var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.quantity-stepper__button--decrease {
+  border-right: 1px solid var(--color-neutral-300);
+}
+
+.quantity-stepper__button--increase {
+  border-left: 1px solid var(--color-neutral-300);
+}
+
+.quantity-stepper__button:hover:not(:disabled) {
+  color: var(--color-primary-950);
+  background: var(--color-accent-100);
+}
+
+.quantity-stepper__button:focus-visible {
+  position: relative;
+  z-index: 2;
+
+  outline: none;
+
+  box-shadow:
+    inset 0 0 0 2px var(--color-accent-600),
+    0 0 0 2px rgb(var(--color-status-info) / 0.12);
+}
+
+.quantity-stepper__button:active:not(:disabled) {
+  color: var(--color-primary-950);
+  background: var(--color-accent-200);
+
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.16);
+
+  transform: scale(0.92);
+}
+
+.quantity-stepper__button:disabled {
+  color: var(--color-neutral-400);
+  background: var(--color-neutral-50);
+
+  cursor: not-allowed;
+}
+
+.quantity-stepper__button:disabled:hover,
+.quantity-stepper__button:disabled:active {
+  color: var(--color-neutral-400);
+  background: var(--color-neutral-50);
+
+  box-shadow: none;
+  transform: none;
+}
+
+
+/* =============================================================================
+   Quantity input
+   ============================================================================= */
+
+.quantity-stepper__input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--space-1);
+
+  color: var(--color-primary-950);
+  background: var(--color-white);
+  border: 0;
+  border-radius: 0;
+
+  font-family: var(--font-body);
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+
+  appearance: textfield;
+
+  transition:
+    background var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+.quantity-stepper__input::-webkit-inner-spin-button,
+.quantity-stepper__input::-webkit-outer-spin-button {
+  margin: 0;
+
+  appearance: none;
+}
+
+.quantity-stepper__input:hover {
+  background: var(--color-primary-50);
+}
+
+.quantity-stepper__input:focus {
+  position: relative;
+  z-index: 2;
+
+  outline: none;
+
+  background: var(--color-white);
+
+  box-shadow:
+    inset 0 0 0 2px var(--color-primary-500),
+    0 0 0 2px rgb(var(--color-status-info) / 0.1);
+}
+
+
+/* =============================================================================
+   Touch devices
+
+   Hover states should not remain visually active after taps.
+   ============================================================================= */
+
+@media (hover: none), (pointer: coarse) {
+  .quantity-stepper__button:hover:not(:disabled) {
+    color: var(--color-primary-900);
+    background: var(--color-white);
+  }
+
+  .quantity-stepper__input:hover {
+    background: var(--color-white);
+  }
+}
