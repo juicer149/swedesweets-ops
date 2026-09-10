@@ -83,7 +83,7 @@ def _build_business_product_card(
             },
         ),
         offers=tuple(
-            _build_business_offer_viewmodel(
+            build_business_offer_viewmodel(
                 offer
             )
             for offer in catalog_product.offers
@@ -101,7 +101,7 @@ def build_business_catalog_payload(
     ]
 
 
-def _build_business_offer_viewmodel(
+def build_business_offer_viewmodel(
     offer: CatalogOffer,
 ) -> CatalogOfferVM:
     if offer.kind == CatalogOfferKind.STANDARD:

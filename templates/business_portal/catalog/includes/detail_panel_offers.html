@@ -1,0 +1,45 @@
+{% load i18n %}
+
+<dl class="detail-data-list">
+  {% for offer in offers %}
+    <div>
+      <dt>{{ offer.label }}</dt>
+
+      <dd>
+        <div>
+          {% if offer.price_label %}
+            <strong>{{ offer.price_label }}</strong>
+            <span aria-hidden="true"> · </span>
+          {% endif %}
+
+          {{ offer.availability_label }}
+        </div>
+
+        <form
+          method="post"
+          action="{% url 'business_portal:catalog_add_product' product.id %}"
+        >
+          {% csrf_token %}
+
+          <input
+            type="hidden"
+            name="commercial_price_id"
+            value="{% if offer.commercial_price_id %}{{ offer.commercial_price_id }}{% endif %}"
+          >
+
+          <button
+            class="button button--sm button--soft button--tone-positive"
+            type="submit"
+          >
+            {% trans "Add to order" %}
+          </button>
+        </form>
+      </dd>
+    </div>
+  {% empty %}
+    <div>
+      <dt>{% trans "Offers" %}</dt>
+      <dd>{% trans "No offers are currently available." %}</dd>
+    </div>
+  {% endfor %}
+</dl>

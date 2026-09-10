@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from decimal import Decimal
 
 from django.db.models import Prefetch
 
@@ -251,6 +250,23 @@ def list_business_catalog_products(
     )
 
 
+def get_business_catalog_product(
+    *,
+    product_id: int,
+) -> CatalogProduct | None:
+    """Return one currently orderable product from the Business catalog.
+
+    Reuse the same catalog construction as the list view so product detail
+    cannot drift from catalog offer and stock semantics.
+    """
+
+    for catalog_product in list_business_catalog_products():
+        if catalog_product.product.id == product_id:
+            return catalog_product
+
+    return None
+
+
 def list_business_catalog_entries(
 ) -> tuple[BusinessCatalogEntry, ...]:
     """Return active products with positive ordinary business stock.
@@ -294,7 +310,7 @@ def get_business_catalog_entry(
     *,
     product_id: int,
 ) -> BusinessCatalogEntry | None:
-    """Return one currently orderable business catalog entry."""
+    """Return one currently orderable legacy business catalog entry."""
 
     available_units_by_product_id = (
         orderable_quantity_by_product_id()

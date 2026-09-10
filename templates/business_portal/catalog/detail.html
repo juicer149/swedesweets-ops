@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+  <section class="content-section content-section--wide content-section--detail">
+    <article class="content-card content-card--wide">
+      <a
+        class="text-link"
+        href="{{ cancel_url }}"
+      >
+        ← {% trans "Back to catalog" %}
+      </a>
+
+      {% include "includes/ui/detail_card_header.html" with header=detail_card.header %}
+
+      {% include "includes/ui/detail_panels.html" with detail_panels=detail_card.panels %}
+    </article>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
+{% endblock %}

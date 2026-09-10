@@ -1,0 +1,49 @@
+{% load i18n %}
+
+<dl class="detail-data-list">
+  <div>
+    <dt>{% trans "Product" %}</dt>
+    <dd>{{ product_name }}</dd>
+  </div>
+
+  <div>
+    <dt>{% trans "Package" %}</dt>
+    <dd>{{ product.unit_weight_label }}</dd>
+  </div>
+
+  <div>
+    <dt>{% trans "SKU" %}</dt>
+    <dd>{{ product.sku }}</dd>
+  </div>
+
+  <div>
+    <dt>{% trans "Vegan" %}</dt>
+    <dd>
+      {% if product.vegan %}
+        {% trans "Yes" %}
+      {% else %}
+        {% trans "No" %}
+      {% endif %}
+    </dd>
+  </div>
+</dl>
+
+{% if profile %}
+  {% if profile.description or profile.ingredients %}
+    <dl class="detail-data-list">
+      {% if profile.description %}
+        <div>
+          <dt>{% trans "Description" %}</dt>
+          <dd>{{ profile.description }}</dd>
+        </div>
+      {% endif %}
+
+      {% if profile.ingredients %}
+        <div>
+          <dt>{% trans "Ingredients" %}</dt>
+          <dd>{{ profile.ingredients }}</dd>
+        </div>
+      {% endif %}
+    </dl>
+  {% endif %}
+{% endif %}

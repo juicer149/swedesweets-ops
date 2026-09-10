@@ -4,7 +4,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import (
     Http404,
-    HttpResponse,
     JsonResponse,
 )
 from django.shortcuts import (
@@ -16,11 +15,14 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from business.selectors import (
-    get_business_catalog_entry,
+    get_business_catalog_product,
     list_business_catalog_products,
 )
 from business.services import (
     add_catalog_offer_to_draft_order,
+)
+from business_portal.catalog.detail_viewmodels import (
+    build_business_catalog_product_detail_context,
 )
 from business_portal.catalog.viewmodels import (
     build_business_catalog_payload,
@@ -184,21 +186,30 @@ def product_detail(
     request,
     product_id: int,
 ):
-    """Temporary business catalog product detail endpoint."""
+    """Render one currently orderable Business catalog product."""
 
     get_portal_customer_for_user(
         user=request.user,
     )
 
-    entry = get_business_catalog_entry(
+    catalog_product = get_business_catalog_product(
         product_id=product_id,
     )
 
-    if entry is None:
+    if catalog_product is None:
         raise Http404(
             "Product is not available in the business catalog."
         )
 
-    return HttpResponse(
-        entry.product.display_name
+    context = (
+        build_business_catalog_product_detail_context(
+            catalog_product=catalog_product,
+            language_code=request.LANGUAGE_CODE,
+        )
+    )
+
+    return render(
+        request,
+        "business_portal/catalog/detail.html",
+        context.as_dict(),
     )
