@@ -9,7 +9,8 @@ from common.ui import UiText
 class CatalogOfferVM:
     """Presentation contract for one selectable catalog offer.
 
-    Portal-specific presentation code decides labels and badges.
+    Actor-specific presentation code decides labels, badges and human-readable
+    availability text.
 
     The shared contract only defines the stable shape consumed by catalog UI
     code.
@@ -21,6 +22,7 @@ class CatalogOfferVM:
     label: str
     badge_label: str | None
     price_label: str | None
+    availability_label: str
     available_units: int
 
     def as_dict(self) -> dict[str, object]:
@@ -31,6 +33,7 @@ class CatalogOfferVM:
             "label": self.label,
             "badge_label": self.badge_label,
             "price_label": self.price_label,
+            "availability_label": self.availability_label,
             "available_units": self.available_units,
         }
 

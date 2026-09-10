@@ -23,113 +23,127 @@
         aria-label="{% trans 'Products' %}"
       >
         {% for card in product_cards %}
-          <article
-            class="product-card"
-            data-catalog-product
-            data-product-id="{{ card.product_id }}"
-          >
-            <div class="product-card__media">
-              <span
-                class="product-card__badge"
-                data-catalog-offer-badge
-                {% if not card.badge_label %}hidden{% endif %}
-              >
-                {{ card.badge_label|default:"" }}
-              </span>
-            </div>
-
-            <div class="product-card__body">
-              <div class="product-card__content">
-                <h2 class="product-card__title">
-                  {{ card.name }}
-                </h2>
-
-                <p class="product-card__meta">
-                  {{ card.package_label }}
-                </p>
-
-                {% if card.offers %}
-                  <div class="product-card__offer">
-                    {% if card.offers|length > 1 %}
-                      <label
-                        for="catalog-offer-{{ card.product_id }}"
-                      >
-                        {% trans "Offer" %}
-                      </label>
-
-                      <select
-                        id="catalog-offer-{{ card.product_id }}"
-                        name="commercial_price_id"
-                        form="catalog-add-form-{{ card.product_id }}"
-                        data-catalog-offer-select
-                      >
-                        {% for offer in card.offers %}
-                          <option
-                            value="{% if offer.commercial_price_id %}{{ offer.commercial_price_id }}{% endif %}"
-                          >
-                            {{ offer.label }}
-                            {% if offer.price_label %}
-                              — {{ offer.price_label }}
-                            {% endif %}
-                          </option>
-                        {% endfor %}
-                      </select>
-                    {% else %}
-                      {% with offer=card.offers.0 %}
-                        <input
-                          type="hidden"
-                          name="commercial_price_id"
-                          value="{% if offer.commercial_price_id %}{{ offer.commercial_price_id }}{% endif %}"
-                          form="catalog-add-form-{{ card.product_id }}"
-                          data-catalog-offer-input
-                        >
-                      {% endwith %}
-                    {% endif %}
-
-                    <p
-                      class="product-card__meta"
-                      data-catalog-offer-details
-                    >
-                      <span data-catalog-offer-price></span>
-                      <span data-catalog-offer-availability></span>
-                    </p>
-                  </div>
-                {% endif %}
-              </div>
-
-              <div class="product-card__actions">
-                <form
-                  id="catalog-add-form-{{ card.product_id }}"
-                  class="product-card__order"
-                  method="post"
-                  action="{{ card.primary_action.href }}"
-                  data-catalog-add-form
+          {% with initial_offer=card.offers.0 %}
+            <article
+              class="product-card"
+              data-catalog-product
+              data-product-id="{{ card.product_id }}"
+            >
+              <div class="product-card__media">
+                <span
+                  class="product-card__badge"
+                  data-catalog-offer-badge
+                  {% if not initial_offer.badge_label %}hidden{% endif %}
                 >
-                  {% csrf_token %}
-
-                  <button
-                    class="{{ card.primary_action.css_class }}"
-                    type="submit"
-                    aria-label="{{ card.primary_action.aria_label }}"
-                    data-catalog-add-button
-                  >
-                    {{ card.primary_action.text }}
-                  </button>
-                </form>
-
-                {% if card.secondary_action %}
-                  <a
-                    class="{{ card.secondary_action.css_class }}"
-                    href="{{ card.secondary_action.href }}"
-                    aria-label="{{ card.secondary_action.aria_label }}"
-                  >
-                    {{ card.secondary_action.text }}
-                    <span aria-hidden="true">→</span>
-                  </a>
-                {% endif %}
+                  {{ initial_offer.badge_label|default:"" }}
+                </span>
               </div>
-            </div>
-          </article>
+
+              <div class="product-card__body">
+                <div class="product-card__content">
+                  <h2 class="product-card__title">
+                    {{ card.name }}
+                  </h2>
+
+                  {% if card.offers %}
+                    {% if card.offers|length > 1 %}
+                      <p class="product-card__meta-line">
+                        <span class="product-card__package">
+                          {{ card.package_label }}
+                        </span>
+                      </p>
+
+                      <div class="product-card__offer">
+                        <select
+                          id="catalog-offer-{{ card.product_id }}"
+                          class="product-card__offer-select"
+                          name="commercial_price_id"
+                          form="catalog-add-form-{{ card.product_id }}"
+                          aria-label="{% trans 'Offer' %}"
+                          data-catalog-offer-select
+                          data-enhanced-select="true"
+                          data-enhanced-select-search="false"
+                        >
+                          {% for offer in card.offers %}
+                            <option
+                              value="{% if offer.commercial_price_id %}{{ offer.commercial_price_id }}{% endif %}"
+                            >
+                              {{ offer.label }}{% if offer.price_label %} — {{ offer.price_label }}{% endif %}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    {% else %}
+                      <p class="product-card__meta-line">
+                        <span class="product-card__package">
+                          {{ card.package_label }}
+                        </span>
+
+                        {% if initial_offer.price_label %}
+                          <span
+                            class="product-card__meta-separator"
+                            aria-hidden="true"
+                          >
+                            ·
+                          </span>
+
+                          <span class="product-card__price">
+                            {{ initial_offer.price_label }}
+                          </span>
+                        {% endif %}
+                      </p>
+
+                      <input
+                        type="hidden"
+                        name="commercial_price_id"
+                        value="{% if initial_offer.commercial_price_id %}{{ initial_offer.commercial_price_id }}{% endif %}"
+                        form="catalog-add-form-{{ card.product_id }}"
+                        data-catalog-offer-input
+                      >
+                    {% endif %}
+                  {% else %}
+                    <p class="product-card__meta-line">
+                      <span class="product-card__package">
+                        {{ card.package_label }}
+                      </span>
+                    </p>
+                  {% endif %}
+                </div>
+
+                <div class="product-card__actions">
+                  <form
+                    id="catalog-add-form-{{ card.product_id }}"
+                    class="product-card__order"
+                    method="post"
+                    action="{{ card.primary_action.href }}"
+                    data-catalog-add-form
+                  >
+                    {% csrf_token %}
+
+                    <button
+                      class="{{ card.primary_action.css_class }}"
+                      type="submit"
+                      aria-label="{{ card.primary_action.aria_label }}"
+                      data-catalog-add-button
+                    >
+                      {{ card.primary_action.text }}
+                    </button>
+                  </form>
+
+                  {% if card.secondary_action %}
+                    <a
+                      class="{{ card.secondary_action.css_class }}"
+                      href="{{ card.secondary_action.href }}"
+                      aria-label="{{ card.secondary_action.aria_label }}"
+                    >
+                      {{ card.secondary_action.text }}
+                      <span aria-hidden="true">→</span>
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          {% endwith %}
         {% endfor %}
       </div>
 

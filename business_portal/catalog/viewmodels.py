@@ -4,6 +4,7 @@ from collections.abc import Iterable
 
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext
 
 from common.catalog.contracts import (
     CatalogOffer,
@@ -113,6 +114,9 @@ def _build_business_offer_viewmodel(
             price_label=_price_label(
                 offer
             ),
+            availability_label=_availability_label(
+                offer.available_units
+            ),
             available_units=offer.available_units,
         )
 
@@ -128,6 +132,9 @@ def _build_business_offer_viewmodel(
         badge_label=reason_label,
         price_label=_price_label(
             offer
+        ),
+        availability_label=_availability_label(
+            offer.available_units
         ),
         available_units=offer.available_units,
     )
@@ -160,3 +167,15 @@ def _price_label(
         return None
 
     return f"€{offer.price:.2f}"
+
+
+def _availability_label(
+    available_units: int,
+) -> str:
+    return ngettext(
+        "%(count)s unit available",
+        "%(count)s units available",
+        available_units,
+    ) % {
+        "count": available_units,
+    }

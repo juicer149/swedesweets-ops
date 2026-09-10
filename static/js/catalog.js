@@ -89,40 +89,22 @@
     return Number(input.value);
   }
 
-  function renderOffer(card, offer) {
+  function renderOfferBadge(card, offer) {
     const badge = card.querySelector(
       "[data-catalog-offer-badge]"
     );
-    const price = card.querySelector(
-      "[data-catalog-offer-price]"
-    );
-    const availability = card.querySelector(
-      "[data-catalog-offer-availability]"
-    );
 
-    if (badge) {
-      badge.textContent =
-        offer && offer.badge_label
-          ? offer.badge_label
-          : "";
-
-      badge.hidden = !(
-        offer && offer.badge_label
-      );
+    if (!badge) {
+      return;
     }
 
-    if (price) {
-      price.textContent =
-        offer && offer.price_label
-          ? offer.price_label
-          : "";
-    }
-
-    if (availability) {
-      availability.textContent = offer
-        ? `${offer.available_units} available`
+    const label =
+      offer && offer.badge_label
+        ? offer.badge_label
         : "";
-    }
+
+    badge.textContent = label;
+    badge.hidden = !label;
   }
 
   function initializeOfferControls(
@@ -144,12 +126,9 @@
         "[data-catalog-product]"
       )
       .forEach((card) => {
-        const productId =
-          card.dataset.productId;
-
         const catalogProduct =
           catalogByProductId.get(
-            productId
+            card.dataset.productId
           );
 
         if (!catalogProduct) {
@@ -157,17 +136,14 @@
         }
 
         const renderSelectedOffer = () => {
-          const commercialPriceId =
-            selectedCommercialPriceId(
-              card
-            );
-
           const offer = findOffer(
             catalogProduct,
-            commercialPriceId
+            selectedCommercialPriceId(
+              card
+            )
           );
 
-          renderOffer(
+          renderOfferBadge(
             card,
             offer
           );
@@ -226,6 +202,7 @@
       }
 
       button.textContent = "Added";
+
       setFeedback(
         payload.message
       );
@@ -248,11 +225,8 @@
     }
   }
 
-  const catalogProducts =
-    parseCatalogData();
-
   initializeOfferControls(
-    catalogProducts
+    parseCatalogData()
   );
 
   forms.forEach((form) => {
