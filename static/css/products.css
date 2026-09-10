@@ -160,9 +160,6 @@
 
 /* =============================================================================
    Product catalog offer selection
-
-   Tom Select owns generic select behavior.
-   Catalog CSS only controls local sizing and hierarchy.
    ============================================================================= */
 
 .product-card__offer {
@@ -245,6 +242,352 @@
 
 
 /* =============================================================================
+   Business catalog product detail
+   ============================================================================= */
+
+.catalog-detail {
+  display: grid;
+  gap: var(--space-5);
+
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  padding:
+    var(--space-8)
+    var(--space-4)
+    var(--space-10);
+}
+
+.catalog-detail__back {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.catalog-detail__back-link {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.catalog-detail__hero {
+  display: grid;
+  grid-template-columns:
+    minmax(18rem, 0.9fr)
+    minmax(0, 1.1fr);
+
+  min-width: 0;
+  overflow: hidden;
+
+  background: var(--color-white);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+
+  box-shadow:
+    0 12px 30px rgb(var(--color-row-shadow) / 0.08),
+    0 1px 0 rgb(255 255 255 / 0.9) inset;
+}
+
+.catalog-detail__media {
+  display: grid;
+
+  min-width: 0;
+  min-height: 30rem;
+
+  background:
+    linear-gradient(
+      145deg,
+      var(--color-primary-50),
+      var(--color-neutral-100)
+    );
+}
+
+.catalog-detail__image,
+.catalog-detail__image-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 30rem;
+}
+
+.catalog-detail__image {
+  display: block;
+
+  padding: var(--space-6);
+
+  object-fit: contain;
+  object-position: center;
+}
+
+.catalog-detail__image-placeholder {
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgb(255 255 255 / 0.9),
+      transparent 44%
+    ),
+    linear-gradient(
+      145deg,
+      var(--color-primary-50),
+      var(--color-neutral-100)
+    );
+}
+
+.catalog-detail__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+
+  min-width: 0;
+  padding: clamp(
+    var(--space-5),
+    5vw,
+    var(--space-8)
+  );
+
+  background: var(--color-accent-100);
+  border-left: 2px solid var(--color-accent-600);
+}
+
+.catalog-detail__header {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.catalog-detail__category {
+  margin: 0;
+
+  color: var(--color-accent-800);
+  font-size: var(--font-size-12);
+  font-weight: 850;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalog-detail__title {
+  margin: 0;
+
+  color: var(--color-primary-950);
+  font-family: var(--font-heading);
+  font-size: clamp(
+    var(--font-size-28, 1.75rem),
+    4vw,
+    2.5rem
+  );
+  font-weight: 750;
+  line-height: 1.08;
+
+  overflow-wrap: anywhere;
+}
+
+.catalog-detail__package {
+  margin: 0;
+
+  color: var(--color-primary-900);
+  font-size: var(--font-size-16);
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+
+/* =============================================================================
+   Detail description
+   ============================================================================= */
+
+.catalog-detail__description {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.catalog-detail__summary {
+  display: -webkit-box;
+
+  margin: 0;
+
+  overflow: hidden;
+
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  font-weight: 450;
+  line-height: 1.55;
+
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.catalog-detail__description.is-expanded .catalog-detail__summary {
+  display: block;
+  overflow: visible;
+
+  -webkit-line-clamp: unset;
+}
+
+.catalog-detail__description-toggle {
+  font-size: var(--font-size-14);
+}
+
+
+/* =============================================================================
+   Detail purchase controls
+   ============================================================================= */
+
+.catalog-detail__purchase {
+  display: grid;
+  gap: var(--space-4);
+
+  margin-top: auto;
+}
+
+.catalog-detail__purchase-fields {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: var(--space-4);
+  align-items: end;
+}
+
+.catalog-detail__field {
+  display: grid;
+  gap: var(--space-2);
+
+  min-width: 0;
+}
+
+.catalog-detail__label {
+  color: var(--color-primary-900);
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.catalog-detail__offer-select,
+.catalog-detail__field .ts-wrapper {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.catalog-detail__field .ts-control {
+  min-height: var(--size-control-md);
+}
+
+.catalog-detail__offer-value {
+  display: flex;
+  align-items: center;
+
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-4);
+
+  color: var(--color-primary-900);
+  background: var(--color-white);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-control);
+
+  font-size: var(--font-size-16);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.catalog-detail__add-button {
+  width: fit-content;
+  min-width: 11rem;
+}
+
+.catalog-detail__stock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  width: fit-content;
+  margin: 0;
+
+  color: var(--color-status-success-text);
+  font-size: var(--font-size-14);
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.catalog-detail__stock-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+
+  flex: 0 0 auto;
+
+  background: var(--color-action-deliver);
+  border-radius: 50%;
+}
+
+
+/* =============================================================================
+   Detail disclosure
+   ============================================================================= */
+
+.catalog-detail__disclosure {
+  border-top: 1px solid var(--color-neutral-300);
+  padding-top: var(--space-4);
+}
+
+.catalog-detail__disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  width: 100%;
+
+  color: var(--color-primary-900);
+
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1.3;
+
+  cursor: pointer;
+
+  list-style: none;
+}
+
+.catalog-detail__disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.catalog-detail__disclosure-summary:hover {
+  color: var(--color-primary-700);
+}
+
+.catalog-detail__disclosure-summary:focus-visible {
+  outline: none;
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-focus-info);
+}
+
+.catalog-detail__disclosure-icon {
+  display: inline-flex;
+
+  font-size: var(--font-size-18);
+  line-height: 1;
+
+  transition: transform var(--motion-fast);
+}
+
+.catalog-detail__disclosure[open]
+.catalog-detail__disclosure-icon {
+  transform: rotate(180deg);
+}
+
+.catalog-detail__disclosure-content {
+  padding-top: var(--space-3);
+}
+
+.catalog-detail__disclosure-content p {
+  margin: 0;
+
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  font-weight: 450;
+  line-height: 1.65;
+}
+
+
+/* =============================================================================
    Product tables
    ============================================================================= */
 
@@ -258,27 +601,23 @@
   white-space: nowrap;
 }
 
-/* Number */
 .product-table th:nth-child(1),
 .product-table td:nth-child(1) {
   width: 3.5rem;
 }
 
-/* Weight */
 .product-table th:nth-child(5),
 .product-table td:nth-child(5) {
   width: 7rem;
   white-space: nowrap;
 }
 
-/* Unit */
 .product-table th:nth-child(6),
 .product-table td:nth-child(6) {
   width: 5rem;
   white-space: nowrap;
 }
 
-/* Vegan */
 .product-table th:nth-child(7),
 .product-table td:nth-child(7) {
   width: 5rem;
@@ -286,7 +625,6 @@
   white-space: nowrap;
 }
 
-/* Status */
 .product-table th:nth-child(8),
 .product-table td:nth-child(8) {
   width: 6rem;
@@ -296,9 +634,6 @@
 
 /* =============================================================================
    Product mobile cards
-
-   Typography is shared through ui-card-* classes in ui-cards.css.
-   Product-specific CSS only controls spacing, tone behavior and tags.
    ============================================================================= */
 
 .mobile-card--product {
@@ -355,8 +690,6 @@
 
 /* =============================================================================
    Product mini cards
-
-   Compact relation cards used inside detail panels and order contents.
    ============================================================================= */
 
 .mobile-card--relation {
@@ -425,6 +758,30 @@
    Catalog responsive
    ============================================================================= */
 
+@media (max-width: 800px) {
+  .catalog-detail {
+    padding-top: var(--space-5);
+  }
+
+  .catalog-detail__hero {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-detail__media {
+    min-height: 20rem;
+  }
+
+  .catalog-detail__image,
+  .catalog-detail__image-placeholder {
+    min-height: 20rem;
+  }
+
+  .catalog-detail__content {
+    border-top: 2px solid var(--color-accent-600);
+    border-left: 0;
+  }
+}
+
 @media (max-width: 720px) {
   .catalog {
     padding-top: var(--space-6);
@@ -442,6 +799,19 @@
   .product-card {
     grid-template-rows: 11rem auto;
   }
+
+  .catalog-detail__purchase-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-detail__field .ts-wrapper,
+  .catalog-detail__offer-select {
+    max-width: none;
+  }
+
+  .catalog-detail__add-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 560px) {
@@ -452,5 +822,54 @@
   .product-card {
     width: min(100%, 22rem);
     margin-inline: auto;
+  }
+
+  .catalog-detail {
+    gap: var(--space-4);
+
+    padding:
+      var(--space-4)
+      var(--space-3)
+      var(--space-8);
+  }
+
+  .catalog-detail__hero {
+    border-radius: var(--radius-card-inner);
+  }
+
+  .catalog-detail__media {
+    min-height: 16rem;
+  }
+
+  .catalog-detail__image,
+  .catalog-detail__image-placeholder {
+    min-height: 16rem;
+  }
+
+  .catalog-detail__image {
+    padding: var(--space-4);
+  }
+
+  .catalog-detail__content {
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .catalog-detail__summary {
+    -webkit-line-clamp: 2;
+  }
+
+  .catalog-detail__description.is-expanded
+  .catalog-detail__summary {
+    -webkit-line-clamp: unset;
+  }
+
+  .catalog-detail__purchase .quantity-stepper {
+    width: 100%;
+
+    grid-template-columns:
+      var(--size-control-sm)
+      minmax(4rem, 1fr)
+      var(--size-control-sm);
   }
 }

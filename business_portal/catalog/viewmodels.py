@@ -4,7 +4,6 @@ from collections.abc import Iterable
 
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import ngettext
 
 from common.catalog.contracts import (
     CatalogOffer,
@@ -18,6 +17,9 @@ from common.catalog.viewmodels import (
 from common.ui import UiText
 from pricing.models import CommercialPrice
 from products.localization import translated_product_name
+
+
+LOW_STOCK_THRESHOLD = 10
 
 
 def build_business_product_cards(
@@ -172,10 +174,14 @@ def _price_label(
 def _availability_label(
     available_units: int,
 ) -> str:
-    return ngettext(
-        "%(count)s unit available",
-        "%(count)s units available",
-        available_units,
-    ) % {
-        "count": available_units,
-    }
+    if available_units < LOW_STOCK_THRESHOLD:
+        return str(
+            _("Only %(count)s left")
+            % {
+                "count": available_units,
+            }
+        )
+
+    return str(
+        _("In stock")
+    )
