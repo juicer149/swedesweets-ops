@@ -219,7 +219,7 @@ def test_catalog_add_product_shows_success_message(
 
 
 @pytest.mark.django_db
-def test_catalog_add_product_shows_error_when_product_is_not_available(
+def test_catalog_add_product_shows_error_when_product_is_not_in_business_catalog(
     client,
 ):
     customer = customer_factory()
@@ -265,7 +265,7 @@ def test_catalog_add_product_shows_error_when_product_is_not_available(
     ]
 
     assert messages == [
-        "product is not available for business ordering"
+        "product is not available in the business catalog"
     ]
 
     assert not Order.objects.filter(

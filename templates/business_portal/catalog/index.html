@@ -29,11 +29,13 @@
             data-product-id="{{ card.product_id }}"
           >
             <div class="product-card__media">
-              {% if card.badge_label %}
-                <span class="product-card__badge">
-                  {{ card.badge_label }}
-                </span>
-              {% endif %}
+              <span
+                class="product-card__badge"
+                data-catalog-offer-badge
+                {% if not card.badge_label %}hidden{% endif %}
+              >
+                {{ card.badge_label|default:"" }}
+              </span>
             </div>
 
             <div class="product-card__body">
@@ -45,10 +47,59 @@
                 <p class="product-card__meta">
                   {{ card.package_label }}
                 </p>
+
+                {% if card.offers %}
+                  <div class="product-card__offer">
+                    {% if card.offers|length > 1 %}
+                      <label
+                        for="catalog-offer-{{ card.product_id }}"
+                      >
+                        {% trans "Offer" %}
+                      </label>
+
+                      <select
+                        id="catalog-offer-{{ card.product_id }}"
+                        name="commercial_price_id"
+                        form="catalog-add-form-{{ card.product_id }}"
+                        data-catalog-offer-select
+                      >
+                        {% for offer in card.offers %}
+                          <option
+                            value="{% if offer.commercial_price_id %}{{ offer.commercial_price_id }}{% endif %}"
+                          >
+                            {{ offer.label }}
+                            {% if offer.price_label %}
+                              — {{ offer.price_label }}
+                            {% endif %}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    {% else %}
+                      {% with offer=card.offers.0 %}
+                        <input
+                          type="hidden"
+                          name="commercial_price_id"
+                          value="{% if offer.commercial_price_id %}{{ offer.commercial_price_id }}{% endif %}"
+                          form="catalog-add-form-{{ card.product_id }}"
+                          data-catalog-offer-input
+                        >
+                      {% endwith %}
+                    {% endif %}
+
+                    <p
+                      class="product-card__meta"
+                      data-catalog-offer-details
+                    >
+                      <span data-catalog-offer-price></span>
+                      <span data-catalog-offer-availability></span>
+                    </p>
+                  </div>
+                {% endif %}
               </div>
 
               <div class="product-card__actions">
                 <form
+                  id="catalog-add-form-{{ card.product_id }}"
                   class="product-card__order"
                   method="post"
                   action="{{ card.primary_action.href }}"

@@ -20,7 +20,7 @@ from business.selectors import (
     list_business_catalog_products,
 )
 from business.services import (
-    add_product_to_draft_order,
+    add_catalog_offer_to_draft_order,
 )
 from business_portal.catalog.viewmodels import (
     build_business_catalog_payload,
@@ -43,6 +43,39 @@ def _wants_json(request) -> bool:
     )
 
 
+def _parse_commercial_price_id(
+    raw_value: str | None,
+) -> int | None:
+    """Parse one catalog selection from form input.
+
+    Empty means the explicit unpriced standard Business offer.
+
+    Any non-empty value must be a positive integer CommercialPrice id.
+    """
+
+    if raw_value is None:
+        return None
+
+    value = raw_value.strip()
+
+    if not value:
+        return None
+
+    try:
+        commercial_price_id = int(value)
+    except ValueError as exc:
+        raise InvalidOrderOperation(
+            "invalid business offer"
+        ) from exc
+
+    if commercial_price_id <= 0:
+        raise InvalidOrderOperation(
+            "invalid business offer"
+        )
+
+    return commercial_price_id
+
+
 @login_required
 @require_POST
 def add_product(
@@ -59,9 +92,18 @@ def add_product(
     )
 
     try:
-        add_product_to_draft_order(
+        commercial_price_id = (
+            _parse_commercial_price_id(
+                request.POST.get(
+                    "commercial_price_id"
+                )
+            )
+        )
+
+        add_catalog_offer_to_draft_order(
             customer=customer,
             product=product,
+            commercial_price_id=commercial_price_id,
             quantity=1,
             user=request.user,
         )
@@ -81,7 +123,6 @@ def add_product(
             request,
             message,
         )
-
     else:
         message = _(
             "%(product)s added to your order."
