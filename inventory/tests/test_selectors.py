@@ -23,6 +23,7 @@ from inventory.selectors import (
     list_depleted_batches,
     list_expiring_batch_rows_for_dashboard,
     list_low_stock_products_for_dashboard,
+    orderable_quantity_by_batch_pk,
     orderable_quantity_by_product_id,
     physical_quantity_by_product,
 )
@@ -420,3 +421,40 @@ def test_count_low_stock_products_counts_low_stock_rows(
     )
 
     assert count_low_stock_products(threshold=10) == 1
+
+
+@pytest.mark.django_db
+def test_orderable_quantity_by_batch_pk_returns_available_quantity(
+    apple,
+    batch_factory,
+):
+    batch = batch_factory(
+        product=apple,
+        quantity=25,
+        best_before=TODAY + timedelta(days=30),
+    )
+
+    quantities = orderable_quantity_by_batch_pk(
+        batch_pks=[
+            batch.pk,
+        ],
+        today=TODAY,
+    )
+
+    assert quantities == {
+        batch.pk: 25,
+    }
+
+
+@pytest.mark.django_db
+def test_orderable_quantity_by_batch_pk_returns_zero_for_unknown_batch():
+    quantities = orderable_quantity_by_batch_pk(
+        batch_pks=[
+            999_999,
+        ],
+        today=TODAY,
+    )
+
+    assert quantities == {
+        999_999: 0,
+    }

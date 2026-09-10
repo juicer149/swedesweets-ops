@@ -8,7 +8,7 @@ create objects, or perform business workflows.
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import date, timedelta, datetime
 from enum import StrEnum
@@ -667,6 +667,75 @@ def orderable_quantity_by_product_id(
         )
         for product_id, physical_quantity
         in physical_quantity_by_product_id.items()
+    }
+
+
+def orderable_quantity_by_batch_pk(
+    *,
+    batch_pks: Iterable[int],
+    today: date | None = None,
+) -> dict[int, int]:
+    """Return currently orderable quantity for requested physical batches.
+
+    Missing or non-orderable batch ids are represented by quantity zero.
+
+    Inventory owns the physical availability calculation. Callers do not need
+    to know how active reservations are stored or aggregated.
+    """
+
+    requested_batch_pks = tuple(
+        dict.fromkeys(
+            int(batch_pk)
+            for batch_pk in batch_pks
+        )
+    )
+
+    if not requested_batch_pks:
+        return {}
+
+    today = today or timezone.localdate()
+    cutoff_date = orderable_best_before_cutoff(
+        today=today,
+    )
+
+    physical_quantity_by_batch_pk = {
+        row["id"]: row["quantity"]
+        for row in (
+            InventoryBatch.objects
+            .filter(
+                pk__in=requested_batch_pks,
+                status=InventoryBatch.Status.ACTIVE,
+                quantity__gt=0,
+                best_before__gt=cutoff_date,
+            )
+            .values(
+                "id",
+                "quantity",
+            )
+        )
+    }
+
+    reserved_quantity_by_batch_pk = (
+        active_reserved_quantities_by_batch_pk(
+            batch_pks=(
+                physical_quantity_by_batch_pk.keys()
+            ),
+        )
+    )
+
+    return {
+        batch_pk: max(
+            physical_quantity_by_batch_pk.get(
+                batch_pk,
+                0,
+            )
+            - reserved_quantity_by_batch_pk.get(
+                batch_pk,
+                0,
+            ),
+            0,
+        )
+        for batch_pk in requested_batch_pks
     }
 
 
