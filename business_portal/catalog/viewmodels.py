@@ -5,32 +5,40 @@ from collections.abc import Iterable
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from business.selectors import BusinessCatalogEntry
-from common.catalog.viewmodels import ProductCardVM
+from common.catalog.contracts import (
+    CatalogOffer,
+    CatalogOfferKind,
+    CatalogProduct,
+)
+from common.catalog.viewmodels import (
+    CatalogOfferVM,
+    ProductCardVM,
+)
 from common.ui import UiText
+from pricing.models import CommercialPrice
 from products.localization import translated_product_name
 
 
 def build_business_product_cards(
     *,
-    entries: Iterable[BusinessCatalogEntry],
+    products: Iterable[CatalogProduct],
     language_code: str,
 ) -> tuple[ProductCardVM, ...]:
     return tuple(
         _build_business_product_card(
-            entry=entry,
+            catalog_product=catalog_product,
             language_code=language_code,
         )
-        for entry in entries
+        for catalog_product in products
     )
 
 
 def _build_business_product_card(
     *,
-    entry: BusinessCatalogEntry,
+    catalog_product: CatalogProduct,
     language_code: str,
 ) -> ProductCardVM:
-    product = entry.product
+    product = catalog_product.product
 
     product_name = translated_product_name(
         product,
@@ -73,4 +81,82 @@ def _build_business_product_card(
                 "product": product_name,
             },
         ),
+        offers=tuple(
+            _build_business_offer_viewmodel(
+                offer
+            )
+            for offer in catalog_product.offers
+        ),
     )
+
+
+def build_business_catalog_payload(
+    *,
+    product_cards: Iterable[ProductCardVM],
+) -> list[dict[str, object]]:
+    return [
+        card.catalog_payload()
+        for card in product_cards
+    ]
+
+
+def _build_business_offer_viewmodel(
+    offer: CatalogOffer,
+) -> CatalogOfferVM:
+    if offer.kind == CatalogOfferKind.STANDARD:
+        return CatalogOfferVM(
+            commercial_price_id=offer.commercial_price_id,
+            batch_id=None,
+            kind=offer.kind.value,
+            label=str(_("Standard")),
+            badge_label=None,
+            price_label=_price_label(
+                offer
+            ),
+            available_units=offer.available_units,
+        )
+
+    reason_label = _reason_label(
+        offer.reason
+    )
+
+    return CatalogOfferVM(
+        commercial_price_id=offer.commercial_price_id,
+        batch_id=offer.batch_id,
+        kind=offer.kind.value,
+        label=reason_label,
+        badge_label=reason_label,
+        price_label=_price_label(
+            offer
+        ),
+        available_units=offer.available_units,
+    )
+
+
+def _reason_label(
+    reason: str | None,
+) -> str:
+    if not reason:
+        return str(
+            _("Special offer")
+        )
+
+    try:
+        return str(
+            CommercialPrice.Reason(
+                reason
+            ).label
+        )
+    except ValueError:
+        return str(
+            _("Special offer")
+        )
+
+
+def _price_label(
+    offer: CatalogOffer,
+) -> str | None:
+    if offer.price is None:
+        return None
+
+    return f"€{offer.price:.2f}"

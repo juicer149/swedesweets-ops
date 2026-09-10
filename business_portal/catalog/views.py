@@ -17,10 +17,13 @@ from django.views.decorators.http import require_POST
 
 from business.selectors import (
     get_business_catalog_entry,
-    list_business_catalog_entries,
+    list_business_catalog_products,
 )
-from business.services import add_product_to_draft_order
+from business.services import (
+    add_product_to_draft_order,
+)
 from business_portal.catalog.viewmodels import (
+    build_business_catalog_payload,
     build_business_product_cards,
 )
 from business_portal.selectors import (
@@ -78,6 +81,7 @@ def add_product(
             request,
             message,
         )
+
     else:
         message = _(
             "%(product)s added to your order."
@@ -111,11 +115,17 @@ def catalog(request):
         user=request.user,
     )
 
-    entries = list_business_catalog_entries()
+    catalog_products = (
+        list_business_catalog_products()
+    )
 
     product_cards = build_business_product_cards(
-        entries=entries,
+        products=catalog_products,
         language_code=request.LANGUAGE_CODE,
+    )
+
+    catalog_data = build_business_catalog_payload(
+        product_cards=product_cards,
     )
 
     return render(
@@ -123,6 +133,7 @@ def catalog(request):
         "business_portal/catalog/index.html",
         {
             "product_cards": product_cards,
+            "catalog_data": catalog_data,
         },
     )
 

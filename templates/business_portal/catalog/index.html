@@ -23,7 +23,11 @@
         aria-label="{% trans 'Products' %}"
       >
         {% for card in product_cards %}
-          <article class="product-card">
+          <article
+            class="product-card"
+            data-catalog-product
+            data-product-id="{{ card.product_id }}"
+          >
             <div class="product-card__media">
               {% if card.badge_label %}
                 <span class="product-card__badge">
@@ -77,6 +81,8 @@
           </article>
         {% endfor %}
       </div>
+
+      {{ catalog_data|json_script:"business-catalog-data" }}
     {% else %}
       <p class="catalog__empty">
         {% trans "No products are currently available." %}
@@ -87,6 +93,7 @@
 
 {% block scripts %}
   {{ block.super }}
+
   <script
     src="{% static 'js/catalog.js' %}"
     defer
