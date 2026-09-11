@@ -89,7 +89,6 @@ ALLOWED_GET_STATUS_CODES = {
 REDIRECT_VIEW_NAMES = {
     "accounts:after_login",
     "business_portal:review_order",
-    "business_portal:edit_profile",
 }
 
 POST_ONLY_VIEW_NAMES = {

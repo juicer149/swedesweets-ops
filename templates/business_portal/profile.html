@@ -1,78 +1,104 @@
 {% extends "base.html" %}
-{% load i18n static %}
+{% load i18n %}
 
-{% block title %}{% trans "My profile" %} | SwedeSweets{% endblock %}
+{% block title %}{% trans "Store" %} | SwedeSweets{% endblock %}
 
 {% block content %}
-{% trans "My profile" as profile_title %}
-{% trans "Update your store contact and delivery details." as profile_description %}
-{% include "includes/ui/page_header.html" with title_id="customer-profile-title" title=profile_title description=profile_description %}
+{% trans "Store" as store_title %}
+{% trans "Your store details and order history." as store_description %}
+
+{% include "includes/ui/page_header.html" with title_id="store-title" title=store_title description=store_description %}
+
+{% include "business_portal/includes/store_section_nav.html" with active_section="overview" only %}
 
 <section
   class="list-section portal-profile-section"
-  aria-labelledby="customer-profile-title"
+  aria-labelledby="store-overview-title"
 >
-  <form class="content-card content-card--wide portal-profile-card" method="post" novalidate>
-    {% csrf_token %}
+  <h2
+    id="store-overview-title"
+    class="visually-hidden"
+  >
+    {% trans "Store overview" %}
+  </h2>
 
+  <article class="content-card content-card--wide portal-profile-card">
     <div class="content-card__body">
+      <div class="form-grid">
+        <div class="form-field">
+          <span class="form-label">
+            {% trans "Store name" %}
+          </span>
+
+          <p>
+            {{ customer.name }}
+          </p>
+        </div>
+
+        <div class="form-field">
+          <span class="form-label">
+            {% trans "Email" %}
+          </span>
+
+          <p>
+            {{ customer.email }}
+          </p>
+        </div>
+
+        <div class="form-field">
+          <span class="form-label">
+            {% trans "Phone number" %}
+          </span>
+
+          <p>
+            {{ customer.phone_number }}
+          </p>
+        </div>
+
+        <div class="form-field">
+          <span class="form-label">
+            {% trans "Address" %}
+          </span>
+
+          <p>
+            {{ customer.address_line }}
+          </p>
+        </div>
+
+        <div class="form-field">
+          <span class="form-label">
+            {% trans "City" %}
+          </span>
+
+          <p>
+            {{ customer.city }}
+          </p>
+        </div>
+
+        <div class="form-field">
+          <span class="form-label">
+            {% trans "Country" %}
+          </span>
+
+          <p>
+            {{ country_label }}
+          </p>
+        </div>
+      </div>
+
       <p class="form-help">
         {% trans "Changes apply to future orders. Existing orders keep the delivery details that were saved when the order was placed." %}
       </p>
-
-      {% if form.non_field_errors %}
-        <div class="form-errors" role="alert">
-          {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
-          {% endfor %}
-        </div>
-      {% endif %}
-
-      <div class="form-grid">
-        {% for field in form %}
-          <div class="form-field {{ field.field.layout_class }}{% if field.errors %} form-field--error{% endif %}">
-            <label class="form-label" for="{{ field.id_for_label }}">
-              {{ field.label }}
-            </label>
-
-            {{ field }}
-
-            {% if field.help_text %}
-              <p class="form-help">{{ field.help_text }}</p>
-            {% endif %}
-
-            {% if field.errors %}
-              <div class="form-field__errors" role="alert">
-                {% for error in field.errors %}
-                  <p>{{ error }}</p>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </div>
     </div>
 
     <footer class="form-actions content-card__footer">
-      <button
-        class="button button--lg button--solid button--tone-place"
-        type="submit"
-      >
-        {% trans "Save profile" %}
-      </button>
-
       <a
-        class="button button--md button--ghost button--tone-neutral"
-        href="{% url 'business_portal:index' %}"
+        class="button button--md button--solid button--tone-place"
+        href="{% url 'business_portal:edit_profile' %}"
       >
-        {% trans "Cancel" %}
+        {% trans "Edit store" %}
       </a>
     </footer>
-  </form>
+  </article>
 </section>
-{% endblock %}
-
-{% block scripts %}
-  {{ block.super }}
-  <script src="{% static 'js/enhanced_selects.js' %}" defer></script>
 {% endblock %}

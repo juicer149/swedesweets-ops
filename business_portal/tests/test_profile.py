@@ -31,7 +31,7 @@ PROFILE_FORM_DATA = {
 
 
 @pytest.mark.django_db
-def test_customer_updates_only_own_store_profile(
+def test_customer_can_view_store_profile(
     client,
 ):
     customer = customer_factory(
@@ -42,18 +42,42 @@ def test_customer_updates_only_own_store_profile(
         city="Chamonix-Mont-Blanc",
         address_line="1 Old Street",
     )
-    other_customer = customer_factory(
-        name="Other Store",
-        email="other@example.com",
-        phone_number="+33 6 55 66 77 88",
-        country="FR",
-        city="Annecy",
-        address_line="2 Other Street",
-    )
+
     user = customer_user_factory(
         customer=customer,
-        username="login@example.com",
     )
+
+    client.force_login(
+        user
+    )
+
+    response = client.get(
+        reverse(
+            "business_portal:profile"
+        )
+    )
+
+    assert response.status_code == 200
+
+    content = response.content.decode()
+
+    assert "Original Store" in content
+    assert "store@example.com" in content
+    assert "Chamonix-Mont-Blanc" in content
+
+
+@pytest.mark.django_db
+def test_store_profile_overview_does_not_accept_post(
+    client,
+):
+    customer = customer_factory(
+        name="Original Store",
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+
     client.force_login(
         user
     )
@@ -65,7 +89,53 @@ def test_customer_updates_only_own_store_profile(
         PROFILE_FORM_DATA,
     )
 
+    assert response.status_code == 405
+
+    customer.refresh_from_db()
+
+    assert customer.name == "Original Store"
+
+
+@pytest.mark.django_db
+def test_customer_updates_only_own_store_profile(
+    client,
+):
+    customer = customer_factory(
+        name="Original Store",
+        email="store@example.com",
+        phone_number="+33 6 11 22 33 44",
+        country="FR",
+        city="Chamonix-Mont-Blanc",
+        address_line="1 Old Street",
+    )
+
+    other_customer = customer_factory(
+        name="Other Store",
+        email="other@example.com",
+        phone_number="+33 6 55 66 77 88",
+        country="FR",
+        city="Annecy",
+        address_line="2 Other Street",
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+        username="login@example.com",
+    )
+
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:edit_profile"
+        ),
+        PROFILE_FORM_DATA,
+    )
+
     assert response.status_code == 302
+
     assert response["Location"] == reverse(
         "business_portal:profile"
     )
@@ -74,45 +144,18 @@ def test_customer_updates_only_own_store_profile(
     other_customer.refresh_from_db()
 
     assert customer.name == "Updated Store"
-    assert (
-        customer.email
-        == "updated@example.com"
-    )
-    assert (
-        customer.phone_number
-        == "+33699887766"
-    )
+    assert customer.email == "updated@example.com"
+    assert customer.phone_number == "+33699887766"
     assert customer.country == "CH"
     assert customer.city == "Zürich"
-    assert (
-        customer.address_line
-        == "Bahnhofstrasse 1"
-    )
+    assert customer.address_line == "Bahnhofstrasse 1"
 
-    assert (
-        other_customer.name
-        == "Other Store"
-    )
-    assert (
-        other_customer.email
-        == "other@example.com"
-    )
-    assert (
-        other_customer.phone_number
-        == "+33655667788"
-    )
-    assert (
-        other_customer.country
-        == "FR"
-    )
-    assert (
-        other_customer.city
-        == "Annecy"
-    )
-    assert (
-        other_customer.address_line
-        == "2 Other Street"
-    )
+    assert other_customer.name == "Other Store"
+    assert other_customer.email == "other@example.com"
+    assert other_customer.phone_number == "+33655667788"
+    assert other_customer.country == "FR"
+    assert other_customer.city == "Annecy"
+    assert other_customer.address_line == "2 Other Street"
 
 
 @pytest.mark.django_db
@@ -127,10 +170,12 @@ def test_profile_update_affects_future_orders_but_not_existing_snapshots(
         city="Chamonix-Mont-Blanc",
         address_line="1 Old Street",
     )
+
     product = product_factory(
         name="Apple",
         weight_per_unit=5000,
     )
+
     batch_factory(
         product=product,
         today=TODAY,
@@ -141,6 +186,7 @@ def test_profile_update_affects_future_orders_but_not_existing_snapshots(
         customer=customer,
         username="login@example.com",
     )
+
     client.force_login(
         user
     )
@@ -157,7 +203,7 @@ def test_profile_update_affects_future_orders_but_not_existing_snapshots(
 
     response = client.post(
         reverse(
-            "business_portal:profile"
+            "business_portal:edit_profile"
         ),
         PROFILE_FORM_DATA,
     )
@@ -167,30 +213,12 @@ def test_profile_update_affects_future_orders_but_not_existing_snapshots(
     existing_order.refresh_from_db()
     customer.refresh_from_db()
 
-    assert (
-        existing_order.customer_name
-        == "Original Store"
-    )
-    assert (
-        existing_order.customer_email
-        == "store@example.com"
-    )
-    assert (
-        existing_order.customer_phone_number
-        == "+33611223344"
-    )
-    assert (
-        existing_order.customer_country
-        == "FR"
-    )
-    assert (
-        existing_order.customer_city
-        == "Chamonix-Mont-Blanc"
-    )
-    assert (
-        existing_order.customer_address_line
-        == "1 Old Street"
-    )
+    assert existing_order.customer_name == "Original Store"
+    assert existing_order.customer_email == "store@example.com"
+    assert existing_order.customer_phone_number == "+33611223344"
+    assert existing_order.customer_country == "FR"
+    assert existing_order.customer_city == "Chamonix-Mont-Blanc"
+    assert existing_order.customer_address_line == "1 Old Street"
 
     new_order = create_order(
         customer=customer,
@@ -202,27 +230,9 @@ def test_profile_update_affects_future_orders_but_not_existing_snapshots(
         ],
     )
 
-    assert (
-        new_order.customer_name
-        == "Updated Store"
-    )
-    assert (
-        new_order.customer_email
-        == "updated@example.com"
-    )
-    assert (
-        new_order.customer_phone_number
-        == "+33699887766"
-    )
-    assert (
-        new_order.customer_country
-        == "CH"
-    )
-    assert (
-        new_order.customer_city
-        == "Zürich"
-    )
-    assert (
-        new_order.customer_address_line
-        == "Bahnhofstrasse 1"
-    )
+    assert new_order.customer_name == "Updated Store"
+    assert new_order.customer_email == "updated@example.com"
+    assert new_order.customer_phone_number == "+33699887766"
+    assert new_order.customer_country == "CH"
+    assert new_order.customer_city == "Zürich"
+    assert new_order.customer_address_line == "Bahnhofstrasse 1"

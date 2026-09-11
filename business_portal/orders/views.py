@@ -27,7 +27,6 @@ from business_portal.orders.form_viewmodels import (
 )
 from business_portal.orders.list_viewmodels import (
     build_portal_order_page_rows,
-    build_portal_orders_page_header,
 )
 from business_portal.orders.review_viewmodels import (
     build_portal_order_review_context,
@@ -123,7 +122,9 @@ PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 )
 
 
-def _wants_json(request) -> bool:
+def _wants_json(
+    request,
+) -> bool:
     return (
         "application/json"
         in request.headers.get(
@@ -298,10 +299,6 @@ def orders(request):
         user=request.user,
     )
 
-    active_draft_order = get_active_draft_order_for_customer(
-        customer=customer,
-    )
-
     controls = TableControls.from_request_values(
         base_path=request.path,
         anchor=PORTAL_ORDERS_LIST_ANCHOR,
@@ -322,15 +319,15 @@ def orders(request):
     customer_orders = list(
         list_customer_orders(
             customer=customer,
-            status=controls.active_filter or None,
+            status=(
+                controls.active_filter
+                or None
+            ),
             sort=controls.active_sort,
         )
     )
 
     context = {
-        "page_header": build_portal_orders_page_header(
-            active_draft_order=active_draft_order,
-        ),
         "order_rows": build_portal_order_page_rows(
             orders=customer_orders,
         ),
@@ -340,8 +337,10 @@ def orders(request):
         "table_sorts": controls.build_table_sort_links(
             PORTAL_ORDER_TABLE_SORTS
         ),
-        "mobile_sort_fields": controls.build_mobile_sort_fields(
-            PORTAL_ORDER_TABLE_SORTS
+        "mobile_sort_fields": (
+            controls.build_mobile_sort_fields(
+                PORTAL_ORDER_TABLE_SORTS
+            )
         ),
         "mobile_sort_direction": (
             controls.build_mobile_sort_direction()
@@ -384,6 +383,7 @@ def current_order(request):
                 request,
                 _("Unknown order action."),
             )
+
             return redirect(
                 "business_portal:current_order"
             )
@@ -400,6 +400,7 @@ def current_order(request):
                         request,
                         result.errors,
                     )
+
                     return redirect(
                         "business_portal:current_order"
                     )
@@ -423,6 +424,7 @@ def current_order(request):
                         request,
                         _("Add at least one product."),
                     )
+
                     return redirect(
                         "business_portal:current_order"
                     )
@@ -436,6 +438,7 @@ def current_order(request):
                     request,
                     _("Unknown order action."),
                 )
+
                 return redirect(
                     "business_portal:current_order"
                 )
@@ -467,6 +470,7 @@ def review_order(request):
             request,
             _("No draft order to review."),
         )
+
         return redirect(
             "business_portal:current_order"
         )
@@ -484,6 +488,7 @@ def review_order(request):
                 request,
                 _("Unknown order action."),
             )
+
             return redirect(
                 "business_portal:review_order"
             )
@@ -500,6 +505,7 @@ def review_order(request):
                         request,
                         result.errors,
                     )
+
                     return redirect(
                         "business_portal:review_order"
                     )
@@ -525,6 +531,7 @@ def review_order(request):
                         request,
                         str(error),
                     )
+
                     return redirect(
                         "business_portal:review_order"
                     )
@@ -549,6 +556,7 @@ def review_order(request):
                     request,
                     _("Unknown order action."),
                 )
+
                 return redirect(
                     "business_portal:review_order"
                 )

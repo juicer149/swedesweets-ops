@@ -1,16 +1,28 @@
 {% extends "base.html" %}
 {% load static i18n %}
 
-{% block title %}{% trans "Order history" %} | SwedeSweets{% endblock %}
+{% block title %}{% trans "Store" %} | SwedeSweets{% endblock %}
 
 {% block content %}
-{% include "includes/ui/page_header.html" with page_header=page_header %}
+{% trans "Store" as store_title %}
+{% trans "Your store details and order history." as store_description %}
+
+{% include "includes/ui/page_header.html" with title_id="store-title" title=store_title description=store_description %}
+
+{% include "business_portal/includes/store_section_nav.html" with active_section="orders" only %}
 
 <section
   id="portal-orders-list"
   class="list-section"
-  aria-labelledby="portal-orders-title"
+  aria-labelledby="store-orders-title"
 >
+  <h2
+    id="store-orders-title"
+    class="visually-hidden"
+  >
+    {% trans "Orders" %}
+  </h2>
+
   {% include "includes/table/filter_chips.html" %}
   {% include "includes/table/sort_select.html" %}
 
@@ -38,7 +50,9 @@
               </span>
             </th>
 
-            <td>{{ row.created_at_label }}</td>
+            <td>
+              {{ row.created_at_label }}
+            </td>
 
             <td>
               <span class="{{ row.status.text.css_class }}">
@@ -47,12 +61,17 @@
             </td>
 
             <td class="numeric-cell">
-              <strong>{{ row.total_quantity }}</strong>
+              <strong>
+                {{ row.total_quantity }}
+              </strong>
             </td>
           </tr>
         {% empty %}
           <tr>
-            <td class="empty-cell" colspan="4">
+            <td
+              class="empty-cell"
+              colspan="4"
+            >
               {% trans "No orders found." %}
             </td>
           </tr>
@@ -66,7 +85,9 @@
       {% include "includes/ui/card.html" with card=row.card only %}
     {% empty %}
       <article class="mobile-card mobile-card--neutral">
-        <p>{% trans "No orders found." %}</p>
+        <p>
+          {% trans "No orders found." %}
+        </p>
       </article>
     {% endfor %}
   </div>
@@ -75,6 +96,14 @@
 
 {% block scripts %}
   {{ block.super }}
-  <script src="{% static 'js/clickable_rows.js' %}" defer></script>
-  <script src="{% static 'js/sort_select.js' %}" defer></script>
+
+  <script
+    src="{% static 'js/clickable_rows.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/sort_select.js' %}"
+    defer
+  ></script>
 {% endblock %}

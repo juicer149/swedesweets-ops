@@ -6,31 +6,30 @@ from accounts.roles import Capability, RoleSpec
 from common.navigation import NavItem, filter_nav_items
 
 
-BUSINESS_ORDERS_NAV_ITEM = NavItem(
-    label=_("Orders"),
-    route_name="business_portal:orders",
-    namespace="business_portal",
-    icon="packed",
-    capability=Capability.VIEW_OWN_ORDERS,
-    active_url_names=("orders", "order_detail"),
-)
-
 BUSINESS_CATALOG_NAV_ITEM = NavItem(
     label=_("Catalog"),
     route_name="business_portal:catalog",
     namespace="business_portal",
     icon="lollipop",
     capability=Capability.VIEW_BUSINESS_PORTAL,
-    active_url_names=("catalog",),
+    active_url_names=(
+        "catalog",
+        "catalog_product",
+    ),
 )
 
 BUSINESS_PROFILE_NAV_ITEM = NavItem(
-    label=_("Store profile"),
+    label=_("Store"),
     route_name="business_portal:profile",
     namespace="business_portal",
     icon="users",
     capability=Capability.VIEW_OWN_ACCOUNT,
-    active_url_names=("profile", "edit_profile"),
+    active_url_names=(
+        "profile",
+        "edit_profile",
+        "orders",
+        "order_detail",
+    ),
 )
 
 BUSINESS_CONTACT_NAV_ITEM = NavItem(
@@ -44,7 +43,6 @@ BUSINESS_CONTACT_NAV_ITEM = NavItem(
 
 
 BUSINESS_PRIMARY_NAV_ITEMS = (
-    BUSINESS_ORDERS_NAV_ITEM,
     BUSINESS_CATALOG_NAV_ITEM,
     BUSINESS_PROFILE_NAV_ITEM,
     BUSINESS_CONTACT_NAV_ITEM,
