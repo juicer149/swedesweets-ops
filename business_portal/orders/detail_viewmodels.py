@@ -5,6 +5,17 @@ from dataclasses import dataclass
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from business_portal.orders.presentation import (
+    business_order_status_label,
+    contents_summary,
+    order_detail_card_class,
+    order_detail_status_class,
+    order_status_icon,
+    quantity_label,
+)
+from business_portal.orders.product_presentation import (
+    business_order_line_presentation,
+)
 from common.detail_cards import (
     DetailCard,
     DetailHeader,
@@ -17,17 +28,6 @@ from common.ui import (
     UiText,
 )
 from orders.models import Order, OrderLine
-from business_portal.orders.presentation import (
-    business_order_status_label,
-    contents_summary,
-    order_detail_card_class,
-    order_detail_status_class,
-    order_status_icon,
-    quantity_label,
-)
-from business_portal.orders.product_presentation import (
-    business_product_catalog_label,
-)
 from products.localization import translated_product_name
 from products.models import Product
 
@@ -39,6 +39,8 @@ class PortalOrderContentLine:
     quantity_label: str
     unit: str
     catalog_label: str
+    offer_label: str | None
+    price_label: str | None
     card: UiCard
 
 
@@ -73,47 +75,92 @@ def build_portal_order_detail_context(
     order: Order,
     language_code: str,
 ) -> PortalOrderDetailContext:
-    order_lines = tuple(order.lines.select_related("product").all())
+    order_lines = tuple(
+        order.lines
+        .select_related(
+            "product",
+            "business_offer_selection__commercial_price",
+        )
+        .order_by("id")
+    )
+
     content_lines = tuple(
         _build_content_line(
             line,
             language_code=language_code,
+            currency=order.currency,
         )
         for line in order_lines
     )
-    product_count = len(content_lines)
-    total_quantity = sum(line.quantity for line in content_lines)
+
+    product_count = len(
+        content_lines
+    )
+
+    total_quantity = sum(
+        line.quantity
+        for line in content_lines
+    )
 
     return PortalOrderDetailContext(
         order=order,
         content_lines=content_lines,
         product_count=product_count,
         total_quantity=total_quantity,
-        total_quantity_label=quantity_label(total_quantity),
+        total_quantity_label=quantity_label(
+            total_quantity
+        ),
         detail_card=DetailCard(
-            header=_build_order_header(order),
+            header=_build_order_header(
+                order
+            ),
             panels=_build_order_detail_panels(
                 order=order,
                 product_count=product_count,
                 total_quantity=total_quantity,
             ),
             content_card_class=(
-                f"portal-order-detail-card {order_detail_card_class(order.status)}"
+                f"portal-order-detail-card "
+                f"{order_detail_card_class(order.status)}"
             ),
         ),
-        title=_("Order #%(order_id)s") % {"order_id": order.pk},
-        customer_status_label=business_order_status_label(order.status),
-        cancel_url=reverse("business_portal:orders"),
+        title=_(
+            "Order #%(order_id)s"
+        )
+        % {
+            "order_id": order.pk,
+        },
+        customer_status_label=(
+            business_order_status_label(
+                order.status
+            )
+        ),
+        cancel_url=reverse(
+            "business_portal:orders"
+        ),
     )
 
 
-def _build_order_header(order: Order) -> DetailHeader:
+def _build_order_header(
+    order: Order,
+) -> DetailHeader:
     return DetailHeader(
         eyebrow=_("Order details"),
-        title=_("Order #%(order_id)s") % {"order_id": order.pk},
-        status_label=business_order_status_label(order.status),
-        status_class=order_detail_status_class(order.status),
-        status_icon=order_status_icon(order.status),
+        title=_(
+            "Order #%(order_id)s"
+        )
+        % {
+            "order_id": order.pk,
+        },
+        status_label=business_order_status_label(
+            order.status
+        ),
+        status_class=order_detail_status_class(
+            order.status
+        ),
+        status_icon=order_status_icon(
+            order.status
+        ),
     )
 
 
@@ -128,9 +175,15 @@ def _build_order_detail_panels(
             key="order",
             label=_("Order"),
             summary=_("Details"),
-            body_template="business_portal/orders/includes/detail_panel_order.html",
+            body_template=(
+                "business_portal/orders/includes/"
+                "detail_panel_order.html"
+            ),
             icon="cart",
-            is_active=order.status == Order.Status.CANCELLED,
+            is_active=(
+                order.status
+                == Order.Status.CANCELLED
+            ),
         ),
         DetailPanel(
             key="items",
@@ -139,9 +192,15 @@ def _build_order_detail_panels(
                 product_count=product_count,
                 total_quantity=total_quantity,
             ),
-            body_template="business_portal/orders/includes/detail_panel_items.html",
+            body_template=(
+                "business_portal/orders/includes/"
+                "detail_panel_items.html"
+            ),
             icon="box",
-            is_active=order.status != Order.Status.CANCELLED,
+            is_active=(
+                order.status
+                != Order.Status.CANCELLED
+            ),
         ),
     )
 
@@ -150,24 +209,46 @@ def _build_content_line(
     line: OrderLine,
     *,
     language_code: str,
+    currency: str,
 ) -> PortalOrderContentLine:
-    product = line.product
-    line_quantity_label = quantity_label(line.quantity_in_units)
-    catalog_label = business_product_catalog_label(
-        product,
-        language_code=language_code,
+    presentation = (
+        business_order_line_presentation(
+            line,
+            language_code=language_code,
+            currency=currency,
+        )
+    )
+
+    line_quantity_label = quantity_label(
+        line.quantity_in_units
     )
 
     return PortalOrderContentLine(
-        product=product,
+        product=line.product,
         quantity=line.quantity_in_units,
         quantity_label=line_quantity_label,
         unit=line.get_unit_display(),
-        catalog_label=catalog_label,
+        catalog_label=(
+            presentation.catalog_label
+        ),
+        offer_label=(
+            presentation.offer_label
+        ),
+        price_label=(
+            presentation.price_label
+        ),
         card=_build_content_line_card(
-            product=product,
+            product=line.product,
             quantity_label=line_quantity_label,
-            catalog_label=catalog_label,
+            catalog_label=(
+                presentation.catalog_label
+            ),
+            offer_label=(
+                presentation.offer_label
+            ),
+            price_label=(
+                presentation.price_label
+            ),
             language_code=language_code,
         ),
     )
@@ -178,11 +259,30 @@ def _build_content_line_card(
     product: Product,
     quantity_label: str,
     catalog_label: str,
+    offer_label: str | None,
+    price_label: str | None,
     language_code: str,
 ) -> UiCard:
+    subtext_parts = [
+        catalog_label,
+    ]
+
+    if offer_label:
+        subtext_parts.append(
+            offer_label
+        )
+
+    if price_label:
+        subtext_parts.append(
+            price_label
+        )
+
     return UiCard(
         tone=TONE_NEUTRAL,
-        css_class="mobile-card mobile-card--neutral portal-detail-item-card",
+        css_class=(
+            "mobile-card mobile-card--neutral "
+            "portal-detail-item-card"
+        ),
         rows=(
             UiCardRow(
                 left=UiText(
@@ -191,7 +291,9 @@ def _build_content_line_card(
                         language_code=language_code,
                     ),
                     css_class="ui-card-title",
-                    subtext=catalog_label,
+                    subtext=" · ".join(
+                        subtext_parts
+                    ),
                 ),
                 right=UiText(
                     text=quantity_label,

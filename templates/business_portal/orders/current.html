@@ -54,6 +54,20 @@
                   <span class="portal-cart-line__product-label">
                     {{ line.product_label }}
                   </span>
+
+                  {% if line.offer_label %}
+                    <div class="muted-text">
+                      <strong>
+                        {{ line.offer_label }}
+                      </strong>
+                    </div>
+                  {% endif %}
+
+                  {% if line.price_label %}
+                    <div class="muted-text">
+                      {{ line.price_label }}
+                    </div>
+                  {% endif %}
                 </div>
 
                 <div class="portal-cart-line__quantity">

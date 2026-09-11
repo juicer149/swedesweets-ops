@@ -58,6 +58,20 @@
                   <span class="muted-text">
                     {{ line.catalog_label }}
                   </span>
+
+                  {% if line.offer_label %}
+                    <div class="muted-text">
+                      <strong>
+                        {{ line.offer_label }}
+                      </strong>
+                    </div>
+                  {% endif %}
+
+                  {% if line.price_label %}
+                    <div class="muted-text">
+                      {{ line.price_label }}
+                    </div>
+                  {% endif %}
                 </td>
 
                 <td class="table-cell--numeric">

@@ -21,10 +21,26 @@
               {% else %}
                 {{ line.product.display_label }}
               {% endif %}
+
+              {% if line.offer_label %}
+                <span class="table-cell-subtext">
+                  <strong>
+                    {{ line.offer_label }}
+                  </strong>
+                </span>
+              {% endif %}
+
+              {% if line.price_label %}
+                <span class="table-cell-subtext">
+                  {{ line.price_label }}
+                </span>
+              {% endif %}
             </th>
 
             <td class="numeric-cell">
-              <strong>{{ line.quantity_label }}</strong>
+              <strong>
+                {{ line.quantity_label }}
+              </strong>
             </td>
           </tr>
         {% endfor %}
@@ -38,5 +54,7 @@
     {% endfor %}
   </div>
 {% else %}
-  <p class="form-help">{% trans "No order items found." %}</p>
+  <p class="form-help">
+    {% trans "No order items found." %}
+  </p>
 {% endif %}

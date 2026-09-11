@@ -6,14 +6,18 @@ from typing import Any
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from business_portal.orders.product_presentation import (
+    business_order_line_presentation,
+)
 from orders.models import Order
-from products.localization import translated_product_name
 
 
 @dataclass(frozen=True, slots=True)
 class PortalDraftLine:
     order_line_id: int
     product_label: str
+    offer_label: str | None
+    price_label: str | None
     quantity: int
     quantity_url: str
     remove_url: str
@@ -91,50 +95,56 @@ def _build_portal_draft_lines(
 ) -> tuple[PortalDraftLine, ...]:
     lines = (
         order.lines
-        .select_related("product")
+        .select_related(
+            "product",
+            "business_offer_selection__commercial_price",
+        )
         .order_by("id")
     )
 
-    return tuple(
-        PortalDraftLine(
-            order_line_id=line.id,
-            product_label=_product_label(
-                line.product,
-                language_code=language_code,
-            ),
-            quantity=line.quantity_in_units,
-            quantity_url=reverse(
-                "business_portal:set_draft_line_quantity",
-                kwargs={
-                    "order_line_id": line.id,
-                },
-            ),
-            remove_url=reverse(
-                "business_portal:remove_draft_line",
-                kwargs={
-                    "order_line_id": line.id,
-                },
-            ),
-        )
-        for line in lines
+    effective_language_code = (
+        language_code or "en"
     )
 
+    draft_lines = []
 
-def _product_label(
-    product,
-    *,
-    language_code: str | None,
-) -> str:
-    if language_code:
-        product_name = translated_product_name(
-            product,
-            language_code=language_code,
+    for line in lines:
+        presentation = (
+            business_order_line_presentation(
+                line,
+                language_code=effective_language_code,
+                currency=order.currency,
+            )
         )
-    else:
-        product_name = product.display_name
 
-    return (
-        f"{product.code_label} · "
-        f"{product_name} · "
-        f"{product.unit_weight_label}"
+        draft_lines.append(
+            PortalDraftLine(
+                order_line_id=line.id,
+                product_label=(
+                    presentation.catalog_label
+                ),
+                offer_label=(
+                    presentation.offer_label
+                ),
+                price_label=(
+                    presentation.price_label
+                ),
+                quantity=line.quantity_in_units,
+                quantity_url=reverse(
+                    "business_portal:set_draft_line_quantity",
+                    kwargs={
+                        "order_line_id": line.id,
+                    },
+                ),
+                remove_url=reverse(
+                    "business_portal:remove_draft_line",
+                    kwargs={
+                        "order_line_id": line.id,
+                    },
+                ),
+            )
+        )
+
+    return tuple(
+        draft_lines
     )

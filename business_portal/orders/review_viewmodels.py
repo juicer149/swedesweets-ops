@@ -11,7 +11,7 @@ from business_portal.orders.presentation import (
     quantity_label,
 )
 from business_portal.orders.product_presentation import (
-    business_product_catalog_label,
+    business_order_line_presentation,
 )
 from orders.models import Order, OrderLine
 from products.models import Product
@@ -23,6 +23,8 @@ class PortalOrderReviewLine:
     quantity: int
     quantity_label: str
     catalog_label: str
+    offer_label: str | None
+    price_label: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,7 +58,10 @@ def build_portal_order_review_context(
 ) -> PortalOrderReviewContext:
     order_lines = tuple(
         order.lines
-        .select_related("product")
+        .select_related(
+            "product",
+            "business_offer_selection__commercial_price",
+        )
         .order_by("id")
     )
 
@@ -64,11 +69,15 @@ def build_portal_order_review_context(
         _build_review_line(
             line,
             language_code=language_code,
+            currency=order.currency,
         )
         for line in order_lines
     )
 
-    product_count = len(lines)
+    product_count = len(
+        lines
+    )
+
     total_quantity = sum(
         line.quantity
         for line in lines
@@ -95,17 +104,29 @@ def _build_review_line(
     line: OrderLine,
     *,
     language_code: str,
+    currency: str,
 ) -> PortalOrderReviewLine:
-    product = line.product
+    presentation = (
+        business_order_line_presentation(
+            line,
+            language_code=language_code,
+            currency=currency,
+        )
+    )
 
     return PortalOrderReviewLine(
-        product=product,
+        product=line.product,
         quantity=line.quantity_in_units,
         quantity_label=quantity_label(
             line.quantity_in_units
         ),
-        catalog_label=business_product_catalog_label(
-            product,
-            language_code=language_code,
+        catalog_label=(
+            presentation.catalog_label
+        ),
+        offer_label=(
+            presentation.offer_label
+        ),
+        price_label=(
+            presentation.price_label
         ),
     )
