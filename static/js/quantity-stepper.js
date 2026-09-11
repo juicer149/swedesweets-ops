@@ -22,28 +22,49 @@ function initializeQuantityStepper(stepper) {
     return;
   }
 
-  const minimum = Number.parseInt(
-    input.min || "1",
-    10
+  const parsedMinimum = Number(
+    input.min || "1"
   );
 
-  const step = Number.parseInt(
-    input.step || "1",
-    10
+  const parsedStep = Number(
+    input.step || "1"
   );
+
+  const minimum = Number.isFinite(
+    parsedMinimum
+  )
+    ? parsedMinimum
+    : 1;
+
+  const step = (
+    Number.isFinite(parsedStep)
+    && parsedStep > 0
+  )
+    ? parsedStep
+    : 1;
+
 
   const readQuantity = () => {
-    const quantity = Number.parseInt(
-      input.value,
-      10
+    const rawValue = input.value.trim();
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const quantity = Number(
+      rawValue
     );
 
-    if (!Number.isInteger(quantity)) {
+    if (
+      !Number.isFinite(quantity)
+      || !Number.isInteger(quantity)
+    ) {
       return null;
     }
 
     return quantity;
   };
+
 
   const renderState = () => {
     const quantity = readQuantity();
@@ -54,8 +75,11 @@ function initializeQuantityStepper(stepper) {
     );
   };
 
+
   const setQuantity = (quantity) => {
-    input.value = String(quantity);
+    input.value = String(
+      quantity
+    );
 
     input.dispatchEvent(
       new Event(
@@ -75,6 +99,7 @@ function initializeQuantityStepper(stepper) {
       )
     );
   };
+
 
   decreaseButton.addEventListener(
     "click",
@@ -97,6 +122,7 @@ function initializeQuantityStepper(stepper) {
     }
   );
 
+
   increaseButton.addEventListener(
     "click",
     () => {
@@ -109,6 +135,7 @@ function initializeQuantityStepper(stepper) {
       );
     }
   );
+
 
   input.addEventListener(
     "input",

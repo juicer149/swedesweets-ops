@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% trans "Order" %} | SwedeSweets{% endblock %}
 
@@ -9,6 +9,8 @@
 <section
   class="form-section form-section--wide"
   aria-labelledby="portal-place-order-title"
+  data-current-order
+  data-current-order-error-message="{% trans 'Could not update quantity.' %}"
 >
   <div class="form-card form-card--wide portal-place-order-card">
     <section
@@ -55,35 +57,27 @@
                 </div>
 
                 <div class="portal-cart-line__quantity">
-                  <div class="quantity-stepper">
-                    <form
-                      method="post"
-                      action="{{ line.quantity_url }}"
-                      class="quantity-stepper__form"
-                    >
-                      {% csrf_token %}
+                  <form
+                    method="post"
+                    action="{{ line.quantity_url }}"
+                    data-current-order-quantity-form
+                    data-confirmed-quantity="{{ line.quantity }}"
+                  >
+                    {% csrf_token %}
 
+                    <div
+                      class="quantity-stepper"
+                      aria-label="{% trans 'Quantity' %}"
+                      data-quantity-stepper
+                    >
                       <button
                         class="quantity-stepper__button quantity-stepper__button--decrease"
-                        type="submit"
-                        name="quantity"
-                        value="{{ line.quantity|add:'-1' }}"
-                        {% if line.quantity <= 1 %}disabled{% endif %}
+                        type="button"
+                        aria-label="{% trans 'Decrease quantity' %}"
+                        data-quantity-decrease
                       >
                         <span aria-hidden="true">−</span>
-
-                        <span class="visually-hidden">
-                          {% trans "Decrease quantity" %}
-                        </span>
                       </button>
-                    </form>
-
-                    <form
-                      method="post"
-                      action="{{ line.quantity_url }}"
-                      class="quantity-stepper__form quantity-stepper__form--value"
-                    >
-                      {% csrf_token %}
 
                       <label
                         class="visually-hidden"
@@ -103,30 +97,35 @@
                         inputmode="numeric"
                         autocomplete="off"
                         required
+                        data-quantity-input
                       >
-                    </form>
-
-                    <form
-                      method="post"
-                      action="{{ line.quantity_url }}"
-                      class="quantity-stepper__form"
-                    >
-                      {% csrf_token %}
 
                       <button
                         class="quantity-stepper__button quantity-stepper__button--increase"
-                        type="submit"
-                        name="quantity"
-                        value="{{ line.quantity|add:'1' }}"
+                        type="button"
+                        aria-label="{% trans 'Increase quantity' %}"
+                        data-quantity-increase
                       >
                         <span aria-hidden="true">+</span>
-
-                        <span class="visually-hidden">
-                          {% trans "Increase quantity" %}
-                        </span>
                       </button>
-                    </form>
-                  </div>
+                    </div>
+
+                    <span
+                      class="visually-hidden"
+                      role="status"
+                      aria-live="polite"
+                      data-current-order-quantity-status
+                    ></span>
+
+                    <noscript>
+                      <button
+                        class="button button--sm button--text button--tone-neutral"
+                        type="submit"
+                      >
+                        {% trans "Update quantity" %}
+                      </button>
+                    </noscript>
+                  </form>
                 </div>
 
                 <div class="portal-cart-line__action">
@@ -204,4 +203,18 @@
     </section>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/quantity-stepper.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/current_order.js' %}"
+    defer
+  ></script>
 {% endblock %}

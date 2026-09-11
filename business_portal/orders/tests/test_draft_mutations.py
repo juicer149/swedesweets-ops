@@ -95,6 +95,61 @@ def test_customer_can_set_draft_line_quantity(
 
 
 @pytest.mark.django_db
+def test_set_draft_line_quantity_returns_json_success(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    line = _create_draft_line(
+        customer=customer,
+        product=product,
+        quantity=1,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:set_draft_line_quantity",
+            kwargs={
+                "order_line_id": line.id,
+            },
+        ),
+        {
+            "quantity": "5",
+        },
+        HTTP_ACCEPT="application/json",
+    )
+
+    assert response.status_code == 200
+
+    assert response.json() == {
+        "ok": True,
+        "message": "Quantity updated.",
+        "quantity": 5,
+    }
+
+    line.refresh_from_db()
+
+    assert line.quantity == 5
+    assert line.quantity_in_units == 5
+
+
+@pytest.mark.django_db
 def test_set_draft_line_quantity_rejects_invalid_quantity(
     client,
 ):
@@ -147,6 +202,54 @@ def test_set_draft_line_quantity_rejects_invalid_quantity(
     assert stored_messages == [
         "Quantity must be a whole number."
     ]
+
+
+@pytest.mark.django_db
+def test_set_draft_line_quantity_returns_json_error_for_invalid_quantity(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    line = _create_draft_line(
+        customer=customer,
+        product=product,
+        quantity=3,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:set_draft_line_quantity",
+            kwargs={
+                "order_line_id": line.id,
+            },
+        ),
+        {
+            "quantity": "not-a-number",
+        },
+        HTTP_ACCEPT="application/json",
+    )
+
+    assert response.status_code == 400
+
+    assert response.json() == {
+        "ok": False,
+        "message": "Quantity must be a whole number.",
+    }
+
+    line.refresh_from_db()
+
+    assert line.quantity_in_units == 3
 
 
 @pytest.mark.django_db
@@ -207,6 +310,60 @@ def test_set_draft_line_quantity_shows_business_validation_error(
     assert stored_messages == [
         "only 10 units are currently available"
     ]
+
+
+@pytest.mark.django_db
+def test_set_draft_line_quantity_returns_json_business_validation_error(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=10,
+    )
+
+    line = _create_draft_line(
+        customer=customer,
+        product=product,
+        quantity=3,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:set_draft_line_quantity",
+            kwargs={
+                "order_line_id": line.id,
+            },
+        ),
+        {
+            "quantity": "11",
+        },
+        HTTP_ACCEPT="application/json",
+    )
+
+    assert response.status_code == 400
+
+    assert response.json() == {
+        "ok": False,
+        "message": "only 10 units are currently available",
+    }
+
+    line.refresh_from_db()
+
+    assert line.quantity_in_units == 3
 
 
 @pytest.mark.django_db

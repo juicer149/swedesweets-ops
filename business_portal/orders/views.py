@@ -4,6 +4,7 @@ from enum import StrEnum
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import (
     get_object_or_404,
     redirect,
@@ -122,6 +123,16 @@ PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
 )
 
 
+def _wants_json(request) -> bool:
+    return (
+        "application/json"
+        in request.headers.get(
+            "Accept",
+            "",
+        )
+    )
+
+
 def _add_service_errors(
     request,
     errors: tuple[str, ...],
@@ -165,6 +176,10 @@ def set_draft_line_quantity(
         order_line_id=order_line_id,
     )
 
+    wants_json = _wants_json(
+        request
+    )
+
     raw_quantity = request.POST.get(
         "quantity",
         "",
@@ -175,10 +190,24 @@ def set_draft_line_quantity(
             raw_quantity
         )
     except ValueError:
+        message = _(
+            "Quantity must be a whole number."
+        )
+
+        if wants_json:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": str(message),
+                },
+                status=400,
+            )
+
         messages.error(
             request,
-            _("Quantity must be a whole number."),
+            message,
         )
+
         return redirect(
             "business_portal:current_order"
         )
@@ -191,14 +220,38 @@ def set_draft_line_quantity(
             user=request.user,
         )
     except ORDER_OPERATION_ERRORS as error:
+        message = str(error)
+
+        if wants_json:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": message,
+                },
+                status=400,
+            )
+
         messages.error(
             request,
-            str(error),
+            message,
         )
     else:
+        message = _(
+            "Quantity updated."
+        )
+
+        if wants_json:
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "message": str(message),
+                    "quantity": quantity,
+                }
+            )
+
         messages.success(
             request,
-            _("Quantity updated."),
+            message,
         )
 
     return redirect(
