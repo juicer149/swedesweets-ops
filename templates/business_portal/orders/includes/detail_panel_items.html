@@ -5,14 +5,27 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>{% trans "Product" %}</th>
-          <th class="numeric-cell">{% trans "Quantity" %}</th>
+          <th>
+            {% trans "Product" %}
+          </th>
+
+          <th class="numeric-cell">
+            {% trans "Quantity" %}
+          </th>
         </tr>
       </thead>
 
       <tbody>
         {% for line in content_lines %}
-          <tr>
+          <tr
+            {% if line.catalog_href %}
+              class="clickable-row"
+              data-href="{{ line.catalog_href }}"
+              tabindex="0"
+              role="link"
+              aria-label="{% trans 'View product in catalog' %}"
+            {% endif %}
+          >
             <th scope="row">
               {% if line.catalog_label %}
                 <span class="table-cell-subtext">
@@ -33,6 +46,12 @@
               {% if line.price_label %}
                 <span class="table-cell-subtext">
                   {{ line.price_label }}
+                </span>
+              {% endif %}
+
+              {% if not line.catalog_href %}
+                <span class="table-cell-subtext">
+                  {% trans "Not currently available in the catalog" %}
                 </span>
               {% endif %}
             </th>

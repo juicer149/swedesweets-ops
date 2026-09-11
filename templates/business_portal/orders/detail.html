@@ -4,9 +4,16 @@
 {% block title %}{{ title }} | SwedeSweets{% endblock %}
 
 {% block content %}
-<section class="content-section content-section--wide content-section--detail">
-  <article class="content-card content-card--wide {{ detail_card.content_card_class }}">
-    <a class="text-link portal-order-detail-card__back-link" href="{{ cancel_url }}">
+<section
+  class="content-section content-section--wide content-section--detail"
+>
+  <article
+    class="content-card content-card--wide {{ detail_card.content_card_class }}"
+  >
+    <a
+      class="text-link portal-order-detail-card__back-link"
+      href="{{ cancel_url }}"
+    >
       ← {% trans "Back to order history" %}
     </a>
 
@@ -21,5 +28,14 @@
 
 {% block scripts %}
   {{ block.super }}
-  <script src="{% static 'js/tabs.js' %}" defer></script>
+
+  <script
+    src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/clickable_rows.js' %}"
+    defer
+  ></script>
 {% endblock %}

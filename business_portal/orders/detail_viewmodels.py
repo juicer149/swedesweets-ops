@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from business.selectors import (
+    list_business_catalog_products,
+)
 from business_portal.orders.presentation import (
     business_order_status_label,
     contents_summary,
@@ -27,8 +30,13 @@ from common.ui import (
     UiCardRow,
     UiText,
 )
-from orders.models import Order, OrderLine
-from products.localization import translated_product_name
+from orders.models import (
+    Order,
+    OrderLine,
+)
+from products.localization import (
+    translated_product_name,
+)
 from products.models import Product
 
 
@@ -41,6 +49,7 @@ class PortalOrderContentLine:
     catalog_label: str
     offer_label: str | None
     price_label: str | None
+    catalog_href: str | None
     card: UiCard
 
 
@@ -84,11 +93,21 @@ def build_portal_order_detail_context(
         .order_by("id")
     )
 
+    available_catalog_product_ids = {
+        catalog_product.product.id
+        for catalog_product in (
+            list_business_catalog_products()
+        )
+    }
+
     content_lines = tuple(
         _build_content_line(
             line,
             language_code=language_code,
             currency=order.currency,
+            available_catalog_product_ids=(
+                available_catalog_product_ids
+            ),
         )
         for line in order_lines
     )
@@ -210,6 +229,7 @@ def _build_content_line(
     *,
     language_code: str,
     currency: str,
+    available_catalog_product_ids: set[int],
 ) -> PortalOrderContentLine:
     presentation = (
         business_order_line_presentation(
@@ -221,6 +241,13 @@ def _build_content_line(
 
     line_quantity_label = quantity_label(
         line.quantity_in_units
+    )
+
+    catalog_href = _catalog_product_href(
+        product_id=line.product_id,
+        available_catalog_product_ids=(
+            available_catalog_product_ids
+        ),
     )
 
     return PortalOrderContentLine(
@@ -237,6 +264,7 @@ def _build_content_line(
         price_label=(
             presentation.price_label
         ),
+        catalog_href=catalog_href,
         card=_build_content_line_card(
             product=line.product,
             quantity_label=line_quantity_label,
@@ -249,8 +277,28 @@ def _build_content_line(
             price_label=(
                 presentation.price_label
             ),
+            catalog_href=catalog_href,
             language_code=language_code,
         ),
+    )
+
+
+def _catalog_product_href(
+    *,
+    product_id: int,
+    available_catalog_product_ids: set[int],
+) -> str | None:
+    if (
+        product_id
+        not in available_catalog_product_ids
+    ):
+        return None
+
+    return reverse(
+        "business_portal:catalog_product",
+        kwargs={
+            "product_id": product_id,
+        },
     )
 
 
@@ -261,6 +309,7 @@ def _build_content_line_card(
     catalog_label: str,
     offer_label: str | None,
     price_label: str | None,
+    catalog_href: str | None,
     language_code: str,
 ) -> UiCard:
     subtext_parts = [
@@ -275,6 +324,15 @@ def _build_content_line_card(
     if price_label:
         subtext_parts.append(
             price_label
+        )
+
+    action = None
+
+    if catalog_href:
+        action = UiText(
+            text=_("View product →"),
+            href=catalog_href,
+            css_class="text-link",
         )
 
     return UiCard(
@@ -301,4 +359,5 @@ def _build_content_line_card(
                 ),
             ),
         ),
+        action=action,
     )
