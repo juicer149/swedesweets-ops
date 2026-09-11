@@ -47,6 +47,7 @@ class ProductCardVM:
     package_label: str
     badge_label: str | None
     primary_action: UiText
+    image_url: str | None = None
     secondary_action: UiText | None = None
     offers: tuple[CatalogOfferVM, ...] = ()
 

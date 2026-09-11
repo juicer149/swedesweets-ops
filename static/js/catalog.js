@@ -1,17 +1,34 @@
 (() => {
+  "use strict";
+
+  const catalog = document.querySelector(
+    ".catalog"
+  );
+
   const forms = document.querySelectorAll(
     "[data-catalog-add-form]"
   );
+
   const feedback = document.querySelector(
     "[data-catalog-feedback]"
   );
+
   const catalogDataElement = document.getElementById(
     "business-catalog-data"
   );
 
+  const addedLabel =
+    catalog?.dataset.catalogAddedLabel
+    || "Added";
+
+  const fallbackErrorMessage =
+    catalog?.dataset.catalogErrorMessage
+    || "Could not add product.";
+
   if (!forms.length) {
     return;
   }
+
 
   function setFeedback(message) {
     if (!feedback) {
@@ -20,6 +37,7 @@
 
     feedback.textContent = message;
   }
+
 
   function parseCatalogData() {
     if (!catalogDataElement) {
@@ -39,11 +57,13 @@
     }
   }
 
+
   function offerKey(commercialPriceId) {
     return commercialPriceId === null
       ? ""
       : String(commercialPriceId);
   }
+
 
   function findOffer(
     catalogProduct,
@@ -67,6 +87,7 @@
     );
   }
 
+
   function selectedCommercialPriceId(card) {
     const select = card.querySelector(
       "[data-catalog-offer-select]"
@@ -82,14 +103,23 @@
       "[data-catalog-offer-input]"
     );
 
-    if (!input || input.value === "") {
+    if (
+      !input
+      || input.value === ""
+    ) {
       return null;
     }
 
-    return Number(input.value);
+    return Number(
+      input.value
+    );
   }
 
-  function renderOfferBadge(card, offer) {
+
+  function renderOfferBadge(
+    card,
+    offer
+  ) {
     const badge = card.querySelector(
       "[data-catalog-offer-badge]"
     );
@@ -106,6 +136,7 @@
     badge.textContent = label;
     badge.hidden = !label;
   }
+
 
   function initializeOfferControls(
     catalogProducts
@@ -164,19 +195,125 @@
       });
   }
 
-  async function submitAddForm(form) {
-    const button = form.querySelector(
-      "[data-catalog-add-button]"
+
+  function resetQuantityInput(form) {
+    const quantityInput = form.querySelector(
+      "[data-quantity-input]"
     );
 
-    if (!button) {
+    if (!quantityInput) {
       return;
     }
 
-    const originalLabel =
-      button.textContent.trim();
+    quantityInput.value = "1";
 
-    button.disabled = true;
+    quantityInput.dispatchEvent(
+      new Event(
+        "input",
+        {
+          bubbles: true,
+        }
+      )
+    );
+
+    quantityInput.dispatchEvent(
+      new Event(
+        "change",
+        {
+          bubbles: true,
+        }
+      )
+    );
+  }
+
+
+  function openQuantityMode(form) {
+    const defaultState = form.querySelector(
+      "[data-catalog-purchase-default]"
+    );
+
+    const quantityState = form.querySelector(
+      "[data-catalog-purchase-quantity]"
+    );
+
+    const quantityInput = form.querySelector(
+      "[data-quantity-input]"
+    );
+
+    if (
+      !defaultState
+      || !quantityState
+      || !quantityInput
+    ) {
+      return;
+    }
+
+    defaultState.hidden = true;
+    quantityState.hidden = false;
+
+    quantityInput.focus();
+    quantityInput.select();
+  }
+
+
+  function closeQuantityMode(
+    form,
+    {
+      resetQuantity = true,
+    } = {}
+  ) {
+    const defaultState = form.querySelector(
+      "[data-catalog-purchase-default]"
+    );
+
+    const quantityState = form.querySelector(
+      "[data-catalog-purchase-quantity]"
+    );
+
+    if (
+      !defaultState
+      || !quantityState
+    ) {
+      return;
+    }
+
+    if (resetQuantity) {
+      resetQuantityInput(
+        form
+      );
+    }
+
+    quantityState.hidden = true;
+    defaultState.hidden = false;
+  }
+
+
+  function isQuantityModeOpen(form) {
+    const quantityState = form.querySelector(
+      "[data-catalog-purchase-quantity]"
+    );
+
+    return Boolean(
+      quantityState
+      && !quantityState.hidden
+    );
+  }
+
+
+  async function submitAddForm(form) {
+    const confirmButton = form.querySelector(
+      "[data-catalog-confirm-button]"
+    );
+
+    if (!confirmButton) {
+      return;
+    }
+
+    const originalLabel = (
+      confirmButton.textContent.trim()
+    );
+
+    confirmButton.disabled = true;
 
     try {
       const response = await fetch(
@@ -191,54 +328,105 @@
         }
       );
 
-      const payload =
-        await response.json();
+      const payload = await response.json();
 
-      if (!response.ok || !payload.ok) {
+      if (
+        !response.ok
+        || !payload.ok
+      ) {
         throw new Error(
-          payload.message ||
-            "Could not add product."
+          payload.message
+          || fallbackErrorMessage
         );
       }
-
-      button.textContent = "Added";
 
       setFeedback(
         payload.message
       );
 
-      window.setTimeout(() => {
-        button.textContent =
-          originalLabel;
-        button.disabled = false;
-      }, 1000);
+      confirmButton.textContent =
+        addedLabel;
+
+      window.setTimeout(
+        () => {
+          confirmButton.textContent =
+            originalLabel;
+
+          confirmButton.disabled =
+            false;
+
+          closeQuantityMode(
+            form
+          );
+        },
+        700
+      );
     } catch (error) {
-      button.textContent =
+      confirmButton.textContent =
         originalLabel;
-      button.disabled = false;
+
+      confirmButton.disabled = false;
 
       setFeedback(
         error instanceof Error
           ? error.message
-          : "Could not add product."
+          : fallbackErrorMessage
       );
     }
   }
+
+
+  function initializePurchaseControls() {
+    forms.forEach((form) => {
+      const cancelButton = form.querySelector(
+        "[data-catalog-cancel-button]"
+      );
+
+      if (cancelButton) {
+        cancelButton.addEventListener(
+          "click",
+          () => {
+            closeQuantityMode(
+              form
+            );
+          }
+        );
+      }
+
+      form.addEventListener(
+        "submit",
+        (event) => {
+          event.preventDefault();
+
+          if (
+            !isQuantityModeOpen(
+              form
+            )
+          ) {
+            openQuantityMode(
+              form
+            );
+
+            return;
+          }
+
+          if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+          }
+
+          submitAddForm(
+            form
+          );
+        }
+      );
+    });
+  }
+
 
   initializeOfferControls(
     parseCatalogData()
   );
 
-  forms.forEach((form) => {
-    form.addEventListener(
-      "submit",
-      (event) => {
-        event.preventDefault();
-
-        submitAddForm(
-          form
-        );
-      }
-    );
-  });
+  initializePurchaseControls();
 })();

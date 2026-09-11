@@ -19,9 +19,6 @@ from pricing.models import CommercialPrice
 from products.localization import translated_product_name
 
 
-LOW_STOCK_THRESHOLD = 10
-
-
 def build_business_product_cards(
     *,
     products: Iterable[CatalogProduct],
@@ -53,6 +50,9 @@ def _build_business_product_card(
         name=product_name,
         package_label=product.unit_weight_label,
         badge_label=None,
+        image_url=_product_image_url(
+            product
+        ),
         primary_action=UiText(
             text=_("Add to order"),
             href=reverse(
@@ -142,6 +142,25 @@ def build_business_offer_viewmodel(
     )
 
 
+def _product_image_url(
+    product,
+) -> str | None:
+    profile = getattr(
+        product,
+        "profile",
+        None,
+    )
+
+    if profile is None:
+        return None
+
+    image_url = (
+        profile.image_url or ""
+    ).strip()
+
+    return image_url or None
+
+
 def _reason_label(
     reason: str | None,
 ) -> str:
@@ -174,13 +193,12 @@ def _price_label(
 def _availability_label(
     available_units: int,
 ) -> str:
-    if available_units < LOW_STOCK_THRESHOLD:
+    if available_units < 10:
         return str(
             _("Only %(count)s left")
-            % {
-                "count": available_units,
-            }
-        )
+        ) % {
+            "count": available_units,
+        }
 
     return str(
         _("In stock")

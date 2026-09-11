@@ -54,8 +54,24 @@
     0 1px 0 rgb(255 255 255 / 0.9) inset;
 }
 
+
+/* =============================================================================
+   Product catalog media
+   ============================================================================= */
+
 .product-card__media {
   position: relative;
+
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+
+  min-width: 0;
+  overflow: hidden;
+  padding: 
+  var(--space-1)
+  var(--space-1)
+  0;
 
   background:
     linear-gradient(
@@ -63,6 +79,38 @@
       var(--color-primary-50),
       var(--color-neutral-100)
     );
+}
+
+.product-card__image-frame {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+
+  padding: 0.25rem;
+
+  background: var(--color-white);
+  border-radius: 
+    var(--radius-card-inner)
+    var(--radius-card-inner)
+    0
+    0;
+}
+
+.product-card__image {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+
+  border-radius:
+    calc(var(--radius-card-inner) - 0.2rem)
+    calc(var(--radius-card-inner) - 0.2rem)
+    0
+    0;
 }
 
 .product-card__badge {
@@ -77,7 +125,7 @@
   padding-inline: var(--space-3);
 
   color: var(--color-status-success-text);
-  background: rgb(255 255 255 / 0.78);
+  background: rgb(255 255 255 / 0.86);
   border:
     1px solid
     rgb(var(--color-status-success) / 0.32);
@@ -89,6 +137,14 @@
 
   backdrop-filter: blur(6px);
 }
+
+.product-card__badge[hidden] {
+  display: none;
+}
+
+/* =============================================================================
+   Product catalog content
+   ============================================================================= */
 
 .product-card__body {
   display: flex;
@@ -103,33 +159,33 @@
 
 .product-card__content {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .product-card__title {
+  display: -webkit-box;
+
+  min-height: calc(2 * 1.18em);
   margin: 0;
+  overflow: hidden;
 
   color: var(--color-primary-950);
   font-family: var(--font-heading);
-  font-size: var(--font-size-20);
+  font-size: var(--font-size-18);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.18;
   text-align: center;
 
   overflow-wrap: anywhere;
+
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
-
-
-/* =============================================================================
-   Product catalog metadata
-   ============================================================================= */
 
 .product-card__meta-line {
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
-  gap: 0.3rem;
 
   min-height: 1.4rem;
   margin: 0;
@@ -144,29 +200,76 @@
   line-height: 1.35;
 }
 
-.product-card__meta-separator {
-  color: var(--color-neutral-500);
-  font-size: var(--font-size-12);
-  font-weight: 500;
+
+/* =============================================================================
+   Product catalog actions
+   ============================================================================= */
+
+.product-card__actions {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+
+  margin-top: auto;
 }
 
-.product-card__price {
-  color: var(--color-neutral-700);
+.product-card__order {
+  display: grid;
+  justify-items: center;
+
+  width: 100%;
+  margin: 0;
+}
+
+.product-card__actions .button {
+  min-width: 9.75rem;
+}
+
+.product-card__actions .text-link {
   font-size: var(--font-size-14);
-  font-weight: 600;
-  line-height: 1.35;
 }
 
 
 /* =============================================================================
-   Product catalog offer selection
+   Product catalog purchase states
    ============================================================================= */
+
+.product-card__purchase-state {
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: var(--space-3);
+
+  width: 100%;
+}
+
+.product-card__purchase-state[hidden] {
+  display: none;
+}
+
+.product-card__purchase-state--quantity {
+  gap: var(--space-2);
+}
+
+
+/* =============================================================================
+   Product catalog offer slot
+   ============================================================================= */
+
+.product-card__offer-slot {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+
+  width: 100%;
+  min-height: 2.55rem;
+}
 
 .product-card__offer {
   display: grid;
   justify-items: center;
 
-  margin-top: var(--space-1);
+  width: 100%;
 }
 
 .product-card__offer-select,
@@ -194,30 +297,62 @@
   padding-inline: 0.75rem;
 }
 
+.product-card__offer-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-1);
+
+  min-height: 2.55rem;
+  margin: 0;
+  padding-inline: var(--space-3);
+
+  color: var(--color-primary-900);
+
+  font-size: var(--font-size-14);
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.product-card__offer-summary-label {
+  font-weight: 700;
+}
+
+.product-card__offer-summary-separator {
+  color: var(--color-neutral-500);
+  font-weight: 500;
+}
+
+.product-card__offer-summary-price {
+  color: var(--color-neutral-700);
+  font-weight: 650;
+}
+
 
 /* =============================================================================
-   Product catalog actions
+   Product catalog quantity confirmation
    ============================================================================= */
 
-.product-card__actions {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-3);
-
-  margin-top: auto;
-  padding-top: var(--space-1);
-}
-
-.product-card__order {
-  margin: 0;
-}
-
-.product-card__actions .button {
-  min-width: 9.75rem;
-}
-
-.product-card__actions .text-link {
+.product-card__quantity-label {
+  color: var(--color-primary-900);
   font-size: var(--font-size-14);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.product-card__quantity-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+
+  width: 100%;
+}
+
+.product-card__quantity-actions .button {
+  min-width: 0;
 }
 
 
@@ -462,9 +597,6 @@
 
 /* =============================================================================
    Detail purchase controls
-
-   Product identity remains at the top. The purchase controls use a deliberate
-   fixed spacing rather than consuming all remaining vertical space.
    ============================================================================= */
 
 .catalog-detail__purchase {
@@ -908,6 +1040,15 @@
   .product-card {
     width: min(100%, 22rem);
     margin-inline: auto;
+  }
+
+  .product-card__purchase-state .quantity-stepper {
+    width: 100%;
+
+    grid-template-columns:
+      var(--size-control-sm)
+      minmax(4rem, 1fr)
+      var(--size-control-sm);
   }
 
   .catalog-detail {
