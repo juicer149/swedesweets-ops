@@ -52,6 +52,17 @@ def _business_price(
     return commercial_price
 
 
+def _stored_messages(
+    response,
+) -> list[str]:
+    return [
+        str(message)
+        for message in get_messages(
+            response.wsgi_request
+        )
+    ]
+
+
 @pytest.mark.django_db
 def test_customer_can_add_catalog_product_to_draft(
     client,
@@ -110,6 +121,176 @@ def test_customer_can_add_catalog_product_to_draft(
 
 
 @pytest.mark.django_db
+def test_catalog_add_product_defaults_missing_quantity_to_one(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:catalog_add_product",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": "",
+        },
+    )
+
+    assert response.status_code == 302
+
+    order = Order.objects.get(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+
+    line = order.lines.get()
+
+    assert line.quantity_in_units == 1
+
+
+@pytest.mark.django_db
+def test_catalog_add_product_accepts_explicit_quantity(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:catalog_add_product",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": "",
+            "quantity": "4",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse(
+        "business_portal:catalog"
+    )
+
+    order = Order.objects.get(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+
+    line = order.lines.get()
+
+    assert line.product == product
+    assert line.quantity_in_units == 4
+    assert line.unit_price_snapshot is None
+    assert (
+        line.business_offer_selection.commercial_price_id
+        is None
+    )
+
+
+@pytest.mark.django_db
+def test_catalog_add_product_accepts_explicit_quantity_for_batch_offer(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch = batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    commercial_price = _business_price(
+        product=product,
+        batch=batch,
+        price="7.50",
+        reason=CommercialPrice.Reason.SHORT_DATED,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:catalog_add_product",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": str(
+                commercial_price.pk
+            ),
+            "quantity": "3",
+        },
+    )
+
+    assert response.status_code == 302
+
+    order = Order.objects.get(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+
+    line = order.lines.get()
+
+    assert line.product == product
+    assert line.quantity_in_units == 3
+    assert line.unit_price_snapshot == Decimal("7.50")
+    assert (
+        line.business_offer_selection.commercial_price
+        == commercial_price
+    )
+
+
+@pytest.mark.django_db
 def test_customer_adding_same_catalog_product_increments_quantity(
     client,
 ):
@@ -142,12 +323,14 @@ def test_customer_adding_same_catalog_product_increments_quantity(
         url,
         {
             "commercial_price_id": "",
+            "quantity": "2",
         },
     )
     second_response = client.post(
         url,
         {
             "commercial_price_id": "",
+            "quantity": "3",
         },
     )
 
@@ -165,11 +348,245 @@ def test_customer_adding_same_catalog_product_increments_quantity(
     line = order.lines.get()
 
     assert line.product == product
-    assert line.quantity_in_units == 2
+    assert line.quantity_in_units == 5
     assert (
         line.business_offer_selection.commercial_price_id
         is None
     )
+
+
+@pytest.mark.django_db
+def test_catalog_add_product_rejects_empty_quantity(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:catalog_add_product",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": "",
+            "quantity": "",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse(
+        "business_portal:catalog"
+    )
+
+    assert _stored_messages(
+        response
+    ) == [
+        "quantity is required"
+    ]
+
+    assert not Order.objects.filter(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    ).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    (
+        "quantity",
+        "expected_message",
+    ),
+    [
+        (
+            "abc",
+            "invalid quantity",
+        ),
+        (
+            "1.5",
+            "invalid quantity",
+        ),
+        (
+            "0",
+            "quantity must be greater than zero",
+        ),
+        (
+            "-1",
+            "quantity must be greater than zero",
+        ),
+    ],
+)
+def test_catalog_add_product_rejects_invalid_quantity(
+    client,
+    quantity,
+    expected_message,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:catalog_add_product",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": "",
+            "quantity": quantity,
+        },
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse(
+        "business_portal:catalog"
+    )
+
+    assert _stored_messages(
+        response
+    ) == [
+        expected_message
+    ]
+
+    assert not Order.objects.filter(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_catalog_add_product_returns_json_error_for_empty_quantity(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:catalog_add_product",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": "",
+            "quantity": "",
+        },
+        HTTP_ACCEPT="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "ok": False,
+        "message": "quantity is required",
+    }
+
+    assert not Order.objects.filter(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_catalog_add_product_returns_json_error_for_invalid_quantity(
+    client,
+):
+    customer = customer_factory()
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    batch_factory(
+        product=product,
+        today=TODAY,
+        quantity=100,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:catalog_add_product",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": "",
+            "quantity": "abc",
+        },
+        HTTP_ACCEPT="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "ok": False,
+        "message": "invalid quantity",
+    }
+
+    assert not Order.objects.filter(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -339,14 +756,9 @@ def test_catalog_add_product_rejects_invalid_offer_id(
         "business_portal:catalog"
     )
 
-    stored_messages = [
-        str(message)
-        for message in get_messages(
-            response.wsgi_request
-        )
-    ]
-
-    assert stored_messages == [
+    assert _stored_messages(
+        response
+    ) == [
         "invalid business offer"
     ]
 
@@ -393,14 +805,9 @@ def test_catalog_add_product_rejects_unknown_offer_id(
 
     assert response.status_code == 302
 
-    stored_messages = [
-        str(message)
-        for message in get_messages(
-            response.wsgi_request
-        )
-    ]
-
-    assert stored_messages == [
+    assert _stored_messages(
+        response
+    ) == [
         "business offer is not currently available"
     ]
 
@@ -463,14 +870,9 @@ def test_catalog_add_product_rejects_retail_price(
 
     assert response.status_code == 302
 
-    stored_messages = [
-        str(message)
-        for message in get_messages(
-            response.wsgi_request
-        )
-    ]
-
-    assert stored_messages == [
+    assert _stored_messages(
+        response
+    ) == [
         "business offer is not currently available"
     ]
 
@@ -526,14 +928,9 @@ def test_catalog_add_product_rejects_disabled_business_price(
 
     assert response.status_code == 302
 
-    stored_messages = [
-        str(message)
-        for message in get_messages(
-            response.wsgi_request
-        )
-    ]
-
-    assert stored_messages == [
+    assert _stored_messages(
+        response
+    ) == [
         "business offer is not currently available"
     ]
 
@@ -577,6 +974,7 @@ def test_catalog_add_product_returns_json_success(
         ),
         {
             "commercial_price_id": "",
+            "quantity": "3",
         },
         HTTP_ACCEPT="application/json",
     )
@@ -587,6 +985,14 @@ def test_catalog_add_product_returns_json_success(
         "ok": True,
         "message": "Generic — Apple added to your order.",
     }
+
+    order = Order.objects.get(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+
+    assert order.lines.get().quantity_in_units == 3
 
 
 @pytest.mark.django_db
@@ -728,17 +1134,13 @@ def test_catalog_add_product_shows_success_message(
         ),
         {
             "commercial_price_id": "",
+            "quantity": "2",
         },
     )
 
-    stored_messages = [
-        str(message)
-        for message in get_messages(
-            response.wsgi_request
-        )
-    ]
-
-    assert stored_messages == [
+    assert _stored_messages(
+        response
+    ) == [
         "Generic — Apple added to your order."
     ]
 
@@ -777,6 +1179,7 @@ def test_catalog_add_product_shows_error_when_product_is_not_in_business_catalog
         ),
         {
             "commercial_price_id": "",
+            "quantity": "2",
         },
     )
 
@@ -785,14 +1188,9 @@ def test_catalog_add_product_shows_error_when_product_is_not_in_business_catalog
         "business_portal:catalog"
     )
 
-    stored_messages = [
-        str(message)
-        for message in get_messages(
-            response.wsgi_request
-        )
-    ]
-
-    assert stored_messages == [
+    assert _stored_messages(
+        response
+    ) == [
         "product is not available in the business catalog"
     ]
 

@@ -78,6 +78,42 @@ def _parse_commercial_price_id(
     return commercial_price_id
 
 
+def _parse_quantity(
+    raw_value: str | None,
+) -> int:
+    """Parse catalog quantity from form input.
+
+    Missing input preserves the legacy catalog behavior and means one unit.
+
+    An explicitly submitted quantity must contain a positive integer.
+    Empty, non-integer and non-positive values are rejected.
+    """
+
+    if raw_value is None:
+        return 1
+
+    value = raw_value.strip()
+
+    if not value:
+        raise InvalidOrderOperation(
+            "quantity is required"
+        )
+
+    try:
+        quantity = int(value)
+    except ValueError as exc:
+        raise InvalidOrderOperation(
+            "invalid quantity"
+        ) from exc
+
+    if quantity <= 0:
+        raise InvalidOrderOperation(
+            "quantity must be greater than zero"
+        )
+
+    return quantity
+
+
 @login_required
 @require_POST
 def add_product(
@@ -102,11 +138,17 @@ def add_product(
             )
         )
 
+        quantity = _parse_quantity(
+            request.POST.get(
+                "quantity"
+            )
+        )
+
         add_catalog_offer_to_draft_order(
             customer=customer,
             product=product,
             commercial_price_id=commercial_price_id,
-            quantity=1,
+            quantity=quantity,
             user=request.user,
         )
     except InvalidOrderOperation as error:
