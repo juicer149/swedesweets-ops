@@ -12,7 +12,6 @@ from business_portal.viewmodels import (
 )
 from orders.selectors import (
     get_active_draft_order_for_customer,
-    get_customer_order_summary,
     list_customer_orders,
 )
 
@@ -23,20 +22,21 @@ def index(request):
         user=request.user,
     )
 
-    active_draft_order = get_active_draft_order_for_customer(
-        customer=customer,
+    active_draft_order = (
+        get_active_draft_order_for_customer(
+            customer=customer,
+        )
+    )
+
+    recent_orders = tuple(
+        list_customer_orders(
+            customer=customer,
+        )[:RECENT_PORTAL_ORDER_LIMIT]
     )
 
     context = build_portal_home_context(
         customer=customer,
-        order_summary=get_customer_order_summary(
-            customer=customer,
-        ),
-        recent_orders=tuple(
-            list_customer_orders(
-                customer=customer,
-            )[:RECENT_PORTAL_ORDER_LIMIT]
-        ),
+        recent_orders=recent_orders,
         active_draft_order=active_draft_order,
     ).as_dict()
 

@@ -4,93 +4,102 @@
 {% block title %}{{ title }} | SwedeSweets{% endblock %}
 
 {% block content %}
-<section class="portal-hero" aria-labelledby="{{ title_id }}">
-  <p class="eyebrow">{{ eyebrow }}</p>
+  <section
+    class="portal-home"
+    aria-labelledby="{{ title_id }}"
+  >
+    <div class="portal-home__intro">
+      <div class="portal-home__intro-copy">
+        <h1 id="{{ title_id }}">
+          {{ title }}
+        </h1>
 
-  <h1 id="{{ title_id }}">{{ title }}</h1>
-
-  <p class="portal-hero__description">
-    {{ description }}
-  </p>
-
-  <nav class="portal-hero__nav" aria-label="{% trans 'Customer portal actions' %}">
-    {% for action in actions %}
-      <a
-        class="{{ action.css_class }}"
-        href="{{ action.href }}"
-        {% if action.aria_label %}aria-label="{{ action.aria_label }}"{% endif %}
-      >
-        <span class="button__icon" aria-hidden="true">
-          {% include "includes/ui/icon.html" with name=action.icon only %}
-        </span>
-        <span class="button__label">{{ action.label }}</span>
-        <span class="button__arrow" aria-hidden="true">›</span>
-      </a>
-    {% endfor %}
-  </nav>
-
-  <div class="portal-hero__account" aria-label="{% trans 'Customer account summary' %}">
-    <span>{{ customer_email }}</span>
-    <span>{{ customer_location }}</span>
-  </div>
-</section>
-
-<section class="portal-section" aria-label="{% trans 'Customer portal summary' %}">
-  <div class="portal-metric-grid">
-    {% for metric in metrics %}
-      <article class="portal-metric portal-metric--{{ metric.tone }}">
-        <p class="portal-metric__label">{{ metric.label }}</p>
-        <strong class="portal-metric__value">{{ metric.value }}</strong>
-        <p class="portal-metric__subtext">{{ metric.subtext }}</p>
-      </article>
-    {% endfor %}
-  </div>
-
-  <article class="content-card content-card--wide portal-focus-card">
-    <header class="content-card__header portal-focus-card__header">
-      <div>
-        <h2>{% trans "Recent orders" %}</h2>
-        <p class="portal-focus-card__description">
-          {% trans "Your latest order activity." %}
+        <p class="portal-home__description">
+          {{ description }}
         </p>
       </div>
 
-      <a class="text-link" href="{% url 'business_portal:orders' %}">
-        {% trans "View all orders" %} →
-      </a>
-    </header>
-
-    <div class="dashboard-focus-list">
-      {% for order in recent_orders %}
+      <div
+        class="portal-home__actions"
+        aria-label="{% trans 'Customer actions' %}"
+      >
         <a
-          class="{{ order.card_class }}"
-          href="{{ order.href }}"
+          class="{{ catalog_action.css_class }}"
+          href="{{ catalog_action.href }}"
+          aria-label="{{ catalog_action.aria_label }}"
         >
-          <span class="portal-order-item__content">
-            <strong class="ui-card-title">
-              {% blocktrans with order_id=order.order_id %}Order #{{ order_id }}{% endblocktrans %}
-            </strong>
-            <span class="ui-card-meta">
-              <span class="{{ order.status_class }}">
-                {{ order.status_label }}
-              </span>
-              · {{ order.created_at_label }}
-            </span>
-          </span>
-
-          <span class="ui-card-link portal-order-item__action">
-            {{ order.action_label }}
-          </span>
+          {{ catalog_action.label }}
         </a>
-      {% empty %}
-        <article class="portal-empty-state">
-          <h2>{% trans "No orders yet" %}</h2>
-          <p>
-            {% trans "Your recent orders will appear here once orders have been placed." %}
-          </p>
-        </article>
-      {% endfor %}
+
+        {% if draft_action %}
+          <a
+            class="{{ draft_action.css_class }}"
+            href="{{ draft_action.href }}"
+            aria-label="{{ draft_action.aria_label }}"
+          >
+            {{ draft_action.label }}
+          </a>
+        {% endif %}
+      </div>
     </div>
-  </article>
-</section>
+
+    <section
+      class="portal-home__recent"
+      aria-labelledby="recent-orders-title"
+    >
+      <header class="portal-home__recent-header">
+        <h2 id="recent-orders-title">
+          {% trans "Recent orders" %}
+        </h2>
+
+        <a
+          class="text-link"
+          href="{{ orders_url }}"
+        >
+          {% trans "View all orders" %}
+        </a>
+      </header>
+
+      <div class="portal-home__order-list">
+        {% for order in recent_orders %}
+          <a
+            class="portal-home-order"
+            href="{{ order.href }}"
+            aria-label="{% blocktrans with order_id=order.order_id %}View order #{{ order_id }}{% endblocktrans %}"
+          >
+            <span class="portal-home-order__identity">
+              <strong class="portal-home-order__number">
+                {% blocktrans with order_id=order.order_id %}Order #{{ order_id }}{% endblocktrans %}
+              </strong>
+
+              <span class="portal-home-order__date">
+                {{ order.created_at_label }}
+              </span>
+            </span>
+
+            <span class="{{ order.status_class }}">
+              {{ order.status_label }}
+            </span>
+
+            <span
+              class="portal-home-order__arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+          </a>
+        {% empty %}
+          <div class="portal-home__empty">
+            <strong>
+              {% trans "No orders yet" %}
+            </strong>
+
+            <p>
+              {% trans "Your latest orders will appear here once you place an order." %}
+            </p>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </section>
 {% endblock %}
