@@ -4,11 +4,9 @@
 {% block title %}{% trans "Catalog" %} | SwedeSweets{% endblock %}
 
 {% block content %}
-  {% include "includes/ui/page_header.html" with title_id="business-catalog-title" title=_("Catalog") %}
-
   <section
     class="catalog"
-    aria-labelledby="business-catalog-title"
+    aria-label="{% trans 'Catalog' %}"
     data-catalog-added-label="{% trans 'Added' %}"
     data-catalog-error-message="{% trans 'Could not add product.' %}"
   >
@@ -17,9 +15,59 @@
         class="catalog-controls"
         aria-label="{% trans 'Catalog filters' %}"
       >
+        <nav
+          class="section-nav catalog-category-nav"
+          aria-label="{% trans 'Product categories' %}"
+        >
+          <button
+            class="section-nav__link section-nav__link--active"
+            type="button"
+            data-catalog-category="all"
+            aria-pressed="true"
+          >
+            {% trans "All" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="candy"
+            aria-pressed="false"
+          >
+            {% trans "Candy" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="chips"
+            aria-pressed="false"
+          >
+            {% trans "Chips" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="dip_mix"
+            aria-pressed="false"
+          >
+            {% trans "Dip mix" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="other"
+            aria-pressed="false"
+          >
+            {% trans "Other" %}
+          </button>
+        </nav>
+
         <div class="catalog-search">
           <label
-            class="catalog-search__label"
+            class="visually-hidden"
             for="catalog-search"
           >
             {% trans "Search products" %}
@@ -34,62 +82,6 @@
             spellcheck="false"
             data-catalog-search
           >
-        </div>
-
-        <div
-          class="catalog-filters"
-          aria-label="{% trans 'Product categories' %}"
-        >
-          <span class="catalog-filters__label">
-            {% trans "Category" %}
-          </span>
-
-          <div class="chip-group">
-            <button
-              class="chip chip--active"
-              type="button"
-              data-catalog-category="all"
-              aria-pressed="true"
-            >
-              {% trans "All" %}
-            </button>
-
-            <button
-              class="chip"
-              type="button"
-              data-catalog-category="candy"
-              aria-pressed="false"
-            >
-              {% trans "Candy" %}
-            </button>
-
-            <button
-              class="chip"
-              type="button"
-              data-catalog-category="chips"
-              aria-pressed="false"
-            >
-              {% trans "Chips" %}
-            </button>
-
-            <button
-              class="chip"
-              type="button"
-              data-catalog-category="dip_mix"
-              aria-pressed="false"
-            >
-              {% trans "Dip mix" %}
-            </button>
-
-            <button
-              class="chip"
-              type="button"
-              data-catalog-category="other"
-              aria-pressed="false"
-            >
-              {% trans "Other" %}
-            </button>
-          </div>
         </div>
       </section>
 
@@ -205,6 +197,7 @@
                               {% endfor %}
                             </select>
                           </div>
+
                         {% elif initial_offer %}
                           <div class="product-card__offer-summary">
                             {% if initial_offer.kind == "batch" %}
@@ -274,9 +267,7 @@
                           aria-label="{% trans 'Decrease quantity' %}"
                           data-quantity-decrease
                         >
-                          <span aria-hidden="true">
-                            −
-                          </span>
+                          <span aria-hidden="true">−</span>
                         </button>
 
                         <label
@@ -309,9 +300,7 @@
                           aria-label="{% trans 'Increase quantity' %}"
                           data-quantity-increase
                         >
-                          <span aria-hidden="true">
-                            +
-                          </span>
+                          <span aria-hidden="true">+</span>
                         </button>
                       </div>
 
@@ -352,9 +341,7 @@
                       aria-label="{{ card.secondary_action.aria_label }}"
                     >
                       {{ card.secondary_action.text }}
-                      <span aria-hidden="true">
-                        →
-                      </span>
+                      <span aria-hidden="true">→</span>
                     </a>
                   {% endif %}
                 </div>

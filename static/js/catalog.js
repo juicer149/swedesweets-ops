@@ -126,7 +126,7 @@
         );
 
         button.classList.toggle(
-          "chip--active",
+          "section-nav__link--active",
           isActive
         );
 
@@ -237,10 +237,14 @@
   }
 
 
-  function offerKey(commercialPriceId) {
+  function offerKey(
+    commercialPriceId
+  ) {
     return commercialPriceId === null
       ? ""
-      : String(commercialPriceId);
+      : String(
+          commercialPriceId
+        );
   }
 
 
@@ -267,7 +271,9 @@
   }
 
 
-  function selectedCommercialPriceId(card) {
+  function selectedCommercialPriceId(
+    card
+  ) {
     const select = card.querySelector(
       "[data-catalog-offer-select]"
     );
@@ -275,7 +281,9 @@
     if (select) {
       return select.value === ""
         ? null
-        : Number(select.value);
+        : Number(
+            select.value
+          );
     }
 
     const input = card.querySelector(
@@ -373,7 +381,9 @@
   }
 
 
-  function resetQuantityInput(form) {
+  function resetQuantityInput(
+    form
+  ) {
     const quantityInput = form.querySelector(
       "[data-quantity-input]"
     );
@@ -404,7 +414,9 @@
   }
 
 
-  function openQuantityMode(form) {
+  function openQuantityMode(
+    form
+  ) {
     const defaultState = form.querySelector(
       "[data-catalog-purchase-default]"
     );
@@ -465,7 +477,9 @@
   }
 
 
-  function isQuantityModeOpen(form) {
+  function isQuantityModeOpen(
+    form
+  ) {
     const quantityState = form.querySelector(
       "[data-catalog-purchase-quantity]"
     );
@@ -477,7 +491,9 @@
   }
 
 
-  async function submitAddForm(form) {
+  async function submitAddForm(
+    form
+  ) {
     const confirmButton = form.querySelector(
       "[data-catalog-confirm-button]"
     );
@@ -497,7 +513,9 @@
         form.action,
         {
           method: "POST",
-          body: new FormData(form),
+          body: new FormData(
+            form
+          ),
           headers: {
             Accept: "application/json",
           },
@@ -544,7 +562,8 @@
       confirmButton.textContent =
         originalLabel;
 
-      confirmButton.disabled = false;
+      confirmButton.disabled =
+        false;
 
       setFeedback(
         error instanceof Error
@@ -556,50 +575,54 @@
 
 
   function initializePurchaseControls() {
-    forms.forEach((form) => {
-      const cancelButton = form.querySelector(
-        "[data-catalog-cancel-button]"
-      );
+    forms.forEach(
+      (form) => {
+        const cancelButton = form.querySelector(
+          "[data-catalog-cancel-button]"
+        );
 
-      if (cancelButton) {
-        cancelButton.addEventListener(
-          "click",
-          () => {
-            closeQuantityMode(
+        if (cancelButton) {
+          cancelButton.addEventListener(
+            "click",
+            () => {
+              closeQuantityMode(
+                form
+              );
+            }
+          );
+        }
+
+        form.addEventListener(
+          "submit",
+          (event) => {
+            event.preventDefault();
+
+            if (
+              !isQuantityModeOpen(
+                form
+              )
+            ) {
+              openQuantityMode(
+                form
+              );
+
+              return;
+            }
+
+            if (
+              !form.checkValidity()
+            ) {
+              form.reportValidity();
+              return;
+            }
+
+            void submitAddForm(
               form
             );
           }
         );
       }
-
-      form.addEventListener(
-        "submit",
-        (event) => {
-          event.preventDefault();
-
-          if (
-            !isQuantityModeOpen(
-              form
-            )
-          ) {
-            openQuantityMode(
-              form
-            );
-
-            return;
-          }
-
-          if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-          }
-
-          void submitAddForm(
-            form
-          );
-        }
-      );
-    });
+    );
   }
 
 
