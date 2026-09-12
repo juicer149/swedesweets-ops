@@ -4,6 +4,7 @@ from collections.abc import Iterable
 
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext
 
 from common.catalog.contracts import (
     CatalogOffer,
@@ -17,6 +18,7 @@ from common.catalog.viewmodels import (
 from common.ui import UiText
 from pricing.models import CommercialPrice
 from products.localization import translated_product_name
+from products.models import ProductProfile
 
 
 def build_business_product_cards(
@@ -45,14 +47,15 @@ def _build_business_product_card(
         language_code=language_code,
     )
 
+    category_key = _catalog_category_key(
+        product
+    )
+
     return ProductCardVM(
         product_id=product.id,
         name=product_name,
         package_label=product.unit_weight_label,
         badge_label=None,
-        image_url=_product_image_url(
-            product
-        ),
         primary_action=UiText(
             text=_("Add to order"),
             href=reverse(
@@ -69,6 +72,9 @@ def _build_business_product_card(
             % {
                 "product": product_name,
             },
+        ),
+        image_url=_product_image_url(
+            product
         ),
         secondary_action=UiText(
             text=_("Details"),
@@ -89,6 +95,12 @@ def _build_business_product_card(
                 offer
             )
             for offer in catalog_product.offers
+        ),
+        category_key=category_key,
+        search_text=_catalog_search_text(
+            product_name=product_name,
+            package_label=product.unit_weight_label,
+            category_key=category_key,
         ),
     )
 
@@ -111,7 +123,9 @@ def build_business_offer_viewmodel(
             commercial_price_id=offer.commercial_price_id,
             batch_id=None,
             kind=offer.kind.value,
-            label=str(_("Standard")),
+            label=str(
+                _("Standard")
+            ),
             badge_label=None,
             price_label=_price_label(
                 offer
@@ -142,21 +156,51 @@ def build_business_offer_viewmodel(
     )
 
 
+def _catalog_category_key(
+    product,
+) -> str:
+    try:
+        category = product.profile.category
+    except ProductProfile.DoesNotExist:
+        return "other"
+
+    if category == ProductProfile.Category.CANDY:
+        return "candy"
+
+    if category == ProductProfile.Category.CHIPS:
+        return "chips"
+
+    if category == ProductProfile.Category.DIP_MIX:
+        return "dip_mix"
+
+    return "other"
+
+
+def _catalog_search_text(
+    *,
+    product_name: str,
+    package_label: str,
+    category_key: str,
+) -> str:
+    return " ".join(
+        (
+            product_name,
+            package_label,
+            category_key.replace(
+                "_",
+                " ",
+            ),
+        )
+    ).casefold()
+
+
 def _product_image_url(
     product,
 ) -> str | None:
-    profile = getattr(
-        product,
-        "profile",
-        None,
-    )
-
-    if profile is None:
+    try:
+        image_url = product.profile.image_url
+    except ProductProfile.DoesNotExist:
         return None
-
-    image_url = (
-        profile.image_url or ""
-    ).strip()
 
     return image_url or None
 
@@ -194,8 +238,10 @@ def _availability_label(
     available_units: int,
 ) -> str:
     if available_units < 10:
-        return str(
-            _("Only %(count)s left")
+        return ngettext(
+            "Only %(count)s left",
+            "Only %(count)s left",
+            available_units,
         ) % {
             "count": available_units,
         }

@@ -5,8 +5,32 @@
     ".catalog"
   );
 
+  if (!catalog) {
+    return;
+  }
+
   const forms = document.querySelectorAll(
     "[data-catalog-add-form]"
+  );
+
+  const cards = Array.from(
+    document.querySelectorAll(
+      "[data-catalog-product]"
+    )
+  );
+
+  const categoryButtons = Array.from(
+    document.querySelectorAll(
+      "[data-catalog-category]"
+    )
+  );
+
+  const searchInput = document.querySelector(
+    "[data-catalog-search]"
+  );
+
+  const noResults = document.querySelector(
+    "[data-catalog-no-results]"
   );
 
   const feedback = document.querySelector(
@@ -18,16 +42,17 @@
   );
 
   const addedLabel =
-    catalog?.dataset.catalogAddedLabel
+    catalog.dataset.catalogAddedLabel
     || "Added";
 
   const fallbackErrorMessage =
-    catalog?.dataset.catalogErrorMessage
+    catalog.dataset.catalogErrorMessage
     || "Could not add product.";
 
-  if (!forms.length) {
-    return;
-  }
+  const filterState = {
+    category: "all",
+    query: "",
+  };
 
 
   function setFeedback(message) {
@@ -36,6 +61,146 @@
     }
 
     feedback.textContent = message;
+  }
+
+
+  function normalizeSearchValue(
+    value
+  ) {
+    return String(
+      value || ""
+    )
+      .trim()
+      .toLocaleLowerCase();
+  }
+
+
+  function cardMatchesCategory(
+    card
+  ) {
+    return (
+      filterState.category === "all"
+      || card.dataset.productCategory
+        === filterState.category
+    );
+  }
+
+
+  function cardMatchesSearch(
+    card
+  ) {
+    if (!filterState.query) {
+      return true;
+    }
+
+    const searchText = normalizeSearchValue(
+      card.dataset.productSearch
+    );
+
+    return searchText.includes(
+      filterState.query
+    );
+  }
+
+
+  function cardShouldBeVisible(
+    card
+  ) {
+    return (
+      cardMatchesCategory(
+        card
+      )
+      && cardMatchesSearch(
+        card
+      )
+    );
+  }
+
+
+  function renderCategoryButtons() {
+    categoryButtons.forEach(
+      (button) => {
+        const isActive = (
+          button.dataset.catalogCategory
+          === filterState.category
+        );
+
+        button.classList.toggle(
+          "chip--active",
+          isActive
+        );
+
+        button.setAttribute(
+          "aria-pressed",
+          String(isActive)
+        );
+      }
+    );
+  }
+
+
+  function applyCatalogFilters() {
+    let visibleCount = 0;
+
+    cards.forEach(
+      (card) => {
+        const visible = (
+          cardShouldBeVisible(
+            card
+          )
+        );
+
+        card.hidden = !visible;
+
+        if (visible) {
+          visibleCount += 1;
+        }
+      }
+    );
+
+    if (noResults) {
+      noResults.hidden = (
+        visibleCount !== 0
+      );
+    }
+
+    renderCategoryButtons();
+  }
+
+
+  function initializeCatalogFilters() {
+    categoryButtons.forEach(
+      (button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            filterState.category = (
+              button.dataset.catalogCategory
+              || "all"
+            );
+
+            applyCatalogFilters();
+          }
+        );
+      }
+    );
+
+    if (searchInput) {
+      searchInput.addEventListener(
+        "input",
+        () => {
+          filterState.query = (
+            normalizeSearchValue(
+              searchInput.value
+            )
+          );
+
+          applyCatalogFilters();
+        }
+      );
+    }
+
+    applyCatalogFilters();
   }
 
 
@@ -166,11 +331,8 @@
       )
     );
 
-    document
-      .querySelectorAll(
-        "[data-catalog-product]"
-      )
-      .forEach((card) => {
+    cards.forEach(
+      (card) => {
         const catalogProduct =
           catalogByProductId.get(
             card.dataset.productId
@@ -206,7 +368,8 @@
         }
 
         renderSelectedOffer();
-      });
+      }
+    );
   }
 
 
@@ -361,14 +524,6 @@
       confirmButton.textContent =
         addedLabel;
 
-      /*
-       * The server has changed the draft.
-       *
-       * Other components, such as the navbar cart,
-       * can now refresh their own server-rendered
-       * projection without catalog.js knowing
-       * anything about their DOM.
-       */
       notifyDraftChanged();
 
       window.setTimeout(
@@ -447,6 +602,8 @@
     });
   }
 
+
+  initializeCatalogFilters();
 
   initializeOfferControls(
     parseCatalogData()

@@ -354,6 +354,9 @@ def _list_catalog_products(
             active=True,
             id__in=product_ids,
         )
+        .select_related(
+            "profile",
+        )
         .prefetch_related(
             Prefetch(
                 "translations",

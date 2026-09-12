@@ -54,6 +54,124 @@
     0 1px 0 rgb(255 255 255 / 0.9) inset;
 }
 
+/* =============================================================================
+   Business catalog controls
+   ============================================================================= */
+
+.catalog-controls {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+
+  width: min(100%, 42rem);
+  margin-inline: auto;
+}
+
+.catalog-search {
+  display: grid;
+  gap: var(--space-2);
+
+  width: min(100%, 34rem);
+}
+
+.catalog-search__label,
+.catalog-filters__label {
+  color: var(--color-primary-950);
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.catalog-search__input {
+  width: 100%;
+  min-height: 3rem;
+  padding:
+    0.65rem
+    0.9rem;
+
+  color: var(--color-primary-950);
+  background: var(--color-white);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-control);
+
+  font: inherit;
+  font-size: var(--font-size-16);
+  line-height: 1.2;
+
+  transition:
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+.catalog-search__input:hover {
+  border-color: var(--color-primary-700);
+}
+
+.catalog-search__input:focus-visible {
+  outline: none;
+  border-color: var(--color-accent-600);
+  box-shadow:
+    0 0 0 3px
+    rgb(var(--color-status-info) / 0.16);
+}
+
+.catalog-search__input::placeholder {
+  color: var(--color-neutral-600);
+}
+
+.catalog-filters {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.catalog-filters .chip-group {
+  justify-content: center;
+}
+
+.catalog__no-results {
+  margin: 0;
+  padding: var(--space-6);
+
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  font-weight: 650;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.catalog__no-results[hidden] {
+  display: none;
+}
+
+.product-card[hidden] {
+  display: none;
+}
+
+
+@media (max-width: 560px) {
+  .catalog-controls {
+    justify-items: stretch;
+  }
+
+  .catalog-search {
+    width: 100%;
+  }
+
+  .catalog-search__label,
+  .catalog-filters__label {
+    text-align: left;
+  }
+
+  .catalog-filters {
+    justify-items: stretch;
+  }
+
+  .catalog-filters .chip-group {
+    justify-content: flex-start;
+  }
+}
 
 /* =============================================================================
    Product catalog media

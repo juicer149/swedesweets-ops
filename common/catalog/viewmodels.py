@@ -7,14 +7,7 @@ from common.ui import UiText
 
 @dataclass(frozen=True, slots=True)
 class CatalogOfferVM:
-    """Presentation contract for one selectable catalog offer.
-
-    Actor-specific presentation code decides labels, badges and human-readable
-    availability text.
-
-    The shared contract only defines the stable shape consumed by catalog UI
-    code.
-    """
+    """Presentation contract for one selectable catalog offer."""
 
     commercial_price_id: int | None
     batch_id: int | None
@@ -50,6 +43,8 @@ class ProductCardVM:
     image_url: str | None = None
     secondary_action: UiText | None = None
     offers: tuple[CatalogOfferVM, ...] = ()
+    category_key: str = "other"
+    search_text: str = ""
 
     def catalog_payload(self) -> dict[str, object]:
         return {

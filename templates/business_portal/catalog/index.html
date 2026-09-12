@@ -12,6 +12,96 @@
     data-catalog-added-label="{% trans 'Added' %}"
     data-catalog-error-message="{% trans 'Could not add product.' %}"
   >
+    {% if product_cards %}
+      <section
+        class="catalog-controls"
+        aria-label="{% trans 'Catalog filters' %}"
+      >
+        <div class="catalog-search">
+          <label
+            class="catalog-search__label"
+            for="catalog-search"
+          >
+            {% trans "Search products" %}
+          </label>
+
+          <input
+            id="catalog-search"
+            class="catalog-search__input"
+            type="search"
+            placeholder="{% trans 'Search products' %}"
+            autocomplete="off"
+            spellcheck="false"
+            data-catalog-search
+          >
+        </div>
+
+        <div
+          class="catalog-filters"
+          aria-label="{% trans 'Product categories' %}"
+        >
+          <span class="catalog-filters__label">
+            {% trans "Category" %}
+          </span>
+
+          <div class="chip-group">
+            <button
+              class="chip chip--active"
+              type="button"
+              data-catalog-category="all"
+              aria-pressed="true"
+            >
+              {% trans "All" %}
+            </button>
+
+            <button
+              class="chip"
+              type="button"
+              data-catalog-category="candy"
+              aria-pressed="false"
+            >
+              {% trans "Candy" %}
+            </button>
+
+            <button
+              class="chip"
+              type="button"
+              data-catalog-category="chips"
+              aria-pressed="false"
+            >
+              {% trans "Chips" %}
+            </button>
+
+            <button
+              class="chip"
+              type="button"
+              data-catalog-category="dip_mix"
+              aria-pressed="false"
+            >
+              {% trans "Dip mix" %}
+            </button>
+
+            <button
+              class="chip"
+              type="button"
+              data-catalog-category="other"
+              aria-pressed="false"
+            >
+              {% trans "Other" %}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <p
+        class="catalog__no-results"
+        data-catalog-no-results
+        hidden
+      >
+        {% trans "No products match your search." %}
+      </p>
+    {% endif %}
+
     <p
       class="catalog__feedback"
       data-catalog-feedback
@@ -23,6 +113,7 @@
       <div
         class="product-grid"
         aria-label="{% trans 'Products' %}"
+        data-catalog-product-grid
       >
         {% for card in product_cards %}
           {% with initial_offer=card.offers.0 %}
@@ -30,6 +121,8 @@
               class="product-card"
               data-catalog-product
               data-product-id="{{ card.product_id }}"
+              data-product-category="{{ card.category_key }}"
+              data-product-search="{{ card.search_text }}"
             >
               <div class="product-card__media">
                 {% if card.image_url %}
@@ -112,7 +205,6 @@
                               {% endfor %}
                             </select>
                           </div>
-
                         {% elif initial_offer %}
                           <div class="product-card__offer-summary">
                             {% if initial_offer.kind == "batch" %}
