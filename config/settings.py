@@ -114,7 +114,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # Third-party apps
     "django_extensions",
+    "storages",
 
     # Local apps
     "config",
@@ -430,7 +433,7 @@ USE_TZ = True
 
 
 # =============================================================================
-# Static / Media
+# Static files
 # =============================================================================
 
 STATIC_URL = (
@@ -447,20 +450,10 @@ STATICFILES_DIRS = [
     / "static",
 ]
 
-STORAGES = {
-    "default": {
-        "BACKEND": (
-            "django.core.files.storage."
-            "FileSystemStorage"
-        ),
-    },
-    "staticfiles": {
-        "BACKEND": (
-            "whitenoise.storage."
-            "CompressedManifestStaticFilesStorage"
-        ),
-    },
-}
+
+# =============================================================================
+# Media storage
+# =============================================================================
 
 MEDIA_URL = (
     "/media/"
@@ -470,6 +463,123 @@ MEDIA_ROOT = (
     BASE_DIR
     / "media"
 )
+
+
+S3_BUCKET_NAME = os.environ.get(
+    "AWS_STORAGE_BUCKET_NAME",
+    "",
+)
+
+S3_ACCESS_KEY_ID = os.environ.get(
+    "AWS_ACCESS_KEY_ID",
+    "",
+)
+
+S3_SECRET_ACCESS_KEY = os.environ.get(
+    "AWS_SECRET_ACCESS_KEY",
+    "",
+)
+
+S3_ENDPOINT_URL = os.environ.get(
+    "AWS_S3_ENDPOINT_URL",
+    "",
+)
+
+S3_REGION_NAME = os.environ.get(
+    "AWS_S3_REGION_NAME",
+    "",
+)
+
+
+S3_MEDIA_SETTINGS = {
+    "AWS_STORAGE_BUCKET_NAME": (
+        S3_BUCKET_NAME
+    ),
+    "AWS_ACCESS_KEY_ID": (
+        S3_ACCESS_KEY_ID
+    ),
+    "AWS_SECRET_ACCESS_KEY": (
+        S3_SECRET_ACCESS_KEY
+    ),
+    "AWS_S3_ENDPOINT_URL": (
+        S3_ENDPOINT_URL
+    ),
+    "AWS_S3_REGION_NAME": (
+        S3_REGION_NAME
+    ),
+}
+
+MISSING_S3_MEDIA_SETTINGS = [
+    name
+    for name, value in S3_MEDIA_SETTINGS.items()
+    if not value
+]
+
+USE_S3_MEDIA = (
+    not MISSING_S3_MEDIA_SETTINGS
+)
+
+
+if not DEBUG and not USE_S3_MEDIA:
+    missing_settings = ", ".join(
+        MISSING_S3_MEDIA_SETTINGS
+    )
+
+    raise RuntimeError(
+        (
+            "S3 media storage must be configured "
+            "when DEBUG is false. "
+            f"Missing: {missing_settings}"
+        )
+    )
+
+
+if USE_S3_MEDIA:
+    DEFAULT_STORAGE = {
+        "BACKEND": (
+            "storages.backends.s3."
+            "S3Storage"
+        ),
+        "OPTIONS": {
+            "bucket_name": (
+                S3_BUCKET_NAME
+            ),
+            "access_key": (
+                S3_ACCESS_KEY_ID
+            ),
+            "secret_key": (
+                S3_SECRET_ACCESS_KEY
+            ),
+            "endpoint_url": (
+                S3_ENDPOINT_URL
+            ),
+            "region_name": (
+                S3_REGION_NAME
+            ),
+            "default_acl": None,
+            "querystring_auth": True,
+            "querystring_expire": 3600,
+            "file_overwrite": False,
+        },
+    }
+else:
+    DEFAULT_STORAGE = {
+        "BACKEND": (
+            "django.core.files.storage."
+            "FileSystemStorage"
+        ),
+    }
+
+
+STORAGES = {
+    "default": DEFAULT_STORAGE,
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage."
+            "CompressedManifestStaticFilesStorage"
+        ),
+    },
+}
 
 
 # =============================================================================
