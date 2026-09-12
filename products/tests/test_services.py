@@ -25,9 +25,6 @@ def test_create_product_creates_product_and_profile():
         category=ProductProfile.Category.CANDY,
         description="  Classic candy.  ",
         ingredients="  Sugar.  ",
-        image_url=(
-            "  https://example.com/product.jpg  "
-        ),
     )
 
     product = result.item
@@ -60,10 +57,8 @@ def test_create_product_creates_product_and_profile():
     )
     assert profile.description == "Classic candy."
     assert profile.ingredients == "Sugar."
-    assert (
-        profile.image_url
-        == "https://example.com/product.jpg"
-    )
+    assert not profile.image
+    assert not profile.thumbnail
 
 
 @pytest.mark.django_db
@@ -209,9 +204,6 @@ def test_update_product_updates_editable_product_and_profile_fields():
         category=ProductProfile.Category.CHIPS,
         description="  Nice chips.  ",
         ingredients="  Potatoes, salt.  ",
-        image_url=(
-            "  https://example.com/product.jpg  "
-        ),
     )
 
     updated.refresh_from_db()
@@ -236,10 +228,6 @@ def test_update_product_updates_editable_product_and_profile_fields():
         updated.profile.ingredients
         == "Potatoes, salt."
     )
-    assert (
-        updated.profile.image_url
-        == "https://example.com/product.jpg"
-    )
 
 
 @pytest.mark.django_db
@@ -252,10 +240,13 @@ def test_update_product_can_clear_profile_fields():
     )
     profile.description = "Description"
     profile.ingredients = "Ingredients"
-    profile.image_url = (
-        "https://example.com/product.jpg"
+    profile.save(
+        update_fields=[
+            "category",
+            "description",
+            "ingredients",
+        ]
     )
-    profile.save()
 
     updated = update_product(
         product=product,
@@ -268,7 +259,6 @@ def test_update_product_can_clear_profile_fields():
         category="",
         description="",
         ingredients="",
-        image_url="",
     )
 
     updated.profile.refresh_from_db()
@@ -276,7 +266,49 @@ def test_update_product_can_clear_profile_fields():
     assert updated.profile.category == ""
     assert updated.profile.description == ""
     assert updated.profile.ingredients == ""
-    assert updated.profile.image_url == ""
+
+
+@pytest.mark.django_db
+def test_update_product_does_not_change_existing_image_fields():
+    product = product_factory()
+
+    profile = product.profile
+    profile.image.name = (
+        "products/originals/example.png"
+    )
+    profile.thumbnail.name = (
+        "products/thumbnails/example.webp"
+    )
+    profile.save(
+        update_fields=[
+            "image",
+            "thumbnail",
+        ]
+    )
+
+    updated = update_product(
+        product=product,
+        internal_number=product.internal_number,
+        manufacturer=product.manufacturer,
+        brand=product.brand,
+        name="Updated name",
+        active=product.active,
+        vegan=product.vegan,
+        category=profile.category,
+        description=profile.description,
+        ingredients=profile.ingredients,
+    )
+
+    updated.profile.refresh_from_db()
+
+    assert (
+        updated.profile.image.name
+        == "products/originals/example.png"
+    )
+    assert (
+        updated.profile.thumbnail.name
+        == "products/thumbnails/example.webp"
+    )
 
 
 @pytest.mark.django_db
@@ -307,6 +339,7 @@ def test_update_product_does_not_change_sku():
         name="Old Name",
         weight_per_unit=1000,
     )
+
     original_sku = product.sku
 
     updated = update_product(
@@ -327,6 +360,7 @@ def test_update_product_rejects_duplicate_internal_number():
     product_factory(
         internal_number=1,
     )
+
     product = product_factory(
         internal_number=2,
         brand="Fazer",

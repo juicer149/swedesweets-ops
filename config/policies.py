@@ -6,9 +6,14 @@ own access.py module. This module composes those declarations into the policy
 maps enforced by ViewCapabilityMiddleware.
 
 Views are denied by default unless listed here or marked auth-exempt.
+
+Infrastructure paths such as static and media files are exempt from view-level
+capability enforcement because they are not application views.
 """
 
 from __future__ import annotations
+
+from django.conf import settings
 
 from accounts.access import (
     AUTH_EXEMPT_VIEWS as ACCOUNT_AUTH_EXEMPT_VIEWS,
@@ -19,29 +24,29 @@ from accounts.access import (
 from business_portal.access import (
     VIEW_CAPABILITIES as BUSINESS_PORTAL_VIEW_CAPABILITIES,
 )
-from ops_portal.customers.access import (
-    VIEW_CAPABILITIES as OPS_CUSTOMER_VIEW_CAPABILITIES,
-)
-from ops_portal.inventory.access import (
-    VIEW_CAPABILITIES as OPS_INVENTORY_VIEW_CAPABILITIES,
-)
 from ops_portal.access import (
     VIEW_CAPABILITIES as OPS_PORTAL_VIEW_CAPABILITIES,
 )
 from ops_portal.accounts.access import (
     VIEW_CAPABILITIES as OPS_ACCOUNT_VIEW_CAPABILITIES,
 )
+from ops_portal.customers.access import (
+    VIEW_CAPABILITIES as OPS_CUSTOMER_VIEW_CAPABILITIES,
+)
+from ops_portal.inventory.access import (
+    VIEW_CAPABILITIES as OPS_INVENTORY_VIEW_CAPABILITIES,
+)
 from ops_portal.orders.access import (
     VIEW_CAPABILITIES as OPS_ORDER_VIEW_CAPABILITIES,
+)
+from ops_portal.products.access import (
+    VIEW_CAPABILITIES as OPS_PRODUCT_VIEW_CAPABILITIES,
 )
 from payments.access import (
     AUTH_EXEMPT_VIEWS as PAYMENT_AUTH_EXEMPT_VIEWS,
 )
 from payments.access import (
     VIEW_CAPABILITIES as PAYMENT_VIEW_CAPABILITIES,
-)
-from ops_portal.products.access import (
-    VIEW_CAPABILITIES as OPS_PRODUCT_VIEW_CAPABILITIES,
 )
 from storefront.access import (
     AUTH_EXEMPT_VIEWS as STOREFRONT_AUTH_EXEMPT_VIEWS,
@@ -76,6 +81,7 @@ VIEW_CAPABILITIES = {
 
 EXEMPT_PATH_PREFIXES = (
     "/admin/",
-    "/static/",
+    settings.STATIC_URL,
+    settings.MEDIA_URL,
     "/favicon.ico",
 )

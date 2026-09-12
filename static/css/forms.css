@@ -177,6 +177,7 @@
   }
 }
 
+
 /* =============================================================================
    Form help and errors
    ============================================================================= */
@@ -235,6 +236,7 @@
   box-shadow: var(--shadow-focus-danger);
 }
 
+
 /* =============================================================================
    Form sections
 
@@ -291,6 +293,180 @@
 
 
 /* =============================================================================
+   Product image upload
+   ============================================================================= */
+
+.product-image-field {
+  gap: var(--space-2);
+}
+
+.product-image-upload {
+  display: grid;
+  gap: var(--space-4);
+
+  padding: var(--space-4);
+
+  background: var(--color-white);
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.product-image-upload__preview {
+  width: min(100%, 24rem);
+  overflow: hidden;
+
+  aspect-ratio: 4 / 3;
+
+  background: var(--color-neutral-100);
+  border: var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+
+.product-image-upload__preview[hidden],
+.product-image-upload__empty[hidden] {
+  display: none;
+}
+
+.product-image-upload__preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+.product-image-upload__empty {
+  display: flex;
+  min-height: 11rem;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+
+  padding: var(--space-5);
+
+  background: var(--color-primary-50);
+  border: 1px dashed rgb(var(--color-row-shadow) / 0.22);
+  border-radius: var(--radius-control);
+
+  text-align: left;
+}
+
+.product-image-upload__empty-icon {
+  display: grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+
+  color: var(--color-primary-900);
+  background: var(--color-white);
+  border: var(--border-subtle);
+  border-radius: 50%;
+}
+
+.product-image-upload__empty-icon .ui-icon-block {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.product-image-upload__empty-icon .ui-icon-svg {
+  width: 100%;
+  height: 100%;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.product-image-upload__empty-copy {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.product-image-upload__empty-copy strong {
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--color-primary-900);
+}
+
+.product-image-upload__empty-copy span {
+  font-size: var(--font-size-14);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--color-neutral-600);
+}
+
+.product-image-upload__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.product-image-upload__choose {
+  gap: var(--space-2);
+}
+
+.product-image-upload__choose .ui-icon-block {
+  flex: 0 0 auto;
+}
+
+.product-image-upload__choose .ui-icon-svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.product-image-upload__remove {
+  display: inline-flex;
+  min-height: var(--size-control-lg);
+  align-items: center;
+  gap: var(--space-2);
+
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-status-danger-text);
+
+  cursor: pointer;
+}
+
+.product-image-upload__remove input {
+  width: 1rem;
+  height: 1rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+
+  accent-color: var(--color-status-danger-text);
+}
+
+.product-image-upload__native {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.product-image-upload > .form-help {
+  margin: 0;
+}
+
+.product-image-upload > .form-field__errors {
+  margin: 0;
+}
+
+
+/* =============================================================================
    Form actions
    ============================================================================= */
 
@@ -320,11 +496,9 @@
   margin-top: 0;
 }
 
+
 /* =============================================================================
    Mobile / touch form actions
-
-   Form actions should be large, predictable tap targets on phones and
-   touch-like layouts. Desktop keeps the compact row layout.
    ============================================================================= */
 
 @media (max-width: 900px), (pointer: coarse) {
@@ -345,5 +519,35 @@
     justify-content: center;
     text-align: center;
     padding-inline: var(--space-5);
+  }
+}
+
+@media (max-width: 700px) {
+  .product-image-upload {
+    padding: var(--space-3);
+  }
+
+  .product-image-upload__preview {
+    width: 100%;
+  }
+
+  .product-image-upload__empty {
+    min-height: 10rem;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .product-image-upload__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .product-image-upload__actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .product-image-upload__remove {
+    justify-content: center;
   }
 }

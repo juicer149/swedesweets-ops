@@ -4,7 +4,6 @@ from products.errors import InvalidProductData
 
 MAX_NAME_LENGTH = 160
 MAX_SKU_LENGTH = 180
-MAX_IMAGE_URL_LENGTH = 500
 
 MIN_WEIGHT_PER_UNIT = 1
 MAX_WEIGHT_PER_UNIT = 50_000

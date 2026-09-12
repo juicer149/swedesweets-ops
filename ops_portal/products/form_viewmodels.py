@@ -9,7 +9,9 @@ from ops_portal.products.forms import (
     ProductEditForm,
     ProductForm,
 )
-from ops_portal.products.pricing_forms import ProductPricingForm
+from ops_portal.products.pricing_forms import (
+    ProductPricingForm,
+)
 from products.models import Product
 
 
@@ -21,27 +23,48 @@ class FormContextItem:
 
 @dataclass(frozen=True, slots=True)
 class ProductFormContext:
-    form: ProductForm | ProductEditForm
+    form: (
+        ProductForm
+        | ProductEditForm
+    )
     pricing_form: ProductPricingForm
     title: str
     description: str
     submit_label: str
     cancel_url: str
     product: Product | None = None
-    product_context_items: list[FormContextItem] | None = None
+    product_context_items: (
+        list[FormContextItem]
+        | None
+    ) = None
+    current_image_url: str = ""
 
-    def as_dict(self) -> dict[str, object]:
+    def as_dict(
+        self,
+    ) -> dict[str, object]:
         return {
             "form": self.form,
-            "pricing_form": self.pricing_form,
+            "pricing_form": (
+                self.pricing_form
+            ),
             "product": self.product,
             "product_context_items": (
-                self.product_context_items or []
+                self.product_context_items
+                or []
+            ),
+            "current_image_url": (
+                self.current_image_url
             ),
             "title": self.title,
-            "description": self.description,
-            "submit_label": self.submit_label,
-            "cancel_url": self.cancel_url,
+            "description": (
+                self.description
+            ),
+            "submit_label": (
+                self.submit_label
+            ),
+            "cancel_url": (
+                self.cancel_url
+            ),
         }
 
 
@@ -56,7 +79,9 @@ def build_create_product_form_context(
         title="Add product",
         description="",
         submit_label="Add product",
-        cancel_url=reverse("ops_products:index"),
+        cancel_url=reverse(
+            "ops_products:index"
+        ),
     )
 
 
@@ -70,8 +95,15 @@ def build_edit_product_form_context(
         form=form,
         pricing_form=pricing_form,
         product=product,
-        product_context_items=build_product_context_items(
-            product
+        product_context_items=(
+            build_product_context_items(
+                product
+            )
+        ),
+        current_image_url=(
+            _current_product_image_url(
+                product
+            )
         ),
         title="Edit product",
         description="",
@@ -79,7 +111,9 @@ def build_edit_product_form_context(
         cancel_url=reverse(
             "ops_products:detail",
             kwargs={
-                "product_pk": product.pk,
+                "product_pk": (
+                    product.pk
+                ),
             },
         ),
     )
@@ -95,11 +129,16 @@ def build_product_context_items(
         ),
         FormContextItem(
             label="Unit weight",
-            value=product.unit_weight_label,
+            value=(
+                product.unit_weight_label
+            ),
         ),
         FormContextItem(
             label="Stock unit",
-            value=product.get_stock_unit_display(),
+            value=(
+                product
+                .get_stock_unit_display()
+            ),
         ),
         FormContextItem(
             label="Current status",
@@ -110,3 +149,21 @@ def build_product_context_items(
             ),
         ),
     ]
+
+
+def _current_product_image_url(
+    product: Product,
+) -> str:
+    profile = getattr(
+        product,
+        "profile",
+        None,
+    )
+
+    if (
+        profile is None
+        or not profile.image
+    ):
+        return ""
+
+    return profile.image.url

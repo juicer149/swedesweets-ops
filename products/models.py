@@ -33,7 +33,6 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
 from products.catalog import (
-    MAX_IMAGE_URL_LENGTH,
     MAX_NAME_LENGTH,
     MAX_SKU_LENGTH,
     MAX_WEIGHT_PER_UNIT,
@@ -45,6 +44,7 @@ from products.catalog import (
     validate_weight_per_unit,
 )
 from products.errors import InvalidProductData
+
 
 IMMUTABLE_PRODUCT_IDENTITY_FIELDS = frozenset(
     {
@@ -129,6 +129,7 @@ class Product(models.Model):
         on_delete=models.PROTECT,
         related_name="products_created",
     )
+
     edited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -136,6 +137,7 @@ class Product(models.Model):
         on_delete=models.PROTECT,
         related_name="products_edited",
     )
+
     activated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -143,6 +145,7 @@ class Product(models.Model):
         on_delete=models.PROTECT,
         related_name="products_activated",
     )
+
     deactivated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -174,11 +177,15 @@ class Product(models.Model):
                 name="product_internal_number_positive_or_null",
             ),
             models.CheckConstraint(
-                condition=models.Q(weight_per_unit__gte=MIN_WEIGHT_PER_UNIT),
+                condition=models.Q(
+                    weight_per_unit__gte=MIN_WEIGHT_PER_UNIT
+                ),
                 name="product_weight_per_unit_at_least_min",
             ),
             models.CheckConstraint(
-                condition=models.Q(weight_per_unit__lte=MAX_WEIGHT_PER_UNIT),
+                condition=models.Q(
+                    weight_per_unit__lte=MAX_WEIGHT_PER_UNIT
+                ),
                 name="product_weight_per_unit_at_most_max",
             ),
         ]
@@ -186,17 +193,28 @@ class Product(models.Model):
     def save(self, *args, **kwargs) -> None:
         """Normalize fields, validate identity and protect immutable data."""
 
-        update_fields = _normalize_update_fields(kwargs.get("update_fields"))
+        update_fields = _normalize_update_fields(
+            kwargs.get("update_fields")
+        )
         is_create = self.pk is None
 
-        self._normalize_catalog_fields(update_fields=update_fields)
-        self._validate_identity_fields(update_fields=update_fields)
+        self._normalize_catalog_fields(
+            update_fields=update_fields
+        )
+        self._validate_identity_fields(
+            update_fields=update_fields
+        )
 
         if is_create:
             self._assign_initial_sku()
-            update_fields = _add_update_field(update_fields, "sku")
+            update_fields = _add_update_field(
+                update_fields,
+                "sku",
+            )
         else:
-            self._protect_immutable_identity(update_fields=update_fields)
+            self._protect_immutable_identity(
+                update_fields=update_fields
+            )
 
         if update_fields is not None:
             kwargs["update_fields"] = update_fields
@@ -208,22 +226,36 @@ class Product(models.Model):
         *,
         update_fields: set[str] | None,
     ) -> None:
-        if _should_handle(update_fields, "internal_number"):
-            validate_internal_number(self.internal_number)
+        if _should_handle(
+            update_fields,
+            "internal_number",
+        ):
+            validate_internal_number(
+                self.internal_number
+            )
 
-        if _should_handle(update_fields, "manufacturer"):
+        if _should_handle(
+            update_fields,
+            "manufacturer",
+        ):
             self.manufacturer = normalize_optional_text(
                 self.manufacturer,
                 field_name="manufacturer",
             )
 
-        if _should_handle(update_fields, "brand"):
+        if _should_handle(
+            update_fields,
+            "brand",
+        ):
             self.brand = normalize_required_text(
                 self.brand,
                 field_name="brand",
             )
 
-        if _should_handle(update_fields, "name"):
+        if _should_handle(
+            update_fields,
+            "name",
+        ):
             self.name = normalize_required_text(
                 self.name,
                 field_name="name",
@@ -234,17 +266,30 @@ class Product(models.Model):
         *,
         update_fields: set[str] | None,
     ) -> None:
-        if _should_handle(update_fields, "weight_per_unit"):
-            validate_weight_per_unit(self.weight_per_unit)
+        if _should_handle(
+            update_fields,
+            "weight_per_unit",
+        ):
+            validate_weight_per_unit(
+                self.weight_per_unit
+            )
 
-        if _should_handle(update_fields, "stock_unit"):
+        if _should_handle(
+            update_fields,
+            "stock_unit",
+        ):
             self._validate_stock_unit()
 
     def _validate_stock_unit(self) -> None:
-        valid_units = {choice.value for choice in self.StockUnit}
+        valid_units = {
+            choice.value
+            for choice in self.StockUnit
+        }
 
         if self.stock_unit not in valid_units:
-            raise InvalidProductData(f"Unsupported stock unit: {self.stock_unit}")
+            raise InvalidProductData(
+                f"Unsupported stock unit: {self.stock_unit}"
+            )
 
     def _assign_initial_sku(self) -> None:
         self.sku = make_sku(
@@ -259,32 +304,53 @@ class Product(models.Model):
         *,
         update_fields: set[str] | None,
     ) -> None:
-        if not _touches_any(update_fields, IMMUTABLE_PRODUCT_IDENTITY_FIELDS):
+        if not _touches_any(
+            update_fields,
+            IMMUTABLE_PRODUCT_IDENTITY_FIELDS,
+        ):
             return
 
         self._raise_if_immutable_identity_changed()
 
-    def _raise_if_immutable_identity_changed(self) -> None:
+    def _raise_if_immutable_identity_changed(
+        self,
+    ) -> None:
         persisted = (
             type(self)
-            .objects.only("weight_per_unit", "stock_unit", "sku")
+            .objects.only(
+                "weight_per_unit",
+                "stock_unit",
+                "sku",
+            )
             .get(pk=self.pk)
         )
 
-        if self.weight_per_unit != persisted.weight_per_unit:
+        if (
+            self.weight_per_unit
+            != persisted.weight_per_unit
+        ):
             raise InvalidProductData(
                 "weight_per_unit cannot be changed after product creation"
             )
 
-        if self.stock_unit != persisted.stock_unit:
+        if (
+            self.stock_unit
+            != persisted.stock_unit
+        ):
             raise InvalidProductData(
                 "stock_unit cannot be changed after product creation"
             )
 
         if self.sku != persisted.sku:
-            raise InvalidProductData("sku cannot be changed after product creation")
+            raise InvalidProductData(
+                "sku cannot be changed after product creation"
+            )
 
-    def mark_as_created(self, *, user=None) -> None:
+    def mark_as_created(
+        self,
+        *,
+        user=None,
+    ) -> None:
         now = timezone.now()
 
         self.created_by = user
@@ -302,9 +368,14 @@ class Product(models.Model):
             ]
         )
 
-    def mark_as_edited(self, *, user=None) -> None:
+    def mark_as_edited(
+        self,
+        *,
+        user=None,
+    ) -> None:
         self.edited_at = timezone.now()
         self.edited_by = user
+
         self.save(
             update_fields=[
                 "edited_at",
@@ -313,13 +384,19 @@ class Product(models.Model):
             ]
         )
 
-    def mark_active_changed(self, *, old_active: bool, user=None) -> None:
+    def mark_active_changed(
+        self,
+        *,
+        old_active: bool,
+        user=None,
+    ) -> None:
         if old_active == self.active:
             return
 
         if self.active:
             self.activated_at = timezone.now()
             self.activated_by = user
+
             self.save(
                 update_fields=[
                     "activated_at",
@@ -331,6 +408,7 @@ class Product(models.Model):
 
         self.deactivated_at = timezone.now()
         self.deactivated_by = user
+
         self.save(
             update_fields=[
                 "deactivated_at",
@@ -340,16 +418,31 @@ class Product(models.Model):
         )
 
     @property
-    def display_name(self, *, language: str = "sv") -> str:
+    def display_name(
+        self,
+        *,
+        language: str = "sv",
+    ) -> str:
         """Human-readable product name for cards, selects and links."""
-        parts = [self.brand, self.name]
-        return " — ".join(str(part) for part in parts if part)
+
+        parts = [
+            self.brand,
+            self.name,
+        ]
+
+        return " — ".join(
+            str(part)
+            for part in parts
+            if part
+        )
 
     @property
     def code_label(self) -> str:
         """Short code label for internal use and compact displays."""
+
         if self.internal_number:
             return f"#{self.internal_number}"
+
         return self.sku
 
     @property
@@ -383,10 +476,23 @@ class Product(models.Model):
     @property
     def catalog_label(self) -> str:
         """Full operational label for searchable selects."""
-        return f"{self.code_label} · {self.display_name} · {self.unit_weight_label}"
+
+        return (
+            f"{self.code_label} · "
+            f"{self.display_name} · "
+            f"{self.unit_weight_label}"
+        )
 
     @property
-    def catalog_sort_key(self) -> tuple[int, str, str, int, str]:
+    def catalog_sort_key(
+        self,
+    ) -> tuple[
+        int,
+        str,
+        str,
+        int,
+        str,
+    ]:
         return (
             self.internal_number or 999_999,
             self.brand.casefold(),
@@ -395,9 +501,14 @@ class Product(models.Model):
             self.sku,
         )
 
-    def stock_quantity_label(self, quantity: int) -> str:
+    def stock_quantity_label(
+        self,
+        quantity: int,
+    ) -> str:
         if quantity < 0:
-            raise InvalidProductData("quantity must be non-negative")
+            raise InvalidProductData(
+                "quantity must be non-negative"
+            )
 
         labels = {
             self.StockUnit.BOX: ngettext(
@@ -422,39 +533,83 @@ class Product(models.Model):
             ),
         }
 
-        return labels[self.stock_unit] % {"count": quantity}
+        return labels[self.stock_unit] % {
+            "count": quantity,
+        }
 
-    def grams_to_units(self, *, grams: int) -> int:
+    def grams_to_units(
+        self,
+        *,
+        grams: int,
+    ) -> int:
         """Convert grams into whole stock units for this product."""
 
         if grams <= 0:
-            raise InvalidProductData("grams must be positive")
+            raise InvalidProductData(
+                "grams must be positive"
+            )
 
-        return (grams + self.weight_per_unit - 1) // self.weight_per_unit
+        return (
+            grams
+            + self.weight_per_unit
+            - 1
+        ) // self.weight_per_unit
 
-    def kg_to_units(self, *, kg: Decimal) -> int:
+    def kg_to_units(
+        self,
+        *,
+        kg: Decimal,
+    ) -> int:
         """Convert kilograms into whole stock units for this product."""
 
         if kg <= 0:
-            raise InvalidProductData("kg must be positive")
+            raise InvalidProductData(
+                "kg must be positive"
+            )
 
-        grams = (kg * Decimal("1000")).to_integral_value(rounding=ROUND_CEILING)
+        grams = (
+            kg
+            * Decimal("1000")
+        ).to_integral_value(
+            rounding=ROUND_CEILING
+        )
 
-        return self.grams_to_units(grams=int(grams))
+        return self.grams_to_units(
+            grams=int(grams)
+        )
 
-    def units_to_grams(self, *, units: int) -> int:
-        """Convert whole stock units into grams for this product."""
+    def units_to_grams(
+        self,
+        *,
+        units: int,
+    ) -> int:
+        """Convert whole stock units into grams."""
 
         if units <= 0:
-            raise InvalidProductData("units must be positive")
+            raise InvalidProductData(
+                "units must be positive"
+            )
 
-        return units * self.weight_per_unit
+        return (
+            units
+            * self.weight_per_unit
+        )
 
-    def units_to_kg(self, *, units: int) -> Decimal:
+    def units_to_kg(
+        self,
+        *,
+        units: int,
+    ) -> Decimal:
         """Convert whole stock units into kilograms."""
 
-        grams = self.units_to_grams(units=units)
-        return Decimal(grams) / Decimal("1000")
+        grams = self.units_to_grams(
+            units=units
+        )
+
+        return (
+            Decimal(grams)
+            / Decimal("1000")
+        )
 
     def __str__(self) -> str:
         return self.display_name
@@ -463,8 +618,8 @@ class Product(models.Model):
 class ProductProfile(models.Model):
     """Optional editable catalog information for a product.
 
-    This is separate from Product because description, ingredients and image are
-    presentation/catalog data, not inventory/order identity.
+    The original image is the permanent source of truth.
+    The thumbnail is a derived asset and may be regenerated.
     """
 
     class Category(models.TextChoices):
@@ -487,17 +642,32 @@ class ProductProfile(models.Model):
         help_text="Primary customer catalog category.",
     )
 
-    description = models.TextField(blank=True)
-    ingredients = models.TextField(blank=True)
-
-    image_url = models.URLField(
-        max_length=MAX_IMAGE_URL_LENGTH,
+    description = models.TextField(
         blank=True,
-        help_text="External image URL. Prefer this over uploads for MVP/Railway.",
+    )
+
+    ingredients = models.TextField(
+        blank=True,
+    )
+
+    image = models.ImageField(
+        upload_to="products/originals/%Y/%m/%d/",
+        max_length=255,
+        blank=True,
+    )
+
+    thumbnail = models.ImageField(
+        upload_to="products/thumbnails/%Y/%m/%d/",
+        max_length=255,
+        blank=True,
+        editable=False,
     )
 
     class Meta:
-        ordering = ["product__brand", "product__name"]
+        ordering = [
+            "product__brand",
+            "product__name",
+        ]
 
     def __str__(self) -> str:
         return self.product.sku
@@ -511,11 +681,13 @@ class ProductTranslation(models.Model):
         related_name="translations",
         on_delete=models.CASCADE,
     )
+
     language_code = models.CharField(
         max_length=10,
         choices=settings.LANGUAGES,
         help_text="Language shown to customers.",
     )
+
     name = models.CharField(
         max_length=MAX_NAME_LENGTH,
         verbose_name="Customer-facing name",
@@ -531,15 +703,24 @@ class ProductTranslation(models.Model):
             "product__name",
             "language_code",
         ]
+
         constraints = [
             models.UniqueConstraint(
-                fields=["product", "language_code"],
-                name="unique_product_translation_per_language",
+                fields=[
+                    "product",
+                    "language_code",
+                ],
+                name=(
+                    "unique_product_translation_per_language"
+                ),
             ),
         ]
 
     def __str__(self) -> str:
-        return f"{self.product.sku} [{self.language_code}]"
+        return (
+            f"{self.product.sku} "
+            f"[{self.language_code}]"
+        )
 
 
 def _normalize_update_fields(
@@ -555,7 +736,10 @@ def _should_handle(
     update_fields: set[str] | None,
     field_name: str,
 ) -> bool:
-    return update_fields is None or field_name in update_fields
+    return (
+        update_fields is None
+        or field_name in update_fields
+    )
 
 
 def _touches_any(
@@ -565,7 +749,10 @@ def _touches_any(
     if update_fields is None:
         return True
 
-    return bool(update_fields & field_names)
+    return bool(
+        update_fields
+        & field_names
+    )
 
 
 def _add_update_field(
@@ -575,5 +762,8 @@ def _add_update_field(
     if update_fields is None:
         return None
 
-    update_fields.add(field_name)
+    update_fields.add(
+        field_name
+    )
+
     return update_fields

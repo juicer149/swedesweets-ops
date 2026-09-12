@@ -3,7 +3,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+
+BASE_DIR = (
+    Path(__file__)
+    .resolve()
+    .parent
+    .parent
+)
 
 
 # =============================================================================
@@ -65,10 +71,15 @@ SECRET_KEY = os.environ.get(
 
 if not SECRET_KEY:
     if DEBUG:
-        SECRET_KEY = "dev-only-change-me"
+        SECRET_KEY = (
+            "dev-only-change-me"
+        )
     else:
         raise RuntimeError(
-            "DJANGO_SECRET_KEY must be set when DEBUG is false."
+            (
+                "DJANGO_SECRET_KEY must be set "
+                "when DEBUG is false."
+            )
         )
 
 ALLOWED_HOSTS = env_list(
@@ -104,6 +115,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
+
     # Local apps
     "config",
     "ops_portal",
@@ -133,11 +145,14 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+
     # Require login for all app pages except explicitly exempt paths.
     "config.middleware.LoginRequiredMiddleware",
+
     # Custom middleware to set request.account and check view permissions.
     "accounts.middleware.AccountContextMiddleware",
     "accounts.middleware.ViewCapabilityMiddleware",
+
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -147,9 +162,13 @@ MIDDLEWARE = [
 # URL / WSGI
 # =============================================================================
 
-ROOT_URLCONF = "config.urls"
+ROOT_URLCONF = (
+    "config.urls"
+)
 
-WSGI_APPLICATION = "config.wsgi.application"
+WSGI_APPLICATION = (
+    "config.wsgi.application"
+)
 
 
 # =============================================================================
@@ -162,15 +181,28 @@ TEMPLATES = [
             "django.template.backends.django.DjangoTemplates"
         ),
         "DIRS": [
-            BASE_DIR / "templates",
+            BASE_DIR
+            / "templates",
         ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "config.context_processors.navigation",
+                (
+                    "django.template.context_processors."
+                    "request"
+                ),
+                (
+                    "django.contrib.auth.context_processors."
+                    "auth"
+                ),
+                (
+                    "django.contrib.messages.context_processors."
+                    "messages"
+                ),
+                (
+                    "config.context_processors."
+                    "navigation"
+                ),
             ],
         },
     },
@@ -181,7 +213,9 @@ TEMPLATES = [
 # Database
 # =============================================================================
 
-if os.environ.get("PGHOST"):
+if os.environ.get(
+    "PGHOST"
+):
     DATABASES = {
         "default": {
             "ENGINE": (
@@ -251,11 +285,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGIN_URL = "login"
+LOGIN_URL = (
+    "login"
+)
+
 LOGIN_REDIRECT_URL = (
     "accounts:after_login"
 )
-LOGOUT_REDIRECT_URL = "login"
+
+LOGOUT_REDIRECT_URL = (
+    "login"
+)
 
 
 # =============================================================================
@@ -301,28 +341,36 @@ EMAIL_HOST = os.environ.get(
     "EMAIL_HOST",
     "",
 )
+
 EMAIL_PORT = int(
     os.environ.get(
         "EMAIL_PORT",
         "587",
     )
 )
+
 EMAIL_HOST_USER = os.environ.get(
     "EMAIL_HOST_USER",
     "",
 )
-EMAIL_HOST_PASSWORD = os.environ.get(
-    "EMAIL_HOST_PASSWORD",
-    "",
+
+EMAIL_HOST_PASSWORD = (
+    os.environ.get(
+        "EMAIL_HOST_PASSWORD",
+        "",
+    )
 )
+
 EMAIL_USE_TLS = env_bool(
     "EMAIL_USE_TLS",
     default=not DEBUG,
 )
+
 EMAIL_USE_SSL = env_bool(
     "EMAIL_USE_SSL",
     default=False,
 )
+
 EMAIL_TIMEOUT = int(
     os.environ.get(
         "EMAIL_TIMEOUT",
@@ -340,9 +388,11 @@ SUMUP_API_KEY = os.environ.get(
     "",
 )
 
-SUMUP_MERCHANT_CODE = os.environ.get(
-    "SUMUP_MERCHANT_CODE",
-    "",
+SUMUP_MERCHANT_CODE = (
+    os.environ.get(
+        "SUMUP_MERCHANT_CODE",
+        "",
+    )
 )
 
 
@@ -367,10 +417,13 @@ LANGUAGES = [
 ]
 
 LOCALE_PATHS = [
-    BASE_DIR / "locale",
+    BASE_DIR
+    / "locale",
 ]
 
-TIME_ZONE = "Europe/Stockholm"
+TIME_ZONE = (
+    "Europe/Stockholm"
+)
 
 USE_I18N = True
 USE_TZ = True
@@ -380,11 +433,15 @@ USE_TZ = True
 # Static / Media
 # =============================================================================
 
-STATIC_URL = "static/"
+STATIC_URL = (
+    "/static/"
+)
+
 STATIC_ROOT = (
     BASE_DIR
     / "staticfiles"
 )
+
 STATICFILES_DIRS = [
     BASE_DIR
     / "static",
@@ -405,7 +462,10 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "media/"
+MEDIA_URL = (
+    "/media/"
+)
+
 MEDIA_ROOT = (
     BASE_DIR
     / "media"

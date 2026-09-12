@@ -16,6 +16,7 @@
 
   <form
     method="post"
+    enctype="multipart/form-data"
     class="form-card"
     novalidate
     data-tabs
@@ -83,7 +84,111 @@
 
         {% include "includes/ui/form_field.html" with field=form.description only %}
         {% include "includes/ui/form_field.html" with field=form.ingredients only %}
-        {% include "includes/ui/form_field.html" with field=form.image_url only %}
+
+        <div
+          class="form-field form-field--full product-image-field"
+          data-product-image-field
+        >
+          <span class="form-label">
+            {{ form.image.label }}
+          </span>
+
+          <div class="product-image-upload">
+            <div
+              class="product-image-upload__preview"
+              data-product-image-preview
+              {% if not current_image_url %}hidden{% endif %}
+            >
+              <img
+                {% if current_image_url %}
+                  src="{{ current_image_url }}"
+                {% endif %}
+                alt=""
+                data-product-image-preview-image
+              >
+            </div>
+
+            <div
+              class="product-image-upload__empty"
+              data-product-image-empty
+              {% if current_image_url %}hidden{% endif %}
+            >
+              <span class="product-image-upload__empty-icon">
+                {% include "includes/ui/icon_block.html" with name="image" size="lg" only %}
+              </span>
+
+              <div class="product-image-upload__empty-copy">
+                <strong>
+                  No product image
+                </strong>
+
+                <span>
+                  Upload a JPEG or PNG up to 10 MB.
+                </span>
+              </div>
+            </div>
+
+            <div class="product-image-upload__actions">
+              <button
+                class="button button--sm button--soft button--tone-place product-image-upload__choose"
+                type="button"
+                data-product-image-select
+              >
+                {% include "includes/ui/icon_block.html" with name="image" size="sm" only %}
+
+                <span data-product-image-select-label>
+                  {% if current_image_url %}
+                    Replace image
+                  {% else %}
+                    Choose image
+                  {% endif %}
+                </span>
+              </button>
+
+              {% if product and current_image_url %}
+                <label class="product-image-upload__remove">
+                  {{ form.remove_image }}
+
+                  <span>
+                    Remove current image
+                  </span>
+                </label>
+              {% endif %}
+            </div>
+
+            <div class="product-image-upload__native">
+              {{ form.image }}
+            </div>
+
+            {% if form.image.help_text %}
+              <p class="form-help">
+                {{ form.image.help_text }}
+              </p>
+            {% endif %}
+
+            {% if form.image.errors %}
+              <div
+                class="form-field__errors"
+                role="alert"
+              >
+                {% for error in form.image.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if form.remove_image.errors %}
+              <div
+                class="form-field__errors"
+                role="alert"
+              >
+                {% for error in form.remove_image.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </section>
 
@@ -183,6 +288,11 @@
 
   <script
     src="{% static 'js/dirty_form.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/product-image-upload.js' %}"
     defer
   ></script>
 {% endblock %}
