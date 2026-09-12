@@ -1,0 +1,219 @@
+{% load i18n %}
+
+<details class="site-nav-cart">
+  <summary
+    class="site-nav-cart__trigger"
+    aria-label="{{ navbar_cart.aria_label }}"
+  >
+    <span
+      class="site-nav-cart__icon"
+      aria-hidden="true"
+    >
+      {% include "includes/ui/icon.html" with name="cart" %}
+    </span>
+
+    <span
+      class="site-nav-cart__count"
+      aria-hidden="true"
+    >
+      {{ navbar_cart.line_count }}
+    </span>
+
+    <span class="visually-hidden">
+      {% blocktrans count count=navbar_cart.line_count %}
+        {{ count }} item in current order
+      {% plural %}
+        {{ count }} items in current order
+      {% endblocktrans %}
+    </span>
+  </summary>
+
+  <div class="site-nav-cart__popover">
+    <header class="site-nav-cart__header">
+      <strong class="site-nav-cart__title">
+        {{ navbar_cart.title }}
+      </strong>
+
+      <span class="site-nav-cart__item-count">
+        {% blocktrans count count=navbar_cart.line_count %}
+          {{ count }} item
+        {% plural %}
+          {{ count }} items
+        {% endblocktrans %}
+      </span>
+    </header>
+
+    {% if navbar_cart.has_lines %}
+      <div class="site-nav-cart__lines">
+        {% for line in navbar_cart.lines %}
+          <article
+            class="site-nav-cart-line"
+            data-navbar-cart-line
+            data-line-id="{{ line.line_id }}"
+          >
+            <div class="site-nav-cart-line__content">
+              <strong class="site-nav-cart-line__label">
+                <a
+                  class="text-link site-nav-cart-line__product-link"
+                  href="{{ line.product_url }}"
+                >
+                  {{ line.label }}
+                </a>
+              </strong>
+
+              {% for metadata in line.metadata %}
+                <span class="site-nav-cart-line__metadata">
+                  {{ metadata }}
+                </span>
+              {% endfor %}
+            </div>
+
+            <div class="site-nav-cart-line__controls">
+              <form
+                class="site-nav-cart-line__quantity"
+                method="post"
+                action="{{ line.quantity_url }}"
+                data-navbar-cart-quantity-form
+                data-confirmed-quantity="{{ line.quantity }}"
+              >
+                {% csrf_token %}
+
+                <div
+                  class="
+                    quantity-stepper
+                    quantity-stepper--compact
+                  "
+                  aria-label="{% trans 'Quantity' %}"
+                  data-quantity-stepper
+                >
+                  <button
+                    class="
+                      quantity-stepper__button
+                      quantity-stepper__button--decrease
+                    "
+                    type="button"
+                    aria-label="{% trans 'Decrease quantity' %}"
+                    data-quantity-decrease
+                  >
+                    <span aria-hidden="true">
+                      −
+                    </span>
+                  </button>
+
+                  <label
+                    class="visually-hidden"
+                    for="navbar-cart-quantity-{{ line.line_id }}"
+                  >
+                    {% trans "Quantity" %}
+                  </label>
+
+                  <input
+                    id="navbar-cart-quantity-{{ line.line_id }}"
+                    class="quantity-stepper__input"
+                    type="number"
+                    name="quantity"
+                    value="{{ line.quantity }}"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    required
+                    data-quantity-input
+                  >
+
+                  <button
+                    class="
+                      quantity-stepper__button
+                      quantity-stepper__button--increase
+                    "
+                    type="button"
+                    aria-label="{% trans 'Increase quantity' %}"
+                    data-quantity-increase
+                  >
+                    <span aria-hidden="true">
+                      +
+                    </span>
+                  </button>
+                </div>
+
+                <span
+                  class="visually-hidden"
+                  role="status"
+                  aria-live="polite"
+                  data-navbar-cart-quantity-status
+                ></span>
+
+                <noscript>
+                  <button
+                    class="
+                      button
+                      button--sm
+                      button--text
+                      button--tone-neutral
+                    "
+                    type="submit"
+                  >
+                    {% trans "Update" %}
+                  </button>
+                </noscript>
+              </form>
+
+              <form
+                class="site-nav-cart-line__remove"
+                method="post"
+                action="{{ line.remove_url }}"
+                data-navbar-cart-remove-form
+              >
+                {% csrf_token %}
+
+                <button
+                  class="site-nav-cart-line__remove-button"
+                  type="submit"
+                  aria-label="{% trans 'Remove product' %}"
+                >
+                  {% include "includes/ui/icon_block.html" with name="trash" size="sm" only %}
+
+                  <span class="visually-hidden">
+                    {% trans "Remove product" %}
+                  </span>
+                </button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      <footer class="site-nav-cart__actions">
+        <a
+          class="
+            button
+            button--sm
+            button--solid
+            button--tone-place
+          "
+          href="{{ navbar_cart.proceed_url }}"
+        >
+          {{ navbar_cart.proceed_label }}
+        </a>
+      </footer>
+    {% else %}
+      <div class="site-nav-cart__empty">
+        <p>
+          {{ navbar_cart.empty_message }}
+        </p>
+
+        <a
+          class="
+            button
+            button--sm
+            button--solid
+            button--tone-place
+          "
+          href="{{ navbar_cart.empty_action_url }}"
+        >
+          {{ navbar_cart.empty_action_label }}
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</details>

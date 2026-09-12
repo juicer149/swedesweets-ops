@@ -658,3 +658,53 @@ def test_remove_draft_line_get_is_not_allowed(
     )
 
     assert response.status_code == 405
+
+
+@pytest.mark.django_db
+def test_customer_can_remove_draft_line_with_json_response(
+    client,
+):
+    customer = customer_factory()
+
+    product = product_factory(
+        name="Apple",
+        weight_per_unit=5000,
+    )
+
+    line = _create_draft_line(
+        customer=customer,
+        product=product,
+        quantity=3,
+    )
+
+    user = customer_user_factory(
+        customer=customer,
+    )
+
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "business_portal:remove_draft_line",
+            kwargs={
+                "order_line_id": line.id,
+            },
+        ),
+        HTTP_ACCEPT="application/json",
+    )
+
+    assert response.status_code == 200
+
+    assert response.json() == {
+        "ok": True,
+        "message": (
+            "Product removed from your order."
+        ),
+        "order_line_id": line.id,
+    }
+
+    assert not OrderLine.objects.filter(
+        pk=line.id,
+    ).exists()

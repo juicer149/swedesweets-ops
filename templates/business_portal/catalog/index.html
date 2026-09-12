@@ -112,6 +112,7 @@
                               {% endfor %}
                             </select>
                           </div>
+
                         {% elif initial_offer %}
                           <div class="product-card__offer-summary">
                             {% if initial_offer.kind == "batch" %}
@@ -156,7 +157,10 @@
                     </div>
 
                     <div
-                      class="product-card__purchase-state product-card__purchase-state--quantity"
+                      class="
+                        product-card__purchase-state
+                        product-card__purchase-state--quantity
+                      "
                       data-catalog-purchase-quantity
                       hidden
                     >
@@ -170,12 +174,17 @@
                         data-quantity-stepper
                       >
                         <button
-                          class="quantity-stepper__button quantity-stepper__button--decrease"
+                          class="
+                            quantity-stepper__button
+                            quantity-stepper__button--decrease
+                          "
                           type="button"
                           aria-label="{% trans 'Decrease quantity' %}"
                           data-quantity-decrease
                         >
-                          <span aria-hidden="true">−</span>
+                          <span aria-hidden="true">
+                            −
+                          </span>
                         </button>
 
                         <label
@@ -200,18 +209,28 @@
                         >
 
                         <button
-                          class="quantity-stepper__button quantity-stepper__button--increase"
+                          class="
+                            quantity-stepper__button
+                            quantity-stepper__button--increase
+                          "
                           type="button"
                           aria-label="{% trans 'Increase quantity' %}"
                           data-quantity-increase
                         >
-                          <span aria-hidden="true">+</span>
+                          <span aria-hidden="true">
+                            +
+                          </span>
                         </button>
                       </div>
 
                       <div class="product-card__quantity-actions">
                         <button
-                          class="button button--md button--soft button--tone-positive"
+                          class="
+                            button
+                            button--md
+                            button--soft
+                            button--tone-positive
+                          "
                           type="submit"
                           data-catalog-confirm-button
                         >
@@ -219,7 +238,12 @@
                         </button>
 
                         <button
-                          class="button button--md button--text button--tone-neutral"
+                          class="
+                            button
+                            button--md
+                            button--text
+                            button--tone-neutral
+                          "
                           type="button"
                           data-catalog-cancel-button
                         >
@@ -236,7 +260,9 @@
                       aria-label="{{ card.secondary_action.aria_label }}"
                     >
                       {{ card.secondary_action.text }}
-                      <span aria-hidden="true">→</span>
+                      <span aria-hidden="true">
+                        →
+                      </span>
                     </a>
                   {% endif %}
                 </div>

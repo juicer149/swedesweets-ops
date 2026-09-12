@@ -39,6 +39,20 @@
   }
 
 
+  function notifyDraftChanged() {
+    document.dispatchEvent(
+      new CustomEvent(
+        "draft-order-changed",
+        {
+          detail: {
+            source: "catalog",
+          },
+        }
+      )
+    );
+  }
+
+
   function parseCatalogData() {
     if (!catalogDataElement) {
       return [];
@@ -347,6 +361,16 @@
       confirmButton.textContent =
         addedLabel;
 
+      /*
+       * The server has changed the draft.
+       *
+       * Other components, such as the navbar cart,
+       * can now refresh their own server-rendered
+       * projection without catalog.js knowing
+       * anything about their DOM.
+       */
+      notifyDraftChanged();
+
       window.setTimeout(
         () => {
           confirmButton.textContent =
@@ -415,7 +439,7 @@
             return;
           }
 
-          submitAddForm(
+          void submitAddForm(
             form
           );
         }

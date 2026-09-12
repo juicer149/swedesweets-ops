@@ -1,130 +1,38 @@
 (() => {
-  "use strict";
-
-  const currentOrder = document.querySelector(
+  const root = document.querySelector(
     "[data-current-order]"
   );
 
-  const forms = document.querySelectorAll(
-    "[data-current-order-quantity-form]"
-  );
-
-  if (
-    !currentOrder
-    || !forms.length
-  ) {
+  if (!root) {
     return;
   }
 
-  const fallbackErrorMessage =
-    currentOrder.dataset.currentOrderErrorMessage
-    || "Could not update quantity.";
+  const fallbackErrorMessage = (
+    root.dataset.currentOrderErrorMessage
+    || "Could not update quantity."
+  );
 
-
-  function parseQuantity(input) {
-    const rawValue = input.value.trim();
-
-    if (!rawValue) {
-      return null;
+  function notifyDraftChanged(
+    {
+      lineId,
+      quantity,
     }
-
-    const quantity = Number(
-      rawValue
-    );
-
-    if (
-      !Number.isFinite(quantity)
-      || !Number.isInteger(quantity)
-      || quantity <= 0
-    ) {
-      return null;
-    }
-
-    return quantity;
-  }
-
-
-  function setInputValue(
-    input,
-    quantity
   ) {
-    input.value = String(
-      quantity
-    );
-
-    input.dispatchEvent(
-      new Event(
-        "input",
+    document.dispatchEvent(
+      new CustomEvent(
+        "draft-order-changed",
         {
-          bubbles: true,
+          detail: {
+            source: "current-order",
+            lineId,
+            quantity,
+          },
         }
       )
     );
   }
 
-
-  function showInputError(
-    input,
-    message
-  ) {
-    input.setCustomValidity(
-      message
-    );
-
-    input.reportValidity();
-  }
-
-
-  async function postQuantity(
-    form,
-    quantity
-  ) {
-    const formData = new FormData(
-      form
-    );
-
-    formData.set(
-      "quantity",
-      String(quantity)
-    );
-
-    const response = await fetch(
-      form.action,
-      {
-        method: "POST",
-        body: formData,
-        headers: {
-          Accept: "application/json",
-        },
-        credentials: "same-origin",
-      }
-    );
-
-    let payload;
-
-    try {
-      payload = await response.json();
-    } catch {
-      throw new Error(
-        fallbackErrorMessage
-      );
-    }
-
-    if (
-      !response.ok
-      || !payload.ok
-    ) {
-      throw new Error(
-        payload.message
-        || fallbackErrorMessage
-      );
-    }
-
-    return payload;
-  }
-
-
-  function initializeQuantityForm(form) {
+  async function updateQuantity(form) {
     const input = form.querySelector(
       "[data-quantity-input]"
     );
@@ -137,167 +45,274 @@
       return;
     }
 
-    let confirmedQuantity = Number(
+    const requestedQuantity = Number(
+      input.value
+    );
+
+    const confirmedQuantity = Number(
       form.dataset.confirmedQuantity
     );
 
     if (
       !Number.isInteger(
-        confirmedQuantity
+        requestedQuantity
       )
-      || confirmedQuantity <= 0
+      || requestedQuantity < 1
     ) {
-      confirmedQuantity = parseQuantity(
-        input
-      ) || 1;
+      input.value = String(
+        confirmedQuantity || 1
+      );
+
+      return;
     }
 
-    let pendingQuantity = null;
-    let updateInProgress = false;
+    if (
+      requestedQuantity
+      === confirmedQuantity
+    ) {
+      return;
+    }
 
-
-    const announce = (message) => {
-      if (!status) {
-        return;
-      }
-
-      status.textContent = message;
-    };
-
-
-    const restoreConfirmedQuantity = () => {
-      setInputValue(
-        input,
-        confirmedQuantity
-      );
-    };
-
-
-    const processQueue = async () => {
-      if (updateInProgress) {
-        return;
-      }
-
-      updateInProgress = true;
-
-      form.setAttribute(
-        "aria-busy",
-        "true"
+    if (
+      form.dataset.updateInProgress
+      === "true"
+    ) {
+      form.dataset.pendingQuantity = String(
+        requestedQuantity
       );
 
-      try {
-        while (
-          pendingQuantity !== null
-        ) {
-          const quantity =
-            pendingQuantity;
+      return;
+    }
 
-          pendingQuantity = null;
+    form.dataset.updateInProgress = "true";
+    form.dataset.pendingQuantity = "";
 
-          if (
-            quantity
-            === confirmedQuantity
-          ) {
-            continue;
-          }
+    try {
+      const formData = new FormData(
+        form
+      );
 
-          try {
-            const payload =
-              await postQuantity(
-                form,
-                quantity
-              );
+      formData.set(
+        "quantity",
+        String(requestedQuantity)
+      );
 
-            confirmedQuantity =
-              payload.quantity;
-
-            form.dataset.confirmedQuantity =
-              String(
-                confirmedQuantity
-              );
-
-            announce(
-              payload.message || ""
-            );
-          } catch (error) {
-            pendingQuantity = null;
-
-            restoreConfirmedQuantity();
-
-            const message =
-              error instanceof Error
-                ? error.message
-                : fallbackErrorMessage;
-
-            announce(
-              message
-            );
-
-            showInputError(
-              input,
-              message
-            );
-
-            break;
-          }
+      const response = await fetch(
+        form.action,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "same-origin",
         }
-      } finally {
-        updateInProgress = false;
+      );
 
-        form.removeAttribute(
-          "aria-busy"
+      const payload = await response.json();
+
+      if (
+        !response.ok
+        || !payload.ok
+      ) {
+        throw new Error(
+          payload.message
+          || fallbackErrorMessage
         );
       }
-    };
 
-
-    const queueCurrentQuantity = () => {
-      if (!input.checkValidity()) {
-        input.reportValidity();
-        return;
-      }
-
-      const quantity = parseQuantity(
-        input
+      const savedQuantity = Number(
+        payload.quantity
       );
 
-      if (quantity === null) {
-        input.reportValidity();
-        return;
+      form.dataset.confirmedQuantity = String(
+        savedQuantity
+      );
+
+      input.value = String(
+        savedQuantity
+      );
+
+      if (status) {
+        status.textContent = (
+          payload.message || ""
+        );
       }
 
-      pendingQuantity = quantity;
+      const lineId = (
+        extractLineId(
+          form.action
+        )
+      );
 
-      processQueue();
-    };
+      notifyDraftChanged({
+        lineId,
+        quantity: savedQuantity,
+      });
+    } catch (error) {
+      input.value = (
+        form.dataset.confirmedQuantity
+        || "1"
+      );
 
-
-    input.addEventListener(
-      "input",
-      () => {
-        input.setCustomValidity("");
+      if (status) {
+        status.textContent = (
+          error instanceof Error
+            ? error.message
+            : fallbackErrorMessage
+        );
       }
+    } finally {
+      form.dataset.updateInProgress = "false";
+
+      const pendingQuantity = Number(
+        form.dataset.pendingQuantity
+      );
+
+      form.dataset.pendingQuantity = "";
+
+      if (
+        Number.isInteger(
+          pendingQuantity
+        )
+        && pendingQuantity >= 1
+        && pendingQuantity !== Number(
+          form.dataset.confirmedQuantity
+        )
+      ) {
+        input.value = String(
+          pendingQuantity
+        );
+
+        void updateQuantity(
+          form
+        );
+      }
+    }
+  }
+
+  function extractLineId(url) {
+    const match = url.match(
+      /\/lines\/(\d+)\/quantity\/?$/
     );
 
+    if (!match) {
+      return null;
+    }
 
-    input.addEventListener(
-      "change",
-      queueCurrentQuantity
-    );
-
-
-    form.addEventListener(
-      "submit",
-      (event) => {
-        event.preventDefault();
-
-        queueCurrentQuantity();
-      }
+    return Number(
+      match[1]
     );
   }
 
+  root.addEventListener(
+    "change",
+    (event) => {
+      const input = event.target.closest(
+        "[data-current-order-quantity-form] [data-quantity-input]"
+      );
 
-  forms.forEach(
-    initializeQuantityForm
+      if (!input) {
+        return;
+      }
+
+      const form = input.closest(
+        "[data-current-order-quantity-form]"
+      );
+
+      if (!form) {
+        return;
+      }
+
+      void updateQuantity(
+        form
+      );
+    }
+  );
+
+  root.addEventListener(
+    "submit",
+    (event) => {
+      const form = event.target.closest(
+        "[data-current-order-quantity-form]"
+      );
+
+      if (!form) {
+        return;
+      }
+
+      event.preventDefault();
+
+      void updateQuantity(
+        form
+      );
+    }
+  );
+
+  document.addEventListener(
+    "draft-order-changed",
+    (event) => {
+      if (
+        event.detail?.source
+        !== "navbar-cart"
+      ) {
+        return;
+      }
+
+      const lineId = Number(
+        event.detail.lineId
+      );
+
+      const quantity = Number(
+        event.detail.quantity
+      );
+
+      if (
+        !Number.isInteger(
+          lineId
+        )
+        || !Number.isInteger(
+          quantity
+        )
+      ) {
+        return;
+      }
+
+      const forms = (
+        root.querySelectorAll(
+          "[data-current-order-quantity-form]"
+        )
+      );
+
+      const form = Array.from(
+        forms
+      ).find(
+        (candidate) => (
+          extractLineId(
+            candidate.action
+          ) === lineId
+        )
+      );
+
+      if (!form) {
+        return;
+      }
+
+      const input = form.querySelector(
+        "[data-quantity-input]"
+      );
+
+      if (!input) {
+        return;
+      }
+
+      form.dataset.confirmedQuantity = String(
+        quantity
+      );
+
+      input.value = String(
+        quantity
+      );
+    }
   );
 })();

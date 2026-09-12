@@ -1,50 +1,81 @@
 "use strict";
 
 
-function initializeQuantityStepper(stepper) {
-  const input = stepper.querySelector(
-    "[data-quantity-input]"
-  );
-
-  const decreaseButton = stepper.querySelector(
-    "[data-quantity-decrease]"
-  );
-
-  const increaseButton = stepper.querySelector(
-    "[data-quantity-increase]"
-  );
-
+(() => {
   if (
-    !input
-    || !decreaseButton
-    || !increaseButton
+    window.__swedeSweetsQuantityStepperInitialized
   ) {
     return;
   }
 
-  const parsedMinimum = Number(
-    input.min || "1"
-  );
-
-  const parsedStep = Number(
-    input.step || "1"
-  );
-
-  const minimum = Number.isFinite(
-    parsedMinimum
-  )
-    ? parsedMinimum
-    : 1;
-
-  const step = (
-    Number.isFinite(parsedStep)
-    && parsedStep > 0
-  )
-    ? parsedStep
-    : 1;
+  window.__swedeSweetsQuantityStepperInitialized = true;
 
 
-  const readQuantity = () => {
+  function parseOptionalNumber(
+    value,
+    fallback
+  ) {
+    if (
+      value === null
+      || value === undefined
+      || String(value).trim() === ""
+    ) {
+      return fallback;
+    }
+
+    const parsed = Number(
+      value
+    );
+
+    return Number.isFinite(parsed)
+      ? parsed
+      : fallback;
+  }
+
+
+  function getStepper(element) {
+    return element.closest(
+      "[data-quantity-stepper]"
+    );
+  }
+
+
+  function getInput(stepper) {
+    return stepper.querySelector(
+      "[data-quantity-input]"
+    );
+  }
+
+
+  function getMinimum(input) {
+    return parseOptionalNumber(
+      input.min,
+      1
+    );
+  }
+
+
+  function getMaximum(input) {
+    return parseOptionalNumber(
+      input.max,
+      Number.POSITIVE_INFINITY
+    );
+  }
+
+
+  function getStep(input) {
+    const step = parseOptionalNumber(
+      input.step,
+      1
+    );
+
+    return step > 0
+      ? step
+      : 1;
+  }
+
+
+  function readQuantity(input) {
     const rawValue = input.value.trim();
 
     if (!rawValue) {
@@ -63,24 +94,81 @@ function initializeQuantityStepper(stepper) {
     }
 
     return quantity;
-  };
+  }
 
 
-  const renderState = () => {
-    const quantity = readQuantity();
-
-    decreaseButton.disabled = (
-      quantity === null
-      || quantity <= minimum
+  function renderState(stepper) {
+    const input = getInput(
+      stepper
     );
-  };
+
+    if (!input) {
+      return;
+    }
+
+    const quantity = readQuantity(
+      input
+    );
+
+    const minimum = getMinimum(
+      input
+    );
+
+    const maximum = getMaximum(
+      input
+    );
+
+    const decreaseButton = (
+      stepper.querySelector(
+        "[data-quantity-decrease]"
+      )
+    );
+
+    const increaseButton = (
+      stepper.querySelector(
+        "[data-quantity-increase]"
+      )
+    );
+
+    if (decreaseButton) {
+      decreaseButton.disabled = (
+        quantity === null
+        || quantity <= minimum
+      );
+    }
+
+    if (increaseButton) {
+      increaseButton.disabled = (
+        quantity !== null
+        && quantity >= maximum
+      );
+    }
+  }
 
 
-  const setQuantity = (quantity) => {
+  function setQuantity(
+    stepper,
+    quantity
+  ) {
+    const input = getInput(
+      stepper
+    );
+
+    if (!input) {
+      return;
+    }
+
     input.value = String(
       quantity
     );
 
+    /*
+     * Keep the same browser contract as the original
+     * quantity stepper.
+     *
+     * "input" lets presentation code react immediately.
+     * "change" lets mutation code persist the new value.
+     */
     input.dispatchEvent(
       new Event(
         "input",
@@ -98,75 +186,189 @@ function initializeQuantityStepper(stepper) {
         }
       )
     );
-  };
+  }
 
 
-  decreaseButton.addEventListener(
+  function decreaseQuantity(button) {
+    const stepper = getStepper(
+      button
+    );
+
+    if (!stepper) {
+      return;
+    }
+
+    const input = getInput(
+      stepper
+    );
+
+    if (!input) {
+      return;
+    }
+
+    const quantity = readQuantity(
+      input
+    );
+
+    const minimum = getMinimum(
+      input
+    );
+
+    const step = getStep(
+      input
+    );
+
+    if (
+      quantity === null
+      || quantity <= minimum
+    ) {
+      return;
+    }
+
+    setQuantity(
+      stepper,
+      Math.max(
+        minimum,
+        quantity - step
+      )
+    );
+  }
+
+
+  function increaseQuantity(button) {
+    const stepper = getStepper(
+      button
+    );
+
+    if (!stepper) {
+      return;
+    }
+
+    const input = getInput(
+      stepper
+    );
+
+    if (!input) {
+      return;
+    }
+
+    const quantity = readQuantity(
+      input
+    );
+
+    const minimum = getMinimum(
+      input
+    );
+
+    const maximum = getMaximum(
+      input
+    );
+
+    const step = getStep(
+      input
+    );
+
+    const nextQuantity = (
+      quantity === null
+        ? minimum
+        : quantity + step
+    );
+
+    setQuantity(
+      stepper,
+      Math.min(
+        maximum,
+        nextQuantity
+      )
+    );
+  }
+
+
+  document.addEventListener(
     "click",
-    () => {
-      const quantity = readQuantity();
+    (event) => {
+      const decreaseButton = (
+        event.target.closest(
+          "[data-quantity-decrease]"
+        )
+      );
 
+      if (decreaseButton) {
+        decreaseQuantity(
+          decreaseButton
+        );
+
+        return;
+      }
+
+      const increaseButton = (
+        event.target.closest(
+          "[data-quantity-increase]"
+        )
+      );
+
+      if (increaseButton) {
+        increaseQuantity(
+          increaseButton
+        );
+      }
+    }
+  );
+
+
+  document.addEventListener(
+    "input",
+    (event) => {
       if (
-        quantity === null
-        || quantity <= minimum
+        !event.target.matches(
+          "[data-quantity-input]"
+        )
       ) {
         return;
       }
 
-      setQuantity(
-        Math.max(
-          minimum,
-          quantity - step
-        )
+      const stepper = getStepper(
+        event.target
       );
+
+      if (stepper) {
+        renderState(
+          stepper
+        );
+      }
     }
   );
 
 
-  increaseButton.addEventListener(
-    "click",
-    () => {
-      const quantity = readQuantity();
-
-      setQuantity(
-        quantity === null
-          ? minimum
-          : quantity + step
-      );
-    }
-  );
-
-
-  input.addEventListener(
-    "input",
-    renderState
-  );
-
-  input.addEventListener(
+  document.addEventListener(
     "change",
-    renderState
+    (event) => {
+      if (
+        !event.target.matches(
+          "[data-quantity-input]"
+        )
+      ) {
+        return;
+      }
+
+      const stepper = getStepper(
+        event.target
+      );
+
+      if (stepper) {
+        renderState(
+          stepper
+        );
+      }
+    }
   );
 
-  renderState();
-}
 
-
-function initializeQuantitySteppers() {
   document
     .querySelectorAll(
       "[data-quantity-stepper]"
     )
     .forEach(
-      initializeQuantityStepper
+      renderState
     );
-}
-
-
-if (document.readyState === "loading") {
-  document.addEventListener(
-    "DOMContentLoaded",
-    initializeQuantitySteppers
-  );
-} else {
-  initializeQuantitySteppers();
-}
+})();

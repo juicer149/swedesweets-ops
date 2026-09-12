@@ -271,6 +271,10 @@ def remove_draft_line(
         order_line_id=order_line_id,
     )
 
+    wants_json = _wants_json(
+        request
+    )
+
     try:
         remove_business_draft_line(
             order=line.order,
@@ -278,14 +282,38 @@ def remove_draft_line(
             user=request.user,
         )
     except ORDER_OPERATION_ERRORS as error:
+        message = str(error)
+
+        if wants_json:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": message,
+                },
+                status=400,
+            )
+
         messages.error(
             request,
-            str(error),
+            message,
         )
     else:
+        message = _(
+            "Product removed from your order."
+        )
+
+        if wants_json:
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "message": str(message),
+                    "order_line_id": line.id,
+                }
+            )
+
         messages.success(
             request,
-            _("Product removed from your order."),
+            message,
         )
 
     return redirect(

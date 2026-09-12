@@ -5,7 +5,10 @@ from django.urls import path
 from business_portal import views
 from business_portal.catalog import views as catalog_views
 from business_portal.orders import (
-    repeat_views as repeat_order_views,
+    navbar_views,
+)
+from business_portal.orders import (
+    repeat_views,
 )
 from business_portal.orders import views as order_views
 from business_portal.profile import views as profile_views
@@ -31,6 +34,11 @@ urlpatterns = [
         name="current_order",
     ),
     path(
+        "order/navbar-cart/",
+        navbar_views.navbar_cart_fragment,
+        name="navbar_cart_fragment",
+    ),
+    path(
         "order/review/",
         order_views.review_order,
         name="review_order",
@@ -52,7 +60,7 @@ urlpatterns = [
     ),
     path(
         "orders/<int:order_id>/repeat/",
-        repeat_order_views.repeat_order,
+        repeat_views.repeat_order,
         name="repeat_order",
     ),
     path(

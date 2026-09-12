@@ -63,19 +63,13 @@ def build_portal_current_order_context(
         else ()
     )
 
-    title = (
-        _("Continue draft")
-        if draft_order is not None
-        else _("Place order")
-    )
-
     return PortalCurrentOrderContext(
         draft_lines=draft_lines,
-        title=title,
+        title=_("Current order"),
         description=_(
-            "Review the products and quantities in your draft order."
+            "Review the products and quantities in your current order."
         ),
-        submit_label=_("Next"),
+        submit_label=_("Review order"),
         discard_draft_label=_("Discard draft"),
         continue_shopping_label=_("Continue shopping"),
         continue_shopping_url=reverse(
