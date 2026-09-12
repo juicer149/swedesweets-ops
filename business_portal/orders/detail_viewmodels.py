@@ -64,6 +64,7 @@ class PortalOrderDetailContext:
     title: str
     customer_status_label: str
     cancel_url: str
+    repeat_order_url: str
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -76,6 +77,7 @@ class PortalOrderDetailContext:
             "title": self.title,
             "customer_status_label": self.customer_status_label,
             "cancel_url": self.cancel_url,
+            "repeat_order_url": self.repeat_order_url,
         }
 
 
@@ -157,6 +159,12 @@ def build_portal_order_detail_context(
         cancel_url=reverse(
             "business_portal:orders"
         ),
+        repeat_order_url=reverse(
+            "business_portal:repeat_order",
+            kwargs={
+                "order_id": order.pk,
+            },
+        ),
     )
 
 
@@ -231,12 +239,10 @@ def _build_content_line(
     currency: str,
     available_catalog_product_ids: set[int],
 ) -> PortalOrderContentLine:
-    presentation = (
-        business_order_line_presentation(
-            line,
-            language_code=language_code,
-            currency=currency,
-        )
+    presentation = business_order_line_presentation(
+        line,
+        language_code=language_code,
+        currency=currency,
     )
 
     line_quantity_label = quantity_label(
@@ -255,28 +261,16 @@ def _build_content_line(
         quantity=line.quantity_in_units,
         quantity_label=line_quantity_label,
         unit=line.get_unit_display(),
-        catalog_label=(
-            presentation.catalog_label
-        ),
-        offer_label=(
-            presentation.offer_label
-        ),
-        price_label=(
-            presentation.price_label
-        ),
+        catalog_label=presentation.catalog_label,
+        offer_label=presentation.offer_label,
+        price_label=presentation.price_label,
         catalog_href=catalog_href,
         card=_build_content_line_card(
             product=line.product,
             quantity_label=line_quantity_label,
-            catalog_label=(
-                presentation.catalog_label
-            ),
-            offer_label=(
-                presentation.offer_label
-            ),
-            price_label=(
-                presentation.price_label
-            ),
+            catalog_label=presentation.catalog_label,
+            offer_label=presentation.offer_label,
+            price_label=presentation.price_label,
             catalog_href=catalog_href,
             language_code=language_code,
         ),
@@ -288,10 +282,7 @@ def _catalog_product_href(
     product_id: int,
     available_catalog_product_ids: set[int],
 ) -> str | None:
-    if (
-        product_id
-        not in available_catalog_product_ids
-    ):
+    if product_id not in available_catalog_product_ids:
         return None
 
     return reverse(

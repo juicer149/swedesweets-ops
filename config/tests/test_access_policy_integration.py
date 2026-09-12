@@ -78,6 +78,8 @@ VIEW_KWARGS = {
     "business_portal:catalog_add_product": CATALOG_PRODUCT_KWARGS,
     "business_portal:set_draft_line_quantity": DRAFT_LINE_KWARGS,
     "business_portal:remove_draft_line": DRAFT_LINE_KWARGS,
+    "business_portal:order_detail": ORDER_KWARGS,
+    "business_portal:repeat_order": ORDER_KWARGS,
 }
 
 
@@ -92,6 +94,7 @@ REDIRECT_VIEW_NAMES = {
 }
 
 POST_ONLY_VIEW_NAMES = {
+    "business_portal:repeat_order",
     "business_portal:catalog_add_product",
     "business_portal:set_draft_line_quantity",
     "business_portal:remove_draft_line",

@@ -21,6 +21,22 @@
 
     {% include "includes/ui/detail_panels.html" with detail_panels=detail_card.panels %}
 
+    <footer class="form-actions content-card__footer">
+      <form
+        method="post"
+        action="{{ repeat_order_url }}"
+      >
+        {% csrf_token %}
+
+        <button
+          class="button button--lg button--solid button--tone-place"
+          type="submit"
+        >
+          {% trans "Order again" %}
+        </button>
+      </form>
+    </footer>
+
     {% include "includes/ui/detail_actions.html" with primary_action=detail_card.primary_action secondary_action=detail_card.secondary_action secondary_actions=detail_card.secondary_actions %}
   </article>
 </section>

@@ -4,6 +4,9 @@ from django.urls import path
 
 from business_portal import views
 from business_portal.catalog import views as catalog_views
+from business_portal.orders import (
+    repeat_views as repeat_order_views,
+)
 from business_portal.orders import views as order_views
 from business_portal.profile import views as profile_views
 
@@ -46,6 +49,11 @@ urlpatterns = [
         "orders/<int:order_id>/",
         order_views.order_detail,
         name="order_detail",
+    ),
+    path(
+        "orders/<int:order_id>/repeat/",
+        repeat_order_views.repeat_order,
+        name="repeat_order",
     ),
     path(
         "catalog/",
