@@ -127,8 +127,13 @@
 .detail-data-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-5);
+  column-gap: var(--space-6);
   margin: 0;
+}
+
+.detail-data-list + .detail-data-list {
+  margin-top: var(--space-6);
 }
 
 .detail-data-list div {
