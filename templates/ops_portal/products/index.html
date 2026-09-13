@@ -5,6 +5,7 @@
 
 {% block content %}
 {% include "includes/ui/list_page_head.html" with page_header=page_header %}
+{% include "includes/ui/list_page_actions.html" with page_header=page_header %}
 
 <section
   id="products-list"
@@ -12,8 +13,8 @@
   aria-labelledby="products-title"
   data-async-list
 >
-  {% include "includes/table/quick_jump_search.html" %}
   {% include "includes/table/filter_chips.html" %}
+  {% include "includes/table/quick_jump_search.html" %}
   {% include "includes/table/sort_select.html" %}
 
   <div class="table-card product-table-card">

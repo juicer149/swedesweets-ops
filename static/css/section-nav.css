@@ -185,3 +185,216 @@
     width: min(72%, 9rem);
   }
 }
+
+
+/* =============================================================================
+   Filter chips styled as section-nav
+
+   Filter chips share the same local-navigation visual language as
+   .section-nav__link (underline indicator), scaled down one step (lighter
+   weight, muted underline color, subtle background pill) so the two read
+   as related but distinct: section-nav switches dataset, filter-chips
+   refine within it.
+
+   Background intensity steps up consistently through the interaction
+   states: rest 15% -> hover 30% -> active (mouse down) 45%, with
+   aria-current="page" held at 40% as a stable "currently selected"
+   marker between hover and the momentary active press.
+
+   No min-height here (unlike .section-nav__link) - the pill's size is
+   deliberately just text + small padding, not a full control height, so
+   it reads as a chip rather than a button.
+
+   Scoped to .filter-chips so this never touches .sort-direction-button,
+   which also carries .filter-chip but lives outside this wrapper.
+   ============================================================================= */
+
+.filter-chips .filter-chip {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 3px var(--space-2);
+
+  color: var(--color-link);
+  background: color-mix(in srgb, var(--color-accent-600) 15%, transparent);
+  border: 0;
+  border-radius: var(--radius-pill);
+
+  font-family: var(--font-body);
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+
+  transition:
+    background var(--motion-fast),
+    color var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.filter-chips .filter-chip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(-1 * var(--space-2) - 1px);
+
+  width: 0;
+  height: 3px;
+
+  background: var(--color-primary-700);
+  border-radius: var(--radius-pill);
+
+  transform: translateX(-50%);
+  transition: width var(--motion-fast);
+}
+
+.filter-chips .filter-chip:hover,
+.filter-chips .filter-chip:focus-visible {
+  background: color-mix(in srgb, var(--color-accent-600) 30%, transparent);
+  color: var(--color-primary-900);
+  box-shadow: none;
+}
+
+.filter-chips .filter-chip[aria-current="page"] {
+  color: var(--color-primary-900);
+  background: color-mix(in srgb, var(--color-accent-600) 40%, transparent);
+  box-shadow: none;
+}
+
+.filter-chips .filter-chip:active {
+  color: var(--color-primary-900);
+  background: color-mix(in srgb, var(--color-accent-600) 45%, transparent);
+  box-shadow: none;
+}
+
+.filter-chips .filter-chip:hover {
+  transform: translateY(-1px);
+}
+
+.filter-chips .filter-chip:hover::after,
+.filter-chips .filter-chip:focus-visible::after,
+.filter-chips .filter-chip[aria-current="page"]::after {
+  width: 100%;
+}
+
+.filter-chips .filter-chip:focus-visible {
+  outline: 2px solid var(--color-accent-600);
+  outline-offset: 5px;
+}
+
+
+@media (hover: none), (pointer: coarse) {
+  .filter-chips .filter-chip:hover {
+    color: var(--color-link);
+    background: color-mix(in srgb, var(--color-accent-600) 15%, transparent);
+    transform: none;
+  }
+
+  .filter-chips .filter-chip:hover::after {
+    width: 0;
+  }
+
+  .filter-chips .filter-chip[aria-current="page"]:hover {
+    color: var(--color-primary-900);
+    background: color-mix(in srgb, var(--color-accent-600) 40%, transparent);
+  }
+
+  .filter-chips .filter-chip[aria-current="page"]:hover::after {
+    width: 100%;
+  }
+}
+
+
+@media (max-width: 720px) {
+  .filter-chips .filter-chip {
+    padding: 3px var(--space-2);
+    font-size: var(--font-size-14);
+  }
+
+  .filter-chips .filter-chip::after {
+    bottom: calc(-1 * var(--space-1) - 1px);
+    height: 3px;
+  }
+
+  .filter-chips .filter-chip:hover::after,
+  .filter-chips .filter-chip:focus-visible::after,
+  .filter-chips .filter-chip[aria-current="page"]::after {
+    width: min(72%, 9rem);
+  }
+}
+
+/* =============================================================================
+   Section-nav row with trailing action
+
+   Wraps .section-nav when a page also has a primary action (e.g.
+   Inventory's "Add batch"), so the two share one row instead of the
+   action stacking as its own row with its own margins underneath -
+   that stacking was what made the action feel heavy and disconnected.
+
+   .section-nav keeps its own standalone margin/border when used without
+   this wrapper (e.g. any future tabs-only page) - these overrides only
+   apply when nested inside .section-nav-row.
+   ============================================================================= */
+
+.section-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+
+  margin-block: var(--space-5) var(--space-4);
+  padding-bottom: var(--space-1);
+
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.section-nav-row .section-nav {
+  flex: 1;
+  margin-block: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.section-nav-row__action {
+  flex: 0 0 auto;
+}
+
+
+@media (max-width: 720px) {
+  .section-nav-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+
+    margin-block: var(--space-3);
+  }
+
+  .section-nav-row .section-nav {
+    margin-block: 0;
+  }
+
+  .section-nav-row__action {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =============================================================================
+   Action button inside a section-nav row
+
+   The button's own classes (button--lg via PageHeaderAction's default)
+   are shared with pages that give the action its own row (list-page-actions).
+   There, --lg reads fine standing alone. Sharing a row with lightweight
+   text tabs makes the same size read as oversized by contrast, so this
+   scopes it down to the button--md size already defined in buttons.css
+   - reusing that token rather than inventing a new size.
+   ============================================================================= */
+
+.section-nav-row__action.button {
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-5);
+}

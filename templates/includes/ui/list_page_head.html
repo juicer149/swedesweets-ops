@@ -1,35 +1,15 @@
 {% comment %}
-Accessible page identity + optional primary action for list pages that
-no longer show a visible hero title. The active top-nav item and any
-section-nav tabs already show "where am I" visually, so this only keeps
-a real landmark heading for assistive tech and direct/bookmarked visits.
+Accessible page identity for list pages that no longer show a visible
+hero title. The active top-nav item and any section-nav tabs already
+show "where am I" visually, so this only keeps a real landmark heading
+for assistive tech and direct/bookmarked visits.
 
 Expected context:
-  page_header:
-    title
-    title_id
-    action (optional PageHeaderAction)
+  page_header.title
+  page_header.title_id
 
 Usage:
   {% include "includes/ui/list_page_head.html" with page_header=page_header %}
 {% endcomment %}
 
 <h1 id="{{ page_header.title_id }}" class="visually-hidden">{{ page_header.title }}</h1>
-
-{% if page_header.action %}
-  <div class="list-page-actions">
-    <a
-      class="{{ page_header.action.css_class }}"
-      href="{{ page_header.action.href }}"
-      {% if page_header.action.aria_label %}aria-label="{{ page_header.action.aria_label }}"{% endif %}
-    >
-      {% if page_header.action.icon %}
-        <span class="button__icon" aria-hidden="true">
-          {% include "includes/ui/icon.html" with name=page_header.action.icon only %}
-        </span>
-      {% endif %}
-
-      <span class="button__label">{{ page_header.action.label }}</span>
-    </a>
-  </div>
-{% endif %}

@@ -6,7 +6,7 @@
 {% block content %}
 {% include "includes/ui/list_page_head.html" with page_header=page_header %}
 
-{% include "includes/ui/section_nav.html" with section_nav_links=view_links section_nav_aria_label="Inventory view" %}
+{% include "includes/ui/section_nav.html" with section_nav_links=view_links section_nav_aria_label="Inventory view" page_header=page_header %}
 
 <section
   id="inventory-list"
@@ -14,11 +14,11 @@
   aria-labelledby="inventory-title"
   data-async-list
 >
-  {% include "includes/table/quick_jump_search.html" %}
-
   {% if filters %}
     {% include "includes/table/filter_chips.html" %}
   {% endif %}
+
+  {% include "includes/table/quick_jump_search.html" %}
 
   {% include "includes/table/sort_select.html" %}
 

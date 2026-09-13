@@ -1,10 +1,6 @@
 {% comment %}
-Reusable section-nav tab bar.
-
-Same visual language whether it separates actor-facing catalog
-categories or ops_portal sub-views (Inventory's Batches/Product stock,
-Accounts' view toggle) - the person reads "where am I" the same way
-everywhere.
+Reusable section-nav tab bar, with an optional trailing primary action
+pinned to the same row instead of its own separate row below.
 
 Expected context:
   section_nav_links: list of objects with
@@ -12,21 +8,42 @@ Expected context:
     href
     is_active
   section_nav_aria_label: string
+  page_header.action: optional PageHeaderAction, rendered on the right
+    of the tab row when supplied.
 
 Usage:
-  {% include "includes/ui/section_nav.html" with section_nav_links=view_links section_nav_aria_label="Inventory view" %}
+  {% include "includes/ui/section_nav.html" with section_nav_links=view_links section_nav_aria_label="Inventory view" page_header=page_header %}
 {% endcomment %}
 
 {% if section_nav_links %}
-  <nav class="section-nav" aria-label="{{ section_nav_aria_label }}">
-    {% for link in section_nav_links %}
+  <div class="section-nav-row">
+    <nav class="section-nav" aria-label="{{ section_nav_aria_label }}">
+      {% for link in section_nav_links %}
+        
+        <a
+          class="section-nav__link{% if link.is_active %} section-nav__link--active{% endif %}"
+          href="{{ link.href }}"
+          {% if link.is_active %}aria-current="page"{% endif %}
+        >
+          {{ link.label }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    {% if page_header.action %}
       <a      
-        class="section-nav__link{% if link.is_active %} section-nav__link--active{% endif %}"
-        href="{{ link.href }}"
-        {% if link.is_active %}aria-current="page"{% endif %}
+        class="section-nav-row__action {{ page_header.action.css_class }}"
+        href="{{ page_header.action.href }}"
+        {% if page_header.action.aria_label %}aria-label="{{ page_header.action.aria_label }}"{% endif %}
       >
-        {{ link.label }}
+        {% if page_header.action.icon %}
+          <span class="button__icon" aria-hidden="true">
+            {% include "includes/ui/icon.html" with name=page_header.action.icon only %}
+          </span>
+        {% endif %}
+
+        <span class="button__label">{{ page_header.action.label }}</span>
       </a>
-    {% endfor %}
-  </nav>
+    {% endif %}
+  </div>
 {% endif %}
