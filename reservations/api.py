@@ -1,6 +1,3 @@
-from reservations.aggregation import (
-    aggregate_reserved_quantities,
-)
 from reservations.datatypes import (
     BatchUsage,
     ReservationPick,
@@ -14,7 +11,6 @@ from reservations.protocols import (
     BatchAvailability,
     BatchPick,
     BatchQuantity,
-    ReservationProvider,
 )
 from reservations.selectors import (
     active_reserved_quantities_by_batch_pk,
@@ -45,10 +41,8 @@ __all__ = [
     "InvalidReservationPool",
     "MissingReservations",
     "ReservationPick",
-    "ReservationProvider",
     "active_reserved_quantities_by_batch_pk",
     "active_reserved_quantity_for_batch_pk",
-    "aggregate_reserved_quantities",
     "cancel_reservations_for_order",
     "cancel_temporary_reservations_for_order",
     "consume_reservations_for_order",

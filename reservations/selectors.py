@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Iterable
 
 from django.db.models import Q
@@ -7,9 +8,6 @@ from django.utils import timezone
 
 from inventory.models import InventoryBatch
 from orders.models import Allocation, Order
-from reservations.aggregation import (
-    aggregate_reserved_quantities,
-)
 from reservations.datatypes import (
     BatchUsage,
     ReservationPick,
@@ -25,12 +23,28 @@ def active_reserved_quantities_by_batch_pk(
 ) -> dict[int, int]:
     """Return active reserved quantities for requested batches."""
 
-    return aggregate_reserved_quantities(
-        batch_pks=batch_pks,
-        providers=[
-            active_allocation_reservations,
-        ],
-    )
+    pks = tuple(batch_pks)
+
+    if not pks:
+        return {}
+
+    requested_pks = set(pks)
+    totals: dict[int, int] = defaultdict(int)
+
+    for batch_pk, quantity in active_allocation_reservations(
+        batch_pks=pks,
+    ):
+        if batch_pk not in requested_pks:
+            continue
+
+        if quantity < 0:
+            raise ValueError(
+                "reserved quantity must not be negative"
+            )
+
+        totals[batch_pk] += quantity
+
+    return dict(totals)
 
 
 def active_reserved_quantity_for_batch_pk(

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Protocol, TypeAlias
+from typing import TypeAlias
 
 
 BatchQuantity: TypeAlias = tuple[int, int]
@@ -26,14 +25,3 @@ class BatchPick:
 
     batch_pk: int
     quantity: int
-
-
-class ReservationProvider(Protocol):
-    def __call__(
-        self,
-        *,
-        batch_pks: tuple[int, ...],
-    ) -> Iterable[BatchQuantity]:
-        """Return reserved quantity grouped by requested batch primary key."""
-
-        ...
