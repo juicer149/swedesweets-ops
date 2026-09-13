@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
+
 from django.db import transaction
 
 from orders.models import Order
 from payments.contracts import (
+    ExternalPaymentState,
+    ExternalPaymentStatus,
     HostedPaymentProvider,
     HostedPaymentRequest,
     HostedPaymentSession,
@@ -13,6 +18,10 @@ from payments.models import PaymentAttempt
 
 class InvalidPaymentAttempt(ValueError):
     """Raised when payment attempt state violates a payment invariant."""
+
+
+class PaymentReconciliationConflict(RuntimeError):
+    """Provider truth conflicts with an irreversible local payment state."""
 
 
 @transaction.atomic
@@ -245,3 +254,157 @@ def create_hosted_payment_session(
         )
 
     return session
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentReconciliationResult:
+    """Outcome of reconciling one payment attempt against provider truth."""
+
+    attempt: PaymentAttempt
+    external: ExternalPaymentState
+
+
+def reconcile_payment_attempt(
+    *,
+    attempt: PaymentAttempt,
+    provider: HostedPaymentProvider,
+    on_succeeded: Callable[..., object],
+    on_failed: Callable[..., object],
+) -> PaymentReconciliationResult:
+    """Reconcile local payment state against provider-authoritative state.
+
+    This function carries no channel knowledge and does not resolve its own
+    provider, matching `create_hosted_payment_session`: the caller owns
+    provider selection.
+
+    Callers own what a successful or failed payment means for their own
+    domain by supplying `on_succeeded`/`on_failed`, called with keyword
+    arguments matching `mark_payment_attempt_succeeded`/
+    `mark_payment_attempt_failed` (`attempt=`, and `provider_transaction_id=`
+    for `on_succeeded`).
+
+    Provider I/O happens before any local transition transaction begins.
+
+    Repeated terminal notifications are idempotent when provider and local
+    state agree.
+    """
+
+    attempt = (
+        PaymentAttempt.objects
+        .get(pk=attempt.pk)
+    )
+
+    if not attempt.provider_payment_id:
+        raise InvalidPaymentAttempt(
+            "payment attempt has no provider payment id"
+        )
+
+    external = _get_external_payment_state(
+        attempt=attempt,
+        provider=provider,
+    )
+
+    reconciled = _apply_reconciliation(
+        attempt=attempt,
+        external=external,
+        on_succeeded=on_succeeded,
+        on_failed=on_failed,
+    )
+
+    return PaymentReconciliationResult(
+        attempt=reconciled,
+        external=external,
+    )
+
+
+def _get_external_payment_state(
+    *,
+    attempt: PaymentAttempt,
+    provider: HostedPaymentProvider,
+) -> ExternalPaymentState:
+    external = provider.get_payment(
+        provider_payment_id=(
+            attempt.provider_payment_id
+        ),
+    )
+
+    if (
+        external.provider_payment_id
+        != attempt.provider_payment_id
+    ):
+        raise PaymentReconciliationConflict(
+            "provider returned a different payment id"
+        )
+
+    return external
+
+
+def _apply_reconciliation(
+    *,
+    attempt: PaymentAttempt,
+    external: ExternalPaymentState,
+    on_succeeded: Callable[..., object],
+    on_failed: Callable[..., object],
+) -> PaymentAttempt:
+    attempt.refresh_from_db()
+
+    if external.status == ExternalPaymentStatus.PENDING:
+        return attempt
+
+    if external.status == ExternalPaymentStatus.SUCCEEDED:
+        if attempt.status == PaymentAttempt.Status.SUCCEEDED:
+            if (
+                external.provider_transaction_id
+                and attempt.provider_transaction_id
+                and (
+                    external.provider_transaction_id
+                    != attempt.provider_transaction_id
+                )
+            ):
+                raise PaymentReconciliationConflict(
+                    "provider transaction id conflicts with local payment"
+                )
+
+            return attempt
+
+        if attempt.status != PaymentAttempt.Status.PENDING:
+            raise PaymentReconciliationConflict(
+                "provider reports successful payment "
+                f"for local {attempt.status} attempt"
+            )
+
+        on_succeeded(
+            attempt=attempt,
+            provider_transaction_id=(
+                external.provider_transaction_id
+            ),
+        )
+
+        attempt.refresh_from_db()
+
+        return attempt
+
+    if external.status == ExternalPaymentStatus.FAILED:
+        if attempt.status in {
+            PaymentAttempt.Status.FAILED,
+            PaymentAttempt.Status.CANCELLED,
+        }:
+            return attempt
+
+        if attempt.status == PaymentAttempt.Status.SUCCEEDED:
+            raise PaymentReconciliationConflict(
+                "provider reports failed payment "
+                "for locally succeeded attempt"
+            )
+
+        on_failed(
+            attempt=attempt,
+        )
+
+        attempt.refresh_from_db()
+
+        return attempt
+
+    raise PaymentReconciliationConflict(
+        f"unsupported external payment status: {external.status}"
+    )

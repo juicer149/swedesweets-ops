@@ -12,10 +12,8 @@ from django.http import (
 from django.views.decorators.csrf import csrf_exempt
 
 from payments.models import PaymentAttempt
-from retail.payments import (
-    PaymentReconciliationConflict,
-    reconcile_retail_payment,
-)
+from payments.services import PaymentReconciliationConflict
+from retail.payments import reconcile_retail_payment
 
 
 logger = logging.getLogger(__name__)
