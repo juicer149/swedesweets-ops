@@ -194,3 +194,52 @@
     border-radius: 20px;
   }
 }
+
+/* =============================================================================
+   List page actions
+
+   Slim right-aligned row for the page's primary action. Placement is
+   deliberately provisional - button location is still being decided, so
+   this exists as one shared spot to move later without touching every page.
+   ============================================================================= */
+
+.list-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-block: var(--space-4) var(--space-2);
+}
+
+.list-page-actions .button {
+  min-height: 48px;
+  padding-inline: var(--space-5);
+  font-size: var(--font-size-16);
+}
+
+@media (max-width: 760px) {
+  .list-page-actions .button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+    padding-inline: var(--space-4);
+  }
+}
+
+
+/* =============================================================================
+   Quick-jump search title
+
+   Kept in the DOM (aria-labelledby still resolves) but hidden visually -
+   the select's own aria-label already carries the accessible name.
+   ============================================================================= */
+
+.quick-jump-search__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

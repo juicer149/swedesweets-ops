@@ -4,12 +4,13 @@
 {% block title %}Orders | SwedeSweets{% endblock %}
 
 {% block content %}
-{% include "includes/ui/page_header.html" with page_header=page_header %}
+{% include "includes/ui/list_page_head.html" with page_header=page_header %}
 
 <section
   id="orders-list"
   class="list-section"
   aria-labelledby="orders-title"
+  data-async-list
 >
   {% include "includes/table/filter_chips.html" %}
   {% include "includes/table/sort_select.html" %}
@@ -77,5 +78,5 @@
 {% block scripts %}
   {{ block.super }}
   <script src="{% static 'js/clickable_rows.js' %}" defer></script>
-  <script src="{% static 'js/sort_select.js' %}" defer></script>
+  <script src="{% static 'js/async_list.js' %}" defer></script>
 {% endblock %}

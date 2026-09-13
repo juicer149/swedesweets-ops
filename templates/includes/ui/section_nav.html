@@ -1,0 +1,32 @@
+{% comment %}
+Reusable section-nav tab bar.
+
+Same visual language whether it separates actor-facing catalog
+categories or ops_portal sub-views (Inventory's Batches/Product stock,
+Accounts' view toggle) - the person reads "where am I" the same way
+everywhere.
+
+Expected context:
+  section_nav_links: list of objects with
+    label
+    href
+    is_active
+  section_nav_aria_label: string
+
+Usage:
+  {% include "includes/ui/section_nav.html" with section_nav_links=view_links section_nav_aria_label="Inventory view" %}
+{% endcomment %}
+
+{% if section_nav_links %}
+  <nav class="section-nav" aria-label="{{ section_nav_aria_label }}">
+    {% for link in section_nav_links %}
+      <a      
+        class="section-nav__link{% if link.is_active %} section-nav__link--active{% endif %}"
+        href="{{ link.href }}"
+        {% if link.is_active %}aria-current="page"{% endif %}
+      >
+        {{ link.label }}
+      </a>
+    {% endfor %}
+  </nav>
+{% endif %}

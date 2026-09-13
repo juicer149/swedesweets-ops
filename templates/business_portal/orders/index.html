@@ -15,6 +15,7 @@
   id="portal-orders-list"
   class="list-section"
   aria-labelledby="store-orders-title"
+  data-async-list
 >
   <h2
     id="store-orders-title"
@@ -103,7 +104,7 @@
   ></script>
 
   <script
-    src="{% static 'js/sort_select.js' %}"
+    src="{% static 'js/async_list.js' %}"
     defer
   ></script>
 {% endblock %}
