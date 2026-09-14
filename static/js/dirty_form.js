@@ -1,225 +1,281 @@
-(() => {
-  const form = document.querySelector("[data-dirty-form]");
+document.addEventListener("DOMContentLoaded", () => {
+  const orderLinesList = document.querySelector("[data-order-lines-list]");
+  const orderLinesWrapper = document.querySelector(
+    "[data-order-lines-wrapper]"
+  );
+  const emptyState = document.querySelector("[data-order-lines-empty]");
+  const emptyFormTemplate = document.getElementById(
+    "order-line-empty-form-template"
+  );
+  const addProductSelect = document.querySelector(
+    "[data-add-order-line-select]"
+  );
+  const totalFormsInput = document.querySelector(
+    'input[name="lines-TOTAL_FORMS"]'
+  );
 
-  if (!form) {
+  if (
+    !orderLinesList ||
+    !emptyFormTemplate ||
+    !addProductSelect ||
+    !totalFormsInput
+  ) {
     return;
   }
 
-  let isDirty = false;
-  let isSubmitting = false;
-  let initialState = "";
-
-  function isEditableField(element) {
-    if (!(element instanceof HTMLElement)) {
-      return false;
-    }
-
-    if (!form.contains(element)) {
-      return false;
-    }
-
-    if (!element.matches("input, select, textarea")) {
-      return false;
-    }
-
-    if (
-      element.matches(
-        '[type="hidden"], [name="csrfmiddlewaretoken"]'
-      )
-    ) {
-      return false;
-    }
-
-    return true;
+  function getOrderLines() {
+    return Array.from(orderLinesList.querySelectorAll("[data-order-line]"));
   }
 
-  function fieldState() {
-    return [...form.querySelectorAll("input, select, textarea")]
-      .filter(isEditableField)
-      .map((field) => {
-        if (
-          field instanceof HTMLInputElement
-          && (
-            field.type === "checkbox"
-            || field.type === "radio"
-          )
-        ) {
-          return {
-            name: field.name,
-            type: field.type,
-            value: field.value,
-            checked: field.checked,
-          };
-        }
-
-        return {
-          name: field.name,
-          type: field.type,
-          value: field.value,
-        };
-      });
-  }
-
-  function serializedState() {
-    return JSON.stringify(fieldState());
-  }
-
-  function handleBeforeUnload(event) {
-    if (!isDirty || isSubmitting) {
-      return;
-    }
-
-    event.preventDefault();
-    event.returnValue = "";
-  }
-
-  function setDirty(value) {
-    if (isDirty === value) {
-      return;
-    }
-
-    isDirty = value;
-
-    form.toggleAttribute(
-      "data-dirty",
-      isDirty
-    );
-
-    if (isDirty) {
-      window.addEventListener(
-        "beforeunload",
-        handleBeforeUnload
-      );
-    } else {
-      window.removeEventListener(
-        "beforeunload",
-        handleBeforeUnload
-      );
-    }
-  }
-
-  function refreshDirtyState() {
-    if (isSubmitting) {
-      return;
-    }
-
-    setDirty(
-      serializedState() !== initialState
+  function findOrderLineByProductId(productId) {
+    return orderLinesList.querySelector(
+      `[data-order-line][data-product-id="${productId}"]`
     );
   }
 
-  function resetInitialState() {
-    initialState = serializedState();
-    setDirty(false);
+  function replaceFormIndex(value, index) {
+    return value
+      .replace(/lines-(\d+|__prefix__)-/g, `lines-${index}-`)
+      .replace(/id_lines-(\d+|__prefix__)-/g, `id_lines-${index}-`);
   }
 
-  function shouldIgnoreLink(link, event) {
-    if (!link.href) {
-      return true;
-    }
+  function reindexOrderLine(orderLine, index) {
+    orderLine.querySelectorAll("[name]").forEach((element) => {
+      element.name = replaceFormIndex(element.name, index);
+    });
 
-    if (link.hasAttribute("download")) {
-      return true;
-    }
+    orderLine.querySelectorAll("[id]").forEach((element) => {
+      element.id = replaceFormIndex(element.id, index);
+    });
 
-    if (link.dataset.dirtyIgnore === "true") {
-      return true;
-    }
+    orderLine.querySelectorAll("label[for]").forEach((label) => {
+      label.htmlFor = replaceFormIndex(label.htmlFor, index);
+    });
 
-    if (
-      link.closest("[data-dirty-ignore='true']")
-    ) {
-      return true;
-    }
+    const number = orderLine.querySelector("[data-order-line-number]");
 
-    if (
-      link.target
-      && link.target !== "_self"
-    ) {
-      return true;
+    if (number) {
+      number.textContent = String(index + 1);
     }
-
-    if (event.defaultPrevented) {
-      return true;
-    }
-
-    if (event.button !== 0) {
-      return true;
-    }
-
-    if (
-      event.metaKey
-      || event.ctrlKey
-      || event.shiftKey
-      || event.altKey
-    ) {
-      return true;
-    }
-
-    return false;
   }
 
-  resetInitialState();
+  function syncFormsetIndexes() {
+    const orderLines = getOrderLines();
 
-  form.addEventListener(
-    "input",
-    (event) => {
-      if (isEditableField(event.target)) {
-        refreshDirtyState();
-      }
+    orderLines.forEach((orderLine, index) => {
+      reindexOrderLine(orderLine, index);
+    });
+
+    totalFormsInput.value = String(orderLines.length);
+  }
+
+  function updateEmptyState() {
+    const hasLines = getOrderLines().length > 0;
+
+    if (orderLinesWrapper) {
+      orderLinesWrapper.hidden = !hasLines;
     }
-  );
 
-  form.addEventListener(
-    "change",
-    (event) => {
-      if (isEditableField(event.target)) {
-        refreshDirtyState();
-      }
+    if (emptyState) {
+      emptyState.hidden = hasLines;
     }
-  );
+  }
 
-  form.addEventListener(
-    "submit",
-    () => {
-      isSubmitting = true;
-      setDirty(false);
-    }
-  );
+  /*
+   * order_lines.js adds/removes whole fields without firing input/change
+   * on anything dirty_form.js's field-level listeners would see (a new
+   * line's fields are populated directly, not via user interaction; a
+   * removed line just disappears via element.remove()). This lets
+   * dirty_form.js, when present on the same <form>, notice those
+   * structural changes explicitly.
+   */
+  function notifyDirtyFormRefresh() {
+    const form = orderLinesList.closest("form");
 
-  document.addEventListener(
-    "click",
-    (event) => {
-      const target = event.target;
-
-      if (!(target instanceof Element)) {
-        return;
-      }
-
-      const link = target.closest("a[href]");
-
-      if (!link || shouldIgnoreLink(link, event)) {
-        return;
-      }
-
-      if (!isDirty) {
-        return;
-      }
-
-      event.preventDefault();
-
-      const shouldLeave = window.confirm(
-        "You have unsaved changes. Leave without saving?"
+    if (form) {
+      form.dispatchEvent(
+        new Event("dirty-form:refresh", { bubbles: true })
       );
+    }
+  }
 
-      if (!shouldLeave) {
-        return;
+  function buildOrderLine(index) {
+    const html = emptyFormTemplate.innerHTML
+      .replaceAll("__prefix__", String(index))
+      .replaceAll("__line_number__", String(index + 1));
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html.trim();
+
+    return wrapper.firstElementChild;
+  }
+
+  function scrollOrderLineIntoView(orderLine) {
+    orderLine.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+
+  function incrementQuantity(orderLine) {
+    const input = orderLine.querySelector("[data-quantity-input]");
+
+    if (!input) {
+      return;
+    }
+
+    const current = Number(input.value);
+    const next = Number.isFinite(current) ? current + 1 : 1;
+
+    input.value = String(next);
+
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function clearAddProductSelect() {
+    const tomSelect = addProductSelect.tomselect;
+
+    if (tomSelect) {
+      tomSelect.clear(true);
+      return;
+    }
+
+    addProductSelect.value = "";
+  }
+
+  /*
+   * Reads the currently selected product straight from the TomSelect
+   * instance's own option data (already fully loaded client-side by
+   * enhanced_selects.js at init - no fetch needed). Falls back to the
+   * native <option> element if TomSelect never initialized (e.g. the
+   * library failed to load).
+   */
+  function readSelectedProduct(value) {
+    const tomSelect = addProductSelect.tomselect;
+
+    if (tomSelect) {
+      const data = tomSelect.options[value];
+
+      if (!data) {
+        return null;
       }
 
-      isSubmitting = true;
-      setDirty(false);
+      const label = data.name
+        ? `${data.code} · ${data.name} · ${data.weight}`.trim()
+        : data.text;
 
-      window.location.assign(link.href);
+      return { value, label };
     }
-  );
-})();
+
+    const option = addProductSelect.selectedOptions[0];
+
+    if (!option || !option.value) {
+      return null;
+    }
+
+    const label = option.dataset.name
+      ? `${option.dataset.code} · ${option.dataset.name} · ${option.dataset.weight}`
+      : option.textContent.trim();
+
+    return { value: option.value, label };
+  }
+
+  function addOrIncrementLine(product) {
+    if (!product || !product.value) {
+      return;
+    }
+
+    const existingLine = findOrderLineByProductId(product.value);
+
+    if (existingLine) {
+      incrementQuantity(existingLine);
+      clearAddProductSelect();
+      notifyDirtyFormRefresh();
+      return;
+    }
+
+    const index = getOrderLines().length;
+    const orderLine = buildOrderLine(index);
+
+    orderLine.dataset.productId = product.value;
+
+    const productInput = orderLine.querySelector(
+      "[data-order-line-product-input]"
+    );
+    const labelElement = orderLine.querySelector(
+      "[data-order-line-product-label]"
+    );
+    const quantityInput = orderLine.querySelector(
+      "[data-quantity-input]"
+    );
+
+    if (productInput) {
+      productInput.value = product.value;
+    }
+
+    if (labelElement) {
+      labelElement.textContent = product.label;
+    }
+
+    if (quantityInput) {
+      quantityInput.value = "1";
+    }
+
+    orderLinesList.appendChild(orderLine);
+    totalFormsInput.value = String(index + 1);
+
+    clearAddProductSelect();
+    updateEmptyState();
+    notifyDirtyFormRefresh();
+    scrollOrderLineIntoView(orderLine);
+  }
+
+  function handleProductSelected(value) {
+    if (!value) {
+      return;
+    }
+
+    addOrIncrementLine(readSelectedProduct(value));
+  }
+
+  /*
+   * enhanced_selects.js initializes TomSelect on DOMContentLoaded too,
+   * and its script tag loads before this one, so addProductSelect.tomselect
+   * is already available here. Prefer TomSelect's own change event
+   * (fires with the new value directly) over the native <select> change
+   * event, since TomSelect's internal option sync is the source of truth
+   * this file should read from.
+   */
+  if (addProductSelect.tomselect) {
+    addProductSelect.tomselect.on("change", handleProductSelected);
+  } else {
+    addProductSelect.addEventListener("change", () => {
+      handleProductSelected(addProductSelect.value);
+    });
+  }
+
+  orderLinesList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest(
+      "[data-remove-order-line]"
+    );
+
+    if (!removeButton) {
+      return;
+    }
+
+    const orderLine = removeButton.closest("[data-order-line]");
+
+    if (!orderLine) {
+      return;
+    }
+
+    orderLine.remove();
+
+    syncFormsetIndexes();
+    updateEmptyState();
+    notifyDirtyFormRefresh();
+  });
+
+  updateEmptyState();
+});

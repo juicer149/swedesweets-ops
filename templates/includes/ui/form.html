@@ -3,6 +3,7 @@
 <form
   method="{{ method|default:'post' }}"
   class="{{ form_class|default:'form-card' }}"
+  data-dirty-form
   novalidate
 >
   {% csrf_token %}

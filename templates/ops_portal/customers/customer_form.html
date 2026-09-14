@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ title }} | SwedeSweets{% endblock %}
 
@@ -12,4 +13,9 @@
 
   {% include "includes/ui/form.html" with form=form submit_label=submit_label cancel_url=cancel_url %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/dirty_form.js' %}" defer></script>
 {% endblock %}
