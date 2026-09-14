@@ -35,6 +35,7 @@ from ops_portal.orders.presentation import (
     quantity_label,
 )
 from ops_portal.products.mini_cards import build_product_quantity_mini_card
+from orders.selectors import get_packaging_list
 from products.models import Product
 
 
@@ -62,10 +63,10 @@ class OrderDetailContext:
     cancel_url: str
     customer_maps_href: str
     customer_detail_href: str
-    pick_lines: list[PickLine] | None = None
+    pick_lines: list[PickLine]
 
     def as_dict(self) -> dict[str, object]:
-        context: dict[str, object] = {
+        return {
             "order": self.order,
             "content_lines": self.content_lines,
             "product_count": self.product_count,
@@ -77,12 +78,8 @@ class OrderDetailContext:
             "cancel_url": self.cancel_url,
             "customer_maps_href": self.customer_maps_href,
             "customer_detail_href": self.customer_detail_href,
+            "pick_lines": self.pick_lines,
         }
-
-        if self.pick_lines is not None:
-            context["pick_lines"] = self.pick_lines
-
-        return context
 
 
 def build_order_detail_context(
@@ -97,6 +94,22 @@ def build_order_detail_context(
     secondary_actions: tuple[DetailAction, ...] = (),
     pick_lines: list[PickLine] | None = None,
 ) -> OrderDetailContext:
+    """Build the shared order detail card context.
+
+    The Checklist tab is always present on the order's detail card,
+    regardless of which view (detail/pack/deliver/cancel) rendered it -
+    a person navigating away from /pack/ and back to the plain detail
+    page should still see the same tab, not have it disappear.
+
+    pick_lines is fetched here by default so every caller gets this for
+    free. pack() passes its own pre-fetched pick_lines (it already needs
+    the list to decide whether the confirm button is disabled), which
+    skips the redundant query here.
+    """
+
+    if pick_lines is None:
+        pick_lines = get_packaging_list(order=order)
+
     order_lines = list(order.lines.select_related("product").all())
     content_lines = _build_content_lines(order_lines)
     product_count = len(content_lines)
@@ -267,9 +280,9 @@ def _build_order_detail_panels(
     *,
     order: Order,
     active_panel: str,
-    pick_lines: list[PickLine] | None,
+    pick_lines: list[PickLine],
 ) -> tuple[DetailPanel, ...]:
-    panels = [
+    return (
         DetailPanel(
             key="order",
             label="Order",
@@ -278,21 +291,14 @@ def _build_order_detail_panels(
             icon="cart",
             is_active=active_panel == "order",
         ),
-    ]
-
-    if pick_lines is not None:
-        panels.append(
-            DetailPanel(
-                key="checklist",
-                label="Checklist",
-                summary=_pick_lines_summary(pick_lines),
-                body_template="ops_portal/orders/includes/detail_panel_checklist.html",
-                icon="box",
-                is_active=active_panel == "checklist",
-            )
-        )
-
-    panels.append(
+        DetailPanel(
+            key="checklist",
+            label="Checklist",
+            summary=_pick_lines_summary(pick_lines),
+            body_template="ops_portal/orders/includes/detail_panel_checklist.html",
+            icon="box",
+            is_active=active_panel == "checklist",
+        ),
         DetailPanel(
             key="customer",
             label="Customer",
@@ -300,14 +306,15 @@ def _build_order_detail_panels(
             body_template="ops_portal/orders/includes/detail_panel_customer.html",
             icon="users",
             is_active=active_panel == "customer",
-        )
+        ),
     )
-
-    return tuple(panels)
 
 
 def _pick_lines_summary(pick_lines: list[PickLine]) -> str:
     count = len(pick_lines)
+
+    if count == 0:
+        return "No lines"
 
     if count == 1:
         return "1 line"
