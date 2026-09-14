@@ -4,6 +4,7 @@
   const ASYNC_TRIGGER_SELECTOR = [
     "[data-async-list] .filter-chip",
     "[data-async-list] .text-link--table-sort",
+    "[data-async-list] .dashboard-queue-nav__link",
   ].join(", ");
 
   function findAsyncSection(node) {
