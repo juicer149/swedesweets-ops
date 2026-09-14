@@ -8,7 +8,6 @@ from django import forms
 from django.forms import BaseFormSet, formset_factory
 from django.utils.translation import gettext as _
 
-from common.form_layout import set_form_field_layout
 from customers.models import Customer
 from orders.datatypes import OrderLineInput
 from orders.models import Order, OrderLine
@@ -24,7 +23,15 @@ from ops_portal.products.presentation import (
 )
 from products.units import quantity_to_units
 
-DEFAULT_ORDER_LINE_COUNT = 1
+# extra=0 below - lines are never pre-rendered blank; they only ever appear
+# via order_lines.js in response to a selection in AddOrderLineProductForm.
+DEFAULT_ORDER_LINE_COUNT = 0
+
+# Kept at the original fractional precision - kg/gram remain valid domain
+# input (unit is just never exposed as a frontend choice), so the field
+# itself must still accept e.g. 12.5 kg. Only the rendered widget is forced
+# to whole-number stepper behavior in OrderLineForm.__init__ below, since
+# that is the only path the current UI actually drives.
 MIN_ORDER_QUANTITY = Decimal("0.001")
 
 MAX_UNITS_PER_PRODUCT_PER_ORDER = MAX_QUANTITY_PER_PRODUCT_PER_ORDER
@@ -187,6 +194,49 @@ class OrderCreateForm(forms.Form):
     )
 
 
+class AddOrderLineProductForm(forms.Form):
+    """Standalone product picker that drives client-side line creation.
+
+    This form's `product` field is never part of OrderLineFormSet - its
+    selection is read entirely by order_lines.js, which creates a new
+    formset line or increments an existing one in response. The form is
+    never bound to a POST and its own submitted value, if any, is
+    ignored server-side.
+    """
+
+    product = ProductChoiceField(
+        queryset=Product.objects.none(),
+        required=False,
+        label="Add product",
+        empty_label="Choose a product to add",
+        error_messages={
+            "invalid_choice": "Choose a valid available product.",
+        },
+        widget=forms.Select(
+            attrs={
+                "data-add-order-line-select": "true",
+                "data-enhanced-select": "true",
+                "data-enhanced-select-search": "true",
+            }
+        ),
+    )
+
+    def __init__(
+        self,
+        *args,
+        product_queryset=None,
+        available_units_by_product_id: dict[int, int] | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+
+        product_field = self.fields["product"]
+        product_field.queryset = product_queryset or Product.objects.none()
+        product_field.available_units_by_product_id = (
+            available_units_by_product_id or {}
+        )
+
+
 class OrderLineForm(forms.Form):
     product = ProductChoiceField(
         queryset=Product.objects.filter(active=True).order_by(
@@ -196,16 +246,11 @@ class OrderLineForm(forms.Form):
             "weight_per_unit",
         ),
         required=False,
-        label="Product",
-        empty_label="Choose product",
         error_messages={
             "invalid_choice": "Choose a valid available product.",
         },
-        widget=forms.Select(
-            attrs={
-                "data-enhanced-select": "true",
-                "data-enhanced-select-search": "true",
-            }
+        widget=forms.HiddenInput(
+            attrs={"data-order-line-product-input": "true"}
         ),
     )
 
@@ -213,15 +258,10 @@ class OrderLineForm(forms.Form):
         required=False,
         choices=ORDER_LINE_UNIT_CHOICES,
         initial=ORDER_LINE_STOCK_UNIT_VALUE,
-        label="Unit",
         error_messages={
             "invalid_choice": "Choose quantity, kg, or grams.",
         },
-        widget=forms.RadioSelect(
-            attrs={
-                "class": "radio-chip-group",
-            }
-        ),
+        widget=forms.HiddenInput(),
     )
 
     quantity = forms.DecimalField(
@@ -229,18 +269,18 @@ class OrderLineForm(forms.Form):
         min_value=MIN_ORDER_QUANTITY,
         max_digits=12,
         decimal_places=3,
-        label="Quantity",
         error_messages={
             "invalid": "Enter quantity using numbers only, e.g. 12 or 2.5.",
             "min_value": "Quantity must be greater than 0.",
             "max_digits": "Quantity is too large.",
             "max_decimal_places": "Use at most 3 decimal places.",
         },
-        widget=forms.TextInput(
+        widget=forms.NumberInput(
             attrs={
-                "placeholder": "e.g. 2.5",
-                "inputmode": "decimal",
+                "class": "quantity-stepper__input",
+                "inputmode": "numeric",
                 "autocomplete": "off",
+                "data-quantity-input": "true",
             }
         ),
     )
@@ -264,11 +304,15 @@ class OrderLineForm(forms.Form):
                 self.available_units_by_product_id
             )
 
-        set_form_field_layout(
-            self,
-            full=("product",),
-            half=("unit", "quantity"),
-        )
+        # DecimalField.widget_attrs() overwrites any step/min we set on the
+        # widget above with values derived from decimal_places (e.g.
+        # step="0.001") during Field.__init__, after the widget's own attrs
+        # are already applied. decimal_places stays at 3 (kg/gram remain
+        # valid domain input server-side), so the override happens here,
+        # after that point, forcing the rendered widget back to whole-unit
+        # stepper behavior - the only path the current UI drives.
+        self.fields["quantity"].widget.attrs["step"] = "1"
+        self.fields["quantity"].widget.attrs["min"] = "1"
 
     def clean(self) -> dict:
         cleaned_data = super().clean()
@@ -446,6 +490,18 @@ class OrderCancelForm(forms.Form):
     )
 
 
+def build_add_order_line_product_form(
+    *,
+    line_formset: OrderLineFormSet,
+) -> AddOrderLineProductForm:
+    return AddOrderLineProductForm(
+        product_queryset=line_formset.product_choice_context.queryset,
+        available_units_by_product_id=(
+            line_formset.product_choice_context.available_units_by_product_id
+        ),
+    )
+
+
 def build_order_line_inputs(
     formset: BaseFormSet,
 ) -> list[OrderLineInput]:
@@ -457,7 +513,12 @@ def build_order_line_initial_data(order: Order) -> list[dict[str, object]]:
         {
             "product": line.product_id,
             "unit": line.unit,
-            "quantity": line.quantity,
+            "quantity": line.quantity_in_units,
+            "product_label": (
+                f"{line.product.code_label} · "
+                f"{line.product.display_name} · "
+                f"{line.product.unit_weight_label}"
+            ),
         }
         for line in order.lines.select_related("product").order_by("id")
     ]

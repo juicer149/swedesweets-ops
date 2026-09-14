@@ -59,43 +59,53 @@
         </h2>
 
         <p>
-          {% trans "Add at least one product. Empty products are ignored." %}
+          {% trans "Choose a product to add it below. Choosing a product that's already added increases its quantity instead." %}
         </p>
+      </div>
+
+      <div class="form-grid">
+        {% include "includes/ui/form_field.html" with field=add_product_form.product only %}
       </div>
 
       {{ line_formset.management_form }}
 
       <div
-        class="order-lines__list"
-        data-order-lines-list
+        class="portal-cart"
+        data-order-lines-wrapper
+        {% if not line_formset.forms %}hidden{% endif %}
       >
-        {% for line_form in line_formset %}
-          {% include "ops_portal/orders/includes/order_line_form.html" with line_form=line_form line_number=forloop.counter remove_hidden=True only %}
-        {% endfor %}
+        <div
+          class="portal-cart__header"
+          aria-hidden="true"
+        >
+          <span>{% trans "Product" %}</span>
+          <span>{% trans "Quantity" %}</span>
+          <span></span>
+        </div>
+
+        <div
+          class="portal-cart__lines"
+          data-order-lines-list
+        >
+          {% for line_form in line_formset %}
+            {% include "ops_portal/orders/includes/order_line_form.html" with line_form=line_form line_number=forloop.counter only %}
+          {% endfor %}
+        </div>
       </div>
 
-      <div class="order-lines__controls">
-        <button
-          class="button button--sm button--soft button--tone-positive order-lines__add-button"
-          type="button"
-          data-add-order-line
-        >
-          <span
-            class="button__icon"
-            aria-hidden="true"
-          >
-            {% include "includes/ui/icon.html" with name="plus" only %}
-          </span>
-
-          <span class="button__label">
-            {% trans "Add product" %}
-          </span>
-        </button>
+      <div
+        class="portal-cart-empty"
+        data-order-lines-empty
+        {% if line_formset.forms %}hidden{% endif %}
+      >
+        <p>
+          {% trans "No products added yet. Use the selector above to add one." %}
+        </p>
       </div>
     </section>
 
     <template id="order-line-empty-form-template">
-      {% include "ops_portal/orders/includes/order_line_form.html" with line_form=line_formset.empty_form line_number="__line_number__" remove_hidden=False only %}
+      {% include "ops_portal/orders/includes/order_line_form.html" with line_form=line_formset.empty_form line_number="__line_number__" only %}
     </template>
 
     <div class="form-actions">
@@ -107,7 +117,7 @@
       </button>
 
       {% if cancel_order_url %}
-        <a
+        <a 
           class="button button--md button--ghost button--tone-danger"
           href="{{ cancel_order_url }}"
         >
@@ -115,7 +125,7 @@
         </a>
       {% endif %}
 
-      <a
+      <a 
         class="button button--md button--ghost button--tone-neutral"
         href="{{ cancel_url }}"
       >
@@ -128,8 +138,6 @@
 
 {% block scripts %}
   {{ block.super }}
-  <script
-    src="{% static 'js/order_lines.js' %}"
-    defer
-  ></script>
+  <script src="{% static 'js/quantity-stepper.js' %}" defer></script>
+  <script src="{% static 'js/order_lines.js' %}" defer></script>
 {% endblock %}

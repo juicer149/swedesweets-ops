@@ -1,9 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
   const orderLinesList = document.querySelector("[data-order-lines-list]");
+  const orderLinesWrapper = document.querySelector(
+    "[data-order-lines-wrapper]"
+  );
+  const emptyState = document.querySelector("[data-order-lines-empty]");
   const emptyFormTemplate = document.getElementById(
     "order-line-empty-form-template"
   );
-  const addProductButton = document.querySelector("[data-add-order-line]");
+  const addProductSelect = document.querySelector(
+    "[data-add-order-line-select]"
+  );
   const totalFormsInput = document.querySelector(
     'input[name="lines-TOTAL_FORMS"]'
   );
@@ -11,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (
     !orderLinesList ||
     !emptyFormTemplate ||
-    !addProductButton ||
+    !addProductSelect ||
     !totalFormsInput
   ) {
     return;
@@ -21,97 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return Array.from(orderLinesList.querySelectorAll("[data-order-line]"));
   }
 
-  function fieldKey(element) {
-    const match = element.name.match(/^lines-(?:\d+|__prefix__)-(.+)$/);
-    return match ? match[1] : element.name;
-  }
-
-  function readFieldValue(element) {
-    if (element.type === "radio") {
-      return element.checked ? element.value : null;
-    }
-
-    if (element.type === "checkbox") {
-      return element.checked;
-    }
-
-    if (element.tomselect) {
-      return element.tomselect.getValue();
-    }
-
-    return element.value;
-  }
-
-  function writeFieldValue(element, value) {
-    if (value === undefined || value === null) {
-      return;
-    }
-
-    if (element.type === "radio") {
-      element.checked = element.value === value;
-      return;
-    }
-
-    if (element.type === "checkbox") {
-      element.checked = Boolean(value);
-      return;
-    }
-
-    if (element.tomselect) {
-      element.tomselect.setValue(value, true);
-      return;
-    }
-
-    element.value = value;
-
-    if (element.tagName === "SELECT") {
-      Array.from(element.options).forEach((option) => {
-        option.selected = option.value === value;
-      });
-    }
-  }
-
-  function readOrderLineState(orderLine) {
-    const state = {};
-
-    orderLine
-      .querySelectorAll("select[name], textarea[name], input[name]")
-      .forEach((element) => {
-        const key = fieldKey(element);
-        const value = readFieldValue(element);
-
-        if (element.type === "radio") {
-          if (value !== null) {
-            state[key] = value;
-          }
-
-          return;
-        }
-
-        state[key] = value;
-      });
-
-    return state;
-  }
-
-  function writeOrderLineState(orderLine, state) {
-    orderLine
-      .querySelectorAll("select[name], textarea[name], input[name]")
-      .forEach((element) => {
-        writeFieldValue(element, state[fieldKey(element)]);
-      });
-  }
-
-  function destroyEnhancedSelects(root) {
-    root.querySelectorAll("select[data-enhanced-select]").forEach((select) => {
-      if (select.tomselect) {
-        select.tomselect.destroy();
-      }
-    });
-  }
-
-  function enhanceOrderLine(orderLine) {
-    window.enhanceSelects?.(orderLine);
+  function findOrderLineByProductId(productId) {
+    return orderLinesList.querySelector(
+      `[data-order-line][data-product-id="${productId}"]`
+    );
   }
 
   function replaceFormIndex(value, index) {
@@ -142,36 +61,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function syncFormsetIndexes() {
     const orderLines = getOrderLines();
-    const states = orderLines.map(readOrderLineState);
-
-    orderLines.forEach(destroyEnhancedSelects);
 
     orderLines.forEach((orderLine, index) => {
       reindexOrderLine(orderLine, index);
-      writeOrderLineState(orderLine, states[index]);
     });
 
     totalFormsInput.value = String(orderLines.length);
-
-    orderLines.forEach((orderLine, index) => {
-      enhanceOrderLine(orderLine);
-      writeOrderLineState(orderLine, states[index]);
-    });
-
-    updateRemoveButtons();
   }
 
-  function updateRemoveButtons() {
-    const orderLines = getOrderLines();
-    const canRemove = orderLines.length > 1;
+  function updateEmptyState() {
+    const hasLines = getOrderLines().length > 0;
 
-    orderLines.forEach((orderLine) => {
-      const removeButton = orderLine.querySelector("[data-remove-order-line]");
+    if (orderLinesWrapper) {
+      orderLinesWrapper.hidden = !hasLines;
+    }
 
-      if (removeButton) {
-        removeButton.hidden = !canRemove;
-      }
-    });
+    if (emptyState) {
+      emptyState.hidden = hasLines;
+    }
   }
 
   function buildOrderLine(index) {
@@ -192,28 +99,148 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  addProductButton.addEventListener("click", () => {
+  function incrementQuantity(orderLine) {
+    const input = orderLine.querySelector("[data-quantity-input]");
+
+    if (!input) {
+      return;
+    }
+
+    const current = Number(input.value);
+    const next = Number.isFinite(current) ? current + 1 : 1;
+
+    input.value = String(next);
+
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function clearAddProductSelect() {
+    const tomSelect = addProductSelect.tomselect;
+
+    if (tomSelect) {
+      tomSelect.clear(true);
+      return;
+    }
+
+    addProductSelect.value = "";
+  }
+
+  /*
+   * Reads the currently selected product straight from the TomSelect
+   * instance's own option data (already fully loaded client-side by
+   * enhanced_selects.js at init - no fetch needed). Falls back to the
+   * native <option> element if TomSelect never initialized (e.g. the
+   * library failed to load).
+   */
+  function readSelectedProduct(value) {
+    const tomSelect = addProductSelect.tomselect;
+
+    if (tomSelect) {
+      const data = tomSelect.options[value];
+
+      if (!data) {
+        return null;
+      }
+
+      const label = data.name
+        ? `${data.code} · ${data.name} · ${data.weight}`.trim()
+        : data.text;
+
+      return { value, label };
+    }
+
+    const option = addProductSelect.selectedOptions[0];
+
+    if (!option || !option.value) {
+      return null;
+    }
+
+    const label = option.dataset.name
+      ? `${option.dataset.code} · ${option.dataset.name} · ${option.dataset.weight}`
+      : option.textContent.trim();
+
+    return { value: option.value, label };
+  }
+
+  function addOrIncrementLine(product) {
+    if (!product || !product.value) {
+      return;
+    }
+
+    const existingLine = findOrderLineByProductId(product.value);
+
+    if (existingLine) {
+      incrementQuantity(existingLine);
+      clearAddProductSelect();
+      return;
+    }
+
     const index = getOrderLines().length;
     const orderLine = buildOrderLine(index);
+
+    orderLine.dataset.productId = product.value;
+
+    const productInput = orderLine.querySelector(
+      "[data-order-line-product-input]"
+    );
+    const labelElement = orderLine.querySelector(
+      "[data-order-line-product-label]"
+    );
+    const quantityInput = orderLine.querySelector(
+      "[data-quantity-input]"
+    );
+
+    if (productInput) {
+      productInput.value = product.value;
+    }
+
+    if (labelElement) {
+      labelElement.textContent = product.label;
+    }
+
+    if (quantityInput) {
+      quantityInput.value = "1";
+    }
 
     orderLinesList.appendChild(orderLine);
     totalFormsInput.value = String(index + 1);
 
-    enhanceOrderLine(orderLine);
-    updateRemoveButtons();
+    clearAddProductSelect();
+    updateEmptyState();
     scrollOrderLineIntoView(orderLine);
-  });
+  }
 
-  orderLinesList.addEventListener("click", (event) => {
-    const removeButton = event.target.closest("[data-remove-order-line]");
-
-    if (!removeButton) {
+  function handleProductSelected(value) {
+    if (!value) {
       return;
     }
 
-    const orderLines = getOrderLines();
+    addOrIncrementLine(readSelectedProduct(value));
+  }
 
-    if (orderLines.length <= 1) {
+  /*
+   * enhanced_selects.js initializes TomSelect on DOMContentLoaded too,
+   * and its script tag loads before this one, so addProductSelect.tomselect
+   * is already available here. Prefer TomSelect's own change event
+   * (fires with the new value directly) over the native <select> change
+   * event, since TomSelect's internal option sync is the source of truth
+   * this file should read from.
+   */
+  if (addProductSelect.tomselect) {
+    addProductSelect.tomselect.on("change", handleProductSelected);
+  } else {
+    addProductSelect.addEventListener("change", () => {
+      handleProductSelected(addProductSelect.value);
+    });
+  }
+
+  orderLinesList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest(
+      "[data-remove-order-line]"
+    );
+
+    if (!removeButton) {
       return;
     }
 
@@ -223,11 +250,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    destroyEnhancedSelects(orderLine);
     orderLine.remove();
 
     syncFormsetIndexes();
+    updateEmptyState();
   });
 
-  updateRemoveButtons();
+  updateEmptyState();
 });

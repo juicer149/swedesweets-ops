@@ -1,37 +1,62 @@
 {# templates/ops_portal/orders/includes/order_line_form.html #}
 {% load i18n %}
 
-<fieldset class="order-line" data-order-line>
-  <legend class="order-line__legend">
-    <span>
-      {% trans "Product" %} <span data-order-line-number>{{ line_number }}</span>
-    </span>
+<article
+  class="portal-cart-line"
+  data-order-line
+  data-product-id="{{ line_form.initial.product|default_if_none:'' }}"
+>
+  {{ line_form.product }}
+  {{ line_form.unit }}
 
-    <button
-      class="button button--text button--tone-danger"
-      type="button"
-      data-remove-order-line
-      {% if remove_hidden %}hidden{% endif %}
+  <div class="portal-cart-line__product">
+    <span
+      class="portal-cart-line__product-label"
+      data-order-line-product-label
     >
-      {% trans "Remove" %}
-    </button>
-  </legend>
-
-  {% if line_form.non_field_errors %}
-    <div class="form-errors" role="alert">
-      {% for error in line_form.non_field_errors %}
-        <p>{{ error }}</p>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  <div class="order-line__grid{% if line_form.unit %} order-line__grid--with-unit{% endif %}">
-    {% include "includes/ui/form_field.html" with field=line_form.product only %}
-
-    {% if line_form.unit %}
-      {% include "includes/ui/form_field.html" with field=line_form.unit only %}
-    {% endif %}
-
-    {% include "includes/ui/form_field.html" with field=line_form.quantity only %}
+      {{ line_form.initial.product_label }}
+    </span>
   </div>
-</fieldset>
+
+  <div class="portal-cart-line__quantity">
+    <div class="quantity-stepper" data-quantity-stepper>
+      <button
+        class="quantity-stepper__button quantity-stepper__button--decrease"
+        type="button"
+        aria-label="{% trans 'Decrease quantity' %}"
+        data-quantity-decrease
+      >
+        <span aria-hidden="true">−</span>
+      </button>
+
+      <label
+        class="visually-hidden"
+        for="{{ line_form.quantity.id_for_label }}"
+      >
+        {% trans "Quantity" %}
+      </label>
+
+      {{ line_form.quantity }}
+
+      <button
+        class="quantity-stepper__button quantity-stepper__button--increase"
+        type="button"
+        aria-label="{% trans 'Increase quantity' %}"
+        data-quantity-increase
+      >
+        <span aria-hidden="true">+</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="portal-cart-line__action">
+    <button
+      class="portal-cart-line__remove-button"
+      type="button"
+      aria-label="{% trans 'Remove product' %}"
+      data-remove-order-line
+    >
+      {% include "includes/ui/icon_block.html" with name="trash" size="sm" only %}
+    </button>
+  </div>
+</article>

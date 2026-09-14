@@ -600,8 +600,9 @@ def test_build_order_line_initial_data():
             {
                 "product": apple.id,
                 "unit": OrderUnit.STOCK,
-                "quantity": Decimal(
-                    "10.000"
+                "quantity": 10,
+                "product_label": (
+                    "#1 · Generic — Apple · 5000 g / Box"
                 ),
             }
         ]

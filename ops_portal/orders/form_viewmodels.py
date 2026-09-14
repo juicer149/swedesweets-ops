@@ -14,9 +14,11 @@ from ops_portal.orders.detail_viewmodels import (
     order_detail_href,
 )
 from ops_portal.orders.forms import (
+    AddOrderLineProductForm,
     OrderCancelForm,
     OrderCreateForm,
     OrderLineFormSet,
+    build_add_order_line_product_form,
 )
 from orders.models import Order
 
@@ -34,6 +36,7 @@ class OrderFormContext:
     submit_label: str
     cancel_url: str
     line_formset: OrderLineFormSet
+    add_product_form: AddOrderLineProductForm
     form: OrderCreateForm | None = None
     order: Order | None = None
     order_context_items: list[FormContextItem] | None = None
@@ -44,6 +47,7 @@ class OrderFormContext:
         return {
             "form": self.form,
             "line_formset": self.line_formset,
+            "add_product_form": self.add_product_form,
             "order": self.order,
             "order_context_items": (
                 self.order_context_items or []
@@ -89,6 +93,9 @@ def build_create_order_form_context(
     return OrderFormContext(
         form=form,
         line_formset=line_formset,
+        add_product_form=build_add_order_line_product_form(
+            line_formset=line_formset,
+        ),
         title="Place order",
         description="Create an order and reserve available stock.",
         submit_label="Place order",
@@ -109,6 +116,9 @@ def build_edit_order_form_context(
             order
         ),
         line_formset=line_formset,
+        add_product_form=build_add_order_line_product_form(
+            line_formset=line_formset,
+        ),
         title="Edit order",
         description=(
             "Update this placed order before it is packed. "
