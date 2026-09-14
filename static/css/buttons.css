@@ -194,7 +194,7 @@
 }
 
 .button--tone-place {
-  --button-solid-text: var(--color-action-place-on-light);
+  --button-solid-text: var(--color-accent-text-standard);
   --button-solid-bg: var(--color-action-place);
   --button-solid-border: var(--color-action-place);
   --button-solid-bg-hover: var(--color-accent-500);
@@ -236,12 +236,12 @@
 }
 
 .button--tone-pack {
-  --button-solid-text: var(--color-action-pack-on-light);
-  --button-solid-bg: var(--color-action-pack);
-  --button-solid-border: var(--color-action-pack);
-  --button-solid-bg-hover: var(--color-primary-400);
+  --button-solid-text: var(--color-primary-text-standard);
+  --button-solid-bg: var(--color-primary-200);
+  --button-solid-border: var(--color-primary-300);
+  --button-solid-bg-hover: var(--color-primary-300);
   --button-solid-border-hover: var(--color-primary-400);
-  --button-solid-bg-active: var(--color-primary-700);
+  --button-solid-bg-active: var(--color-primary-400);
   --button-solid-shadow-hover: var(--shadow-pack-glow);
 
   --button-soft-text: var(--color-action-pack-on-light);

@@ -86,7 +86,7 @@
   font-family: var(--font-heading);
   font-size: var(--font-size-28);
   line-height: var(--line-height-tight);
-  color: var(--color-primary-900);
+  color: var(--color-text-heading);
 }
 
 .content-card__status {

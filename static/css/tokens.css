@@ -17,6 +17,7 @@
   --color-primary-50: #fdfefe;
 
   /* Yellow / gold */
+  --color-accent-950: #4a3405;
   --color-accent-900: #6f4e06;
   --color-accent-800: #a2720b;
   --color-accent-700: #d99100;
@@ -43,6 +44,29 @@
 
   --color-table-heading: var(--color-accent-800);
   --color-table-rule: var(--color-accent-900);
+
+  /* ==========================================================================
+     Standard text-on-tint colors
+
+     The darker anchor shade for each hue, meant for text sitting on a
+     lighter tint of the same hue (buttons, notices, badges). Reused
+     wherever a component wants "dark text, light same-hue background"
+     instead of picking a raw shade number each time.
+     ========================================================================== */
+
+  --color-primary-text-standard: var(--color-primary-900);
+  --color-accent-text-standard: var(--color-accent-950);
+
+  /* ==========================================================================
+     Sitewide heading color
+
+     One switch for every h1/h2/h3 on the site. Defaults to a warm near-black
+     from the neutral scale instead of the cooler primary-900 navy, so
+     headings read closer to the body text's warmth. Revert by pointing this
+     back at var(--color-primary-900).
+     ========================================================================== */
+
+  --color-text-heading: var(--color-neutral-900);
 
   /* ==========================================================================
      Semantic status channels

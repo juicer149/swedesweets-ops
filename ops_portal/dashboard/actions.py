@@ -29,7 +29,9 @@ class DashboardActionSpec:
         return DashboardAction(
             label=self.label,
             href=self.build_href(),
-            css_class=(f"button button--hero-action {self.css_tone} button--with-icon"),
+            css_class=(
+                f"button button--lg button--solid {self.css_tone} button--with-icon"
+            ),
             aria_label=self.aria_label,
             icon=self.icon,
         )
@@ -63,7 +65,7 @@ def _add_batch_href() -> str:
 
 
 PLACE_ORDER_ACTION = DashboardActionSpec(
-    label="Place",
+    label="Place new order",
     capability=Capability.CREATE_ORDERS,
     css_tone="button--tone-place",
     aria_label="Place a new order",
@@ -104,17 +106,18 @@ ADD_BATCH_ACTION = DashboardActionSpec(
 #
 # This is UX, not authorization. A role may have access to a route without that
 # route appearing as a hero action.
+#
+# Pack/Deliver are deliberately not hero actions - the queue tabs below already
+# surface a "Pack order ->"/"Mark delivered ->" link on every relevant item, so
+# repeating them here would be pure duplication.
 
 
 STAFF_DASHBOARD_ACTIONS = (
     PLACE_ORDER_ACTION,
-    PACK_ORDERS_ACTION,
-    DELIVER_ORDERS_ACTION,
+    ADD_BATCH_ACTION,
 )
 
 RESTRICTED_STAFF_DASHBOARD_ACTIONS = (
-    PACK_ORDERS_ACTION,
-    DELIVER_ORDERS_ACTION,
     ADD_BATCH_ACTION,
 )
 

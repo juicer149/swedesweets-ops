@@ -3,12 +3,13 @@
 {% block title %}Operations Dashboard | SwedeSweets{% endblock %}
 
 {% block content %}
-<section class="ops-hero" aria-labelledby="ops-dashboard-title">
-  <p class="eyebrow">Operations</p>
+<section class="dashboard-hero" aria-labelledby="ops-dashboard-title">
+  <div class="dashboard-hero__copy">
+    <p class="eyebrow">Operations</p>
+    <h1 id="ops-dashboard-title">Dashboard</h1>
+  </div>
 
-  <h1 id="ops-dashboard-title">Dashboard</h1>
-
-  <nav class="ops-hero__nav" aria-label="Quick actions">
+  <nav class="dashboard-hero__actions" aria-label="Quick actions">
     {% for action in dashboard_actions %}
       {% include "includes/ui/action_button.html" with action=action %}
     {% endfor %}
@@ -23,6 +24,7 @@
   {% if dashboard_queue_tabs %}
     <nav class="section-nav dashboard-queue-nav" aria-label="Dashboard attention queue">
       {% for tab in dashboard_queue_tabs %}
+
         <a
           href="{{ tab.href }}"
           class="section-nav__link dashboard-queue-nav__link{% if tab.is_active %} section-nav__link--active{% endif %}"
@@ -60,7 +62,7 @@
 
         <div class="dashboard-focus-list">
           {% for item in dashboard_queue_panel.items %}
-            <a
+            <a   
               class="mobile-card mobile-card--clickable mobile-card--{{ item.tone }} dashboard-focus-item"
               href="{{ item.href }}"
             >

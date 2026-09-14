@@ -44,7 +44,7 @@ h1,
 h2 {
   font-family: var(--font-heading);
   line-height: var(--line-height-tight);
-  color: var(--color-primary-900);
+  color: var(--color-text-heading);
 }
 
 h1 {
@@ -63,7 +63,7 @@ h3 {
   margin-bottom: var(--space-3);
   font-size: var(--font-size-20);
   line-height: 1.6;
-  color: var(--color-primary-900);
+  color: var(--color-text-heading);
 }
 
 p {
