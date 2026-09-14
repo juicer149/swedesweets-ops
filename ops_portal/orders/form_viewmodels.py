@@ -73,7 +73,6 @@ class CancelOrderFormContext:
             description=self.description,
             cancel_url=self.cancel_url,
             active_panel="order",
-            include_contents=True,
         ).as_dict()
 
         context["form"] = self.form

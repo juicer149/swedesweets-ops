@@ -419,8 +419,7 @@ def pack(
         cancel_url=reverse(
             "ops_orders:index"
         ),
-        active_panel="",
-        include_contents=True,
+        active_panel="checklist",
         pick_lines=pick_lines,
         primary_action=build_pack_action(
             is_disabled=not pick_lines,
@@ -495,8 +494,7 @@ def deliver(
         cancel_url=reverse(
             "ops_orders:index"
         ),
-        active_panel="contents",
-        include_contents=True,
+        active_panel="order",
         primary_action=build_deliver_action(),
     ).as_dict()
 
@@ -516,12 +514,6 @@ def detail(
         order_id
     )
 
-    active_panel = (
-        "order"
-        if order.status == Order.Status.CANCELLED
-        else "contents"
-    )
-
     context = build_order_detail_context(
         order=order,
         title=f"Order #{order.id}",
@@ -529,8 +521,7 @@ def detail(
         cancel_url=reverse(
             "ops_orders:index"
         ),
-        active_panel=active_panel,
-        include_contents=True,
+        active_panel="order",
         primary_action=build_order_detail_primary_action(
             order=order,
             role_spec=request.role_spec,

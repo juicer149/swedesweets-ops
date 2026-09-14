@@ -1,0 +1,35 @@
+{% if pick_lines %}
+  <p class="form-help">Check each batch as it is picked from stock.</p>
+
+  <div class="pack-list" data-pack-checklist>
+    <div class="pack-list__items">
+      {% for line in pick_lines %}
+        <label class="pack-line">
+          <input
+            class="pack-line__checkbox"
+            type="checkbox"
+            data-pack-line-checkbox
+            aria-label="Picked {{ line.quantity_label }} of {{ line.product_name }} from batch {{ line.batch_id }}"
+          >
+
+          <span class="pack-line__content">
+            <span class="pack-line__quantity">
+              {{ line.quantity_label }}
+            </span>
+
+            <span class="pack-line__product">
+              {{ line.product_name }}
+            </span>
+
+            <span class="pack-line__meta">
+              <span>Batch: {{ line.batch_id }}</span>
+              <span>Location: {{ line.location }}</span>
+            </span>
+          </span>
+        </label>
+      {% endfor %}
+    </div>
+  </div>
+{% else %}
+  <p class="form-help">No reserved pick lines found for this order.</p>
+{% endif %}

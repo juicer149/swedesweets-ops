@@ -92,7 +92,6 @@ def build_order_detail_context(
     description: str,
     cancel_url: str,
     active_panel: str,
-    include_contents: bool,
     primary_action: DetailAction | None = None,
     secondary_action: DetailAction | None = None,
     secondary_actions: tuple[DetailAction, ...] = (),
@@ -113,10 +112,8 @@ def build_order_detail_context(
             header=_build_order_header(order),
             panels=_build_order_detail_panels(
                 order=order,
-                product_count=product_count,
-                total_quantity=total_quantity,
                 active_panel=active_panel,
-                include_contents=include_contents,
+                pick_lines=pick_lines,
             ),
             content_card_class=order_detail_card_class(order.status),
             primary_action=primary_action,
@@ -269,10 +266,8 @@ def _build_order_header(order: Order) -> DetailHeader:
 def _build_order_detail_panels(
     *,
     order: Order,
-    product_count: int,
-    total_quantity: int,
     active_panel: str,
-    include_contents: bool,
+    pick_lines: list[PickLine] | None,
 ) -> tuple[DetailPanel, ...]:
     panels = [
         DetailPanel(
@@ -285,18 +280,15 @@ def _build_order_detail_panels(
         ),
     ]
 
-    if include_contents:
+    if pick_lines is not None:
         panels.append(
             DetailPanel(
-                key="contents",
-                label="Contents",
-                summary=contents_summary(
-                    product_count=product_count,
-                    total_quantity=total_quantity,
-                ),
-                body_template="ops_portal/orders/includes/detail_panel_contents.html",
+                key="checklist",
+                label="Checklist",
+                summary=_pick_lines_summary(pick_lines),
+                body_template="ops_portal/orders/includes/detail_panel_checklist.html",
                 icon="box",
-                is_active=active_panel == "contents",
+                is_active=active_panel == "checklist",
             )
         )
 
@@ -312,6 +304,15 @@ def _build_order_detail_panels(
     )
 
     return tuple(panels)
+
+
+def _pick_lines_summary(pick_lines: list[PickLine]) -> str:
+    count = len(pick_lines)
+
+    if count == 1:
+        return "1 line"
+
+    return f"{count} lines"
 
 
 def order_detail_href(order: Order) -> str:
