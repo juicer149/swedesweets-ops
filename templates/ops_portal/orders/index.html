@@ -5,7 +5,8 @@
 
 {% block content %}
 {% include "includes/ui/list_page_head.html" with page_header=page_header %}
-{% include "includes/ui/list_page_actions.html" with page_header=page_header %}
+
+{% include "includes/ui/section_nav.html" with section_nav_links=channel_tabs section_nav_aria_label="Order channel" page_header=page_header %}
 
 <section
   id="orders-list"

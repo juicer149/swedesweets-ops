@@ -125,6 +125,7 @@ class CustomerOrderSummary:
 def list_orders(
     *,
     status: str | None = None,
+    channel: str | None = None,
     sort: str | None = None,
 ) -> QuerySet[Order]:
     """Return orders for the operational order list.
@@ -148,6 +149,9 @@ def list_orders(
             status_rank=_status_rank_expression(),
         )
     )
+
+    if channel in Order.Channel.values:
+        orders = orders.filter(channel=channel)
 
     orders = _apply_order_history_status_filter(
         orders,

@@ -49,6 +49,7 @@ from ops_portal.orders.forms import (
     build_order_line_inputs,
 )
 from ops_portal.orders.list_viewmodels import (
+    build_order_channel_tabs,
     build_order_page_rows,
     build_orders_page_header,
 )
@@ -81,6 +82,7 @@ ORDER_TABLE_SORTS = [
 ORDERS_LIST_ANCHOR = "orders-list"
 ORDER_FILTER_QUERY_KEY = "status"
 ORDER_LINE_FORMSET_PREFIX = "lines"
+ORDER_DEFAULT_CHANNEL = Order.Channel.BUSINESS
 
 ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
     filters_title_id="orders-filters-title",
@@ -97,6 +99,11 @@ ORDER_OPERATION_ERRORS = (
 
 @login_required
 def index(request):
+    channel = request.GET.get("channel", "")
+
+    if channel not in Order.Channel.values:
+        channel = ORDER_DEFAULT_CHANNEL
+
     controls = TableControls.from_request_values(
         base_path=request.path,
         anchor=ORDERS_LIST_ANCHOR,
@@ -106,11 +113,13 @@ def index(request):
         allowed_sorts=ORDER_SORTS,
         default_sort=DEFAULT_ORDER_SORT,
         filter_query_key=ORDER_FILTER_QUERY_KEY,
+        extra_query_params={"channel": channel},
     )
 
     orders = list(
         list_orders(
             status=controls.active_filter or None,
+            channel=channel,
             sort=controls.active_sort,
         )
     )
@@ -118,6 +127,9 @@ def index(request):
     context = {
         "page_header": build_orders_page_header(
             role_spec=request.role_spec,
+        ),
+        "channel_tabs": build_order_channel_tabs(
+            active_channel=channel,
         ),
         "order_rows": build_order_page_rows(
             orders=orders,

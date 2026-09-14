@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from accounts.roles import RoleSpec
 from common.page_header import PageHeader, PageHeaderAction
+from common.table_tools import build_query_url
 from common.ui import (
     StatusPresentation,
     UiCard,
@@ -26,6 +27,36 @@ from ops_portal.orders.presentation import (
     order_lifecycle_label,
     order_quantity_label,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class OrderChannelLink:
+    key: str
+    label: str
+    href: str
+    is_active: bool
+
+
+def build_order_channel_tabs(
+    *,
+    active_channel: str,
+) -> tuple[OrderChannelLink, ...]:
+    return tuple(
+        OrderChannelLink(
+            key=value,
+            label=label,
+            href=_order_channel_href(value),
+            is_active=value == active_channel,
+        )
+        for value, label in Order.Channel.choices
+    )
+
+
+def _order_channel_href(channel: str) -> str:
+    return build_query_url(
+        base_path=reverse("ops_orders:index"),
+        params={"channel": channel},
+    )
 
 
 @dataclass(frozen=True, slots=True)
