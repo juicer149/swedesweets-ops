@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 PIP := .venv/bin/pip
 MANAGE := $(PYTHON) manage.py
 
-.PHONY: help venv install setup run check migrate makemigrations superuser seed reset-demo shell django-shell test test-v clean
+.PHONY: help venv install setup run check migrate makemigrations superuser seed reset-demo shell django-shell collectstatic test test-v clean
 
 help:
 	@echo "SwedeSweets Ops commands"
@@ -19,6 +19,7 @@ help:
 	@echo "  make superuser     Create Django superuser"
 	@echo "  make seed          Seed demo data"
 	@echo "  make reset-demo    Reset and seed demo data"
+	@echo "  make collectstatic Build static files manifest"
 	@echo ""
 	@echo "Tools:"
 	@echo "  make shell         Run shell_plus with IPython"
@@ -53,6 +54,9 @@ seed:
 
 reset-demo:
 	$(MANAGE) seed_demo_data --reset --with-demo-user
+
+collectstatic:
+	$(MANAGE) collectstatic --noinput
 
 shell:
 	$(MANAGE) shell_plus --ipython

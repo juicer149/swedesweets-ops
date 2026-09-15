@@ -1,0 +1,67 @@
+/* =============================================================================
+   Confirm dialog
+
+   Native <dialog>-based replacement for window.confirm(), styled to match
+   the site's auth-card signature (white surface, accent top border)
+   instead of the browser's unstyleable native prompt. Built and
+   controlled entirely by confirm_dialog.js - this file only owns
+   appearance.
+   ============================================================================= */
+
+.confirm-dialog {
+  max-width: min(90vw, 28rem);
+  padding: 0;
+
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-content-card);
+}
+
+.confirm-dialog::backdrop {
+  background: rgb(var(--color-row-shadow) / 0.45);
+}
+
+.confirm-dialog__card {
+  padding: var(--space-6);
+
+  background: var(--color-white);
+  border-top: 5px solid var(--color-accent-600);
+  border-radius: var(--radius-md);
+}
+
+.confirm-dialog__title {
+  margin: 0 0 var(--space-3);
+
+  color: var(--color-text-heading);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-24);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.confirm-dialog__message {
+  margin: 0 0 var(--space-6);
+
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-16);
+  line-height: 1.5;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+@media (max-width: 480px) {
+  .confirm-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-dialog__actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+}

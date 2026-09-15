@@ -32,6 +32,35 @@
   color: var(--color-primary-900);
 }
 
+
+/* =============================================================================
+   Changed-field marker
+
+   Small dot before a field's label, toggled by dirty_form.js when that
+   field's value differs from what it was when the form loaded. Purely
+   visual - dirty_form.js owns when the class is present.
+   ============================================================================= */
+
+.form-field--changed .form-label {
+  position: relative;
+  padding-left: var(--space-3);
+}
+
+.form-field--changed .form-label::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+
+  width: 6px;
+  height: 6px;
+
+  background: var(--color-accent-600);
+  border-radius: 50%;
+
+  transform: translateY(-50%);
+}
+
 .form-field input,
 .form-field select,
 .form-field textarea {

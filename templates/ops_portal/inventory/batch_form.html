@@ -139,7 +139,7 @@
       </button>
 
       {% if cancel_url %}
-        <a
+        <a 
           class="button button--md button--ghost button--tone-neutral"
           href="{{ cancel_url }}"
         >
@@ -156,6 +156,11 @@
 
   <script
     src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/confirm_dialog.js' %}"
     defer
   ></script>
 
