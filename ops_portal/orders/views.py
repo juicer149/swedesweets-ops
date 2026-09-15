@@ -15,10 +15,7 @@ from common.table_controls import (
     TableFilter,
     TableSortField,
 )
-from fulfillment.services import (
-    cancel_order,
-    pack_order,
-)
+from fulfillment.services import cancel_order
 from inventory.errors import InvalidStockOperation
 from ops_portal.orders.access import (
     can_cancel_order,
@@ -35,6 +32,7 @@ from ops_portal.orders.detail_viewmodels import (
     build_post_edit_success_url,
     build_post_pack_success_url,
 )
+from ops_portal.orders.services import pack_order_and_clear_checklist
 from orders.errors import InvalidOrderOperation
 from ops_portal.orders.form_viewmodels import (
     build_cancel_order_form_context,
@@ -383,7 +381,7 @@ def pack(
 
     if request.method == "POST":
         try:
-            packed_order = pack_order(
+            packed_order = pack_order_and_clear_checklist(
                 order=order,
                 user=request.user,
             )
