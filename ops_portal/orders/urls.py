@@ -13,5 +13,10 @@ urlpatterns = [
     path("<int:order_id>/edit/", views.edit, name="edit"),
     path("<int:order_id>/cancel/", views.cancel, name="cancel"),
     path("<int:order_id>/pack/", views.pack, name="pack"),
+    path(
+        "<int:order_id>/pack/checklist/<int:allocation_id>/toggle/",
+        views.toggle_checklist_mark,
+        name="toggle_checklist_mark",
+    ),
     path("<int:order_id>/deliver/", views.deliver, name="deliver"),
 ]

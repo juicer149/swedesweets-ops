@@ -150,6 +150,7 @@ class OrderLineInput:
 
 @dataclass(frozen=True)
 class PickLine:
+    allocation_id: int
     sku: str
     product_name: str
     batch_id: str

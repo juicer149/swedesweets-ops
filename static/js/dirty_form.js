@@ -38,6 +38,20 @@
       return false;
     }
 
+    /*
+     * order_lines.js's product picker is a transient UI control, not
+     * real order data - it's always reset to empty right after a
+     * selection is made, and the real change (a new/incremented line)
+     * is already reported separately via the dirty-form:refresh event.
+     * Tracking this field produces a false "changed" marker on the
+     * picker itself instead of on the line that actually changed.
+     */
+    if (
+      element.matches("[data-add-order-line-select]")
+    ) {
+      return false;
+    }
+
     return true;
   }
 
@@ -204,9 +218,13 @@
 
   /*
    * Opt-in marker for links that represent an intentional discard, e.g.
-   * a form's own Cancel/Back button. These should never show a confirm
-   * prompt of any kind - not our styled dialog, and not the browser's
-   * own unstyleable beforeunload prompt either.
+   * a destructive action's own link (Cancel order), which already has
+   * its own confirmation flow via data-confirm-message. These should
+   * never show a second, generic prompt - neither our styled dialog,
+   * nor the browser's own beforeunload prompt. Plain "go back without
+   * saving" links (e.g. order_form.html's Back) are NOT marked this
+   * way - they behave like any other navigation and should trigger the
+   * normal unsaved-changes prompt below.
    */
   function isDirtyIgnoreLink(link) {
     if (link.dataset.dirtyIgnore === "true") {
@@ -220,6 +238,37 @@
     }
 
     return false;
+  }
+
+  /*
+   * A dirty-ignore link may separately opt into its own confirmation
+   * prompt via data-confirm-message (e.g. "Are you sure you want to
+   * cancel this order?") - distinct from the unsaved-changes prompt
+   * below. Handled in the same click handler as dirty-ignore links so
+   * there is one single owner of "what happens when this link is
+   * clicked", rather than a second listener racing this one over
+   * preventDefault() and dirty-state cleanup.
+   */
+  async function confirmAndNavigate(link) {
+    const confirmed = window.confirmDialog
+      ? await window.confirmDialog(
+          link.dataset.confirmMessage,
+          {
+            title: link.dataset.confirmTitle || "Please confirm",
+            confirmLabel: link.dataset.confirmLabel || "Confirm",
+            cancelLabel: link.dataset.confirmCancelLabel || "Cancel",
+          }
+        )
+      : window.confirm(link.dataset.confirmMessage);
+
+    if (!confirmed) {
+      return;
+    }
+
+    isSubmitting = true;
+    setDirty(false);
+
+    window.location.assign(link.href);
   }
 
   resetInitialState();
@@ -278,10 +327,12 @@
       }
 
       if (isDirtyIgnoreLink(link)) {
-        // Intentional discard (e.g. Cancel/Back): clear dirty state
-        // before the browser navigates, so its own beforeunload prompt
-        // never fires either. Default navigation proceeds normally -
-        // no preventDefault, no confirm of any kind.
+        if (link.dataset.confirmMessage) {
+          event.preventDefault();
+          await confirmAndNavigate(link);
+          return;
+        }
+
         if (isDirty) {
           isSubmitting = true;
           setDirty(false);

@@ -22,6 +22,7 @@ VIEW_CAPABILITIES = {
     "ops_orders:edit": Capability.EDIT_ORDERS,
     "ops_orders:cancel": Capability.CANCEL_ORDERS,
     "ops_orders:pack": Capability.PACK_ORDERS,
+    "ops_orders:toggle_checklist_mark": Capability.PACK_ORDERS,
     "ops_orders:deliver": Capability.DELIVER_ORDERS,
 }
 

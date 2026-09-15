@@ -41,6 +41,16 @@ ORDER_HISTORY_STATUSES = (
     Order.Status.CANCELLED,
 )
 
+ORDER_ACTIVE_STATUSES = (
+    Order.Status.PLACED,
+    Order.Status.PACKED,
+)
+
+ORDER_ARCHIVED_STATUSES = (
+    Order.Status.DELIVERED,
+    Order.Status.CANCELLED,
+)
+
 DEFAULT_ORDER_SORT = "status"
 
 ORDER_SORTS: dict[str, tuple[str, ...]] = {
@@ -125,6 +135,7 @@ class CustomerOrderSummary:
 def list_orders(
     *,
     status: str | None = None,
+    status_group: str | None = None,
     channel: str | None = None,
     sort: str | None = None,
 ) -> QuerySet[Order]:
@@ -133,6 +144,10 @@ def list_orders(
     Invalid querystring values fall back to the default ordering.
 
     Drafts are work-in-progress and are excluded from default history.
+
+    channel/status_group are optional additional narrowing used by the
+    dashboard's embedded Orders branch. Callers that never pass them
+    (the standalone /orders/ page) see unchanged behavior.
     """
 
     normalized_sort = normalize_sort(
@@ -152,6 +167,11 @@ def list_orders(
 
     if channel in Order.Channel.values:
         orders = orders.filter(channel=channel)
+
+    if status_group == "active":
+        orders = orders.filter(status__in=ORDER_ACTIVE_STATUSES)
+    elif status_group == "archived":
+        orders = orders.filter(status__in=ORDER_ARCHIVED_STATUSES)
 
     orders = _apply_order_history_status_filter(
         orders,
@@ -427,6 +447,7 @@ def _build_pick_line(
     pick: ReservationPick,
 ) -> PickLine:
     return PickLine(
+        allocation_id=pick.allocation_id,
         sku=pick.sku,
         product_name=pick.product_name,
         batch_id=pick.batch_code,

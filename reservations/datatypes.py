@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class ReservationPick:
+    allocation_id: int
     sku: str
     product_name: str
     batch_code: str

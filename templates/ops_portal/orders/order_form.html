@@ -122,6 +122,10 @@
           class="button button--md button--ghost button--tone-danger"
           href="{{ cancel_order_url }}"
           data-dirty-ignore="true"
+          data-confirm-message="{% trans 'Are you sure you want to cancel this order? This cannot be undone.' %}"
+          data-confirm-title="{% trans 'Cancel order' %}"
+          data-confirm-label="{% trans 'Yes, cancel order' %}"
+          data-confirm-cancel-label="{% trans 'No, keep order' %}"
         >
           {% trans "Cancel order" %}
         </a>
@@ -130,7 +134,6 @@
       <a 
         class="button button--md button--ghost button--tone-neutral"
         href="{{ cancel_url }}"
-        data-dirty-ignore="true"
       >
         {% trans "Back" %}
       </a>

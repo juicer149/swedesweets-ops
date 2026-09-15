@@ -14,16 +14,15 @@ from common.detail_cards import (
     DetailCard,
     DetailHeader,
     DetailPanel,
-    build_danger_get_action,
     build_secondary_get_action,
 )
 from common.ui import UiCard
 from ops_portal.orders.access import (
-    can_cancel_order,
     can_deliver_order,
     can_edit_order,
     can_pack_order,
 )
+from ops_portal.orders.checklist import list_checked_allocation_ids_for_order
 from orders.datatypes import PickLine
 from orders.models import Order, OrderLine
 from ops_portal.orders.presentation import (
@@ -64,6 +63,7 @@ class OrderDetailContext:
     customer_maps_href: str
     customer_detail_href: str
     pick_lines: list[PickLine]
+    checked_allocation_ids: frozenset[int]
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -79,6 +79,7 @@ class OrderDetailContext:
             "customer_maps_href": self.customer_maps_href,
             "customer_detail_href": self.customer_detail_href,
             "pick_lines": self.pick_lines,
+            "checked_allocation_ids": self.checked_allocation_ids,
         }
 
 
@@ -96,15 +97,14 @@ def build_order_detail_context(
 ) -> OrderDetailContext:
     """Build the shared order detail card context.
 
-    The Checklist tab only makes sense while the order is PLACED - that
-    is the only status where reservations are still RESERVED rather
-    than CONSUMED (packed) or released (delivered/cancelled). pick_lines
-    is auto-fetched only for PLACED orders when the caller doesn't
-    supply it, so other statuses skip the query entirely instead of
-    always fetching an empty list.
+    The Checklist tab is always present on the order's detail card,
+    regardless of which view (detail/pack/deliver/cancel) rendered it -
+    a person navigating away from /pack/ and back to the plain detail
+    page should still see the same tab, not have it disappear.
 
-    pack() passes its own pre-fetched pick_lines (it already needs the
-    list to decide whether the confirm button is disabled), which
+    pick_lines is fetched here by default so every caller gets this for
+    free. pack() passes its own pre-fetched pick_lines (it already needs
+    the list to decide whether the confirm button is disabled), which
     skips the redundant query here.
     """
 
@@ -114,6 +114,10 @@ def build_order_detail_context(
             if order.status == Order.Status.PLACED
             else []
         )
+
+    checked_allocation_ids = list_checked_allocation_ids_for_order(
+        order=order,
+    )
 
     order_lines = list(order.lines.select_related("product").all())
     content_lines = _build_content_lines(order_lines)
@@ -144,6 +148,7 @@ def build_order_detail_context(
         customer_maps_href=maps_directions_href(order.customer_address),
         customer_detail_href=customer_detail_href(order),
         pick_lines=pick_lines,
+        checked_allocation_ids=checked_allocation_ids,
     )
 
 
@@ -170,6 +175,15 @@ def build_order_secondary_actions(
     order: Order,
     role_spec: RoleSpec,
 ) -> tuple[DetailAction, ...]:
+    """Return the secondary actions shown on the detail and pack pages.
+
+    Cancel order deliberately lives only on the edit page (see
+    OrderFormContext.cancel_order_url), not here - cancelling is a more
+    consequential action than viewing/packing, and edit is already the
+    page a person goes to when they intend to change something about
+    the order.
+    """
+
     actions: list[DetailAction] = []
 
     if can_edit_order(order=order, role_spec=role_spec):
@@ -177,15 +191,6 @@ def build_order_secondary_actions(
             build_secondary_get_action(
                 label="Edit order",
                 href=order_edit_href(order),
-            )
-        )
-
-    if can_cancel_order(order=order, role_spec=role_spec):
-        actions.append(
-            build_danger_get_action(
-                label="Cancel order",
-                href=order_cancel_href(order),
-                icon="x",
             )
         )
 
@@ -287,7 +292,7 @@ def _build_order_detail_panels(
     active_panel: str,
     pick_lines: list[PickLine],
 ) -> tuple[DetailPanel, ...]:
-    panels = [
+    return (
         DetailPanel(
             key="order",
             label="Order",
@@ -296,21 +301,14 @@ def _build_order_detail_panels(
             icon="cart",
             is_active=active_panel == "order",
         ),
-    ]
-
-    if order.status == Order.Status.PLACED:
-        panels.append(
-            DetailPanel(
-                key="checklist",
-                label="Checklist",
-                summary=_pick_lines_summary(pick_lines),
-                body_template="ops_portal/orders/includes/detail_panel_checklist.html",
-                icon="box",
-                is_active=active_panel == "checklist",
-            )
-        )
-
-    panels.append(
+        DetailPanel(
+            key="checklist",
+            label="Checklist",
+            summary=_pick_lines_summary(pick_lines),
+            body_template="ops_portal/orders/includes/detail_panel_checklist.html",
+            icon="box",
+            is_active=active_panel == "checklist",
+        ),
         DetailPanel(
             key="customer",
             label="Customer",
@@ -318,10 +316,8 @@ def _build_order_detail_panels(
             body_template="ops_portal/orders/includes/detail_panel_customer.html",
             icon="users",
             is_active=active_panel == "customer",
-        )
+        ),
     )
-
-    return tuple(panels)
 
 
 def _pick_lines_summary(pick_lines: list[PickLine]) -> str:

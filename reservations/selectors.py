@@ -192,6 +192,7 @@ def _build_reservation_pick(
     product = allocation.batch.product
 
     return ReservationPick(
+        allocation_id=allocation.id,
         sku=product.sku,
         product_name=product.catalog_label,
         batch_code=allocation.batch.batch_id,

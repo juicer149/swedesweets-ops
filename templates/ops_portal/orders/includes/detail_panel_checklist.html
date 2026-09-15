@@ -1,7 +1,11 @@
 {% if pick_lines %}
   <p class="form-help">Check each batch as it is picked from stock.</p>
 
-  <div class="pack-list" data-pack-checklist>
+  <div
+    class="pack-list"
+    data-pack-checklist
+    data-checklist-toggle-url-base="{% url 'ops_orders:pack' order_id=order.pk %}checklist/"
+  >
     <div class="pack-list__items">
       {% for line in pick_lines %}
         <label class="pack-line">
@@ -9,6 +13,8 @@
             class="pack-line__checkbox"
             type="checkbox"
             data-pack-line-checkbox
+            data-allocation-id="{{ line.allocation_id }}"
+            {% if line.allocation_id in checked_allocation_ids %}checked{% endif %}
             aria-label="Picked {{ line.quantity_label }} of {{ line.product_name }} from batch {{ line.batch_id }}"
           >
 

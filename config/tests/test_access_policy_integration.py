@@ -35,6 +35,11 @@ ORDER_KWARGS = {
     "order_id": MISSING_OBJECT_ID,
 }
 
+TOGGLE_CHECKLIST_KWARGS = {
+    "order_id": MISSING_OBJECT_ID,
+    "allocation_id": MISSING_OBJECT_ID,
+}
+
 BATCH_KWARGS = {
     "batch_pk": MISSING_OBJECT_ID,
 }
@@ -65,6 +70,7 @@ VIEW_KWARGS = {
     "ops_orders:edit": ORDER_KWARGS,
     "ops_orders:cancel": ORDER_KWARGS,
     "ops_orders:pack": ORDER_KWARGS,
+    "ops_orders:toggle_checklist_mark": TOGGLE_CHECKLIST_KWARGS,
     "ops_orders:deliver": ORDER_KWARGS,
     "ops_inventory:detail": BATCH_KWARGS,
     "ops_inventory:edit": BATCH_KWARGS,
@@ -98,6 +104,7 @@ POST_ONLY_VIEW_NAMES = {
     "business_portal:catalog_add_product",
     "business_portal:set_draft_line_quantity",
     "business_portal:remove_draft_line",
+    "ops_orders:toggle_checklist_mark",
 }
 
 DENIED_STATUS_CODE = 403

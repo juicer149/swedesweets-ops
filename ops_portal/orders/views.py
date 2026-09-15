@@ -2,13 +2,10 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from business.services import (
-    create_order,
-    update_placed_order,
-)
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
@@ -23,6 +20,10 @@ from ops_portal.orders.access import (
     can_edit_order,
     can_pack_order,
 )
+from ops_portal.orders.checklist import (
+    ChecklistAllocationNotFound,
+    toggle_checklist_mark as _toggle_checklist_mark,
+)
 from ops_portal.orders.detail_viewmodels import (
     build_deliver_action,
     build_order_detail_context,
@@ -32,7 +33,11 @@ from ops_portal.orders.detail_viewmodels import (
     build_post_edit_success_url,
     build_post_pack_success_url,
 )
-from ops_portal.orders.services import pack_order_and_clear_checklist
+from ops_portal.orders.services import (
+    create_order,
+    pack_order_and_clear_checklist,
+    update_placed_order_and_preserve_checklist
+)
 from orders.errors import InvalidOrderOperation
 from ops_portal.orders.form_viewmodels import (
     build_cancel_order_form_context,
@@ -232,7 +237,7 @@ def edit(
 
         if line_formset.is_valid():
             try:
-                updated_order = update_placed_order(
+                updated_order = update_placed_order_and_preserve_checklist(
                     order=order,
                     lines=build_order_line_inputs(
                         line_formset,
@@ -432,6 +437,51 @@ def pack(
         request,
         "ops_portal/orders/pack.html",
         context,
+    )
+
+
+@login_required
+def toggle_checklist_mark(
+    request,
+    order_id: int,
+    allocation_id: int,
+):
+    if request.method != "POST":
+        return JsonResponse(
+            {"ok": False, "message": "Method not allowed."},
+            status=405,
+        )
+
+    order = _get_order_or_404(order_id)
+
+    if not can_pack_order(
+        order=order,
+        role_spec=request.role_spec,
+    ):
+        return JsonResponse(
+            {
+                "ok": False,
+                "message": (
+                    f"Order #{order.id} cannot be packed "
+                    f"because it is {order.status}."
+                ),
+            },
+            status=403,
+        )
+
+    try:
+        checked = _toggle_checklist_mark(
+            order=order,
+            allocation_id=allocation_id,
+        )
+    except ChecklistAllocationNotFound as error:
+        return JsonResponse(
+            {"ok": False, "message": str(error)},
+            status=404,
+        )
+
+    return JsonResponse(
+        {"ok": True, "checked": checked}
     )
 
 
