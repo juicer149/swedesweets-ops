@@ -97,26 +97,27 @@ def build_order_detail_context(
 ) -> OrderDetailContext:
     """Build the shared order detail card context.
 
-    The Checklist tab is always present on the order's detail card,
-    regardless of which view (detail/pack/deliver/cancel) rendered it -
-    a person navigating away from /pack/ and back to the plain detail
-    page should still see the same tab, not have it disappear.
+    The Checklist tab only makes sense while the order is PLACED - that
+    is the only status where reservations are still RESERVED rather
+    than CONSUMED (packed) or released (delivered/cancelled). pick_lines
+    and checked_allocation_ids are both skipped entirely for any other
+    status, so the tab never appears (see _build_order_detail_panels)
+    and no unnecessary queries run.
 
-    pick_lines is fetched here by default so every caller gets this for
-    free. pack() passes its own pre-fetched pick_lines (it already needs
-    the list to decide whether the confirm button is disabled), which
+    pack() passes its own pre-fetched pick_lines (it already needs the
+    list to decide whether the confirm button is disabled), which
     skips the redundant query here.
     """
 
-    if pick_lines is None:
-        pick_lines = (
-            get_packaging_list(order=order)
-            if order.status == Order.Status.PLACED
-            else []
-        )
+    is_placed = order.status == Order.Status.PLACED
 
-    checked_allocation_ids = list_checked_allocation_ids_for_order(
-        order=order,
+    if pick_lines is None:
+        pick_lines = get_packaging_list(order=order) if is_placed else []
+
+    checked_allocation_ids = (
+        list_checked_allocation_ids_for_order(order=order)
+        if is_placed
+        else frozenset()
     )
 
     order_lines = list(order.lines.select_related("product").all())
@@ -292,7 +293,7 @@ def _build_order_detail_panels(
     active_panel: str,
     pick_lines: list[PickLine],
 ) -> tuple[DetailPanel, ...]:
-    return (
+    panels = [
         DetailPanel(
             key="order",
             label="Order",
@@ -301,14 +302,21 @@ def _build_order_detail_panels(
             icon="cart",
             is_active=active_panel == "order",
         ),
-        DetailPanel(
-            key="checklist",
-            label="Checklist",
-            summary=_pick_lines_summary(pick_lines),
-            body_template="ops_portal/orders/includes/detail_panel_checklist.html",
-            icon="box",
-            is_active=active_panel == "checklist",
-        ),
+    ]
+
+    if order.status == Order.Status.PLACED:
+        panels.append(
+            DetailPanel(
+                key="checklist",
+                label="Checklist",
+                summary=_pick_lines_summary(pick_lines),
+                body_template="ops_portal/orders/includes/detail_panel_checklist.html",
+                icon="box",
+                is_active=active_panel == "checklist",
+            )
+        )
+
+    panels.append(
         DetailPanel(
             key="customer",
             label="Customer",
@@ -316,8 +324,10 @@ def _build_order_detail_panels(
             body_template="ops_portal/orders/includes/detail_panel_customer.html",
             icon="users",
             is_active=active_panel == "customer",
-        ),
+        )
     )
+
+    return tuple(panels)
 
 
 def _pick_lines_summary(pick_lines: list[PickLine]) -> str:
