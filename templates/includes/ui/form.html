@@ -32,7 +32,11 @@
     </button>
 
     {% if cancel_url %}
-      <a class="button button--md button--ghost button--tone-neutral" href="{{ cancel_url }}">
+      <a 
+        class="button button--md button--ghost button--tone-neutral"
+        href="{{ cancel_url }}"
+        data-dirty-ignore="true"
+      >
         {% trans "Cancel" %}
       </a>
     {% endif %}

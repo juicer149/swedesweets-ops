@@ -159,22 +159,19 @@
     setDirty(false);
   }
 
-  function shouldIgnoreLink(link, event) {
+  /*
+   * True when this click will not actually navigate away from the
+   * current tab (download, new tab/window, a modifier key held, a
+   * non-primary mouse button, or another handler already handled it).
+   * Dirty state is left untouched in every one of these cases, since
+   * the page isn't unloading.
+   */
+  function isNonNavigatingClick(link, event) {
     if (!link.href) {
       return true;
     }
 
     if (link.hasAttribute("download")) {
-      return true;
-    }
-
-    if (link.dataset.dirtyIgnore === "true") {
-      return true;
-    }
-
-    if (
-      link.closest("[data-dirty-ignore='true']")
-    ) {
       return true;
     }
 
@@ -198,6 +195,26 @@
       || event.ctrlKey
       || event.shiftKey
       || event.altKey
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /*
+   * Opt-in marker for links that represent an intentional discard, e.g.
+   * a form's own Cancel/Back button. These should never show a confirm
+   * prompt of any kind - not our styled dialog, and not the browser's
+   * own unstyleable beforeunload prompt either.
+   */
+  function isDirtyIgnoreLink(link) {
+    if (link.dataset.dirtyIgnore === "true") {
+      return true;
+    }
+
+    if (
+      link.closest("[data-dirty-ignore='true']")
     ) {
       return true;
     }
@@ -256,7 +273,20 @@
 
       const link = target.closest("a[href]");
 
-      if (!link || shouldIgnoreLink(link, event)) {
+      if (!link || isNonNavigatingClick(link, event)) {
+        return;
+      }
+
+      if (isDirtyIgnoreLink(link)) {
+        // Intentional discard (e.g. Cancel/Back): clear dirty state
+        // before the browser navigates, so its own beforeunload prompt
+        // never fires either. Default navigation proceeds normally -
+        // no preventDefault, no confirm of any kind.
+        if (isDirty) {
+          isSubmitting = true;
+          setDirty(false);
+        }
+
         return;
       }
 
