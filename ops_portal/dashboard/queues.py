@@ -396,4 +396,4 @@ def _build_active_queue_panel(
 
 
 def _dashboard_queue_href(queue_key: str) -> str:
-    return f"{reverse('index')}?queue={queue_key}#dashboard-queue"
+    return f"{reverse('ops_dashboard')}?queue={queue_key}#dashboard-queue"

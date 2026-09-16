@@ -16,6 +16,6 @@ def get_after_login_redirect_name(
         return "business_portal:index"
 
     if role_spec.allows(Capability.VIEW_STAFF_OPS):
-        return "index"
+        return "ops_dashboard"
 
     return "accounts:me"

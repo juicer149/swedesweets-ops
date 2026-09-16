@@ -11,5 +11,5 @@ CAPABILITIES = frozenset(
 
 
 VIEW_CAPABILITIES = {
-    "index": Capability.VIEW_STAFF_OPS,
+    "ops_dashboard": Capability.VIEW_STAFF_OPS,
 }

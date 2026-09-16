@@ -56,8 +56,19 @@ from storefront.access import (
 )
 
 
+# The site root ("index") redirects anonymously to the public storefront
+# and has no single owning portal, so its exemption is declared directly
+# here rather than composed from a portal's access.py.
+GLOBAL_AUTH_EXEMPT_VIEWS = frozenset(
+    {
+        "index",
+    }
+)
+
+
 AUTH_EXEMPT_VIEWS = frozenset(
     {
+        *GLOBAL_AUTH_EXEMPT_VIEWS,
         *ACCOUNT_AUTH_EXEMPT_VIEWS,
         *PAYMENT_AUTH_EXEMPT_VIEWS,
         *STOREFRONT_AUTH_EXEMPT_VIEWS,

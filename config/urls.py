@@ -6,6 +6,7 @@ from django.urls import (
     path,
 )
 
+from config import views as config_views
 from ops_portal.dashboard import views as dashboard_views
 
 
@@ -16,8 +17,13 @@ urlpatterns = [
     ),
     path(
         "",
-        dashboard_views.index,
+        config_views.index,
         name="index",
+    ),
+    path(
+        "ops/",
+        dashboard_views.index,
+        name="ops_dashboard",
     ),
     path(
         "admin/",

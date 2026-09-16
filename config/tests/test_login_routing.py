@@ -33,7 +33,7 @@ def test_staff_redirects_to_ops():
         ),
     )
 
-    assert redirect_name == "index"
+    assert redirect_name == "ops_dashboard"
 
 
 def test_unknown_account_falls_back_to_own_account():
