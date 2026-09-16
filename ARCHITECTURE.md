@@ -203,6 +203,31 @@ orders
 Portal package structure should follow useful actor-facing use cases rather than
 mechanically mirror every domain application.
 
+## Actor-scoped UI cache
+
+A portal may own a narrow, actor-specific model representing transient UI
+state - never domain truth - when that state exists only to serve one
+actor's interface and has no meaning to any other actor or domain
+application.
+
+Example:
+
+```text
+ops_portal/models.py
+    PickChecklistMark
+        - caches which reserved pick lines staff have physically
+          checked off during packing
+        - not domain truth (Allocation/Order already own real state)
+        - has no meaning outside the ops packing workflow
+        - domain applications remain unaware it exists
+```
+
+This is distinct from domain-owned persistent state. A portal-owned cache
+model should be rare, narrowly scoped, and cheap to delete without losing
+any business truth. It does not justify a new domain/application package
+(see "Avoid synthetic symmetry") merely because it happens to persist to
+the database.
+
 ## Domain and application apps
 
 Domain and application apps own business behavior and persistence knowledge.
