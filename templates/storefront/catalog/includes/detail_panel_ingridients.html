@@ -1,0 +1,13 @@
+{% load i18n %}
+
+<div class="catalog-detail-copy">
+  {% if ingredients %}
+    <p>
+      {{ ingredients }}
+    </p>
+  {% else %}
+    <p>
+      {% trans "No ingredient information is currently available." %}
+    </p>
+  {% endif %}
+</div>

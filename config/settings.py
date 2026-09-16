@@ -156,6 +156,9 @@ MIDDLEWARE = [
     "accounts.middleware.AccountContextMiddleware",
     "accounts.middleware.ViewCapabilityMiddleware",
 
+    # Attach anonymous retail cart identity for the public storefront.
+    "storefront.middleware.RetailCartMiddleware",
+
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]

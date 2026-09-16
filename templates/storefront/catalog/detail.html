@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ title }} | SwedeSweets{% endblock %}
+
+{% block content %}
+  <section class="catalog-detail">
+    <div class="catalog-detail__back">
+      <a
+        class="text-link catalog-detail__back-link"
+        href="{{ cancel_url }}"
+      >
+        ← {% trans "Back to catalog" %}
+      </a>
+    </div>
+
+    <article class="catalog-detail__hero">
+      <div class="catalog-detail__media">
+        <div class="catalog-detail__image-frame">
+          {% if image_url %}
+            <img
+              class="catalog-detail__image"
+              src="{{ image_url }}"
+              alt="{{ product_name }}"
+            >
+          {% else %}
+            <div
+              class="catalog-detail__image-placeholder"
+              aria-hidden="true"
+            ></div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="catalog-detail__content">
+        <header class="catalog-detail__header">
+          <div class="catalog-detail__header-meta">
+            {% if category_label %}
+              <p class="catalog-detail__category">
+                {{ category_label }}
+              </p>
+            {% endif %}
+
+            {% if initial_offer.availability_label %}
+              <p
+                class="catalog-detail__stock"
+                data-catalog-detail-stock-container
+              >
+                <span
+                  class="catalog-detail__stock-dot"
+                  aria-hidden="true"
+                ></span>
+
+                <span data-catalog-detail-stock>
+                  {{ initial_offer.availability_label }}
+                </span>
+              </p>
+            {% endif %}
+          </div>
+
+          <h1 class="catalog-detail__title">
+            {{ product_name }}
+          </h1>
+
+          <p class="catalog-detail__package">
+            {{ product.unit_weight_label }}
+          </p>
+
+          {% if product.vegan %}
+            <div class="product-tag-list">
+              <span class="product-tag product-tag--vegan">
+                {% include "includes/ui/icon_block.html" with name="leaf" size="sm" class_name="product-tag__icon" only %}
+
+                <span>
+                  {% trans "Vegan" %}
+                </span>
+              </span>
+            </div>
+          {% endif %}
+        </header>
+
+        <form
+          class="catalog-detail__purchase"
+          method="post"
+          action="{% url 'storefront:add_to_cart' product.id %}"
+        >
+          {% csrf_token %}
+
+          <div class="catalog-detail__purchase-fields">
+            <div class="catalog-detail__field">
+              <label
+                class="catalog-detail__label"
+                for="catalog-detail-offer"
+              >
+                {% trans "Offer" %}
+              </label>
+
+              {% if offers|length > 1 %}
+                <select
+                  id="catalog-detail-offer"
+                  class="catalog-detail__offer-select"
+                  name="commercial_price_id"
+                  data-enhanced-select="true"
+                  data-enhanced-select-search="false"
+                  data-catalog-detail-offer
+                >
+                  {% for offer in offers %}
+                    <option
+                      value="{{ offer.commercial_price_id }}"
+                      data-stock-label="{{ offer.availability_label }}"
+                    >
+                      {{ offer.label }}{% if offer.price_label %} — {{ offer.price_label }}{% endif %}
+                    </option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                <div class="catalog-detail__offer-value">
+                  <span>
+                    {{ initial_offer.label }}
+                  </span>
+
+                  {% if initial_offer.price_label %}
+                    <span aria-hidden="true"> · </span>
+
+                    <span>
+                      {{ initial_offer.price_label }}
+                    </span>
+                  {% endif %}
+                </div>
+
+                <input
+                  type="hidden"
+                  name="commercial_price_id"
+                  value="{{ initial_offer.commercial_price_id }}"
+                >
+              {% endif %}
+            </div>
+
+            <div class="catalog-detail__field">
+              <span class="catalog-detail__label">
+                {% trans "Quantity" %}
+              </span>
+
+              <div
+                class="quantity-stepper"
+                aria-label="{% trans 'Quantity' %}"
+                data-quantity-stepper
+              >
+                <button
+                  class="quantity-stepper__button quantity-stepper__button--decrease"
+                  type="button"
+                  aria-label="{% trans 'Decrease quantity' %}"
+                  data-quantity-decrease
+                >
+                  <span aria-hidden="true">−</span>
+                </button>
+
+                <label
+                  class="visually-hidden"
+                  for="catalog-detail-quantity"
+                >
+                  {% trans "Quantity" %}
+                </label>
+
+                <input
+                  id="catalog-detail-quantity"
+                  class="quantity-stepper__input"
+                  type="number"
+                  name="quantity"
+                  value="1"
+                  min="1"
+                  step="1"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  required
+                  data-quantity-input
+                >
+
+                <button
+                  class="quantity-stepper__button quantity-stepper__button--increase"
+                  type="button"
+                  aria-label="{% trans 'Increase quantity' %}"
+                  data-quantity-increase
+                >
+                  <span aria-hidden="true">+</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="catalog-detail__purchase-footer">
+            <button
+              class="button button--md button--soft button--tone-positive catalog-detail__add-button"
+              type="submit"
+            >
+              {% trans "Add to cart" %}
+            </button>
+          </div>
+        </form>
+
+        <div class="catalog-detail__mobile-information">
+          {% if description %}
+            <details
+              class="catalog-detail__disclosure"
+              open
+            >
+              <summary class="catalog-detail__disclosure-summary">
+                <span>
+                  {% trans "Description" %}
+                </span>
+
+                <span
+                  class="catalog-detail__disclosure-icon"
+                  aria-hidden="true"
+                >
+                  ↓
+                </span>
+              </summary>
+
+              <div class="catalog-detail__disclosure-content">
+                <p>
+                  {{ description }}
+                </p>
+              </div>
+            </details>
+          {% endif %}
+
+          {% if ingredients %}
+            <details class="catalog-detail__disclosure">
+              <summary class="catalog-detail__disclosure-summary">
+                <span>
+                  {% trans "Ingredients" %}
+                </span>
+
+                <span
+                  class="catalog-detail__disclosure-icon"
+                  aria-hidden="true"
+                >
+                  ↓
+                </span>
+              </summary>
+
+              <div class="catalog-detail__disclosure-content">
+                <p>
+                  {{ ingredients }}
+                </p>
+              </div>
+            </details>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+
+    {% if detail_panels %}
+      <section
+        class="catalog-detail__desktop-information"
+        aria-label="{% trans 'Product information' %}"
+      >
+        {% include "includes/ui/detail_panels.html" with detail_panels=detail_panels %}
+      </section>
+    {% endif %}
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/quantity-stepper.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/catalog_detail.js' %}"
+    defer
+  ></script>
+{% endblock %}

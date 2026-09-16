@@ -1,0 +1,13 @@
+{% load i18n %}
+
+<div class="catalog-detail-copy">
+  {% if description %}
+    <p>
+      {{ description }}
+    </p>
+  {% else %}
+    <p>
+      {% trans "No product description is currently available." %}
+    </p>
+  {% endif %}
+</div>

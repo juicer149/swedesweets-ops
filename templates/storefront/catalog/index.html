@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans "Catalog" %} | SwedeSweets{% endblock %}
+
+{% block content %}
+  <section
+    class="catalog"
+    aria-label="{% trans 'Catalog' %}"
+    data-catalog-added-label="{% trans 'Added' %}"
+    data-catalog-error-message="{% trans 'Could not add product.' %}"
+  >
+    {% if product_cards %}
+      <section
+        class="catalog-controls"
+        aria-label="{% trans 'Catalog filters' %}"
+      >
+        <nav
+          class="section-nav catalog-category-nav"
+          aria-label="{% trans 'Product categories' %}"
+        >
+          <button
+            class="section-nav__link section-nav__link--active"
+            type="button"
+            data-catalog-category="all"
+            aria-pressed="true"
+          >
+            {% trans "All" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="candy"
+            aria-pressed="false"
+          >
+            {% trans "Candy" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="chips"
+            aria-pressed="false"
+          >
+            {% trans "Chips" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="dip_mix"
+            aria-pressed="false"
+          >
+            {% trans "Dip mix" %}
+          </button>
+
+          <button
+            class="section-nav__link"
+            type="button"
+            data-catalog-category="other"
+            aria-pressed="false"
+          >
+            {% trans "Other" %}
+          </button>
+        </nav>
+
+        <div class="catalog-search">
+          <label
+            class="visually-hidden"
+            for="catalog-search"
+          >
+            {% trans "Search products" %}
+          </label>
+
+          <input
+            id="catalog-search"
+            class="catalog-search__input"
+            type="search"
+            placeholder="{% trans 'Search products' %}"
+            autocomplete="off"
+            spellcheck="false"
+            data-catalog-search
+          >
+        </div>
+      </section>
+
+      <p
+        class="catalog__no-results"
+        data-catalog-no-results
+        hidden
+      >
+        {% trans "No products match your search." %}
+      </p>
+    {% endif %}
+
+    <p
+      class="catalog__feedback"
+      data-catalog-feedback
+      role="status"
+      aria-live="polite"
+    ></p>
+
+    {% if product_cards %}
+      <div
+        class="product-grid"
+        aria-label="{% trans 'Products' %}"
+        data-catalog-product-grid
+      >
+        {% for card in product_cards %}
+          {% with initial_offer=card.offers.0 %}
+            <article
+              class="product-card"
+              data-catalog-product
+              data-product-id="{{ card.product_id }}"
+              data-product-category="{{ card.category_key }}"
+              data-product-search="{{ card.search_text }}"
+            >
+              <div class="product-card__media">
+                {% if card.image_url %}
+                  <div class="product-card__image-frame">
+                    <img
+                      class="product-card__image"
+                      src="{{ card.image_url }}"
+                      alt="{{ card.name }}"
+                      loading="lazy"
+                    >
+                  </div>
+                {% endif %}
+
+                {% if card.offers|length > 1 or initial_offer.badge_label %}
+                  <span
+                    class="product-card__badge"
+                    data-catalog-offer-badge
+                    {% if not initial_offer.badge_label %}hidden{% endif %}
+                  >
+                    {{ initial_offer.badge_label|default:"" }}
+                  </span>
+                {% endif %}
+              </div>
+
+              <div class="product-card__body">
+                <div class="product-card__content">
+                  <h2
+                    class="product-card__title"
+                    title="{{ card.name }}"
+                  >
+                    {{ card.name }}
+                  </h2>
+
+                  <p class="product-card__meta-line">
+                    <span class="product-card__package">
+                      {{ card.package_label }}
+                    </span>
+                  </p>
+                </div>
+
+                <div class="product-card__actions">
+                  <form
+                    id="catalog-add-form-{{ card.product_id }}"
+                    class="product-card__order"
+                    method="post"
+                    action="{{ card.primary_action.href }}"
+                    data-catalog-add-form
+                  >
+                    {% csrf_token %}
+
+                    <div
+                      class="product-card__purchase-state"
+                      data-catalog-purchase-default
+                    >
+                      <div class="product-card__offer-slot">
+                        {% if card.offers|length > 1 %}
+                          <div class="product-card__offer">
+                            <label
+                              class="visually-hidden"
+                              for="catalog-offer-{{ card.product_id }}"
+                            >
+                              {% trans "Offer" %}
+                            </label>
+
+                            <select
+                              id="catalog-offer-{{ card.product_id }}"
+                              class="product-card__offer-select"
+                              name="commercial_price_id"
+                              aria-label="{% trans 'Offer' %}"
+                              data-catalog-offer-select
+                              data-enhanced-select="true"
+                              data-enhanced-select-search="false"
+                            >
+                              {% for offer in card.offers %}
+                                <option
+                                  value="{{ offer.commercial_price_id }}"
+                                >
+                                  {{ offer.label }}{% if offer.price_label %} — {{ offer.price_label }}{% endif %}
+                                </option>
+                              {% endfor %}
+                            </select>
+                          </div>
+
+                        {% elif initial_offer %}
+                          <div class="product-card__offer-summary">
+                            {% if initial_offer.kind == "batch" %}
+                              <span class="product-card__offer-summary-label">
+                                {{ initial_offer.label }}
+                              </span>
+                            {% endif %}
+
+                            {% if initial_offer.price_label %}
+                              {% if initial_offer.kind == "batch" %}
+                                <span
+                                  class="product-card__offer-summary-separator"
+                                  aria-hidden="true"
+                                >
+                                  —
+                                </span>
+                              {% endif %}
+
+                              <span class="product-card__offer-summary-price">
+                                {{ initial_offer.price_label }}
+                              </span>
+                            {% endif %}
+                          </div>
+
+                          <input
+                            type="hidden"
+                            name="commercial_price_id"
+                            value="{{ initial_offer.commercial_price_id }}"
+                            data-catalog-offer-input
+                          >
+                        {% endif %}
+                      </div>
+
+                      <button
+                        class="{{ card.primary_action.css_class }}"
+                        type="submit"
+                        aria-label="{{ card.primary_action.aria_label }}"
+                        data-catalog-add-button
+                      >
+                        {{ card.primary_action.text }}
+                      </button>
+                    </div>
+
+                    <div
+                      class="
+                        product-card__purchase-state
+                        product-card__purchase-state--quantity
+                      "
+                      data-catalog-purchase-quantity
+                      hidden
+                    >
+                      <span class="product-card__quantity-label">
+                        {% trans "Quantity" %}
+                      </span>
+
+                      <div
+                        class="quantity-stepper"
+                        aria-label="{% trans 'Quantity' %}"
+                        data-quantity-stepper
+                      >
+                        <button
+                          class="
+                            quantity-stepper__button
+                            quantity-stepper__button--decrease
+                          "
+                          type="button"
+                          aria-label="{% trans 'Decrease quantity' %}"
+                          data-quantity-decrease
+                        >
+                          <span aria-hidden="true">−</span>
+                        </button>
+
+                        <label
+                          class="visually-hidden"
+                          for="catalog-quantity-{{ card.product_id }}"
+                        >
+                          {% trans "Quantity" %}
+                        </label>
+
+                        <input
+                          id="catalog-quantity-{{ card.product_id }}"
+                          class="quantity-stepper__input"
+                          type="number"
+                          name="quantity"
+                          value="1"
+                          min="1"
+                          step="1"
+                          inputmode="numeric"
+                          autocomplete="off"
+                          required
+                          data-quantity-input
+                        >
+
+                        <button
+                          class="
+                            quantity-stepper__button
+                            quantity-stepper__button--increase
+                          "
+                          type="button"
+                          aria-label="{% trans 'Increase quantity' %}"
+                          data-quantity-increase
+                        >
+                          <span aria-hidden="true">+</span>
+                        </button>
+                      </div>
+
+                      <div class="product-card__quantity-actions">
+                        <button
+                          class="
+                            button
+                            button--md
+                            button--soft
+                            button--tone-positive
+                          "
+                          type="submit"
+                          data-catalog-confirm-button
+                        >
+                          {% trans "Confirm" %}
+                        </button>
+
+                        <button
+                          class="
+                            button
+                            button--md
+                            button--text
+                            button--tone-neutral
+                          "
+                          type="button"
+                          data-catalog-cancel-button
+                        >
+                          {% trans "Cancel" %}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+
+                  {% if card.secondary_action %}
+                    <a
+                      class="{{ card.secondary_action.css_class }}"
+                      href="{{ card.secondary_action.href }}"
+                      aria-label="{{ card.secondary_action.aria_label }}"
+                    >
+                      {{ card.secondary_action.text }}
+                      <span aria-hidden="true">→</span>
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          {% endwith %}
+        {% endfor %}
+      </div>
+
+      {{ catalog_data|json_script:"retail-catalog-data" }}
+    {% else %}
+      <p class="catalog__empty">
+        {% trans "No products are currently available." %}
+      </p>
+    {% endif %}
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/quantity-stepper.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/storefront-catalog.js' %}"
+    defer
+  ></script>
+{% endblock %}
