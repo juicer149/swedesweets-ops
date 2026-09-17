@@ -47,29 +47,68 @@ def navigation(request):
     ):
         return {
             "primary_nav_items": (),
-            "site_home_href": build_home_href(
-                account_role=None,
-                role_spec=None,
-            ),
+            "site_home_href": reverse("index"),
             "navbar_cart": None,
             "account_menu": None,
         }
 
-    if _is_on_storefront(request):
-        return {
-            "primary_nav_items": (
-                build_public_primary_nav_items()
-            ),
-            "site_home_href": reverse("index"),
-            "navbar_cart": None,
-            "account_menu": (
-                build_storefront_account_menu(
-                    account_role=account_role,
-                    role_spec=role_spec,
-                )
-            ),
-        }
+    if _uses_shared_site_chrome(request):
+        return _build_site_navigation(
+            request=request,
+            account_role=account_role,
+            role_spec=role_spec,
+        )
 
+    return _build_portal_navigation(
+        request=request,
+        account_role=account_role,
+        role_spec=role_spec,
+    )
+
+
+def _build_site_navigation(
+    *,
+    request,
+    account_role: AccountRole,
+    role_spec,
+) -> dict:
+    if (
+        account_role
+        == AccountRole.BUSINESS_CUSTOMER
+    ):
+        primary_nav_items = (
+            build_business_primary_nav_items()
+        )
+
+        account_menu = (
+            build_business_account_menu()
+        )
+    else:
+        primary_nav_items = (
+            build_public_primary_nav_items()
+        )
+
+        account_menu = (
+            build_storefront_account_menu(
+                account_role=account_role,
+                role_spec=role_spec,
+            )
+        )
+
+    return {
+        "primary_nav_items": primary_nav_items,
+        "site_home_href": reverse("index"),
+        "navbar_cart": None,
+        "account_menu": account_menu,
+    }
+
+
+def _build_portal_navigation(
+    *,
+    request,
+    account_role: AccountRole,
+    role_spec,
+) -> dict:
     navbar_cart = None
 
     if (
@@ -77,9 +116,7 @@ def navigation(request):
         == AccountRole.BUSINESS_CUSTOMER
     ):
         primary_nav_items = (
-            build_business_primary_nav_items(
-                role_spec=role_spec,
-            )
+            build_business_primary_nav_items()
         )
 
         account_menu = (
@@ -138,7 +175,9 @@ def navigation(request):
     }
 
 
-def _is_on_storefront(request) -> bool:
+def _uses_shared_site_chrome(
+    request,
+) -> bool:
     resolver_match = getattr(
         request,
         "resolver_match",
@@ -148,4 +187,7 @@ def _is_on_storefront(request) -> bool:
     if resolver_match is None:
         return False
 
-    return resolver_match.namespace == "storefront"
+    return resolver_match.namespace in {
+        "storefront",
+        "public_site",
+    }

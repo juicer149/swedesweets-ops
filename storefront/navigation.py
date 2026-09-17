@@ -1,20 +1,9 @@
 """
 Navigation for the public storefront.
 
-The storefront's link row is identical for every visitor - anonymous,
-business customer or staff - so these items carry no capability and are
-never filtered. What varies by identity is the account slot, not the
-chrome.
-
-Site chrome, sales channel and identity are separate concerns:
-
-    chrome   - Shop / Contact / FAQ, same for everyone
-    channel  - which catalog and cart the links resolve to
-    identity - what the account slot offers
-
-This module owns the first two for the retail channel. Identity menus are
-built in accounts_menu.py so the same account slot can be filled by any
-zone.
+The public site chrome is shared by retail visitors, business customers and
+staff. The commerce destination varies by sales channel, while Contact and
+FAQ are shared public-site resources.
 """
 
 from __future__ import annotations
@@ -27,14 +16,6 @@ from django.utils.translation import gettext_lazy as _
 
 @dataclass(frozen=True, slots=True)
 class PublicNavItem:
-    """A storefront link.
-
-    Deliberately not common.navigation.NavItem: that type requires a
-    Capability, and every storefront link is visible to everyone. Adding a
-    Capability here just to satisfy the type would put a permission on
-    something that has no permission.
-    """
-
     label: str
     route_name: str
     namespace: str
@@ -59,19 +40,16 @@ STOREFRONT_CATALOG_NAV_ITEM = PublicNavItem(
 
 STOREFRONT_CONTACT_NAV_ITEM = PublicNavItem(
     label=_("Contact"),
-    route_name="storefront:contact",
-    namespace="storefront",
+    route_name="public_site:contact",
+    namespace="public_site",
     icon="mail",
     active_url_names=("contact",),
 )
 
 STOREFRONT_FAQ_NAV_ITEM = PublicNavItem(
     label=_("FAQ"),
-    route_name="storefront:faq",
-    namespace="storefront",
-    # No question-mark icon exists in includes/ui/icon.html yet. The
-    # navbar renders the label alone when icon is empty, so this stays
-    # blank rather than borrowing a misleading one.
+    route_name="public_site:faq",
+    namespace="public_site",
     icon="",
     active_url_names=("faq",),
 )

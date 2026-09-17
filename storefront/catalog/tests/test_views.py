@@ -6,6 +6,12 @@ import pytest
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
+from customers.tests.factories import (
+    customer_factory,
+)
+from accounts.tests.factories import (
+    customer_user_factory,
+)
 from pricing.models import CommercialPrice, PriceAmount
 from products.tests.factories import product_factory
 from retail.models import RetailCart
@@ -112,6 +118,109 @@ def test_product_detail_returns_404_for_product_without_retail_price(
     )
 
     assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# storefront sales-channel boundary
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_business_customer_is_redirected_from_retail_catalog(
+    client,
+):
+    customer = customer_factory()
+    user = customer_user_factory(
+        customer=customer,
+    )
+
+    client.force_login(
+        user
+    )
+
+    response = client.get(
+        reverse("storefront:product_list")
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse(
+        "business_portal:catalog"
+    )
+
+
+@pytest.mark.django_db
+def test_business_customer_is_redirected_from_retail_product_detail(
+    client,
+):
+    customer = customer_factory()
+    user = customer_user_factory(
+        customer=customer,
+    )
+    product = product_factory(
+        name="Apple",
+    )
+
+    client.force_login(
+        user
+    )
+
+    response = client.get(
+        reverse(
+            "storefront:product_detail",
+            kwargs={
+                "product_id": product.id,
+            },
+        )
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse(
+        "business_portal:catalog_product",
+        kwargs={
+            "product_id": product.id,
+        },
+    )
+
+
+@pytest.mark.django_db
+def test_business_customer_cannot_mutate_retail_cart(
+    client,
+):
+    customer = customer_factory()
+    user = customer_user_factory(
+        customer=customer,
+    )
+    product = product_factory(
+        name="Apple",
+    )
+    offer = retail_product_price_factory(
+        product=product,
+        enabled=True,
+        price=Decimal("12.50"),
+    )
+
+    client.force_login(
+        user
+    )
+
+    response = client.post(
+        reverse(
+            "storefront:add_to_cart",
+            kwargs={
+                "product_id": product.id,
+            },
+        ),
+        {
+            "commercial_price_id": str(
+                offer.pk
+            ),
+            "quantity": "1",
+        },
+    )
+
+    assert response.status_code == 403
+    assert not RetailCart.objects.exists()
+    assert "retail_cart" not in response.cookies
 
 
 # ---------------------------------------------------------------------------

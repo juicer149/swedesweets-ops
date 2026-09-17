@@ -6,7 +6,6 @@ from django.urls import (
     path,
 )
 
-from config import views as config_views
 from ops_portal.dashboard import views as dashboard_views
 
 
@@ -17,13 +16,20 @@ urlpatterns = [
     ),
     path(
         "",
-        config_views.index,
+        dashboard_views.index,
         name="index",
     ),
     path(
         "ops/",
         dashboard_views.index,
         name="ops_dashboard",
+    ),
+    path(
+        "",
+        include(
+            "storefront.public_urls",
+            namespace="public_site",
+        ),
     ),
     path(
         "admin/",
@@ -43,9 +49,6 @@ urlpatterns = [
             namespace="ops_accounts",
         ),
     ),
-    # Django auth views:
-    # /accounts/login/  -> name="login"
-    # /accounts/logout/ -> name="logout"
     path(
         "accounts/",
         include("django.contrib.auth.urls"),
@@ -102,7 +105,6 @@ urlpatterns = [
 ]
 
 
-# Serve uploaded files from Django in development.
 if settings.DEBUG:
     urlpatterns += static(
         settings.MEDIA_URL,

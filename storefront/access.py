@@ -6,9 +6,9 @@ AUTH_EXEMPT_VIEWS = frozenset(
         "storefront:product_list",
         "storefront:product_detail",
         "storefront:add_to_cart",
-        "storefront:contact",
-        "storefront:faq",
         "storefront:payment_return",
+        "public_site:contact",
+        "public_site:faq",
     }
 )
 

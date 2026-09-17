@@ -5,6 +5,7 @@ from django.db import transaction
 from django.http import (
     HttpRequest,
     Http404,
+    HttpResponseForbidden,
     JsonResponse,
 )
 from django.shortcuts import (
@@ -15,6 +16,7 @@ from django.shortcuts import (
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from accounts.roles import AccountRole
 from products.models import Product
 from retail.catalog_selectors import (
     get_retail_catalog_product,
@@ -38,6 +40,26 @@ from storefront.catalog.viewmodels import (
     build_retail_catalog_payload,
     build_retail_product_cards,
 )
+
+
+def _is_business_customer(
+    request: HttpRequest,
+) -> bool:
+    """Return whether this request belongs to the business sales channel.
+
+    AccountRole is resolved by the authentication/access middleware before
+    the view runs. Storefront uses that established identity rather than
+    trying to infer business-customer state itself.
+    """
+
+    return (
+        getattr(
+            request,
+            "account_role",
+            None,
+        )
+        == AccountRole.BUSINESS_CUSTOMER
+    )
 
 
 def _wants_json(request: HttpRequest) -> bool:
@@ -146,7 +168,18 @@ def _resolve_cart(
 
 
 def product_list(request: HttpRequest):
-    """Render the public retail catalog."""
+    """Render the public retail catalog.
+
+    Business customers use their own sales channel. The public retail URL
+    remains canonical for anonymous visitors and staff browsing the public
+    site, while a business customer is sent to the equivalent business
+    catalog.
+    """
+
+    if _is_business_customer(request):
+        return redirect(
+            "business_portal:catalog"
+        )
 
     catalog_products = (
         list_retail_catalog_products()
@@ -175,7 +208,17 @@ def product_detail(
     request: HttpRequest,
     product_id: int,
 ):
-    """Render one currently orderable retail catalog product."""
+    """Render one currently orderable retail catalog product.
+
+    A business customer is redirected to the same product in the business
+    catalog before any retail catalog lookup is performed.
+    """
+
+    if _is_business_customer(request):
+        return redirect(
+            "business_portal:catalog_product",
+            product_id=product_id,
+        )
 
     catalog_product = get_retail_catalog_product(
         product_id=product_id,
@@ -203,6 +246,25 @@ def add_to_cart(
     request: HttpRequest,
     product_id: int,
 ):
+    if _is_business_customer(request):
+        message = _(
+            "Retail cart actions are not available "
+            "for business customers."
+        )
+
+        if _wants_json(request):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": message,
+                },
+                status=403,
+            )
+
+        return HttpResponseForbidden(
+            message
+        )
+
     product = get_object_or_404(
         Product,
         pk=product_id,
@@ -285,4 +347,6 @@ def add_to_cart(
             message,
         )
 
-    return redirect("storefront:product_list")
+    return redirect(
+        "storefront:product_list"
+    )
