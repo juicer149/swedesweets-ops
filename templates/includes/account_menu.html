@@ -1,30 +1,25 @@
 {% load i18n %}
 
 {% comment %}
-  Identity slot for the shared site navbar.
+  Shared identity/context menu for navbar account slots.
 
-  Uses the same <details>/<summary> popover mechanism as
-  includes/navbar_cart.html, so no new JavaScript is needed.
+  The caller supplies an already-composed AccountMenu. This template knows
+  nothing about roles, portals or sales channels.
 
-  Logout is a POST form rather than a link (CSRF), so it is rendered
-  separately from account_menu.items rather than as another nav item.
+  Logout is a POST form rather than a menu item because logging out mutates
+  authentication state and must carry CSRF protection.
 
   Expects:
-    account_menu.label - trigger text (e.g. "My account")
-    account_menu.items - NavItem-likes, rendered in order
+    account_menu.label
+    account_menu.items
 {% endcomment %}
 
 <details class="site-nav-account">
   <summary
-    class="site-nav-account__trigger"
+    class="site-nav-account__trigger site-nav__auth-action"
     aria-label="{{ account_menu.label }}"
   >
-    <span
-      class="site-nav-account__icon"
-      aria-hidden="true"
-    >
-      {% include "includes/ui/icon.html" with name="users" %}
-    </span>
+    {% include "includes/ui/icon_block.html" with name="users" size="sm" only %}
 
     <span class="site-nav-account__label">
       {{ account_menu.label }}
@@ -40,12 +35,7 @@
             href="{{ item.href }}"
           >
             {% if item.icon %}
-              <span
-                class="site-nav-account__link-icon"
-                aria-hidden="true"
-              >
-                {% include "includes/ui/icon.html" with name=item.icon %}
-              </span>
+              {% include "includes/ui/icon_block.html" with name=item.icon size="sm" only %}
             {% endif %}
 
             <span>

@@ -3,15 +3,12 @@ from __future__ import annotations
 from django.urls import reverse
 
 from accounts.account_menus import (
-    build_account_menu,
+    build_business_account_menu,
+    build_ops_account_menu,
+    build_storefront_account_menu,
 )
-from accounts.navigation import (
-    build_home_href,
-)
-from accounts.roles import (
-    AccountRole,
-    Capability,
-)
+from accounts.navigation import build_home_href
+from accounts.roles import AccountRole, Capability
 from business_portal.navigation import (
     build_business_primary_nav_items,
 )
@@ -58,23 +55,18 @@ def navigation(request):
             "account_menu": None,
         }
 
-    # The storefront is reachable by every identity, so its chrome is
-    # decided by the zone (storefront/base.html renders site_navbar.html),
-    # not by who is asking. Only the account slot varies here.
     if _is_on_storefront(request):
         return {
             "primary_nav_items": (
                 build_public_primary_nav_items()
             ),
-            # build_home_href sends every resolved role - including the
-            # anonymous UNKNOWN role - to accounts:after_login, which
-            # requires login. On the public site the logo must stay
-            # public, so it is overridden here.
             "site_home_href": reverse("index"),
             "navbar_cart": None,
-            "account_menu": build_account_menu(
-                account_role=account_role,
-                role_spec=role_spec,
+            "account_menu": (
+                build_storefront_account_menu(
+                    account_role=account_role,
+                    role_spec=role_spec,
+                )
             ),
         }
 
@@ -88,6 +80,10 @@ def navigation(request):
             build_business_primary_nav_items(
                 role_spec=role_spec,
             )
+        )
+
+        account_menu = (
+            build_business_account_menu()
         )
 
         if role_spec.allows(
@@ -123,6 +119,14 @@ def navigation(request):
             )
         )
 
+        account_menu = (
+            build_ops_account_menu()
+            if role_spec.allows(
+                Capability.VIEW_STAFF_OPS
+            )
+            else None
+        )
+
     return {
         "primary_nav_items": primary_nav_items,
         "site_home_href": build_home_href(
@@ -130,7 +134,7 @@ def navigation(request):
             role_spec=role_spec,
         ),
         "navbar_cart": navbar_cart,
-        "account_menu": None,
+        "account_menu": account_menu,
     }
 
 

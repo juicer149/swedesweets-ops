@@ -2,14 +2,7 @@
 
 {% with namespace=request.resolver_match.namespace %}
 {% with url_name=request.resolver_match.url_name %}
-<header
-  class="
-    site-header
-    {% if url_name == 'login' %}
-      site-header--auth
-    {% endif %}
-  "
->
+<header class="site-header">
   <div class="container">
     <nav
       class="site-nav"
@@ -28,7 +21,7 @@
       </a>
 
       <div class="site-nav__content">
-        {% if request.user.is_authenticated and url_name != "login" %}
+        {% if primary_nav_items %}
           <div
             class="site-nav__links"
             style="--site-nav-count: {{ primary_nav_items|length }};"
@@ -58,12 +51,14 @@
                   {% endif %}
                 {% endif %}
               >
-                <span
-                  class="site-nav__icon"
-                  aria-hidden="true"
-                >
-                  {% include "includes/ui/icon.html" with name=item.icon %}
-                </span>
+                {% if item.icon %}
+                  <span
+                    class="site-nav__icon"
+                    aria-hidden="true"
+                  >
+                    {% include "includes/ui/icon.html" with name=item.icon %}
+                  </span>
+                {% endif %}
 
                 <span>
                   {{ item.label }}
@@ -93,32 +88,10 @@
 
           {% include "includes/language_switcher.html" %}
 
-          {% if request.user.is_authenticated %}
-            {% if url_name != "login" %}
-              <a
-                class="site-nav__auth-action"
-                href="{% url 'accounts:me' %}"
-              >
-                {% trans "My account" %}
-              </a>
-
-              <form
-                class="site-nav__auth-form"
-                method="post"
-                action="{% url 'logout' %}"
-              >
-                {% csrf_token %}
-
-                <button
-                  class="site-nav__auth-action"
-                  type="submit"
-                >
-                  {% trans "Logout" %}
-                </button>
-              </form>
-            {% endif %}
-          {% else %}
-            {% if url_name != "login" %}
+          {% if url_name != "login" %}
+            {% if account_menu %}
+              {% include "includes/account_menu.html" %}
+            {% else %}
               <a
                 class="site-nav__auth-action"
                 href="{% url 'login' %}"
