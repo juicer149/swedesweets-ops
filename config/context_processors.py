@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from django.urls import reverse
+
+from accounts.account_menus import (
+    build_account_menu,
+)
 from accounts.navigation import (
     build_home_href,
 )
@@ -21,6 +26,9 @@ from ops_portal.navigation import (
 )
 from orders.selectors import (
     get_active_draft_order_for_customer,
+)
+from storefront.navigation import (
+    build_public_primary_nav_items,
 )
 
 
@@ -47,6 +55,27 @@ def navigation(request):
                 role_spec=None,
             ),
             "navbar_cart": None,
+            "account_menu": None,
+        }
+
+    # The storefront is reachable by every identity, so its chrome is
+    # decided by the zone (storefront/base.html renders site_navbar.html),
+    # not by who is asking. Only the account slot varies here.
+    if _is_on_storefront(request):
+        return {
+            "primary_nav_items": (
+                build_public_primary_nav_items()
+            ),
+            # build_home_href sends every resolved role - including the
+            # anonymous UNKNOWN role - to accounts:after_login, which
+            # requires login. On the public site the logo must stay
+            # public, so it is overridden here.
+            "site_home_href": reverse("index"),
+            "navbar_cart": None,
+            "account_menu": build_account_menu(
+                account_role=account_role,
+                role_spec=role_spec,
+            ),
         }
 
     navbar_cart = None
@@ -101,4 +130,18 @@ def navigation(request):
             role_spec=role_spec,
         ),
         "navbar_cart": navbar_cart,
+        "account_menu": None,
     }
+
+
+def _is_on_storefront(request) -> bool:
+    resolver_match = getattr(
+        request,
+        "resolver_match",
+        None,
+    )
+
+    if resolver_match is None:
+        return False
+
+    return resolver_match.namespace == "storefront"

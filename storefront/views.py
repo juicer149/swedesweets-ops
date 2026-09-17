@@ -8,7 +8,7 @@ from django.http import (
     HttpResponse,
     HttpResponseRedirect,
 )
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 
 from payments.models import PaymentAttempt
 from retail.models import RetailCheckoutSession
@@ -16,6 +16,20 @@ from retail.payments import (
     RetailPaymentRecoveryAction,
     recover_retail_payment,
 )
+
+
+def contact(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "storefront/contact.html",
+    )
+
+
+def faq(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "storefront/faq.html",
+    )
 
 
 def payment_return(

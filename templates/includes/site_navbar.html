@@ -1,0 +1,141 @@
+{% load static i18n %}
+
+{% comment %}
+  Shared site chrome for the public-facing zones (storefront and, once
+  migrated, business_portal).
+
+  This template renders mechanics only - logo position, link row, cart
+  slot, account slot. It deliberately contains no role checks: the zone's
+  navigation builder decides what goes in each slot, and this file only
+  decides where it appears. Keep it that way; a role check here is the
+  first step toward a central if-role-elif machine.
+
+  Expects in context:
+    site_home_href   - where the logo links
+    primary_nav_items - NavItem-likes (label/href/icon/namespace/active_url_names)
+    navbar_cart      - NavbarCart | None
+    account_menu     - AccountMenu | None (None renders the login button)
+{% endcomment %}
+
+{% with namespace=request.resolver_match.namespace %}
+{% with url_name=request.resolver_match.url_name %}
+<header class="site-header">
+  <div class="container">
+    <nav
+      class="site-nav"
+      aria-label="{% trans 'Primary navigation' %}"
+    >
+      <a
+        class="site-brand"
+        href="{{ site_home_href }}"
+        aria-label="{% trans 'SwedeSweets home' %}"
+      >
+        <img
+          class="site-brand__logo"
+          src="{% static 'images/swedesweets-logo.png' %}"
+          alt="SwedeSweets"
+        >
+      </a>
+
+      <div class="site-nav__content">
+        {% if primary_nav_items %}
+          <div
+            class="site-nav__links"
+            style="--site-nav-count: {{ primary_nav_items|length }};"
+          >
+            {% for item in primary_nav_items %}
+              <a
+                class="
+                  site-nav__link
+                  {% if namespace == item.namespace %}
+                    {% if item.active_url_names %}
+                      {% if url_name in item.active_url_names %}
+                        site-nav__link--active
+                      {% endif %}
+                    {% else %}
+                      site-nav__link--active
+                    {% endif %}
+                  {% endif %}
+                "
+                href="{{ item.href }}"
+                {% if namespace == item.namespace %}
+                  {% if item.active_url_names %}
+                    {% if url_name in item.active_url_names %}
+                      aria-current="page"
+                    {% endif %}
+                  {% else %}
+                    aria-current="page"
+                  {% endif %}
+                {% endif %}
+              >
+                {% if item.icon %}
+                  <span
+                    class="site-nav__icon"
+                    aria-hidden="true"
+                  >
+                    {% include "includes/ui/icon.html" with name=item.icon %}
+                  </span>
+                {% endif %}
+
+                <span>
+                  {{ item.label }}
+                </span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div
+            class="
+              site-nav__links
+              site-nav__links--empty
+            "
+            aria-hidden="true"
+          ></div>
+        {% endif %}
+
+        <div class="site-nav__auth">
+          {% if navbar_cart %}
+            <div
+              data-navbar-cart-container
+              data-navbar-cart-url="{{ navbar_cart.fragment_url }}"
+            >
+              {% include "includes/navbar_cart.html" %}
+            </div>
+          {% endif %}
+
+          {% include "includes/language_switcher.html" %}
+
+          {% if account_menu %}
+            {% include "includes/account_menu.html" %}
+          {% else %}
+            <a
+              class="site-nav__auth-action"
+              href="{% url 'login' %}"
+            >
+              {% trans "Login" %}
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+{% if navbar_cart %}
+  <script
+    src="{% static 'js/ui-dom.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/quantity-stepper.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/navbar-cart.js' %}"
+    defer
+  ></script>
+{% endif %}
+{% endwith %}
+{% endwith %}

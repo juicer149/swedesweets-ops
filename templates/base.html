@@ -12,7 +12,16 @@
   </head>
 
   <body>
-    {% include "includes/navbar.html" %}
+    {% comment %}
+      Zone base templates (storefront/base.html, business_portal/base.html,
+      ops_portal/base.html) override this block with their own navbar.
+
+      The default keeps every not-yet-migrated template rendering exactly
+      as before, so zones can be migrated one at a time.
+    {% endcomment %}
+    {% block navbar %}
+      {% include "includes/navbar.html" %}
+    {% endblock %}
 
     <main class="site-main">
       <div class="container">

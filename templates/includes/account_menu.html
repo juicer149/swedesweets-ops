@@ -1,0 +1,74 @@
+{% load i18n %}
+
+{% comment %}
+  Identity slot for the shared site navbar.
+
+  Uses the same <details>/<summary> popover mechanism as
+  includes/navbar_cart.html, so no new JavaScript is needed.
+
+  Logout is a POST form rather than a link (CSRF), so it is rendered
+  separately from account_menu.items rather than as another nav item.
+
+  Expects:
+    account_menu.label - trigger text (e.g. "My account")
+    account_menu.items - NavItem-likes, rendered in order
+{% endcomment %}
+
+<details class="site-nav-account">
+  <summary
+    class="site-nav-account__trigger"
+    aria-label="{{ account_menu.label }}"
+  >
+    <span
+      class="site-nav-account__icon"
+      aria-hidden="true"
+    >
+      {% include "includes/ui/icon.html" with name="users" %}
+    </span>
+
+    <span class="site-nav-account__label">
+      {{ account_menu.label }}
+    </span>
+  </summary>
+
+  <div class="site-nav-account__popover">
+    {% if account_menu.items %}
+      <div class="site-nav-account__links">
+        {% for item in account_menu.items %}
+          <a
+            class="site-nav-account__link"
+            href="{{ item.href }}"
+          >
+            {% if item.icon %}
+              <span
+                class="site-nav-account__link-icon"
+                aria-hidden="true"
+              >
+                {% include "includes/ui/icon.html" with name=item.icon %}
+              </span>
+            {% endif %}
+
+            <span>
+              {{ item.label }}
+            </span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form
+      class="site-nav-account__logout"
+      method="post"
+      action="{% url 'logout' %}"
+    >
+      {% csrf_token %}
+
+      <button
+        class="site-nav-account__logout-button"
+        type="submit"
+      >
+        {% trans "Logout" %}
+      </button>
+    </form>
+  </div>
+</details>

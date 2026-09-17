@@ -24,6 +24,16 @@ urlpatterns = [
         name="add_to_cart",
     ),
     path(
+        "contact/",
+        views.contact,
+        name="contact",
+    ),
+    path(
+        "faq/",
+        views.faq,
+        name="faq",
+    ),
+    path(
         "payment/<uuid:checkout_id>/return/",
         views.payment_return,
         name="payment_return",

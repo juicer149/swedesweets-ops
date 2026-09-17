@@ -1,0 +1,25 @@
+{% extends "storefront/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "FAQ" %} | SwedeSweets{% endblock %}
+
+{% block content %}
+{% include "includes/ui/page_header.html" with title_id="public-faq-title" title=_("Frequently asked questions") description=_("Answers are on the way - in the meantime, feel free to contact us directly.") %}
+
+<section
+  class="list-section"
+  aria-labelledby="public-faq-title"
+>
+  <article class="content-card">
+    <div class="content-card__body">
+      <p>
+        {% trans "This page is still being written." %}
+        <a class="text-link" href="{% url 'storefront:contact' %}">
+          {% trans "Contact us" %}
+        </a>
+        {% trans "if you have a question in the meantime." %}
+      </p>
+    </div>
+  </article>
+</section>
+{% endblock %}
