@@ -1,7 +1,30 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load static i18n %}
 
 {% block title %}{% trans "Login" %} | SwedeSweets{% endblock %}
+
+{% block navbar %}
+<header class="site-header site-header--auth">
+  <div class="container">
+    <nav
+      class="site-nav"
+      aria-label="{% trans 'Authentication navigation' %}"
+    >
+      <a
+        class="site-brand"
+        href="{% url 'index' %}"
+        aria-label="{% trans 'SwedeSweets home' %}"
+      >
+        <img
+          class="site-brand__logo"
+          src="{% static 'images/swedesweets-logo.png' %}"
+          alt="SwedeSweets"
+        >
+      </a>
+    </nav>
+  </div>
+</header>
+{% endblock %}
 
 {% block content %}
 <section class="auth-page" aria-labelledby="login-title">

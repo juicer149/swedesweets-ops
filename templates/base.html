@@ -41,9 +41,25 @@
 
     {% include "includes/footer.html" %}
 
-    <script src="{% static 'vendor/tom-select/js/tom-select.complete.min.js' %}" defer></script>
-    <script src="{% static 'js/enhanced_selects.js' %}" defer></script>
-    <script src="{% static 'js/quick_jumps.js' %}" defer></script>
+    <script
+      src="{% static 'vendor/tom-select/js/tom-select.complete.min.js' %}"
+      defer
+    ></script>
+
+    <script
+      src="{% static 'js/enhanced_selects.js' %}"
+      defer
+    ></script>
+
+    <script
+      src="{% static 'js/quick_jumps.js' %}"
+      defer
+    ></script>
+
+    <script
+      src="{% static 'js/details-popover.js' %}"
+      defer
+    ></script>
 
     {% block scripts %}{% endblock %}
   </body>

@@ -14,7 +14,10 @@
     account_menu.items
 {% endcomment %}
 
-<details class="site-nav-account">
+<details
+  class="site-nav-account"
+  data-dismiss-on-outside-click
+>
   <summary
     class="site-nav-account__trigger site-nav__auth-action"
     aria-label="{{ account_menu.label }}"
