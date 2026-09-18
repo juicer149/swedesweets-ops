@@ -33,7 +33,7 @@ def test_business_catalog_uses_business_sales_channel():
     )
 
 
-def test_business_contact_and_faq_use_public_pages():
+def test_business_contact_and_faq_stay_in_business_portal():
     items = build_business_primary_nav_items()
 
     contact_item = items[1]
@@ -41,20 +41,20 @@ def test_business_contact_and_faq_use_public_pages():
 
     assert (
         contact_item.route_name
-        == "public_site:contact"
+        == "business_portal:contact"
     )
     assert (
         contact_item.href
-        == reverse("public_site:contact")
+        == reverse("business_portal:contact")
     )
 
     assert (
         faq_item.route_name
-        == "public_site:faq"
+        == "business_portal:faq"
     )
     assert (
         faq_item.href
-        == reverse("public_site:faq")
+        == reverse("business_portal:faq")
     )
 
 

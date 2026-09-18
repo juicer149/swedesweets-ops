@@ -8,14 +8,33 @@ from django.http import (
     HttpResponse,
     HttpResponseRedirect,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+    render,
+)
+from django.urls import reverse
 
+from accounts.roles import AccountRole
 from payments.models import PaymentAttempt
 from retail.models import RetailCheckoutSession
 from retail.payments import (
     RetailPaymentRecoveryAction,
     recover_retail_payment,
 )
+
+
+def _is_business_customer(
+    request: HttpRequest,
+) -> bool:
+    return (
+        getattr(
+            request,
+            "account_role",
+            None,
+        )
+        == AccountRole.BUSINESS_CUSTOMER
+    )
 
 
 def landing(request: HttpRequest) -> HttpResponse:
@@ -26,6 +45,11 @@ def landing(request: HttpRequest) -> HttpResponse:
 
 
 def contact(request: HttpRequest) -> HttpResponse:
+    if _is_business_customer(request):
+        return redirect(
+            "business_portal:contact"
+        )
+
     return render(
         request,
         "storefront/contact.html",
@@ -33,9 +57,19 @@ def contact(request: HttpRequest) -> HttpResponse:
 
 
 def faq(request: HttpRequest) -> HttpResponse:
+    if _is_business_customer(request):
+        return redirect(
+            "business_portal:faq"
+        )
+
     return render(
         request,
         "storefront/faq.html",
+        {
+            "contact_url": reverse(
+                "public_site:contact"
+            ),
+        },
     )
 
 

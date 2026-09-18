@@ -34,16 +34,16 @@ BUSINESS_CATALOG_NAV_ITEM = BusinessNavItem(
 
 BUSINESS_CONTACT_NAV_ITEM = BusinessNavItem(
     label=_("Contact"),
-    route_name="public_site:contact",
-    namespace="public_site",
+    route_name="business_portal:contact",
+    namespace="business_portal",
     icon="mail",
     active_url_names=("contact",),
 )
 
 BUSINESS_FAQ_NAV_ITEM = BusinessNavItem(
     label=_("FAQ"),
-    route_name="public_site:faq",
-    namespace="public_site",
+    route_name="business_portal:faq",
+    namespace="business_portal",
     icon="",
     active_url_names=("faq",),
 )

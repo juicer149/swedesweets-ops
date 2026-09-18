@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.urls import reverse
 
 from business_portal.selectors import (
     get_portal_customer_for_user,
@@ -51,5 +52,18 @@ def index(request):
 def contact(request):
     return render(
         request,
-        "business_portal/contact.html",
+        "storefront/contact.html",
+    )
+
+
+@login_required
+def faq(request):
+    return render(
+        request,
+        "storefront/faq.html",
+        {
+            "contact_url": reverse(
+                "business_portal:contact"
+            ),
+        },
     )

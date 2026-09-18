@@ -14,7 +14,7 @@
     <div class="content-card__body">
       <p>
         {% trans "This page is still being written." %}
-        <a class="text-link" href="{% url 'public_site:contact' %}">
+        <a class="text-link" href="{{ contact_url }}">
           {% trans "Contact us" %}
         </a>
         {% trans "if you have a question in the meantime." %}

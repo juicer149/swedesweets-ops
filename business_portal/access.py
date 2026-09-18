@@ -19,4 +19,5 @@ VIEW_CAPABILITIES = {
     "business_portal:profile": Capability.VIEW_OWN_ACCOUNT,
     "business_portal:edit_profile": Capability.EDIT_OWN_ACCOUNT,
     "business_portal:contact": Capability.VIEW_BUSINESS_PORTAL,
+    "business_portal:faq": Capability.VIEW_BUSINESS_PORTAL,
 }
