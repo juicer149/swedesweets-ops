@@ -84,7 +84,6 @@ VIEW_KWARGS = {
     "business_portal:catalog_add_product": CATALOG_PRODUCT_KWARGS,
     "business_portal:set_draft_line_quantity": DRAFT_LINE_KWARGS,
     "business_portal:remove_draft_line": DRAFT_LINE_KWARGS,
-    "business_portal:order_detail": ORDER_KWARGS,
     "business_portal:repeat_order": ORDER_KWARGS,
 }
 
@@ -97,6 +96,10 @@ ALLOWED_GET_STATUS_CODES = {
 REDIRECT_VIEW_NAMES = {
     "accounts:after_login",
     "business_portal:review_order",
+}
+
+BUSINESS_CUSTOMER_REDIRECT_VIEW_NAMES = {
+    "accounts:me",
 }
 
 POST_ONLY_VIEW_NAMES = {
@@ -140,8 +143,17 @@ def _assert_allowed_get_response(
     *,
     view_name: str,
     response,
+    redirect_view_names: set[str] | None = None,
 ) -> None:
-    if view_name in REDIRECT_VIEW_NAMES:
+    expected_redirects = REDIRECT_VIEW_NAMES
+
+    if redirect_view_names is not None:
+        expected_redirects = (
+            REDIRECT_VIEW_NAMES
+            | redirect_view_names
+        )
+
+    if view_name in expected_redirects:
         assert (
             response.status_code
             == REDIRECT_STATUS_CODE
@@ -337,6 +349,9 @@ def test_customer_user_access_matches_declared_capabilities(
             _assert_allowed_get_response(
                 view_name=view_name,
                 response=response,
+                redirect_view_names=(
+                    BUSINESS_CUSTOMER_REDIRECT_VIEW_NAMES
+                ),
             )
         else:
             assert (

@@ -4,9 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from accounts.self_viewmodels import build_self_account_detail_context
 from accounts.activity_selectors import list_account_activities
+from accounts.roles import AccountRole
 from accounts.selectors import get_account_record
+from accounts.self_viewmodels import build_self_account_detail_context
 from config.login_routing import get_after_login_redirect_name
 
 
@@ -29,6 +30,11 @@ def after_login(request):
 
 @login_required
 def me(request):
+    if request.account_role == AccountRole.BUSINESS_CUSTOMER:
+        return redirect(
+            "business_portal:index"
+        )
+
     account = get_account_record(
         user=request.user
     )
