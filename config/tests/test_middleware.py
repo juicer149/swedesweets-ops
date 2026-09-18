@@ -29,7 +29,7 @@ def _request(
 def test_authenticated_active_user_is_allowed_through():
     middleware = LoginRequiredMiddleware(_response)
     request = _request(
-        path="/orders/",
+        path="/ops/orders/",
         user=SimpleNamespace(
             is_authenticated=True,
             is_active=True,
@@ -45,7 +45,7 @@ def test_authenticated_active_user_is_allowed_through():
 def test_anonymous_user_is_redirected_to_login_for_protected_path():
     middleware = LoginRequiredMiddleware(_response)
     request = _request(
-        path="/orders/",
+        path="/ops/orders/",
         user=AnonymousUser(),
     )
 
@@ -129,7 +129,7 @@ def test_auth_exempt_view_is_available_to_anonymous_user():
 def test_inactive_authenticated_user_is_logged_out_and_redirected():
     middleware = LoginRequiredMiddleware(_response)
     request = _request(
-        path="/orders/",
+        path="/ops/orders/",
         user=SimpleNamespace(
             is_authenticated=True,
             is_active=False,

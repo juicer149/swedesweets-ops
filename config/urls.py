@@ -21,11 +21,6 @@ urlpatterns = [
         name="index",
     ),
     path(
-        "ops/",
-        dashboard_views.index,
-        name="ops_dashboard",
-    ),
-    path(
         "",
         include(
             "storefront.public_urls",
@@ -45,38 +40,43 @@ urlpatterns = [
     ),
     path(
         "accounts/",
+        include("django.contrib.auth.urls"),
+    ),
+    path(
+        "ops/",
+        dashboard_views.index,
+        name="ops_dashboard",
+    ),
+    path(
+        "ops/accounts/",
         include(
             "ops_portal.accounts.urls",
             namespace="ops_accounts",
         ),
     ),
     path(
-        "accounts/",
-        include("django.contrib.auth.urls"),
-    ),
-    path(
-        "orders/",
+        "ops/orders/",
         include(
             "ops_portal.orders.urls",
             namespace="ops_orders",
         ),
     ),
     path(
-        "inventory/",
+        "ops/inventory/",
         include(
             "ops_portal.inventory.urls",
             namespace="ops_inventory",
         ),
     ),
     path(
-        "products/",
+        "ops/products/",
         include(
             "ops_portal.products.urls",
             namespace="ops_products",
         ),
     ),
     path(
-        "customers/",
+        "ops/customers/",
         include(
             "ops_portal.customers.urls",
             namespace="ops_customers",

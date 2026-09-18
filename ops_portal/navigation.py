@@ -25,7 +25,7 @@ CUSTOMERS_NAV_ITEM = NavItem(
 ORDERS_NAV_ITEM = NavItem(
     label="Orders",
     route_name="ops_orders:index",
-    namespace="orders",
+    namespace="ops_orders",
     icon="cart",
     capability=Capability.VIEW_ORDERS,
 )
@@ -69,7 +69,10 @@ RESTRICTED_STAFF_NAV_ITEMS = (
 )
 
 
-NAV_ITEMS_BY_ROLE: dict[AccountRole, tuple[NavItem, ...]] = {
+NAV_ITEMS_BY_ROLE: dict[
+    AccountRole,
+    tuple[NavItem, ...],
+] = {
     AccountRole.OWNER: STAFF_NAV_ITEMS,
     AccountRole.FULL_STAFF: STAFF_NAV_ITEMS,
     AccountRole.RESTRICTED_STAFF: RESTRICTED_STAFF_NAV_ITEMS,
@@ -81,7 +84,10 @@ def build_staff_primary_nav_items(
     account_role: AccountRole,
     role_spec: RoleSpec,
 ) -> tuple[NavItem, ...]:
-    candidates = NAV_ITEMS_BY_ROLE.get(account_role, ())
+    candidates = NAV_ITEMS_BY_ROLE.get(
+        account_role,
+        (),
+    )
 
     return filter_nav_items(
         candidates=candidates,

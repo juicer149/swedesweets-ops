@@ -171,7 +171,7 @@ def test_view_capability_middleware_allows_public_view_for_anonymous_user():
 def test_view_capability_middleware_redirects_anonymous_user_for_protected_view():
     request = _build_request(
         user=AnonymousUser(),
-        path="/orders/",
+        path="/ops/orders/",
         view_name="ops_orders:index",
     )
     _attach_account_context(request)
@@ -187,7 +187,7 @@ def test_view_capability_middleware_redirects_anonymous_user_for_protected_view(
 def test_view_capability_middleware_allows_user_with_required_capability():
     request = _build_request(
         user=restricted_staff_user_factory(),
-        path="/orders/1/pack/",
+        path="/ops/orders/1/pack/",
         view_name="ops_orders:pack",
     )
     _attach_account_context(request)
@@ -209,7 +209,7 @@ def test_view_capability_middleware_denies_user_without_required_capability():
 
     request = _build_request(
         user=user,
-        path="/orders/",
+        path="/ops/orders/",
         view_name="ops_orders:index",
     )
     _attach_account_context(request)
