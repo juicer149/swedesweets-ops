@@ -1,26 +1,12 @@
 """
-Identity menus for the shared navbar account slot.
+Identity menus for shared navbar account slots.
 
-The account slot has one presentation component, but its contents depend on
-the current application zone:
+The account slot is shared presentation. Its contents depend on both
+identity and the current application zone.
 
-    public storefront
-        anonymous       -> no menu; navbar renders Login
-        business custom -> Orders, My account, Store info, Logout
-        staff           -> My account, Ops dashboard, Logout
-
-    business portal
-        business custom -> Orders, My account, Store info, Logout
-
-    operations portal
-        staff           -> My account, Public site, Logout
-
-Logout is not represented as an AccountMenuItem because it is a POST action.
-The shared account_menu.html template renders it separately with CSRF
+Logout is deliberately not represented as an AccountMenuItem because it is
+a POST action. includes/account_menu.html renders it separately with CSRF
 protection.
-
-This module owns identity/context navigation. Primary application navigation
-remains owned by storefront, business_portal and ops_portal respectively.
 """
 
 from __future__ import annotations
@@ -56,14 +42,8 @@ MY_ACCOUNT_MENU_ITEM = AccountMenuItem(
     icon="users",
 )
 
-BUSINESS_ORDERS_MENU_ITEM = AccountMenuItem(
-    label=_("Orders"),
-    route_name="business_portal:orders",
-    icon="box",
-)
-
-BUSINESS_STORE_INFO_MENU_ITEM = AccountMenuItem(
-    label=_("Store info"),
+BUSINESS_ACCOUNT_MENU_ITEM = AccountMenuItem(
+    label=_("My account"),
     route_name="business_portal:profile",
     icon="users",
 )
@@ -86,7 +66,7 @@ def build_storefront_account_menu(
     account_role: AccountRole,
     role_spec: RoleSpec,
 ) -> AccountMenu | None:
-    """Build the account menu shown while browsing the public storefront."""
+    """Build the identity menu while browsing the public storefront."""
 
     if role_spec.allows(Capability.VIEW_STAFF_OPS):
         return AccountMenu(
@@ -104,20 +84,24 @@ def build_storefront_account_menu(
 
 
 def build_business_account_menu() -> AccountMenu:
-    """Build identity navigation for an authenticated business customer."""
+    """Build the identity menu inside the business sales channel.
+
+    The business account area will become the single entry point for
+    account identity, store information and order history. Until that
+    account area is migrated, the existing profile route remains the
+    stable destination.
+    """
 
     return AccountMenu(
         label=_("Account"),
         items=(
-            BUSINESS_ORDERS_MENU_ITEM,
-            MY_ACCOUNT_MENU_ITEM,
-            BUSINESS_STORE_INFO_MENU_ITEM,
+            BUSINESS_ACCOUNT_MENU_ITEM,
         ),
     )
 
 
 def build_ops_account_menu() -> AccountMenu:
-    """Build identity/context navigation for staff inside the ops portal."""
+    """Build identity/context navigation inside the operations portal."""
 
     return AccountMenu(
         label=_("Account"),

@@ -7,6 +7,7 @@ from django.urls import (
 )
 
 from ops_portal.dashboard import views as dashboard_views
+from storefront import views as storefront_views
 
 
 urlpatterns = [
@@ -16,7 +17,7 @@ urlpatterns = [
     ),
     path(
         "",
-        dashboard_views.index,
+        storefront_views.landing,
         name="index",
     ),
     path(

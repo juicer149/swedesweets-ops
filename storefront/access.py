@@ -3,6 +3,7 @@ from __future__ import annotations
 
 AUTH_EXEMPT_VIEWS = frozenset(
     {
+        "index",
         "storefront:product_list",
         "storefront:product_detail",
         "storefront:add_to_cart",

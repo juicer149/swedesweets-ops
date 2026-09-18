@@ -18,6 +18,13 @@ from retail.payments import (
 )
 
 
+def landing(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "storefront/landing.html",
+    )
+
+
 def contact(request: HttpRequest) -> HttpResponse:
     return render(
         request,

@@ -7,7 +7,6 @@ from accounts.account_menus import (
     build_ops_account_menu,
     build_storefront_account_menu,
 )
-from accounts.navigation import build_home_href
 from accounts.roles import AccountRole, Capability
 from business_portal.navigation import (
     build_business_primary_nav_items,
@@ -83,6 +82,13 @@ def _build_site_navigation(
         account_menu = (
             build_business_account_menu()
         )
+
+        navbar_cart = (
+            _build_business_cart(
+                request=request,
+                role_spec=role_spec,
+            )
+        )
     else:
         primary_nav_items = (
             build_public_primary_nav_items()
@@ -95,10 +101,12 @@ def _build_site_navigation(
             )
         )
 
+        navbar_cart = None
+
     return {
         "primary_nav_items": primary_nav_items,
         "site_home_href": reverse("index"),
-        "navbar_cart": None,
+        "navbar_cart": navbar_cart,
         "account_menu": account_menu,
     }
 
@@ -109,68 +117,97 @@ def _build_portal_navigation(
     account_role: AccountRole,
     role_spec,
 ) -> dict:
-    navbar_cart = None
-
     if (
         account_role
         == AccountRole.BUSINESS_CUSTOMER
     ):
-        primary_nav_items = (
+        return _build_business_navigation(
+            request=request,
+            role_spec=role_spec,
+        )
+
+    return _build_ops_navigation(
+        account_role=account_role,
+        role_spec=role_spec,
+    )
+
+
+def _build_business_navigation(
+    *,
+    request,
+    role_spec,
+) -> dict:
+    return {
+        "primary_nav_items": (
             build_business_primary_nav_items()
-        )
-
-        account_menu = (
+        ),
+        "site_home_href": reverse("index"),
+        "navbar_cart": (
+            _build_business_cart(
+                request=request,
+                role_spec=role_spec,
+            )
+        ),
+        "account_menu": (
             build_business_account_menu()
+        ),
+    }
+
+
+def _build_business_cart(
+    *,
+    request,
+    role_spec,
+):
+    if not role_spec.allows(
+        Capability.PLACE_BUSINESS_ORDERS
+    ):
+        return None
+
+    customer = get_portal_customer_for_user(
+        user=request.user,
+    )
+
+    draft_order = (
+        get_active_draft_order_for_customer(
+            customer=customer,
         )
+    )
 
+    return build_business_navbar_cart(
+        draft_order=draft_order,
+        language_code=getattr(
+            request,
+            "LANGUAGE_CODE",
+            None,
+        ),
+    )
+
+
+def _build_ops_navigation(
+    *,
+    account_role: AccountRole,
+    role_spec,
+) -> dict:
+    account_menu = (
+        build_ops_account_menu()
         if role_spec.allows(
-            Capability.PLACE_BUSINESS_ORDERS
-        ):
-            customer = (
-                get_portal_customer_for_user(
-                    user=request.user,
-                )
-            )
+            Capability.VIEW_STAFF_OPS
+        )
+        else None
+    )
 
-            draft_order = (
-                get_active_draft_order_for_customer(
-                    customer=customer,
-                )
-            )
-
-            navbar_cart = (
-                build_business_navbar_cart(
-                    draft_order=draft_order,
-                    language_code=getattr(
-                        request,
-                        "LANGUAGE_CODE",
-                        None,
-                    ),
-                )
-            )
-    else:
-        primary_nav_items = (
+    return {
+        "primary_nav_items": (
             build_staff_primary_nav_items(
                 account_role=account_role,
                 role_spec=role_spec,
             )
-        )
-
-        account_menu = (
-            build_ops_account_menu()
-            if role_spec.allows(
-                Capability.VIEW_STAFF_OPS
-            )
-            else None
-        )
-
-    return {
-        "primary_nav_items": primary_nav_items,
-        "site_home_href": build_home_href(
-            account_role=account_role,
-            role_spec=role_spec,
         ),
-        "navbar_cart": navbar_cart,
+        "site_home_href": reverse(
+            "ops_dashboard"
+        ),
+        "navbar_cart": None,
         "account_menu": account_menu,
     }
 
@@ -187,7 +224,12 @@ def _uses_shared_site_chrome(
     if resolver_match is None:
         return False
 
-    return resolver_match.namespace in {
-        "storefront",
-        "public_site",
-    }
+    return (
+        resolver_match.namespace
+        in {
+            "storefront",
+            "public_site",
+        }
+        or resolver_match.view_name
+        == "index"
+    )
