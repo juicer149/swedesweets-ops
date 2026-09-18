@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% load static i18n %}
 
-{% block title %}{% trans "Store" %} | SwedeSweets{% endblock %}
+{% block title %}{% trans "Orders" %} | SwedeSweets{% endblock %}
 
 {% block content %}
-{% trans "Store" as store_title %}
-{% trans "Your store details and order history." as store_description %}
-
-{% include "includes/ui/page_header.html" with title_id="store-title" title=store_title description=store_description %}
+<h1 class="visually-hidden">
+  {% trans "Orders" %}
+</h1>
 
 {% include "business_portal/includes/account_section_nav.html" with active_section="orders" only %}
 
@@ -21,7 +20,7 @@
     id="store-orders-title"
     class="visually-hidden"
   >
-    {% trans "Orders" %}
+    {% trans "Order history" %}
   </h2>
 
   {% include "includes/table/filter_chips.html" %}

@@ -4,10 +4,9 @@
 {% block title %}{% trans "My account" %} | SwedeSweets{% endblock %}
 
 {% block content %}
-{% trans "My account" as account_title %}
-{% trans "Manage your store information and account security." as account_description %}
-
-{% include "includes/ui/page_header.html" with title_id="my-account-title" title=account_title description=account_description %}
+<h1 class="visually-hidden">
+  {% trans "My account" %}
+</h1>
 
 {% include "business_portal/includes/account_section_nav.html" with active_section="account" only %}
 
