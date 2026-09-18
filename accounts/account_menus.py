@@ -44,7 +44,7 @@ MY_ACCOUNT_MENU_ITEM = AccountMenuItem(
 
 BUSINESS_ACCOUNT_MENU_ITEM = AccountMenuItem(
     label=_("My account"),
-    route_name="business_portal:profile",
+    route_name="business_portal:index",
     icon="users",
 )
 
@@ -84,13 +84,7 @@ def build_storefront_account_menu(
 
 
 def build_business_account_menu() -> AccountMenu:
-    """Build the identity menu inside the business sales channel.
-
-    The business account area will become the single entry point for
-    account identity, store information and order history. Until that
-    account area is migrated, the existing profile route remains the
-    stable destination.
-    """
+    """Build the identity menu for the business customer site."""
 
     return AccountMenu(
         label=_("Account"),

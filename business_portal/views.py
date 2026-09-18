@@ -3,52 +3,36 @@ from __future__ import annotations
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.urls import reverse
+from django.views.decorators.http import require_GET
 
 from business_portal.selectors import (
     get_portal_customer_for_user,
 )
-from business_portal.viewmodels import (
-    RECENT_PORTAL_ORDER_LIMIT,
-    build_portal_home_context,
-)
-from orders.selectors import (
-    get_active_draft_order_for_customer,
-    list_customer_orders,
-)
+from customers.models import CUSTOMER_COUNTRY_LABELS
 
 
 @login_required
+@require_GET
 def index(request):
     customer = get_portal_customer_for_user(
         user=request.user,
     )
 
-    active_draft_order = (
-        get_active_draft_order_for_customer(
-            customer=customer,
-        )
-    )
-
-    recent_orders = tuple(
-        list_customer_orders(
-            customer=customer,
-        )[:RECENT_PORTAL_ORDER_LIMIT]
-    )
-
-    context = build_portal_home_context(
-        customer=customer,
-        recent_orders=recent_orders,
-        active_draft_order=active_draft_order,
-    ).as_dict()
-
     return render(
         request,
         "business_portal/index.html",
-        context,
+        {
+            "customer": customer,
+            "country_label": CUSTOMER_COUNTRY_LABELS.get(
+                customer.country,
+                customer.country,
+            ),
+        },
     )
 
 
 @login_required
+@require_GET
 def contact(request):
     return render(
         request,
@@ -57,6 +41,7 @@ def contact(request):
 
 
 @login_required
+@require_GET
 def faq(request):
     return render(
         request,

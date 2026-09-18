@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from django.views.decorators.http import require_GET
 from django.http import (
     Http404,
     HttpRequest,
@@ -37,6 +38,7 @@ def _is_business_customer(
     )
 
 
+@require_GET
 def landing(request: HttpRequest) -> HttpResponse:
     return render(
         request,
@@ -44,6 +46,7 @@ def landing(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_GET
 def contact(request: HttpRequest) -> HttpResponse:
     if _is_business_customer(request):
         return redirect(
@@ -56,6 +59,7 @@ def contact(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_GET
 def faq(request: HttpRequest) -> HttpResponse:
     if _is_business_customer(request):
         return redirect(

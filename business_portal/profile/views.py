@@ -4,7 +4,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_GET
 
 from business_portal.profile.forms import (
     CustomerProfileForm,
@@ -17,27 +16,6 @@ from business_portal.selectors import (
     get_portal_customer_for_user,
 )
 from customers.errors import InvalidCustomerData
-from customers.models import CUSTOMER_COUNTRY_LABELS
-
-
-@login_required
-@require_GET
-def profile(request):
-    customer = get_portal_customer_for_user(
-        user=request.user,
-    )
-
-    return render(
-        request,
-        "business_portal/profile.html",
-        {
-            "customer": customer,
-            "country_label": CUSTOMER_COUNTRY_LABELS.get(
-                customer.country,
-                customer.country,
-            ),
-        },
-    )
 
 
 @login_required
@@ -71,7 +49,7 @@ def edit_profile(request):
                 )
 
                 return redirect(
-                    "business_portal:profile"
+                    "business_portal:index"
                 )
     else:
         form = CustomerProfileForm(

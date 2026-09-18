@@ -2,14 +2,14 @@
 
 <nav
   class="section-nav"
-  aria-label="{% trans 'Store sections' %}"
+  aria-label="{% trans 'Account sections' %}"
 >
   <a
-    class="section-nav__link{% if active_section == 'overview' %} section-nav__link--active{% endif %}"
-    href="{% url 'business_portal:profile' %}"
-    {% if active_section == "overview" %}aria-current="page"{% endif %}
+    class="section-nav__link{% if active_section == 'account' %} section-nav__link--active{% endif %}"
+    href="{% url 'business_portal:index' %}"
+    {% if active_section == "account" %}aria-current="page"{% endif %}
   >
-    {% trans "Overview" %}
+    {% trans "My account" %}
   </a>
 
   <a

@@ -53,7 +53,7 @@ def test_customer_can_view_store_profile(
 
     response = client.get(
         reverse(
-            "business_portal:profile"
+            "business_portal:index"
         )
     )
 
@@ -84,7 +84,7 @@ def test_store_profile_overview_does_not_accept_post(
 
     response = client.post(
         reverse(
-            "business_portal:profile"
+            "business_portal:index"
         ),
         PROFILE_FORM_DATA,
     )
@@ -129,7 +129,7 @@ def test_customer_updates_only_own_store_profile(
 
     response = client.post(
         reverse(
-            "business_portal:edit_profile"
+            "business_portal:edit_store"
         ),
         PROFILE_FORM_DATA,
     )
@@ -137,7 +137,7 @@ def test_customer_updates_only_own_store_profile(
     assert response.status_code == 302
 
     assert response["Location"] == reverse(
-        "business_portal:profile"
+        "business_portal:index"
     )
 
     customer.refresh_from_db()
@@ -203,7 +203,7 @@ def test_profile_update_affects_future_orders_but_not_existing_snapshots(
 
     response = client.post(
         reverse(
-            "business_portal:edit_profile"
+            "business_portal:edit_store"
         ),
         PROFILE_FORM_DATA,
     )

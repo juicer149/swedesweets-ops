@@ -58,7 +58,7 @@ def test_business_contact_and_faq_stay_in_business_portal():
     )
 
 
-def test_business_navigation_does_not_include_account_pages():
+def test_business_navigation_does_not_include_account_area():
     items = build_business_primary_nav_items()
 
     route_names = {
@@ -66,5 +66,6 @@ def test_business_navigation_does_not_include_account_pages():
         for item in items
     }
 
-    assert "business_portal:profile" not in route_names
+    assert "business_portal:index" not in route_names
     assert "business_portal:orders" not in route_names
+    assert "business_portal:edit_store" not in route_names

@@ -5,6 +5,7 @@ from accounts.roles import Capability
 
 VIEW_CAPABILITIES = {
     "business_portal:index": Capability.VIEW_BUSINESS_PORTAL,
+    "business_portal:edit_store": Capability.EDIT_OWN_ACCOUNT,
     "business_portal:orders": Capability.VIEW_OWN_ORDERS,
     "business_portal:order_detail": Capability.VIEW_OWN_ORDERS,
     "business_portal:repeat_order": Capability.PLACE_BUSINESS_ORDERS,
@@ -16,8 +17,6 @@ VIEW_CAPABILITIES = {
     "business_portal:catalog": Capability.VIEW_BUSINESS_PORTAL,
     "business_portal:catalog_product": Capability.VIEW_BUSINESS_PORTAL,
     "business_portal:catalog_add_product": Capability.PLACE_BUSINESS_ORDERS,
-    "business_portal:profile": Capability.VIEW_OWN_ACCOUNT,
-    "business_portal:edit_profile": Capability.EDIT_OWN_ACCOUNT,
     "business_portal:contact": Capability.VIEW_BUSINESS_PORTAL,
     "business_portal:faq": Capability.VIEW_BUSINESS_PORTAL,
 }
