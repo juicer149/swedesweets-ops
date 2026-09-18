@@ -12,7 +12,7 @@
     || "Could not update quantity."
   );
 
-  function notifyDraftChanged(
+  function notifyCartChanged(
     {
       lineId,
       quantity,
@@ -20,7 +20,7 @@
   ) {
     document.dispatchEvent(
       new CustomEvent(
-        "draft-order-changed",
+        "cart-changed",
         {
           detail: {
             source: "current-order",
@@ -145,7 +145,7 @@
         )
       );
 
-      notifyDraftChanged({
+      notifyCartChanged({
         lineId,
         quantity: savedQuantity,
       });
@@ -250,7 +250,7 @@
   );
 
   document.addEventListener(
-    "draft-order-changed",
+    "cart-changed",
     (event) => {
       if (
         event.detail?.source

@@ -168,12 +168,12 @@
    */
 
 
-  function dispatchDraftChanged(
+  function dispatchCartChanged(
     detail = {}
   ) {
     document.dispatchEvent(
       new CustomEvent(
-        "draft-order-changed",
+        "cart-changed",
         {
           detail,
         }
@@ -391,7 +391,7 @@
         );
       }
 
-      dispatchDraftChanged({
+      dispatchCartChanged({
         source: "navbar-cart",
         mutation: "quantity",
         lineId: lineIdFromElement(
@@ -531,7 +531,7 @@
         form
       );
 
-      dispatchDraftChanged({
+      dispatchCartChanged({
         source: "navbar-cart",
         mutation: "remove",
         lineId,
@@ -636,7 +636,7 @@
 
 
   document.addEventListener(
-    "draft-order-changed",
+    "cart-changed",
     (event) => {
       if (
         event.detail?.source

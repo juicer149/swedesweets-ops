@@ -207,7 +207,7 @@
   function notifyCartChanged() {
     document.dispatchEvent(
       new CustomEvent(
-        "retail-cart-changed",
+        "cart-changed",
         {
           detail: {
             source: "storefront-catalog",

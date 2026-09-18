@@ -7,7 +7,10 @@ from accounts.account_menus import (
     build_ops_account_menu,
     build_storefront_account_menu,
 )
-from accounts.roles import AccountRole, Capability
+from accounts.roles import (
+    AccountRole,
+    Capability,
+)
 from business_portal.navigation import (
     build_business_primary_nav_items,
 )
@@ -22,6 +25,12 @@ from ops_portal.navigation import (
 )
 from orders.selectors import (
     get_active_draft_order_for_customer,
+)
+from storefront.cart_selectors import (
+    get_retail_cart,
+)
+from storefront.navbar_viewmodels import (
+    build_retail_navbar_cart,
 )
 from storefront.navigation import (
     build_public_primary_nav_items,
@@ -46,12 +55,16 @@ def navigation(request):
     ):
         return {
             "primary_nav_items": (),
-            "site_home_href": reverse("index"),
+            "site_home_href": reverse(
+                "index"
+            ),
             "navbar_cart": None,
             "account_menu": None,
         }
 
-    if _uses_shared_site_chrome(request):
+    if _uses_shared_site_chrome(
+        request
+    ):
         return _build_site_navigation(
             request=request,
             account_role=account_role,
@@ -101,11 +114,17 @@ def _build_site_navigation(
             )
         )
 
-        navbar_cart = None
+        navbar_cart = (
+            _build_retail_cart(
+                request=request,
+            )
+        )
 
     return {
         "primary_nav_items": primary_nav_items,
-        "site_home_href": reverse("index"),
+        "site_home_href": reverse(
+            "index"
+        ),
         "navbar_cart": navbar_cart,
         "account_menu": account_menu,
     }
@@ -141,7 +160,9 @@ def _build_business_navigation(
         "primary_nav_items": (
             build_business_primary_nav_items()
         ),
-        "site_home_href": reverse("index"),
+        "site_home_href": reverse(
+            "index"
+        ),
         "navbar_cart": (
             _build_business_cart(
                 request=request,
@@ -164,8 +185,10 @@ def _build_business_cart(
     ):
         return None
 
-    customer = get_portal_customer_for_user(
-        user=request.user,
+    customer = (
+        get_portal_customer_for_user(
+            user=request.user,
+        )
     )
 
     draft_order = (
@@ -181,6 +204,23 @@ def _build_business_cart(
             "LANGUAGE_CODE",
             None,
         ),
+    )
+
+
+def _build_retail_cart(
+    *,
+    request,
+):
+    cart = get_retail_cart(
+        cart_id=getattr(
+            request,
+            "retail_cart_id",
+            None,
+        ),
+    )
+
+    return build_retail_navbar_cart(
+        cart=cart,
     )
 
 

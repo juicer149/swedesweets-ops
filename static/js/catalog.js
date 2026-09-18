@@ -204,10 +204,10 @@
   }
 
 
-  function notifyDraftChanged() {
+  function notifyCartChanged() {
     document.dispatchEvent(
       new CustomEvent(
-        "draft-order-changed",
+        "cart-changed",
         {
           detail: {
             source: "catalog",
@@ -542,7 +542,7 @@
       confirmButton.textContent =
         addedLabel;
 
-      notifyDraftChanged();
+      notifyCartChanged();
 
       window.setTimeout(
         () => {
@@ -634,3 +634,4 @@
 
   initializePurchaseControls();
 })();
+
