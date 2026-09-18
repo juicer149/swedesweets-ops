@@ -7,7 +7,7 @@ from business_portal.catalog import views as catalog_views
 from business_portal.orders import navbar_views
 from business_portal.orders import repeat_views
 from business_portal.orders import views as order_views
-from business_portal.profile import views as profile_views
+from business_portal.store import views as store_views
 
 
 app_name = "business_portal"
@@ -21,7 +21,7 @@ urlpatterns = [
     ),
     path(
         "store/edit/",
-        profile_views.edit_profile,
+        store_views.edit_store,
         name="edit_store",
     ),
     path(

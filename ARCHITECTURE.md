@@ -167,7 +167,7 @@ business_portal/
         presentation.py
         *_viewmodels.py
 
-    profile/
+    store/
         forms.py
         services.py
         views.py
@@ -386,8 +386,8 @@ orders/services.py
 or:
 
 ```text
-business_portal/profile/services.py
-    B2B profile-update use case
+business_portal/store/services.py
+    B2B store-update use case
         ↓
 customers/services.py
 ```
@@ -482,6 +482,47 @@ ops_portal/accounts
 accounts
     shared identity, permissions, lifecycle and self/account behavior
 ```
+
+B2B customers use `/my/` as their canonical account area. The generic
+`/accounts/me/` route remains available for shared/staff self-account behavior,
+but redirects B2B customers into `business_portal`.
+
+## Route structure
+
+Top-level URL prefixes reflect the application surface they belong to:
+
+```text
+/
+    public landing page
+
+/shop/
+    public retail storefront
+
+/my/
+    authenticated B2B customer area
+
+/ops/
+    internal staff operations area
+
+/accounts/
+    shared authentication and account workflows
+```
+
+Operational resources live below `/ops/`, for example:
+
+```text
+/ops/orders/
+/ops/customers/
+/ops/inventory/
+/ops/products/
+/ops/accounts/
+```
+
+B2B customer routes live below `/my/`, including catalog, contact, FAQ,
+account/store editing and order history.
+
+The URL prefix is not an authorization boundary by itself. Capabilities,
+route policies and object scoping remain authoritative.
 
 ## Route authorization
 
@@ -1111,8 +1152,8 @@ business_portal/orders
     order detail
     B2B order presentation
 
-business_portal/profile
-    customer profile editing
+business_portal/store
+    customer store editing
 
 business_portal
     portal home
@@ -1151,8 +1192,8 @@ B2B customer UI
 B2B order UI
     -> business_portal/orders
 
-B2B profile UI
-    -> business_portal/profile
+B2B store UI
+    -> business_portal/store
 
 public retail UI
     -> storefront
@@ -1184,6 +1225,19 @@ actor-specific navigation composition
 domain ORM queries
     -> owning domain selectors
 ```
+
+Current route surfaces are intentionally separated:
+
+```text
+/                  public landing
+/shop/             retail storefront
+/my/               B2B customer area
+/ops/              internal operations
+/accounts/         shared authentication/account workflows
+```
+
+`/accounts/me/` remains the generic self-account route for shared/staff use.
+B2B customers are redirected from it to `/my/`.
 
 This document now describes the current intended structure rather than a
 temporary migration state.

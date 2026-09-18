@@ -5,21 +5,21 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 
-from business_portal.profile.forms import (
+from business_portal.selectors import (
+    get_portal_customer_for_user,
+)
+from business_portal.store.forms import (
     CustomerProfileForm,
     build_customer_profile_initial_data,
 )
-from business_portal.profile.services import (
+from business_portal.store.services import (
     update_portal_customer_profile,
-)
-from business_portal.selectors import (
-    get_portal_customer_for_user,
 )
 from customers.errors import InvalidCustomerData
 
 
 @login_required
-def edit_profile(request):
+def edit_store(request):
     customer = get_portal_customer_for_user(
         user=request.user,
     )
@@ -45,7 +45,7 @@ def edit_profile(request):
             else:
                 messages.success(
                     request,
-                    _("Profile updated."),
+                    _("Store information updated."),
                 )
 
                 return redirect(
@@ -61,7 +61,7 @@ def edit_profile(request):
 
     return render(
         request,
-        "business_portal/profile_edit.html",
+        "business_portal/store_edit.html",
         {
             "form": form,
             "customer": customer,
