@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-19 12:33+0200\n"
+"POT-Creation-Date: 2026-09-19 12:50+0200\n"
 "PO-Revision-Date: 2026-09-18 19:28+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -679,7 +679,6 @@ msgid "Address is too long."
 msgstr "L’adresse est trop longue."
 
 #: business_portal/store/views.py:48
-#| msgid "Edit store information"
 msgid "Store information updated."
 msgstr "Les informations du magasin ont été mises à jour."
 
@@ -913,7 +912,6 @@ msgid "Merchandise"
 msgstr "Marchandise"
 
 #: storefront/cart_views.py:261
-#| msgid "Product removed from your order."
 msgid "Product removed from your cart."
 msgstr "Produit retiré de votre panier."
 
@@ -948,13 +946,11 @@ msgstr "Panier"
 
 # | msgid "No orders yet"
 #: storefront/navbar_viewmodels.py:51 storefront/navbar_viewmodels.py:76
-#| msgid "Your order is empty."
 msgid "Your cart is empty."
 msgstr "Votre panier est vide."
 
 # | msgid "Customer catalog"
 #: storefront/navbar_viewmodels.py:54 storefront/navbar_viewmodels.py:79
-#| msgid "Browse catalog"
 msgid "Browse shop"
 msgstr "Parcourir la boutique"
 
@@ -1380,8 +1376,8 @@ msgid "SwedeSweets home"
 msgstr "Accueil SwedeSweets"
 
 #: templates/includes/navbar.html:99 templates/includes/site_navbar.html:115
-#: templates/registration/login.html:4 templates/registration/login.html:36
-#: templates/registration/login.html:91
+#: templates/registration/login.html:4 templates/registration/login.html:40
+#: templates/registration/login.html:95
 msgid "Login"
 msgstr "Connexion"
 
@@ -1393,14 +1389,6 @@ msgstr "Connexion"
 # | "        %(product_count)s products\n"
 #: templates/includes/navbar_cart.html:26
 #, python-format
-#| msgid ""
-#| "\n"
-#| "          %(count)s item\n"
-#| "        "
-#| msgid_plural ""
-#| "\n"
-#| "          %(count)s items\n"
-#| "        "
 msgid ""
 "\n"
 "        %(count)s item selected\n"
@@ -1496,19 +1484,19 @@ msgstr "Non, conserver la commande"
 msgid "Authentication navigation"
 msgstr "Navigation d’authentification"
 
-#: templates/registration/login.html:40
+#: templates/registration/login.html:44
 msgid "Sign in to access your SwedeSweets account."
 msgstr "Connectez-vous pour accéder à votre compte SwedeSweets."
 
-#: templates/registration/login.html:55
+#: templates/registration/login.html:59
 msgid "Username"
 msgstr "Nom d’utilisateur"
 
-#: templates/registration/login.html:71
+#: templates/registration/login.html:75
 msgid "Password"
 msgstr "Mot de passe"
 
-#: templates/registration/login.html:98
+#: templates/registration/login.html:102
 msgid "Forgot password?"
 msgstr "Mot de passe oublié ?"
 
