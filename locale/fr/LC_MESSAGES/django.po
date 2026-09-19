@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-18 19:17+0200\n"
+"POT-Creation-Date: 2026-09-19 12:33+0200\n"
 "PO-Revision-Date: 2026-09-18 19:28+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -22,7 +22,7 @@ msgstr ""
 #: accounts/self_viewmodels.py:80 accounts/self_viewmodels.py:114
 #: templates/business_portal/includes/account_section_nav.html:12
 #: templates/business_portal/index.html:4
-#: templates/business_portal/index.html:7
+#: templates/business_portal/index.html:8
 msgid "My account"
 msgstr "Mon compte"
 
@@ -208,7 +208,7 @@ msgstr "Accès inconnu"
 msgid "Activity"
 msgstr "Activité"
 
-#: accounts/self_viewmodels.py:149 templates/business_portal/index.html:106
+#: accounts/self_viewmodels.py:149 templates/business_portal/index.html:105
 #: templates/registration/password_change_form.html:4
 #: templates/registration/password_change_form.html:7
 #: templates/registration/password_change_form.html:13
@@ -378,6 +378,7 @@ msgid "Discard draft"
 msgstr "Abandonner"
 
 #: business_portal/orders/form_viewmodels.py:74
+#: storefront/navbar_viewmodels.py:46 storefront/navbar_viewmodels.py:71
 msgid "Continue shopping"
 msgstr "Continuer les achats"
 
@@ -569,7 +570,7 @@ msgid "Quantity must be a whole number."
 msgstr "La quantité doit être un nombre entier."
 
 # | msgid "Quantity"
-#: business_portal/orders/views.py:241
+#: business_portal/orders/views.py:241 storefront/cart_views.py:197
 msgid "Quantity updated."
 msgstr "Quantité mise à jour."
 
@@ -599,88 +600,88 @@ msgstr "Aucun brouillon de commande à vérifier."
 msgid "Order #%(order_id)s placed."
 msgstr "Commande n° %(order_id)s passée."
 
-#: business_portal/profile/forms.py:25 templates/business_portal/index.html:30
+#: business_portal/store/forms.py:25 templates/business_portal/index.html:29
 msgid "Store name"
 msgstr "Nom du magasin"
 
-#: business_portal/profile/forms.py:28
+#: business_portal/store/forms.py:28
 msgid "Enter the store name."
 msgstr "Saisissez le nom du magasin."
 
-#: business_portal/profile/forms.py:31
+#: business_portal/store/forms.py:31
 msgid "Store name is too long."
 msgstr "Le nom du magasin est trop long."
 
-#: business_portal/profile/forms.py:43
+#: business_portal/store/forms.py:43
 #: templates/accounts/includes/detail_panel_account.html:5
-#: templates/business_portal/contact.html:20
-#: templates/business_portal/index.html:40 templates/storefront/contact.html:20
+#: templates/business_portal/index.html:39 templates/storefront/contact.html:20
 msgid "Email"
 msgstr "E-mail"
 
-#: business_portal/profile/forms.py:46
+#: business_portal/store/forms.py:46
 msgid "Enter an email address."
 msgstr "Saisissez une adresse e-mail."
 
-#: business_portal/profile/forms.py:49
+#: business_portal/store/forms.py:49
 msgid "Enter a valid email address."
 msgstr "Saisissez une adresse e-mail valide."
 
-#: business_portal/profile/forms.py:52
+#: business_portal/store/forms.py:52
 msgid "Email address is too long."
 msgstr "L’adresse e-mail est trop longue."
 
-#: business_portal/profile/forms.py:64 templates/business_portal/index.html:50
+#: business_portal/store/forms.py:64 templates/business_portal/index.html:49
 msgid "Phone number"
 msgstr "Numéro de téléphone"
 
-#: business_portal/profile/forms.py:67
+#: business_portal/store/forms.py:67
 msgid "Enter a phone number."
 msgstr "Saisissez un nomero de téléphone."
 
-#: business_portal/profile/forms.py:70
+#: business_portal/store/forms.py:70
 msgid "Phone number is too long."
 msgstr "Le numéro de téléphone est trop long."
 
-#: business_portal/profile/forms.py:82 templates/business_portal/index.html:80
+#: business_portal/store/forms.py:82 templates/business_portal/index.html:79
 msgid "Country"
 msgstr "Pays"
 
-#: business_portal/profile/forms.py:85
+#: business_portal/store/forms.py:85
 msgid "Choose a country."
 msgstr "Choisissez un pays."
 
-#: business_portal/profile/forms.py:88
+#: business_portal/store/forms.py:88
 msgid "Choose a valid country."
 msgstr "Choisissez un pays valide."
 
-#: business_portal/profile/forms.py:102 templates/business_portal/index.html:70
+#: business_portal/store/forms.py:102 templates/business_portal/index.html:69
 msgid "City"
 msgstr "Ville"
 
-#: business_portal/profile/forms.py:105
+#: business_portal/store/forms.py:105
 msgid "Enter a city."
 msgstr "Saisissez une ville."
 
-#: business_portal/profile/forms.py:108
+#: business_portal/store/forms.py:108
 msgid "City is too long."
 msgstr "La ville est trop longue."
 
-#: business_portal/profile/forms.py:120 templates/business_portal/index.html:60
+#: business_portal/store/forms.py:120 templates/business_portal/index.html:59
 msgid "Address"
 msgstr "Adresse"
 
-#: business_portal/profile/forms.py:123
+#: business_portal/store/forms.py:123
 msgid "Enter a street address."
 msgstr "Saisissez une adresse."
 
-#: business_portal/profile/forms.py:126
+#: business_portal/store/forms.py:126
 msgid "Address is too long."
 msgstr "L’adresse est trop longue."
 
-#: business_portal/profile/views.py:48
-msgid "Profile updated."
-msgstr "Profil mis à jour."
+#: business_portal/store/views.py:48
+#| msgid "Edit store information"
+msgid "Store information updated."
+msgstr "Les informations du magasin ont été mises à jour."
 
 #: ops_portal/accounts/detail_viewmodels.py:129
 #, python-format
@@ -911,31 +912,51 @@ msgstr "Préparations pour dip"
 msgid "Merchandise"
 msgstr "Marchandise"
 
+#: storefront/cart_views.py:261
+#| msgid "Product removed from your order."
+msgid "Product removed from your cart."
+msgstr "Produit retiré de votre panier."
+
 # | msgid "Edit order"
 #: storefront/catalog/viewmodels.py:64
 #: templates/storefront/catalog/detail.html:196
-#| msgid "Add to order"
 msgid "Add to cart"
 msgstr "Ajouter au panier"
 
 # | msgid "Add product"
 #: storefront/catalog/viewmodels.py:77
 #, python-format
-#| msgid "Add %(product)s to order"
 msgid "Add %(product)s to cart"
 msgstr "Ajouter %(product)s au panier"
 
 #: storefront/catalog/views.py:251
-#| msgid "%(product)s is no longer available for business ordering."
 msgid "Retail cart actions are not available for business customers."
-msgstr "Les actions du panier ne sont pas disponibles pour les clients professionnels."
+msgstr ""
+"Les actions du panier ne sont pas disponibles pour les clients "
+"professionnels."
 
 # | msgid "Choose products and quantities for your next order."
 #: storefront/catalog/views.py:332
 #, python-format
-#| msgid "%(product)s added to your order."
 msgid "%(product)s added to your cart."
 msgstr "%(product)s a été ajouté à votre panier."
+
+#: storefront/navbar_viewmodels.py:39 storefront/navbar_viewmodels.py:40
+#: storefront/navbar_viewmodels.py:64 storefront/navbar_viewmodels.py:65
+msgid "Shopping cart"
+msgstr "Panier"
+
+# | msgid "No orders yet"
+#: storefront/navbar_viewmodels.py:51 storefront/navbar_viewmodels.py:76
+#| msgid "Your order is empty."
+msgid "Your cart is empty."
+msgstr "Votre panier est vide."
+
+# | msgid "Customer catalog"
+#: storefront/navbar_viewmodels.py:54 storefront/navbar_viewmodels.py:79
+#| msgid "Browse catalog"
+msgid "Browse shop"
+msgstr "Parcourir la boutique"
 
 #: storefront/navigation.py:31
 msgid "Shop"
@@ -1194,7 +1215,7 @@ msgid "Confirm"
 msgstr "Confirmer"
 
 #: templates/business_portal/catalog/index.html:331
-#: templates/business_portal/profile_edit.html:90
+#: templates/business_portal/store_edit.html:90
 #: templates/includes/ui/form.html:40
 #: templates/ops_portal/inventory/batch_form.html:147
 #: templates/ops_portal/products/product_form.html:274
@@ -1207,46 +1228,21 @@ msgstr "Annulée"
 msgid "No products are currently available."
 msgstr "Aucun produit n’est disponible actuellement."
 
-#: templates/business_portal/contact.html:4
-#: templates/business_portal/contact.html:7
-msgid "Contact SwedeSweets"
-msgstr "Contacter SwedeSweets"
-
-#: templates/business_portal/contact.html:7
-msgid ""
-"Need help with an order, delivery, or your account? Contact us directly."
-msgstr ""
-"Besoin d’aide pour une commande, une livraison ou votre compte ? Contactez-"
-"nous directement."
-
-#: templates/business_portal/contact.html:31
-#: templates/storefront/contact.html:31
-msgid "Phone"
-msgstr "Téléphone"
-
 #: templates/business_portal/includes/account_section_nav.html:5
-#| msgid "Store sections"
 msgid "Account sections"
 msgstr "Sections du compte"
 
 #: templates/business_portal/includes/account_section_nav.html:20
-#: templates/business_portal/orders/index.html:24
+#: templates/business_portal/orders/index.html:4
+#: templates/business_portal/orders/index.html:8
 msgid "Orders"
 msgstr "Commandes"
 
-#: templates/business_portal/index.html:8
-msgid "Manage your store information and account security."
-msgstr "Gérez les informations de votre magasin et la sécurité de votre compte."
-
-#: templates/business_portal/index.html:22
-#| msgid "Account"
+#: templates/business_portal/index.html:21
 msgid "Account details"
 msgstr "Détails du compte"
 
-#: templates/business_portal/index.html:90
-#| msgid ""
-#| "Changes apply to future orders. Existing orders keep the delivery details "
-#| "that were saved when the order was placed."
+#: templates/business_portal/index.html:89
 msgid ""
 "Changes to store information apply to future orders. Existing orders keep "
 "the delivery details that were saved when the order was placed."
@@ -1255,8 +1251,7 @@ msgstr ""
 "commandes futures. Les commandes existantes conservent les informations de "
 "livraison enregistrées lors de la commande."
 
-#: templates/business_portal/index.html:99
-#| msgid "Product information"
+#: templates/business_portal/index.html:98
 msgid "Edit store information"
 msgstr "Modifier les informations du magasin"
 
@@ -1322,44 +1317,38 @@ msgstr[1] ""
 "        %(product_count)s produits\n"
 "      "
 
-# | msgid "Store name"
-#: templates/business_portal/orders/index.html:4
-#: templates/business_portal/orders/index.html:7
-msgid "Store"
-msgstr "Magasin"
+#: templates/business_portal/orders/index.html:23
+msgid "Order history"
+msgstr "Historique des commandes"
 
-#: templates/business_portal/orders/index.html:8
-msgid "Your store details and order history."
-msgstr "Les informations de votre magasin et l’historique de vos commandes."
-
-#: templates/business_portal/orders/index.html:46
+#: templates/business_portal/orders/index.html:45
 #, python-format
 msgid "View order #%(order_id)s"
 msgstr "Voir la commande n° %(order_id)s"
 
-#: templates/business_portal/orders/index.html:50
+#: templates/business_portal/orders/index.html:49
 #, python-format
 msgid "#%(order_id)s"
 msgstr "n° %(order_id)s"
 
-#: templates/business_portal/orders/index.html:76
-#: templates/business_portal/orders/index.html:90
+#: templates/business_portal/orders/index.html:75
+#: templates/business_portal/orders/index.html:89
 msgid "No orders found."
 msgstr "Aucune commande trouvée."
 
 # | msgid "Edit order"
-#: templates/business_portal/profile_edit.html:4
-#: templates/business_portal/profile_edit.html:7
+#: templates/business_portal/store_edit.html:4
+#: templates/business_portal/store_edit.html:7
 msgid "Edit store"
 msgstr "Modifier le magasin"
 
-#: templates/business_portal/profile_edit.html:8
+#: templates/business_portal/store_edit.html:8
 msgid "Update your store contact and delivery details."
 msgstr ""
 "Mettez à jour les coordonnées et les informations de livraison de votre "
 "magasin."
 
-#: templates/business_portal/profile_edit.html:25
+#: templates/business_portal/store_edit.html:25
 msgid ""
 "Changes apply to future orders. Existing orders keep the delivery details "
 "that were saved when the order was placed."
@@ -1369,7 +1358,7 @@ msgstr ""
 "de la commande."
 
 # | msgid "Save and leave"
-#: templates/business_portal/profile_edit.html:83
+#: templates/business_portal/store_edit.html:83
 msgid "Save changes"
 msgstr "Enregistrer les modifications"
 
@@ -1404,22 +1393,30 @@ msgstr "Connexion"
 # | "        %(product_count)s products\n"
 #: templates/includes/navbar_cart.html:26
 #, python-format
+#| msgid ""
+#| "\n"
+#| "          %(count)s item\n"
+#| "        "
+#| msgid_plural ""
+#| "\n"
+#| "          %(count)s items\n"
+#| "        "
 msgid ""
 "\n"
-"        %(count)s item in current order\n"
+"        %(count)s item selected\n"
 "      "
 msgid_plural ""
 "\n"
-"        %(count)s items in current order\n"
+"        %(count)s items selected\n"
 "      "
 msgstr[0] ""
 "\n"
-"        %(count)s article dans la commande en cours\n"
-"      "
+"          %(count)s article\n"
+"        "
 msgstr[1] ""
 "\n"
-"        %(count)s articles dans la commande en cours\n"
-"      "
+"          %(count)s articles\n"
+"        "
 
 # | msgid ""
 # | "\n"
@@ -1474,12 +1471,13 @@ msgstr ""
 #: templates/ops_portal/orders/order_form.html:103
 msgid "No products added yet. Use the selector above to add one."
 msgstr ""
-"Aucun produit ajouté pour le moment. Utilisez le sélecteur ci-dessus pour "
-"en ajouter un."
+"Aucun produit ajouté pour le moment. Utilisez le sélecteur ci-dessus pour en "
+"ajouter un."
 
 #: templates/ops_portal/orders/order_form.html:125
 msgid "Are you sure you want to cancel this order? This cannot be undone."
-msgstr "Voulez-vous vraiment annuler cette commande ? Cette action est irréversible."
+msgstr ""
+"Voulez-vous vraiment annuler cette commande ? Cette action est irréversible."
 
 #: templates/ops_portal/orders/order_form.html:126
 #: templates/ops_portal/orders/order_form.html:130
@@ -1487,17 +1485,14 @@ msgid "Cancel order"
 msgstr "Annuler la commande"
 
 #: templates/ops_portal/orders/order_form.html:127
-#| msgid "Cancel order"
 msgid "Yes, cancel order"
 msgstr "Oui, annuler la commande"
 
 #: templates/ops_portal/orders/order_form.html:128
-#| msgid "Packed order"
 msgid "No, keep order"
 msgstr "Non, conserver la commande"
 
 #: templates/registration/login.html:11
-#| msgid "Primary navigation"
 msgid "Authentication navigation"
 msgstr "Navigation d’authentification"
 
@@ -1531,7 +1526,6 @@ msgid "Your password was changed successfully."
 msgstr "Votre mot de passe a été modifié avec succès."
 
 #: templates/registration/password_change_done.html:25
-#| msgid "Continue draft"
 msgid "Continue"
 msgstr "Continuer"
 
@@ -1651,13 +1645,17 @@ msgid "Send reset link"
 msgstr "Envoyer le lien de réinitialisation"
 
 #: templates/storefront/contact.html:7 templates/storefront/faq.html:18
-#| msgid "Contact"
 msgid "Contact us"
 msgstr "Nous contacter"
 
 #: templates/storefront/contact.html:7
 msgid "Questions about an order, a product, or anything else? Get in touch."
-msgstr "Des questions sur une commande, un produit ou autre chose ? Contactez-nous."
+msgstr ""
+"Des questions sur une commande, un produit ou autre chose ? Contactez-nous."
+
+#: templates/storefront/contact.html:31
+msgid "Phone"
+msgstr "Téléphone"
 
 #: templates/storefront/faq.html:7
 msgid "Frequently asked questions"
@@ -1677,6 +1675,53 @@ msgstr "Cette page est encore en cours de rédaction."
 #: templates/storefront/faq.html:20
 msgid "if you have a question in the meantime."
 msgstr "si vous avez une question en attendant."
+
+#~ msgid "Profile updated."
+#~ msgstr "Profil mis à jour."
+
+#~ msgid "Contact SwedeSweets"
+#~ msgstr "Contacter SwedeSweets"
+
+#~ msgid ""
+#~ "Need help with an order, delivery, or your account? Contact us directly."
+#~ msgstr ""
+#~ "Besoin d’aide pour une commande, une livraison ou votre compte ? "
+#~ "Contactez-nous directement."
+
+#~ msgid "Manage your store information and account security."
+#~ msgstr ""
+#~ "Gérez les informations de votre magasin et la sécurité de votre compte."
+
+# | msgid "Store name"
+#~ msgid "Store"
+#~ msgstr "Magasin"
+
+#~ msgid "Your store details and order history."
+#~ msgstr "Les informations de votre magasin et l’historique de vos commandes."
+
+# | msgid ""
+# | "\n"
+# | "        %(product_count)s product\n"
+# | "      "
+# | msgid_plural ""
+# | "        %(product_count)s products\n"
+#, python-format
+#~ msgid ""
+#~ "\n"
+#~ "        %(count)s item in current order\n"
+#~ "      "
+#~ msgid_plural ""
+#~ "\n"
+#~ "        %(count)s items in current order\n"
+#~ "      "
+#~ msgstr[0] ""
+#~ "\n"
+#~ "        %(count)s article dans la commande en cours\n"
+#~ "      "
+#~ msgstr[1] ""
+#~ "\n"
+#~ "        %(count)s articles dans la commande en cours\n"
+#~ "      "
 
 #, python-format
 #~ msgid "Welcome back, %(name)s"
@@ -1762,9 +1807,6 @@ msgstr "si vous avez une question en attendant."
 #~ msgstr ""
 #~ "%(product)s est trop volumineux. Le maximum est de %(maximum)s par "
 #~ "commande."
-
-#~ msgid "Order history"
-#~ msgstr "Historique des commandes"
 
 #~ msgid "Review your orders and follow their current status."
 #~ msgstr "Consultez vos commandes et suivez leur statut actuel."
