@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-19 12:50+0200\n"
+"POT-Creation-Date: 2026-09-19 13:02+0200\n"
 "PO-Revision-Date: 2026-09-18 19:28+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
@@ -208,7 +208,7 @@ msgstr "Accès inconnu"
 msgid "Activity"
 msgstr "Activité"
 
-#: accounts/self_viewmodels.py:149 templates/business_portal/index.html:105
+#: accounts/self_viewmodels.py:149 templates/business_portal/index.html:124
 #: templates/registration/password_change_form.html:4
 #: templates/registration/password_change_form.html:7
 #: templates/registration/password_change_form.html:13
@@ -407,6 +407,7 @@ msgstr "Votre commande est vide."
 # | msgid "Customer catalog"
 #: business_portal/orders/navbar_viewmodels.py:65
 #: business_portal/orders/navbar_viewmodels.py:90
+#: templates/business_portal/index.html:19
 msgid "Browse catalog"
 msgstr "Parcourir le catalogue"
 
@@ -600,7 +601,7 @@ msgstr "Aucun brouillon de commande à vérifier."
 msgid "Order #%(order_id)s placed."
 msgstr "Commande n° %(order_id)s passée."
 
-#: business_portal/store/forms.py:25 templates/business_portal/index.html:29
+#: business_portal/store/forms.py:25 templates/business_portal/index.html:48
 msgid "Store name"
 msgstr "Nom du magasin"
 
@@ -614,7 +615,7 @@ msgstr "Le nom du magasin est trop long."
 
 #: business_portal/store/forms.py:43
 #: templates/accounts/includes/detail_panel_account.html:5
-#: templates/business_portal/index.html:39 templates/storefront/contact.html:20
+#: templates/business_portal/index.html:58 templates/storefront/contact.html:20
 msgid "Email"
 msgstr "E-mail"
 
@@ -630,7 +631,7 @@ msgstr "Saisissez une adresse e-mail valide."
 msgid "Email address is too long."
 msgstr "L’adresse e-mail est trop longue."
 
-#: business_portal/store/forms.py:64 templates/business_portal/index.html:49
+#: business_portal/store/forms.py:64 templates/business_portal/index.html:68
 msgid "Phone number"
 msgstr "Numéro de téléphone"
 
@@ -642,7 +643,7 @@ msgstr "Saisissez un nomero de téléphone."
 msgid "Phone number is too long."
 msgstr "Le numéro de téléphone est trop long."
 
-#: business_portal/store/forms.py:82 templates/business_portal/index.html:79
+#: business_portal/store/forms.py:82 templates/business_portal/index.html:98
 msgid "Country"
 msgstr "Pays"
 
@@ -654,7 +655,7 @@ msgstr "Choisissez un pays."
 msgid "Choose a valid country."
 msgstr "Choisissez un pays valide."
 
-#: business_portal/store/forms.py:102 templates/business_portal/index.html:69
+#: business_portal/store/forms.py:102 templates/business_portal/index.html:88
 msgid "City"
 msgstr "Ville"
 
@@ -666,7 +667,7 @@ msgstr "Saisissez une ville."
 msgid "City is too long."
 msgstr "La ville est trop longue."
 
-#: business_portal/store/forms.py:120 templates/business_portal/index.html:59
+#: business_portal/store/forms.py:120 templates/business_portal/index.html:78
 msgid "Address"
 msgstr "Adresse"
 
@@ -1234,11 +1235,24 @@ msgstr "Sections du compte"
 msgid "Orders"
 msgstr "Commandes"
 
-#: templates/business_portal/index.html:21
+#: templates/business_portal/index.html:13
+#, fuzzy
+#| msgid "Operations"
+msgid "Order actions"
+msgstr "Opérations"
+
+# | msgid "Recent orders"
+#: templates/business_portal/index.html:26
+#, fuzzy
+#| msgid "View current order"
+msgid "Review current order"
+msgstr "Voir la commande en cours"
+
+#: templates/business_portal/index.html:40
 msgid "Account details"
 msgstr "Détails du compte"
 
-#: templates/business_portal/index.html:89
+#: templates/business_portal/index.html:108
 msgid ""
 "Changes to store information apply to future orders. Existing orders keep "
 "the delivery details that were saved when the order was placed."
@@ -1247,7 +1261,7 @@ msgstr ""
 "commandes futures. Les commandes existantes conservent les informations de "
 "livraison enregistrées lors de la commande."
 
-#: templates/business_portal/index.html:98
+#: templates/business_portal/index.html:117
 msgid "Edit store information"
 msgstr "Modifier les informations du magasin"
 
@@ -1721,10 +1735,6 @@ msgstr "si vous avez une question en attendant."
 #~ msgid "Browse the product catalog"
 #~ msgstr "Parcourir le catalogue de produits"
 
-# | msgid "Recent orders"
-#~ msgid "View current order"
-#~ msgstr "Voir la commande en cours"
-
 # | msgid "View your order history"
 #~ msgid "View your current order"
 #~ msgstr "Voir votre commande en cours"
@@ -1895,9 +1905,6 @@ msgstr "si vous avez une question en attendant."
 
 #~ msgid "Edit my profile"
 #~ msgstr "Modifier mon profil"
-
-#~ msgid "Operations"
-#~ msgstr "Opérations"
 
 #~ msgid "No draft order to discard."
 #~ msgstr "Aucune brouillon de commande à vérifier."

@@ -1,0 +1,107 @@
+{% load i18n %}
+
+<section
+  id="account-panel-account"
+  role="tabpanel"
+  aria-labelledby="account-tab-account"
+  data-tab-panel="account"
+  {% if active_tab != "account" %}hidden{% endif %}
+>
+  <section
+    class="list-section portal-profile-section"
+    aria-labelledby="account-details-title"
+  >
+    <h2
+      id="account-details-title"
+      class="visually-hidden"
+    >
+      {% trans "Account details" %}
+    </h2>
+
+    <article class="content-card content-card--wide portal-profile-card">
+      <div class="content-card__body">
+        <div class="form-grid">
+          <div class="form-field">
+            <span class="form-label">
+              {% trans "Store name" %}
+            </span>
+
+            <p>
+              {{ customer.name }}
+            </p>
+          </div>
+
+          <div class="form-field">
+            <span class="form-label">
+              {% trans "Email" %}
+            </span>
+
+            <p>
+              {{ customer.email }}
+            </p>
+          </div>
+
+          <div class="form-field">
+            <span class="form-label">
+              {% trans "Phone number" %}
+            </span>
+
+            <p>
+              {{ customer.phone_number }}
+            </p>
+          </div>
+
+          <div class="form-field">
+            <span class="form-label">
+              {% trans "Address" %}
+            </span>
+
+            <p>
+              {{ customer.address_line }}
+            </p>
+          </div>
+
+          <div class="form-field">
+            <span class="form-label">
+              {% trans "City" %}
+            </span>
+
+            <p>
+              {{ customer.city }}
+            </p>
+          </div>
+
+          <div class="form-field">
+            <span class="form-label">
+              {% trans "Country" %}
+            </span>
+
+            <p>
+              {{ country_label }}
+            </p>
+          </div>
+        </div>
+
+        <p class="form-help">
+          {% trans "Changes to store information apply to future orders. Existing orders keep the delivery details that were saved when the order was placed." %}
+        </p>
+      </div>
+
+      <footer class="form-actions content-card__footer">
+        <a
+          class="button button--md button--solid button--tone-place"
+          href="{% url 'business_portal:edit_store' %}"
+        >
+          {% trans "Edit store information" %}
+        </a>
+
+        <a
+          class="button button--md button--ghost button--tone-neutral"
+          href="{% url 'password_change' %}"
+        >
+          {% trans "Change password" %}
+        </a>
+      </footer>
+    </article>
+  </section>
+</section>

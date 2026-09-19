@@ -10,9 +10,13 @@ from django.shortcuts import (
     redirect,
     render,
 )
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import (
+    require_GET,
+    require_POST,
+)
 
 from business.services import (
     place_order as place_draft_order,
@@ -44,7 +48,6 @@ from business_portal.selectors import (
 from common.table_controls import (
     TableControls,
     TableControlsTemplate,
-    TableFilter,
     TableSortField,
 )
 from inventory.errors import InvalidStockOperation
@@ -68,32 +71,11 @@ class PortalOrderIntent(StrEnum):
 
 
 PORTAL_ORDERS_LIST_ANCHOR = "portal-orders-list"
-PORTAL_ORDER_FILTER_QUERY_KEY = "status"
 
 ORDER_OPERATION_ERRORS = (
     InvalidOrderOperation,
     InvalidStockOperation,
 )
-
-PORTAL_ORDER_FILTERS = [
-    TableFilter("", gettext_lazy("All")),
-    TableFilter(
-        Order.Status.PLACED,
-        Order.Status.PLACED.label,
-    ),
-    TableFilter(
-        Order.Status.PACKED,
-        Order.Status.PACKED.label,
-    ),
-    TableFilter(
-        Order.Status.DELIVERED,
-        Order.Status.DELIVERED.label,
-    ),
-    TableFilter(
-        Order.Status.CANCELLED,
-        Order.Status.CANCELLED.label,
-    ),
-]
 
 PORTAL_ORDER_TABLE_SORTS = [
     TableSortField(
@@ -164,6 +146,82 @@ def _get_portal_draft_line(
         order__customer=customer,
         order__status=Order.Status.DRAFT,
     )
+
+
+def build_portal_orders_context(
+    *,
+    request,
+    customer,
+    base_path: str,
+) -> dict:
+    controls = TableControls.from_request_values(
+        base_path=base_path,
+        anchor=PORTAL_ORDERS_LIST_ANCHOR,
+        requested_sort=request.GET.get(
+            "sort",
+            "",
+        ),
+        filters=[],
+        allowed_sorts=CUSTOMER_ORDER_SORTS,
+        default_sort=DEFAULT_CUSTOMER_ORDER_SORT,
+        extra_query_params={
+            "tab": "orders",
+        },
+    )
+
+    customer_orders = list(
+        list_customer_orders(
+            customer=customer,
+            status=None,
+            sort=controls.active_sort,
+        )
+    )
+
+    return {
+        "order_rows": build_portal_order_page_rows(
+            orders=customer_orders,
+        ),
+        "order_filter_options": (
+            (
+                "",
+                gettext_lazy("All"),
+            ),
+            (
+                Order.Status.PLACED,
+                Order.Status.PLACED.label,
+            ),
+            (
+                Order.Status.PACKED,
+                Order.Status.PACKED.label,
+            ),
+            (
+                Order.Status.DELIVERED,
+                Order.Status.DELIVERED.label,
+            ),
+            (
+                Order.Status.CANCELLED,
+                Order.Status.CANCELLED.label,
+            ),
+        ),
+        "filters": [],
+        "table_sorts": controls.build_table_sort_links(
+            PORTAL_ORDER_TABLE_SORTS
+        ),
+        "mobile_sort_fields": (
+            controls.build_mobile_sort_fields(
+                PORTAL_ORDER_TABLE_SORTS
+            )
+        ),
+        "mobile_sort_direction": (
+            controls.build_mobile_sort_direction()
+        ),
+        "table_controls_template": (
+            PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE
+        ),
+        "numeric_table_fields": [
+            "quantity",
+        ],
+    }
 
 
 @login_required
@@ -322,70 +380,23 @@ def remove_draft_line(
 
 
 @login_required
+@require_GET
 def orders(request):
-    customer = get_portal_customer_for_user(
-        user=request.user,
+    target = reverse(
+        "business_portal:index"
     )
 
-    controls = TableControls.from_request_values(
-        base_path=request.path,
-        anchor=PORTAL_ORDERS_LIST_ANCHOR,
-        requested_filter=request.GET.get(
-            PORTAL_ORDER_FILTER_QUERY_KEY,
-            "",
-        ),
-        requested_sort=request.GET.get(
-            "sort",
-            "",
-        ),
-        filters=PORTAL_ORDER_FILTERS,
-        allowed_sorts=CUSTOMER_ORDER_SORTS,
-        default_sort=DEFAULT_CUSTOMER_ORDER_SORT,
-        filter_query_key=PORTAL_ORDER_FILTER_QUERY_KEY,
-    )
+    query_params = request.GET.copy()
+    query_params["tab"] = "orders"
 
-    customer_orders = list(
-        list_customer_orders(
-            customer=customer,
-            status=(
-                controls.active_filter
-                or None
-            ),
-            sort=controls.active_sort,
+    query_string = query_params.urlencode()
+
+    if query_string:
+        target = (
+            f"{target}?{query_string}"
         )
-    )
 
-    context = {
-        "order_rows": build_portal_order_page_rows(
-            orders=customer_orders,
-        ),
-        "filters": controls.build_filter_links(
-            PORTAL_ORDER_FILTERS
-        ),
-        "table_sorts": controls.build_table_sort_links(
-            PORTAL_ORDER_TABLE_SORTS
-        ),
-        "mobile_sort_fields": (
-            controls.build_mobile_sort_fields(
-                PORTAL_ORDER_TABLE_SORTS
-            )
-        ),
-        "mobile_sort_direction": (
-            controls.build_mobile_sort_direction()
-        ),
-        "table_controls_template": (
-            PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE
-        ),
-        "numeric_table_fields": [
-            "quantity",
-        ],
-    }
-
-    return render(
-        request,
-        "business_portal/orders/index.html",
-        context,
-    )
+    return redirect(target)
 
 
 @login_required

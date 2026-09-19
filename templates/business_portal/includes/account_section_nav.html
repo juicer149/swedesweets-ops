@@ -1,22 +1,22 @@
 {% load i18n %}
 
+{% trans "My account" as my_account_label %}
+{% trans "Orders" as orders_label %}
+
 <nav
   class="section-nav"
   aria-label="{% trans 'Account sections' %}"
+  role="tablist"
 >
-  <a
-    class="section-nav__link{% if active_section == 'account' %} section-nav__link--active{% endif %}"
-    href="{% url 'business_portal:index' %}"
-    {% if active_section == "account" %}aria-current="page"{% endif %}
-  >
-    {% trans "My account" %}
-  </a>
+  {% if active_tab == "account" %}
+    {% include "includes/ui/section_tab.html" with key="account" label=my_account_label is_active=True tab_id="account-tab-account" panel_id="account-panel-account" only %}
+  {% else %}
+    {% include "includes/ui/section_tab.html" with key="account" label=my_account_label is_active=False tab_id="account-tab-account" panel_id="account-panel-account" only %}
+  {% endif %}
 
-  <a
-    class="section-nav__link{% if active_section == 'orders' %} section-nav__link--active{% endif %}"
-    href="{% url 'business_portal:orders' %}"
-    {% if active_section == "orders" %}aria-current="page"{% endif %}
-  >
-    {% trans "Orders" %}
-  </a>
+  {% if active_tab == "orders" %}
+    {% include "includes/ui/section_tab.html" with key="orders" label=orders_label is_active=True tab_id="account-tab-orders" panel_id="account-panel-orders" only %}
+  {% else %}
+    {% include "includes/ui/section_tab.html" with key="orders" label=orders_label is_active=False tab_id="account-tab-orders" panel_id="account-panel-orders" only %}
+  {% endif %}
 </nav>

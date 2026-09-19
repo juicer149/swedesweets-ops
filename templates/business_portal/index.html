@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load static i18n %}
 
 {% block title %}{% trans "My account" %} | SwedeSweets{% endblock %}
 
@@ -8,103 +8,62 @@
   {% trans "My account" %}
 </h1>
 
-{% include "business_portal/includes/account_section_nav.html" with active_section="account" only %}
+<section class="content-card content-card--wide">
+  <div class="content-card__body">
+    <div class="form-grid">
+      <div>
+        <h2>
+          {% trans "Account" %}
+        </h2>
 
-<section
-  class="list-section portal-profile-section"
-  aria-labelledby="account-details-title"
->
-  <h2
-    id="account-details-title"
-    class="visually-hidden"
-  >
-    {% trans "Account details" %}
-  </h2>
-
-  <article class="content-card content-card--wide portal-profile-card">
-    <div class="content-card__body">
-      <div class="form-grid">
-        <div class="form-field">
-          <span class="form-label">
-            {% trans "Store name" %}
-          </span>
-
-          <p>
-            {{ customer.name }}
-          </p>
-        </div>
-
-        <div class="form-field">
-          <span class="form-label">
-            {% trans "Email" %}
-          </span>
-
-          <p>
-            {{ customer.email }}
-          </p>
-        </div>
-
-        <div class="form-field">
-          <span class="form-label">
-            {% trans "Phone number" %}
-          </span>
-
-          <p>
-            {{ customer.phone_number }}
-          </p>
-        </div>
-
-        <div class="form-field">
-          <span class="form-label">
-            {% trans "Address" %}
-          </span>
-
-          <p>
-            {{ customer.address_line }}
-          </p>
-        </div>
-
-        <div class="form-field">
-          <span class="form-label">
-            {% trans "City" %}
-          </span>
-
-          <p>
-            {{ customer.city }}
-          </p>
-        </div>
-
-        <div class="form-field">
-          <span class="form-label">
-            {% trans "Country" %}
-          </span>
-
-          <p>
-            {{ country_label }}
-          </p>
-        </div>
+        <p class="form-help">
+          {% trans "View your account details and order history." %}
+        </p>
       </div>
 
-      <p class="form-help">
-        {% trans "Changes to store information apply to future orders. Existing orders keep the delivery details that were saved when the order was placed." %}
-      </p>
+      <div class="form-actions">
+        <a
+          class="button button--md button--solid button--tone-place"
+          href="{% url 'business_portal:catalog' %}"
+        >
+          {% trans "Browse catalog" %}
+        </a>
+
+        <a
+          class="button button--md button--ghost button--tone-neutral"
+          href="{% url 'business_portal:current_order' %}"
+        >
+          {% trans "Review current order" %}
+        </a>
+      </div>
     </div>
-
-    <footer class="form-actions content-card__footer">
-      <a
-        class="button button--md button--solid button--tone-place"
-        href="{% url 'business_portal:edit_store' %}"
-      >
-        {% trans "Edit store information" %}
-      </a>
-
-      <a
-        class="button button--md button--ghost button--tone-neutral"
-        href="{% url 'password_change' %}"
-      >
-        {% trans "Change password" %}
-      </a>
-    </footer>
-  </article>
+  </div>
 </section>
+
+<div data-tabs>
+  {% include "business_portal/includes/account_section_nav.html" with active_tab=active_tab only %}
+
+  {% include "business_portal/includes/account_details_panel.html" %}
+
+  {% include "business_portal/includes/orders_panel.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/tabs.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/clickable_rows.js' %}"
+    defer
+  ></script>
+
+  <script
+    src="{% static 'js/order-history.js' %}"
+    defer
+  ></script>
 {% endblock %}
