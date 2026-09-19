@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: SwedeSweets MVP\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-19 13:02+0200\n"
-"PO-Revision-Date: 2026-09-18 19:28+0200\n"
+"PO-Revision-Date: 2026-09-19 15:05+0200\n"
 "Last-Translator: SwedeSweets <no-reply@swedesweets.local>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -1236,17 +1236,12 @@ msgid "Orders"
 msgstr "Commandes"
 
 #: templates/business_portal/index.html:13
-#, fuzzy
-#| msgid "Operations"
 msgid "Order actions"
-msgstr "Opérations"
+msgstr "Actions sur la commande"
 
-# | msgid "Recent orders"
 #: templates/business_portal/index.html:26
-#, fuzzy
-#| msgid "View current order"
 msgid "Review current order"
-msgstr "Voir la commande en cours"
+msgstr "Vérifier la commande en cours"
 
 #: templates/business_portal/index.html:40
 msgid "Account details"
