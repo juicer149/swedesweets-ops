@@ -3,15 +3,18 @@ from __future__ import annotations
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_GET
 
-from business_portal.orders.views import (
-    build_portal_orders_context,
+from business_portal.orders.list_viewmodels import (
+    build_portal_order_page_rows,
 )
 from business_portal.selectors import (
     get_portal_customer_for_user,
 )
 from customers.models import CUSTOMER_COUNTRY_LABELS
+from orders.models import Order
+from orders.selectors import list_customer_orders
 
 
 ACCOUNT_TAB_ACCOUNT = "account"
@@ -21,6 +24,29 @@ ACCOUNT_TABS = {
     ACCOUNT_TAB_ORDERS,
 }
 
+ACCOUNT_ORDER_FILTER_OPTIONS = (
+    (
+        "",
+        _("All"),
+    ),
+    (
+        Order.Status.PLACED,
+        Order.Status.PLACED.label,
+    ),
+    (
+        Order.Status.PACKED,
+        Order.Status.PACKED.label,
+    ),
+    (
+        Order.Status.DELIVERED,
+        Order.Status.DELIVERED.label,
+    ),
+    (
+        Order.Status.CANCELLED,
+        Order.Status.CANCELLED.label,
+    ),
+)
+
 
 def _active_account_tab(
     value: str | None,
@@ -29,6 +55,24 @@ def _active_account_tab(
         return value
 
     return ACCOUNT_TAB_ACCOUNT
+
+
+def _build_account_orders_context(
+    *,
+    customer,
+) -> dict:
+    customer_orders = list(
+        list_customer_orders(
+            customer=customer,
+        )
+    )
+
+    return {
+        "order_rows": build_portal_order_page_rows(
+            orders=customer_orders,
+        ),
+        "order_filter_options": ACCOUNT_ORDER_FILTER_OPTIONS,
+    }
 
 
 @login_required
@@ -54,12 +98,8 @@ def index(request):
     }
 
     context.update(
-        build_portal_orders_context(
-            request=request,
+        _build_account_orders_context(
             customer=customer,
-            base_path=reverse(
-                "business_portal:index"
-            ),
         )
     )
 

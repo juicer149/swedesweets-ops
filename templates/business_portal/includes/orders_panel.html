@@ -20,22 +20,31 @@
       {% trans "Order history" %}
     </h2>
 
-    <div
-      class="filter-chips"
-      role="group"
-      aria-label="{% trans 'Order filters' %}"
-    >
-      {% for value, label in order_filter_options %}
-        <button
-          class="filter-chip"
-          type="button"
-          data-order-filter="{{ value }}"
-          aria-pressed="{% if not value %}true{% else %}false{% endif %}"
-          {% if not value %}aria-current="page"{% endif %}
-        >
-          {{ label }}
-        </button>
-      {% endfor %}
+    <div class="filter-group">
+      <h2
+        id="portal-orders-filters-title"
+        class="filter-label"
+      >
+        {% trans "Filters" %}
+      </h2>
+
+      <div
+        class="filter-chips"
+        role="group"
+        aria-labelledby="portal-orders-filters-title"
+      >
+        {% for value, label in order_filter_options %}
+          <button
+            class="chip filter-chip"
+            type="button"
+            data-order-filter="{{ value }}"
+            aria-pressed="{% if not value %}true{% else %}false{% endif %}"
+            {% if not value %}aria-current="page"{% endif %}
+          >
+            {{ label }}
+          </button>
+        {% endfor %}
+      </div>
     </div>
 
     <div class="sort-control">

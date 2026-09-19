@@ -12,7 +12,6 @@ from django.shortcuts import (
 )
 from django.urls import reverse
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
 from django.views.decorators.http import (
     require_GET,
     require_POST,
@@ -29,9 +28,6 @@ from business_portal.orders.detail_viewmodels import (
 from business_portal.orders.form_viewmodels import (
     build_portal_current_order_context,
 )
-from business_portal.orders.list_viewmodels import (
-    build_portal_order_page_rows,
-)
 from business_portal.orders.review_viewmodels import (
     build_portal_order_review_context,
 )
@@ -45,11 +41,6 @@ from business_portal.orders.services import (
 from business_portal.selectors import (
     get_portal_customer_for_user,
 )
-from common.table_controls import (
-    TableControls,
-    TableControlsTemplate,
-    TableSortField,
-)
 from inventory.errors import InvalidStockOperation
 from orders.errors import InvalidOrderOperation
 from orders.models import (
@@ -57,10 +48,7 @@ from orders.models import (
     OrderLine,
 )
 from orders.selectors import (
-    CUSTOMER_ORDER_SORTS,
-    DEFAULT_CUSTOMER_ORDER_SORT,
     get_active_draft_order_for_customer,
-    list_customer_orders,
 )
 
 
@@ -70,37 +58,9 @@ class PortalOrderIntent(StrEnum):
     DISCARD_DRAFT = "discard_draft"
 
 
-PORTAL_ORDERS_LIST_ANCHOR = "portal-orders-list"
-
 ORDER_OPERATION_ERRORS = (
     InvalidOrderOperation,
     InvalidStockOperation,
-)
-
-PORTAL_ORDER_TABLE_SORTS = [
-    TableSortField(
-        "order",
-        gettext_lazy("Order"),
-    ),
-    TableSortField(
-        "created",
-        gettext_lazy("Created"),
-    ),
-    TableSortField(
-        "status",
-        gettext_lazy("Status"),
-    ),
-    TableSortField(
-        "quantity",
-        gettext_lazy("Quantity"),
-    ),
-]
-
-PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE = TableControlsTemplate(
-    filters_title_id="portal-orders-filters-title",
-    filters_aria_label=gettext_lazy("Order filters"),
-    sort_title_id="portal-orders-sort-title",
-    sort_select_id="mobile-portal-orders-sort",
 )
 
 
@@ -146,82 +106,6 @@ def _get_portal_draft_line(
         order__customer=customer,
         order__status=Order.Status.DRAFT,
     )
-
-
-def build_portal_orders_context(
-    *,
-    request,
-    customer,
-    base_path: str,
-) -> dict:
-    controls = TableControls.from_request_values(
-        base_path=base_path,
-        anchor=PORTAL_ORDERS_LIST_ANCHOR,
-        requested_sort=request.GET.get(
-            "sort",
-            "",
-        ),
-        filters=[],
-        allowed_sorts=CUSTOMER_ORDER_SORTS,
-        default_sort=DEFAULT_CUSTOMER_ORDER_SORT,
-        extra_query_params={
-            "tab": "orders",
-        },
-    )
-
-    customer_orders = list(
-        list_customer_orders(
-            customer=customer,
-            status=None,
-            sort=controls.active_sort,
-        )
-    )
-
-    return {
-        "order_rows": build_portal_order_page_rows(
-            orders=customer_orders,
-        ),
-        "order_filter_options": (
-            (
-                "",
-                gettext_lazy("All"),
-            ),
-            (
-                Order.Status.PLACED,
-                Order.Status.PLACED.label,
-            ),
-            (
-                Order.Status.PACKED,
-                Order.Status.PACKED.label,
-            ),
-            (
-                Order.Status.DELIVERED,
-                Order.Status.DELIVERED.label,
-            ),
-            (
-                Order.Status.CANCELLED,
-                Order.Status.CANCELLED.label,
-            ),
-        ),
-        "filters": [],
-        "table_sorts": controls.build_table_sort_links(
-            PORTAL_ORDER_TABLE_SORTS
-        ),
-        "mobile_sort_fields": (
-            controls.build_mobile_sort_fields(
-                PORTAL_ORDER_TABLE_SORTS
-            )
-        ),
-        "mobile_sort_direction": (
-            controls.build_mobile_sort_direction()
-        ),
-        "table_controls_template": (
-            PORTAL_ORDER_TABLE_CONTROLS_TEMPLATE
-        ),
-        "numeric_table_fields": [
-            "quantity",
-        ],
-    }
 
 
 @login_required
