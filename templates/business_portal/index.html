@@ -4,43 +4,17 @@
 {% block title %}{% trans "My account" %} | SwedeSweets{% endblock %}
 
 {% block content %}
-<h1 class="visually-hidden">
+<h1
+  id="account-page-title"
+  class="visually-hidden"
+>
   {% trans "My account" %}
 </h1>
 
-<section class="content-card content-card--wide">
-  <div class="content-card__body">
-    <div class="form-grid">
-      <div>
-        <h2>
-          {% trans "Account" %}
-        </h2>
-
-        <p class="form-help">
-          {% trans "View your account details and order history." %}
-        </p>
-      </div>
-
-      <div class="form-actions">
-        <a
-          class="button button--md button--solid button--tone-place"
-          href="{% url 'business_portal:catalog' %}"
-        >
-          {% trans "Browse catalog" %}
-        </a>
-
-        <a
-          class="button button--md button--ghost button--tone-neutral"
-          href="{% url 'business_portal:current_order' %}"
-        >
-          {% trans "Review current order" %}
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div data-tabs>
+<div
+  data-tabs
+  aria-labelledby="account-page-title"
+>
   {% include "business_portal/includes/account_section_nav.html" with active_tab=active_tab only %}
 
   {% include "business_portal/includes/account_details_panel.html" %}
