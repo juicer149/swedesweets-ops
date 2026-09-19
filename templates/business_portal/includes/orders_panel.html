@@ -38,24 +38,161 @@
       {% endfor %}
     </div>
 
-    {% include "includes/table/sort_select.html" %}
+    <div class="sort-control">
+      <label
+        id="portal-orders-sort-title"
+        class="filter-label"
+        for="mobile-portal-orders-sort"
+      >
+        {% trans "Order by" %}
+      </label>
+
+      <div class="sort-control__field">
+        <select
+          id="mobile-portal-orders-sort"
+          class="sort-select"
+          data-order-sort-select
+          aria-labelledby="portal-orders-sort-title"
+        >
+          <option value="order">
+            {% trans "Order" %}
+          </option>
+
+          <option value="created">
+            {% trans "Created" %}
+          </option>
+
+          <option
+            value="status"
+            selected
+          >
+            {% trans "Status" %}
+          </option>
+
+          <option value="quantity">
+            {% trans "Quantity" %}
+          </option>
+        </select>
+
+        <button
+          class="filter-chip sort-direction-button"
+          type="button"
+          data-order-sort-direction
+          aria-label="{% trans 'Change sort direction' %}"
+          title="{% trans 'Change sort direction' %}"
+        >
+          ↓
+        </button>
+      </div>
+    </div>
 
     <div class="table-card">
       <table class="data-table">
         <thead>
           <tr>
-            {% include "includes/table/sort_headers.html" %}
+            <th
+              scope="col"
+              data-order-sort-heading="order"
+            >
+              <button
+                class="text-link text-link--table-sort"
+                type="button"
+                data-order-sort="order"
+              >
+                <span>
+                  {% trans "Order" %}
+                </span>
+
+                <span
+                  class="sort-arrow"
+                  data-order-sort-arrow
+                  aria-hidden="true"
+                ></span>
+              </button>
+            </th>
+
+            <th
+              scope="col"
+              data-order-sort-heading="created"
+            >
+              <button
+                class="text-link text-link--table-sort"
+                type="button"
+                data-order-sort="created"
+              >
+                <span>
+                  {% trans "Created" %}
+                </span>
+
+                <span
+                  class="sort-arrow"
+                  data-order-sort-arrow
+                  aria-hidden="true"
+                ></span>
+              </button>
+            </th>
+
+            <th
+              scope="col"
+              data-order-sort-heading="status"
+              aria-sort="ascending"
+            >
+              <button
+                class="text-link text-link--table-sort text-link--active"
+                type="button"
+                data-order-sort="status"
+                aria-current="page"
+              >
+                <span>
+                  {% trans "Status" %}
+                </span>
+
+                <span
+                  class="sort-arrow"
+                  data-order-sort-arrow
+                  aria-hidden="true"
+                >
+                  ↑
+                </span>
+              </button>
+            </th>
+
+            <th
+              class="numeric-cell"
+              scope="col"
+              data-order-sort-heading="quantity"
+            >
+              <button
+                class="text-link text-link--table-sort"
+                type="button"
+                data-order-sort="quantity"
+              >
+                <span>
+                  {% trans "Quantity" %}
+                </span>
+
+                <span
+                  class="sort-arrow"
+                  data-order-sort-arrow
+                  aria-hidden="true"
+                ></span>
+              </button>
+            </th>
           </tr>
         </thead>
 
-        <tbody>
+        <tbody data-order-table-body>
           {% for row in order_rows %}
             <tr
               class="clickable-row"
               data-tone="{{ row.status.tone.key }}"
               data-href="{{ row.detail_href }}"
               data-order-row
+              data-order-id="{{ row.order.id }}"
+              data-order-created="{{ row.order.created_at|date:'c' }}"
               data-order-status="{{ row.order.status }}"
+              data-order-status-rank="{{ row.order.status_rank }}"
+              data-order-quantity="{{ row.total_quantity }}"
               tabindex="0"
               role="link"
               aria-label="{% blocktrans with order_id=row.order.id %}View order #{{ order_id }}{% endblocktrans %}"
@@ -110,11 +247,18 @@
       </table>
     </div>
 
-    <div class="mobile-card-list">
+    <div
+      class="mobile-card-list"
+      data-order-card-list
+    >
       {% for row in order_rows %}
         <div
           data-order-card
+          data-order-id="{{ row.order.id }}"
+          data-order-created="{{ row.order.created_at|date:'c' }}"
           data-order-status="{{ row.order.status }}"
+          data-order-status-rank="{{ row.order.status_rank }}"
+          data-order-quantity="{{ row.total_quantity }}"
         >
           {% include "includes/ui/card.html" with card=row.card only %}
         </div>

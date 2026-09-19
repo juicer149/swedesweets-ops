@@ -11,6 +11,21 @@
   text-decoration: none;
 }
 
+button.text-link {
+  padding: 0;
+
+  color: inherit;
+  background: transparent;
+  border: 0;
+
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+
+  appearance: none;
+  cursor: pointer;
+}
+
 .text-link::after {
   content: "";
   position: absolute;
