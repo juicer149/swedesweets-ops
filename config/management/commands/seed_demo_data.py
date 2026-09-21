@@ -17,7 +17,11 @@ from customers.services import create_customer
 from inventory.models import InventoryBatch
 from inventory.services import create_batch
 from orders.datatypes import OrderLineInput
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Order,
+    OrderLine,
+)
+from reservations.models import Allocation
 from orders.services import create_order, deliver_order, pack_order
 from products.models import Product
 from products.services import create_product

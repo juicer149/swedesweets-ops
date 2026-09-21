@@ -23,10 +23,10 @@ from inventory.services import create_batch
 from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
 from orders.models import (
-    Allocation,
     Order,
     OrderLine,
 )
+from reservations.models import Allocation
 from pricing.models import (
     CommercialPrice,
     PriceAmount,

@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from django.db.models import Q, Sum
 from django.utils import timezone
 
-from orders.models import Allocation
+from reservations.models import Allocation
 from reservations.protocols import BatchQuantity
 
 

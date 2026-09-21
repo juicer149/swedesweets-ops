@@ -7,10 +7,8 @@ import pytest
 from django.utils import timezone
 
 from inventory.services import create_batch
-from orders.models import (
-    Allocation,
-    Order,
-)
+from orders.models import Order
+from reservations.models import Allocation
 from payments.contracts import (
     ExternalPaymentState,
     ExternalPaymentStatus,

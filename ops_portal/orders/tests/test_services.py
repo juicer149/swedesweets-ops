@@ -14,7 +14,11 @@ from ops_portal.orders.services import (
 )
 from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Order,
+    OrderLine,
+)
+from reservations.models import Allocation
 from products.tests.factories import product_factory
 from products.units import OrderUnit
 

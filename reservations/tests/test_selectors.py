@@ -6,7 +6,11 @@ import pytest
 from django.utils import timezone
 
 from inventory.services import create_batch
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Order,
+    OrderLine,
+)
+from reservations.models import Allocation
 from products.models import Product
 from reservations.selectors import (
     active_reserved_quantities_by_batch_pk,

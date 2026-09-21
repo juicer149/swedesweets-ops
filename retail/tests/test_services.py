@@ -14,7 +14,11 @@ from inventory.services import (
     create_batch,
     update_batch,
 )
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Order,
+    OrderLine,
+)
+from reservations.models import Allocation
 from payments.models import PaymentAttempt
 from pricing.models import CommercialPrice, PriceAmount
 from retail.models import (

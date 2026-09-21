@@ -4,10 +4,10 @@ import pytest
 
 from fulfillment.services import pack_order
 from orders.models import (
-    Allocation,
     Order,
     OrderLine,
 )
+from reservations.models import Allocation
 from orders.selectors import (
     count_packed_orders,
     count_placed_orders,

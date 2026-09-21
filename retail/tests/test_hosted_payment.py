@@ -7,7 +7,7 @@ import pytest
 from django.utils import timezone
 
 from inventory.services import create_batch
-from orders.models import Allocation
+from reservations.models import Allocation
 from payments.contracts import (
     HostedPaymentRequest,
     HostedPaymentSession,

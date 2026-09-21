@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from django.db import models
 
-from orders.models import Allocation
+from reservations.models import Allocation
 
 
 class PickChecklistMark(models.Model):

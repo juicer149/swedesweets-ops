@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from orders.models import Allocation, Order
+from orders.models import Order
+from reservations.models import Allocation
 from ops_portal.models import PickChecklistMark
 
 

@@ -6,8 +6,6 @@ Order owns the order lifecycle and the commercial snapshot of the purchase.
 OrderLine owns the product quantity requested by the order. External input may
 currently use different units, but services normalize fulfillment to whole
 product stock units.
-
-Allocation owns batch-level reservations for orders.
 """
 
 from __future__ import annotations
@@ -27,10 +25,7 @@ from customers.models import (
     MAX_CUSTOMER_NAME_LENGTH,
     MAX_CUSTOMER_PHONE_LENGTH,
 )
-from orders.errors import (
-    InvalidAllocationStatusTransition,
-    InvalidOrderStatusTransition,
-)
+from orders.errors import InvalidOrderStatusTransition
 
 if TYPE_CHECKING:
     from orders.datatypes import BuyerInput
@@ -524,103 +519,3 @@ class OrderLine(models.Model):
 
     def __str__(self) -> str:
         return f"{self.product.sku}: {self.quantity} {self.unit}"
-
-
-class Allocation(models.Model):
-    """Batch-level stock reservation.
-
-    RESERVED:
-        Stock is claimed by an order.
-
-        ``reserved_until=None`` represents a reservation without automatic
-        expiry, used by the normal placed-order workflow.
-
-        A future ``reserved_until`` represents a temporary reservation, such
-        as stock held while a retail payment attempt is in progress.
-
-        Once ``reserved_until`` has passed, the reservation no longer reduces
-        availability even if cleanup has not yet changed its status.
-
-    CONSUMED:
-        The order was packed and physical stock was reduced.
-
-    CANCELLED:
-        The reservation was explicitly released.
-    """
-
-    class Status(models.TextChoices):
-        RESERVED = "reserved", _("Reserved")
-        CONSUMED = "consumed", _("Consumed")
-        CANCELLED = "cancelled", _("Cancelled")
-
-    ALLOWED_TRANSITIONS = {
-        Status.RESERVED: {
-            Status.CONSUMED,
-            Status.CANCELLED,
-        },
-        Status.CONSUMED: set(),
-        Status.CANCELLED: set(),
-    }
-
-    order = models.ForeignKey(
-        Order,
-        on_delete=models.CASCADE,
-        related_name="allocations",
-    )
-    order_line = models.ForeignKey(
-        OrderLine,
-        on_delete=models.CASCADE,
-        related_name="allocations",
-    )
-    batch = models.ForeignKey(
-        "inventory.InventoryBatch",
-        on_delete=models.PROTECT,
-        related_name="allocations",
-    )
-    quantity = models.PositiveIntegerField()
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.RESERVED,
-    )
-    reserved_until = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["status"]),
-            models.Index(fields=["order", "status"]),
-            models.Index(fields=["batch", "status"]),
-        ]
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(quantity__gt=0),
-                name="allocation_quantity_gt_0",
-            ),
-        ]
-
-    def _transition_to(self, target: str) -> None:
-        if self.status == target:
-            return
-
-        allowed_targets = self.ALLOWED_TRANSITIONS[self.status]
-
-        if target not in allowed_targets:
-            raise InvalidAllocationStatusTransition(
-                f"Cannot transition allocation {self.pk} "
-                f"from {self.status!r} to {target!r}"
-            )
-
-        self.status = target
-        self.save(update_fields=["status"])
-
-    def consume(self) -> None:
-        self._transition_to(self.Status.CONSUMED)
-
-    def cancel(self) -> None:
-        self._transition_to(self.Status.CANCELLED)
-
-    def __str__(self) -> str:
-        return f"{self.order_id} -> {self.batch_id}: {self.quantity}"

@@ -8,7 +8,11 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from inventory.models import InventoryBatch
-from orders.models import Allocation, Order, OrderLine
+from orders.models import (
+    Order,
+    OrderLine,
+)
+from reservations.models import Allocation
 from reservations.planning import plan_batch_picks
 from reservations.protocols import BatchAvailability
 from reservations.selectors import (

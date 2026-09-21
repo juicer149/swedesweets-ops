@@ -13,10 +13,10 @@ from fulfillment.tests.conftest import TODAY
 from inventory.services import create_batch
 from orders.errors import InvalidOrderOperation
 from orders.models import (
-    Allocation,
     Order,
     OrderLine,
 )
+from reservations.models import Allocation
 
 
 def _create_order_line(

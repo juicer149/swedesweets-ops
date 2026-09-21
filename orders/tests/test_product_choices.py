@@ -10,10 +10,10 @@ from inventory.models import InventoryBatch
 from inventory.services import create_batch
 from inventory.tests.factories import batch_factory
 from orders.models import (
-    Allocation,
     Order,
     OrderLine,
 )
+from reservations.models import Allocation
 from orders.product_choices import build_product_choice_context
 from products.tests.factories import product_factory
 

@@ -12,7 +12,8 @@ from ops_portal.orders.drafts import (
 )
 from ops_portal.orders.policies import prepare_ops_order_for_placement
 from orders.datatypes import OrderLineInput
-from orders.models import Allocation, Order
+from orders.models import Order
+from reservations.models import Allocation
 from orders.services import (
     create_draft_order,
     place_order as place_shared_order,
