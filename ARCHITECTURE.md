@@ -919,7 +919,7 @@ reservations
 orders
 inventory
 ```
-
+`orders` must not import `reservations`.
 An `Allocation` cannot exist without an order line and an inventory batch.
 An `Order` can exist without any allocations.
 
@@ -974,6 +974,10 @@ exists.
 `fulfillment` is a shared application capability.
 
 It may compose:
+
+`fulfillment` owns the pack/pick read views composed from reservation
+data (`PickLine`, `get_packaging_list`, `get_packed_lines`). Reservation
+state itself remains owned by `reservations`.
 
 ```text
 orders
