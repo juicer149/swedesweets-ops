@@ -12,7 +12,7 @@ from __future__ import annotations
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from orders.errors import InvalidAllocationStatusTransition
+from reservations.errors import InvalidAllocationStatusTransition
 
 
 class Allocation(models.Model):

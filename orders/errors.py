@@ -11,7 +11,3 @@ class InvalidOrderOperation(OrderError):
 
 class InvalidOrderStatusTransition(OrderError):
     """Raised when an order lifecycle transition is not allowed."""
-
-
-class InvalidAllocationStatusTransition(OrderError):
-    """Raised when an allocation lifecycle transition is not allowed."""

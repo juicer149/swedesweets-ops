@@ -6,7 +6,7 @@ import pytest
 from django.utils import timezone
 
 from inventory.services import create_batch
-from orders.errors import InvalidAllocationStatusTransition
+from reservations.errors import InvalidAllocationStatusTransition
 from orders.models import (
     Order,
     OrderLine,
