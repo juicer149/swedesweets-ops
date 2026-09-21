@@ -18,9 +18,6 @@ public API:
 
     OrderLineInput.resolve_product_id() -> int
         -> Resolve either product_id or product into product id.
-
-    PickLine
-        -> Read model for packaging and packed-line selectors.
 """
 
 from __future__ import annotations
@@ -147,13 +144,3 @@ class OrderLineInput:
 
         raise InvalidOrderOperation("product_id or product is required")
 
-
-@dataclass(frozen=True)
-class PickLine:
-    allocation_id: int
-    sku: str
-    product_name: str
-    batch_id: str
-    location: str
-    quantity: int
-    quantity_label: str

@@ -26,13 +26,7 @@ from django.db.models.functions import Coalesce
 
 from common.table_tools import normalize_sort
 from customers.models import Customer
-from orders.datatypes import PickLine
 from orders.models import Order
-from reservations.datatypes import ReservationPick
-from reservations.selectors import (
-    list_consumed_picks_for_order,
-    list_reserved_picks_for_order,
-)
 
 ORDER_HISTORY_STATUSES = (
     Order.Status.PLACED,
@@ -325,38 +319,6 @@ def count_packed_orders() -> int:
     ).count()
 
 
-def get_packaging_list(
-    *,
-    order: Order,
-) -> list[PickLine]:
-    picks = list_reserved_picks_for_order(
-        order=order,
-    )
-
-    return [
-        _build_pick_line(
-            pick=pick,
-        )
-        for pick in picks
-    ]
-
-
-def get_packed_lines(
-    *,
-    order: Order,
-) -> list[PickLine]:
-    picks = list_consumed_picks_for_order(
-        order=order,
-    )
-
-    return [
-        _build_pick_line(
-            pick=pick,
-        )
-        for pick in picks
-    ]
-
-
 class OrderActivityKind(StrEnum):
     PLACED = "placed"
     PACKED = "packed"
@@ -439,21 +401,6 @@ def list_order_activity_for_actor(
             key=lambda activity: activity.occurred_at,
             reverse=True,
         )[:limit]
-    )
-
-
-def _build_pick_line(
-    *,
-    pick: ReservationPick,
-) -> PickLine:
-    return PickLine(
-        allocation_id=pick.allocation_id,
-        sku=pick.sku,
-        product_name=pick.product_name,
-        batch_id=pick.batch_code,
-        location=pick.location,
-        quantity=pick.quantity,
-        quantity_label=pick.quantity_label,
     )
 
 
