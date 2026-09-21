@@ -12,6 +12,7 @@ from common.table_controls import (
     TableFilter,
     TableSortField,
 )
+from fulfillment.selectors import get_packaging_list
 from fulfillment.services import cancel_order
 from inventory.errors import InvalidStockOperation
 from ops_portal.orders.access import (
@@ -60,7 +61,6 @@ from orders.models import Order
 from orders.selectors import (
     DEFAULT_ORDER_SORT,
     ORDER_SORTS,
-    get_packaging_list,
     list_orders,
 )
 from orders.services import deliver_order

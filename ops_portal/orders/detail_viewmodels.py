@@ -23,7 +23,7 @@ from ops_portal.orders.access import (
     can_pack_order,
 )
 from ops_portal.orders.checklist import list_checked_allocation_ids_for_order
-from orders.datatypes import PickLine
+from fulfillment.datatypes import PickLine
 from orders.models import Order, OrderLine
 from ops_portal.orders.presentation import (
     contents_summary,
@@ -34,7 +34,7 @@ from ops_portal.orders.presentation import (
     quantity_label,
 )
 from ops_portal.products.mini_cards import build_product_quantity_mini_card
-from orders.selectors import get_packaging_list
+from fulfillment.selectors import get_packaging_list
 from products.models import Product
 
 
