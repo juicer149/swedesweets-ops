@@ -903,6 +903,26 @@ ops_portal ───────┘
 A shared capability should exist because it represents a stable application
 concept, not merely because two callers currently contain similar code.
 
+## Reservations
+
+`reservations` owns stock-reservation state and mechanism.
+
+It owns `Allocation`: a batch-level claim on physical stock made on behalf
+of one order line. The table keeps its historical name (`orders_allocation`)
+via `db_table`; only ownership moved.
+
+Dependency direction:
+
+```text
+reservations
+    ↓
+orders
+inventory
+```
+
+An `Allocation` cannot exist without an order line and an inventory batch.
+An `Order` can exist without any allocations.
+
 ## Payments
 
 Payment processing is a capability separate from retail presentation.
