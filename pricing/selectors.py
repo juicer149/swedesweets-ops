@@ -202,16 +202,32 @@ def list_orderable_batches_for_offer(
             .order_by("best_before", "batch_id")
         )
 
+    # NOTE: a single multi-condition .exclude() across the many-valued
+    # `commercial_prices` relation does NOT require all conditions to match
+    # the same related CommercialPrice row - Django ORs the per-row matches
+    # per condition independently for exclude() on multi-valued relations.
+    # A batch with a *disabled* same-channel batch offer and an unrelated
+    # *enabled* other-channel batch offer could therefore be wrongly
+    # excluded. Use an explicit subquery (itself a .filter(), which DOES
+    # require all conditions on the same row) instead.
+    excluded_batch_ids = (
+        CommercialPrice.objects
+        .filter(
+            channel=offer.channel,
+            enabled=True,
+            batch__isnull=False,
+            amounts__currency=currency,
+        )
+        .values("batch_id")
+    )
+
     return (
         list_orderable_batches_for_product(
             product=offer.product,
             today=today,
         )
         .exclude(
-            commercial_prices__channel=offer.channel,
-            commercial_prices__enabled=True,
-            commercial_prices__amounts__currency=currency,
-            commercial_prices__batch__isnull=False,
+            pk__in=excluded_batch_ids,
         )
     )
 

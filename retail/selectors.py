@@ -78,6 +78,25 @@ def list_batches_for_retail_price(
     ):
         return InventoryBatch.objects.none()
 
+    # NOTE: a single multi-condition .exclude() across the many-valued
+    # `commercial_prices` relation does NOT require all conditions to match
+    # the same related CommercialPrice row - Django ORs the per-row matches
+    # per condition independently for exclude() on multi-valued relations.
+    # A batch with a *disabled* RETAIL batch price and an unrelated *enabled*
+    # BUSINESS batch price could therefore be wrongly excluded. Use an
+    # explicit subquery (itself a .filter(), which DOES require all
+    # conditions on the same row) instead.
+    excluded_batch_ids = (
+        CommercialPrice.objects
+        .filter(
+            channel=CommercialPrice.Channel.RETAIL,
+            enabled=True,
+            batch__isnull=False,
+            amounts__currency=currency,
+        )
+        .values("batch_id")
+    )
+
     return (
         InventoryBatch.objects
         .filter(
@@ -87,10 +106,7 @@ def list_batches_for_retail_price(
             best_before__gt=cutoff,
         )
         .exclude(
-            commercial_prices__channel=CommercialPrice.Channel.RETAIL,
-            commercial_prices__enabled=True,
-            commercial_prices__amounts__currency=currency,
-            commercial_prices__batch__isnull=False,
+            pk__in=excluded_batch_ids,
         )
         .order_by(
             "best_before",

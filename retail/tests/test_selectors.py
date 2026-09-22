@@ -209,3 +209,33 @@ def test_product_price_uses_fefo_order():
             today=today,
         )
     ) == [earlier, later]
+
+@pytest.mark.django_db
+def test_product_price_pool_survives_disabled_price_on_other_channel():
+    """A batch with a disabled RETAIL batch price and an enabled BUSINESS
+    batch price (in the same currency) must stay in the retail product pool -
+    exclude() over a multi-valued relation must not cross-match conditions
+    from different related rows."""
+
+    today = timezone.localdate()
+    product = retail_product_factory()
+    product_price = retail_product_price_factory(
+        product=product, enabled=True, price=Decimal("6.90"),
+    )
+    batch = retail_inventory_batch_factory(product=product, today=today)
+
+    disabled_retail_batch_price = retail_batch_price_factory(
+        batch=batch, enabled=False, price=Decimal("3.90"),
+    )
+    CommercialPrice.objects.create(
+        product=product, batch=batch,
+        channel=CommercialPrice.Channel.BUSINESS, enabled=True,
+    )  # note: needs its own PriceAmount in EUR to trigger the bug
+
+    assert list(
+        list_batches_for_retail_price(
+            commercial_price=product_price,
+            currency=PriceAmount.Currency.EUR,
+            today=today,
+        )
+    ) == [batch]
