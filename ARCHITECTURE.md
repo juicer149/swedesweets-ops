@@ -927,12 +927,71 @@ An `Order` can exist without any allocations.
 
 ## Pricing
 
-`pricing` owns the shared stock-pool mechanism: `list_orderable_batches_for_offer`
-resolves which physical batches back one CommercialPrice offer.
+`pricing` owns commercial offers (`CommercialPrice`), their currency
+amounts (`PriceAmount`), and the shared stock-pool mechanism.
 
-This selector is deliberately reservation-agnostic - it answers physical
+An offer is the channel-specific commercial identity of one product scope:
+
+```text
+Product
+    global identity and status (Product.active)
+
+CommercialPrice (offer)
+    one product scope (product-wide or one batch) in one channel
+    enabled = available in that channel
+
+PriceAmount
+    optional or required depending on channel policy
+```
+
+Offer identity, availability and price are separate concepts. `enabled`
+does not mean "the price is active": a price is removed by removing its
+`PriceAmount`, not by disabling the offer.
+
+Orderability is decided by gates, in order:
+
+```text
+Product.active          global gate
+offer.enabled           channel gate
+available stock > 0     reservation-adjusted
+channel price policy    per channel
+```
+
+Channel price policy:
+
+```text
+BUSINESS standard offer
+    price optional - B2B orders may be invoiced afterwards
+
+BUSINESS batch offer
+    EUR price required
+
+RETAIL offers
+    valid price required - checkout needs a concrete price
+```
+
+Every product has an explicit BUSINESS standard offer (product-wide, batch
+NULL). It is created enabled by the data migration, by the ops product
+creation flow and by `ensure_standard_offer`. Existing offers are never
+re-enabled implicitly; availability changes go through
+`set_commercial_price_enabled`. Retail offers are always explicit
+commercial decisions and are never created automatically.
+
+Stock-pool invariant:
+
+```text
+A batch is excluded from a product-wide offer's stock pool
+if and only if its own batch offer is orderable in the same channel.
+```
+
+Otherwise the same physical units would be represented by two selectable
+offers. A batch offer that is disabled or unpriced leaves its batch in the
+product-wide pool.
+
+`list_orderable_batches_for_offer` resolves which physical batches back one
+offer. It is deliberately reservation-agnostic - it answers physical
 eligibility only (status, quantity, expiry, exclusion of batches sold
-through their own enabled same-channel offer). Reservation accounting
+through their own orderable same-channel offer). Reservation accounting
 happens downstream, in `reservations`, when the returned pool is locked
 and reserved from.
 
@@ -943,6 +1002,14 @@ disappear from the catalog even though it remains physically eligible.
 This is a deliberate scope difference, not an inconsistency to converge:
 merging reservation-awareness into the shared pool selector would break
 the ownership boundary `reservations` depends on to lock and count safely.
+
+The catalog is an approximate "orderable right now" view. Placement
+re-validates authoritatively under locking.
+
+Transitional: until order lines require an explicit offer, the business
+catalog still synthesizes an unpriced standard offer
+(`commercial_price_id=None`) for a product that lacks the standard offer
+row. In production every product has the row.
 
 ## Payments
 
