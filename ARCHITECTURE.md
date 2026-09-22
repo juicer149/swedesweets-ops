@@ -919,9 +919,30 @@ reservations
 orders
 inventory
 ```
+
 `orders` must not import `reservations`.
+
 An `Allocation` cannot exist without an order line and an inventory batch.
 An `Order` can exist without any allocations.
+
+## Pricing
+
+`pricing` owns the shared stock-pool mechanism: `list_orderable_batches_for_offer`
+resolves which physical batches back one CommercialPrice offer.
+
+This selector is deliberately reservation-agnostic - it answers physical
+eligibility only (status, quantity, expiry, exclusion of batches sold
+through their own enabled same-channel offer). Reservation accounting
+happens downstream, in `reservations`, when the returned pool is locked
+and reserved from.
+
+`business.list_business_catalog_products` layers reservation-adjusted
+availability (via `orderable_quantity_by_batch_pk`) on top of this
+mechanic for display purposes - a fully reserved batch offer should
+disappear from the catalog even though it remains physically eligible.
+This is a deliberate scope difference, not an inconsistency to converge:
+merging reservation-awareness into the shared pool selector would break
+the ownership boundary `reservations` depends on to lock and count safely.
 
 ## Payments
 
