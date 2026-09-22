@@ -14,6 +14,15 @@ PRICE_MAX_DIGITS = 10
 PRICING_STATUS_ACTIVE = "active"
 PRICING_STATUS_INACTIVE = "inactive"
 
+BUSINESS_STATUS_HELP_TEXT = (
+    "Active means the product can be ordered in the B2B portal. "
+    "A price is optional; inactive hides the product from B2B ordering."
+)
+
+RETAIL_STATUS_HELP_TEXT = (
+    "Active retail pricing needs at least one currency amount."
+)
+
 
 def _price_field(
     *,
@@ -43,7 +52,11 @@ def _price_field(
     )
 
 
-def _pricing_status_field() -> forms.ChoiceField:
+def _pricing_status_field(
+    *,
+    help_text: str = "",
+    initial: str = PRICING_STATUS_INACTIVE,
+) -> forms.ChoiceField:
     return forms.ChoiceField(
         choices=(
             (
@@ -55,8 +68,9 @@ def _pricing_status_field() -> forms.ChoiceField:
                 "Inactive",
             ),
         ),
-        initial=PRICING_STATUS_INACTIVE,
+        initial=initial,
         label="Status",
+        help_text=help_text,
         error_messages={
             "required": "Choose pricing status.",
             "invalid_choice": (
@@ -78,7 +92,12 @@ class ProductPricingForm(forms.Form):
     business_sek = _price_field(
         label="SEK",
     )
-    business_status = _pricing_status_field()
+    # New products are orderable in B2B by default, matching the historical
+    # behavior and the 2b data migration (standard offers created enabled).
+    business_status = _pricing_status_field(
+        help_text=BUSINESS_STATUS_HELP_TEXT,
+        initial=PRICING_STATUS_ACTIVE,
+    )
 
     retail_eur = _price_field(
         label="EUR",
@@ -86,7 +105,9 @@ class ProductPricingForm(forms.Form):
     retail_sek = _price_field(
         label="SEK",
     )
-    retail_status = _pricing_status_field()
+    retail_status = _pricing_status_field(
+        help_text=RETAIL_STATUS_HELP_TEXT,
+    )
 
     def __init__(
         self,
@@ -112,16 +133,11 @@ class ProductPricingForm(forms.Form):
     def clean(self) -> dict[str, object]:
         cleaned_data = super().clean()
 
-        self._validate_active_channel(
-            channel=CommercialPrice.Channel.BUSINESS,
-            status_field="business_status",
-            amount_fields=(
-                "business_eur",
-                "business_sek",
-            ),
-        )
-
-        self._validate_active_channel(
+        # BUSINESS status is channel availability, and the business standard
+        # offer may be unpriced, so an active business status needs no amount.
+        # RETAIL checkout requires a concrete price, so active retail pricing
+        # still needs at least one amount.
+        self._validate_active_channel_has_amount(
             channel=CommercialPrice.Channel.RETAIL,
             status_field="retail_status",
             amount_fields=(
@@ -170,7 +186,7 @@ class ProductPricingForm(forms.Form):
             ),
         }
 
-    def _validate_active_channel(
+    def _validate_active_channel_has_amount(
         self,
         *,
         channel: str,

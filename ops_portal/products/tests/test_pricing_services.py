@@ -16,7 +16,10 @@ from pricing.tests.factories import (
 
 
 @pytest.mark.django_db
-def test_update_product_standard_pricing_does_nothing_when_empty():
+def test_update_product_standard_pricing_empty_keeps_only_business_standard_offer():
+    """The business standard offer always exists; inactive means not orderable
+    in B2B. Retail pricing is still only created when configured."""
+
     product = pricing_product_factory()
 
     update_product_standard_pricing(
@@ -29,9 +32,40 @@ def test_update_product_standard_pricing_does_nothing_when_empty():
         retail_enabled=False,
     )
 
-    assert CommercialPrice.objects.filter(
+    business = CommercialPrice.objects.get(
         product=product,
-    ).count() == 0
+        channel=CommercialPrice.Channel.BUSINESS,
+        batch__isnull=True,
+    )
+    assert business.enabled is False
+    assert not business.amounts.exists()
+    assert not CommercialPrice.objects.filter(
+        product=product,
+        channel=CommercialPrice.Channel.RETAIL,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_update_product_standard_pricing_enables_unpriced_business_standard_offer():
+    product = pricing_product_factory()
+
+    update_product_standard_pricing(
+        product=product,
+        business_eur=None,
+        business_sek=None,
+        business_enabled=True,
+        retail_eur=None,
+        retail_sek=None,
+        retail_enabled=False,
+    )
+
+    business = CommercialPrice.objects.get(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        batch__isnull=True,
+    )
+    assert business.enabled is True
+    assert not business.amounts.exists()
 
 
 @pytest.mark.django_db

@@ -152,15 +152,25 @@ def test_product_pricing_form_accepts_multiple_currencies():
     assert form.retail_enabled is True
 
 
-def test_product_pricing_form_rejects_active_business_without_amount():
+def test_product_pricing_form_accepts_active_business_without_amount():
+    """Business status is B2B availability; the standard offer may be unpriced."""
+
     form = ProductPricingForm(
         data=valid_pricing_form_data(
             business_status=PRICING_STATUS_ACTIVE,
         )
     )
 
-    assert not form.is_valid()
-    assert "business_status" in form.errors
+    assert form.is_valid(), form.errors
+    assert form.business_enabled is True
+    assert form.pricing_values()["business_eur"] is None
+
+
+def test_product_pricing_form_defaults_business_active_retail_inactive():
+    form = ProductPricingForm()
+
+    assert form["business_status"].value() == PRICING_STATUS_ACTIVE
+    assert form["retail_status"].value() == PRICING_STATUS_INACTIVE
 
 
 def test_product_pricing_form_rejects_active_retail_without_amount():
