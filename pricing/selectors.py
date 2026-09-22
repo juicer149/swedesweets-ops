@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Collection
+from datetime import date
 
 from django.db.models import QuerySet
+from django.utils import timezone
 
+from inventory.expiry import orderable_best_before_cutoff
 from inventory.models import InventoryBatch
+from inventory.selectors import list_orderable_batches_for_product
 from pricing.models import CommercialPrice, PriceAmount
 from products.models import Product
 
@@ -149,6 +153,66 @@ def resolve_price_amount(
         product=product,
         channel=channel,
         currency=currency,
+    )
+
+
+def list_orderable_batches_for_offer(
+    *,
+    offer: CommercialPrice,
+    currency: str,
+    today: date | None = None,
+) -> QuerySet[InventoryBatch]:
+    """Return the stock pool one CommercialPrice offer can draw from.
+
+    This is the mechanism shared by every channel: which physical batches
+    back a given offer right now. It does not decide whether the offer
+    itself is currently sellable in the requested currency (e.g. whether it
+    has a PriceAmount) - callers that need that guarantee (retail) check it
+    themselves before calling; callers that allow an unpriced standard offer
+    (business) simply don't.
+
+    A disabled offer, or an offer for an inactive product, has no pool.
+
+    A batch-specific offer's pool is exactly its own batch.
+
+    A product-wide offer's pool is the product's ordinary orderable batches,
+    excluding any batch that has its own *enabled* same-channel offer priced
+    in the requested currency - that batch is sold through its own offer
+    instead, so its stock must not also be claimable through the product-wide
+    one.
+    """
+
+    today = today or timezone.localdate()
+
+    if not offer.enabled or not offer.product.active:
+        return InventoryBatch.objects.none()
+
+    if offer.batch_id is not None:
+        cutoff = orderable_best_before_cutoff(today=today)
+
+        return (
+            InventoryBatch.objects
+            .filter(
+                pk=offer.batch_id,
+                status=InventoryBatch.Status.ACTIVE,
+                quantity__gt=0,
+                best_before__gt=cutoff,
+            )
+            .select_related("product")
+            .order_by("best_before", "batch_id")
+        )
+
+    return (
+        list_orderable_batches_for_product(
+            product=offer.product,
+            today=today,
+        )
+        .exclude(
+            commercial_prices__channel=offer.channel,
+            commercial_prices__enabled=True,
+            commercial_prices__amounts__currency=currency,
+            commercial_prices__batch__isnull=False,
+        )
     )
 
 
