@@ -224,3 +224,65 @@ def set_commercial_price_enabled(
     )
 
     return commercial_price
+
+
+@transaction.atomic
+def ensure_standard_offer(
+    *,
+    product: Product,
+    channel: str,
+) -> CommercialPrice:
+    """Return the product-wide standard offer for a channel, creating it if missing.
+
+    Idempotent. A newly created standard offer is enabled, because before
+    explicit offers existed every active product with stock was orderable in
+    the business channel without any CommercialPrice row. Creating it
+    disabled would silently make those products unorderable.
+
+    An existing offer is returned unchanged: enabled, reason and amounts are
+    never modified here. Availability changes go through
+    `set_commercial_price_enabled`.
+
+    Offer identity and price are separate concepts, so no PriceAmount is
+    created.
+
+    Only the business channel gets standard offers automatically. Retail
+    offers remain explicit, priced commercial decisions.
+    """
+
+    if channel != CommercialPrice.Channel.BUSINESS:
+        raise InvalidCommercialPrice(
+            "standard offers are only created automatically "
+            "for the business channel"
+        )
+
+    existing = (
+        CommercialPrice.objects
+        .filter(
+            product=product,
+            channel=channel,
+            batch__isnull=True,
+        )
+        .first()
+    )
+
+    if existing is not None:
+        return existing
+
+    try:
+        with transaction.atomic():
+            return CommercialPrice.objects.create(
+                product=product,
+                batch=None,
+                channel=channel,
+                reason="",
+                enabled=True,
+            )
+    except IntegrityError:
+        # A concurrent caller created it between the read and the insert;
+        # unique_product_price_per_channel guarantees there is exactly one.
+        return CommercialPrice.objects.get(
+            product=product,
+            channel=channel,
+            batch__isnull=True,
+        )
