@@ -43,12 +43,29 @@ def list_business_catalog_products(
 ) -> tuple[CatalogProduct, ...]:
     """Return the business catalog as shared product/offer contracts.
 
-    Business policy currently allows ordinary product ordering without a
-    configured price.
+    Gates, in order:
 
-    Enabled batch-specific BUSINESS prices with an EUR amount become explicit
-    offers and their physical stock is removed from the ordinary standard
-    pool, so the same units are not represented by two selectable offers.
+        Product.active            global product status
+        offer.enabled             business channel availability
+        available units > 0       reservation-adjusted stock
+        business price policy     standard offer: price optional
+                                  batch offer: EUR price required
+
+    The product-level BUSINESS CommercialPrice is the standard offer's
+    identity. When it is enabled the standard offer carries its id, priced
+    only if an EUR amount exists. When it is disabled the product has no
+    standard offer in the business channel.
+
+    Enabled batch-specific BUSINESS offers with an EUR amount become explicit
+    offers and their stock is removed from the standard pool, so the same
+    units are not represented by two selectable offers. A batch offer that is
+    not orderable (disabled or unpriced) leaves its batch in the standard
+    pool.
+
+    Transitional: a product with no product-level BUSINESS row at all still
+    gets a synthetic unpriced standard offer (`commercial_price_id=None`).
+    After the 2b data migration every product has the row; this fallback is
+    removed when order lines require an explicit offer (2c).
     """
 
     available_units_by_product_id = (
@@ -79,15 +96,14 @@ def list_business_catalog_products(
             channels=[
                 CommercialPrice.Channel.BUSINESS,
             ],
-            enabled_only=True,
         ).filter(
             product_id__in=candidate_product_ids,
         )
     )
 
-    product_price_by_product_id: dict[
+    standard_offer_by_product_id: dict[
         int,
-        tuple[CommercialPrice, PriceAmount],
+        CommercialPrice,
     ] = {}
 
     batch_price_candidates: list[
@@ -95,21 +111,21 @@ def list_business_catalog_products(
     ] = []
 
     for commercial_price in commercial_prices:
+        if commercial_price.batch_id is None:
+            standard_offer_by_product_id[
+                commercial_price.product_id
+            ] = commercial_price
+            continue
+
+        if not commercial_price.enabled:
+            continue
+
         amount = _find_amount(
             commercial_price=commercial_price,
             currency=PriceAmount.Currency.EUR,
         )
 
         if amount is None:
-            continue
-
-        if commercial_price.batch_id is None:
-            product_price_by_product_id[
-                commercial_price.product_id
-            ] = (
-                commercial_price,
-                amount,
-            )
             continue
 
         batch_price_candidates.append(
@@ -209,20 +225,29 @@ def list_business_catalog_products(
             0,
         )
 
+        standard_offer = (
+            standard_offer_by_product_id.get(
+                product.id
+            )
+        )
+
+        standard_offer_is_enabled = (
+            standard_offer is None
+            or standard_offer.enabled
+        )
+
         offers: list[CatalogOffer] = []
 
-        if standard_available_units > 0:
+        if (
+            standard_available_units > 0
+            and standard_offer_is_enabled
+        ):
             offers.append(
                 _build_standard_offer(
-                    product=product,
                     available_units=(
                         standard_available_units
                     ),
-                    product_price=(
-                        product_price_by_product_id.get(
-                            product.id
-                        )
-                    ),
+                    standard_offer=standard_offer,
                 )
             )
 
@@ -378,17 +403,11 @@ def _list_catalog_products(
 
 def _build_standard_offer(
     *,
-    product: Product,
     available_units: int,
-    product_price: (
-        tuple[
-            CommercialPrice,
-            PriceAmount,
-        ]
-        | None
-    ),
+    standard_offer: CommercialPrice | None,
 ) -> CatalogOffer:
-    if product_price is None:
+    if standard_offer is None:
+        # Transitional fallback: product has no business standard offer row.
         return CatalogOffer(
             kind=CatalogOfferKind.STANDARD,
             commercial_price_id=None,
@@ -399,19 +418,22 @@ def _build_standard_offer(
             available_units=available_units,
         )
 
-    commercial_price, amount = (
-        product_price
+    amount = _find_amount(
+        commercial_price=standard_offer,
+        currency=PriceAmount.Currency.EUR,
     )
 
     return CatalogOffer(
         kind=CatalogOfferKind.STANDARD,
-        commercial_price_id=(
-            commercial_price.pk
-        ),
+        commercial_price_id=standard_offer.pk,
         batch_id=None,
         reason=None,
-        price=amount.price,
-        currency=amount.currency,
+        price=(
+            amount.price
+            if amount is not None
+            else None
+        ),
+        currency=PriceAmount.Currency.EUR,
         available_units=available_units,
     )
 

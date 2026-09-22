@@ -928,10 +928,12 @@ def test_catalog_add_product_rejects_disabled_business_price(
 
     assert response.status_code == 302
 
+    # A disabled business standard offer removes the product from the B2B
+    # catalog, so selection is rejected at product level.
     assert _stored_messages(
         response
     ) == [
-        "business offer is not currently available"
+        "product is not available in the business catalog"
     ]
 
     assert not Order.objects.filter(

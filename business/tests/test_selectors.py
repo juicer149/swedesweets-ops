@@ -670,3 +670,135 @@ def test_business_catalog_can_expose_only_batch_offer(
     assert offer.kind == CatalogOfferKind.BATCH
     assert offer.batch_id == batch.pk
     assert offer.available_units == 5
+
+
+@pytest.mark.django_db
+def test_business_catalog_standard_offer_uses_enabled_unpriced_row(
+    monkeypatch,
+):
+    product = _product(
+        internal_number=1,
+        name="Explicit unpriced",
+    )
+
+    standard_offer = _commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+    )
+
+    monkeypatch.setattr(
+        "business.selectors.orderable_quantity_by_product_id",
+        lambda: {
+            product.id: 8,
+        },
+    )
+
+    monkeypatch.setattr(
+        "business.selectors.orderable_quantity_by_batch_pk",
+        lambda *, batch_pks: {},
+    )
+
+    (catalog_product,) = (
+        list_business_catalog_products()
+    )
+
+    (offer,) = catalog_product.offers
+
+    assert offer.kind == CatalogOfferKind.STANDARD
+    assert offer.commercial_price_id == standard_offer.pk
+    assert offer.price is None
+    assert offer.currency == PriceAmount.Currency.EUR
+    assert offer.available_units == 8
+
+
+@pytest.mark.django_db
+def test_business_catalog_disabled_standard_offer_hides_product(
+    monkeypatch,
+):
+    product = _product(
+        internal_number=1,
+        name="Not sold in B2B",
+    )
+
+    standard_offer = _commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=False,
+    )
+
+    _price_amount(
+        commercial_price=standard_offer,
+        price="12.50",
+    )
+
+    monkeypatch.setattr(
+        "business.selectors.orderable_quantity_by_product_id",
+        lambda: {
+            product.id: 10,
+        },
+    )
+
+    monkeypatch.setattr(
+        "business.selectors.orderable_quantity_by_batch_pk",
+        lambda *, batch_pks: {},
+    )
+
+    assert list_business_catalog_products() == ()
+
+
+@pytest.mark.django_db
+def test_business_catalog_disabled_standard_offer_keeps_batch_offer(
+    monkeypatch,
+):
+    product = _product(
+        internal_number=1,
+        name="Only special stock in B2B",
+    )
+
+    _commercial_price(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=False,
+    )
+
+    batch = _batch(
+        product=product,
+        batch_id="BATCH-SPECIAL",
+        quantity=4,
+    )
+
+    batch_offer = _commercial_price(
+        product=product,
+        batch=batch,
+        channel=CommercialPrice.Channel.BUSINESS,
+        reason=CommercialPrice.Reason.SHORT_DATED,
+    )
+
+    _price_amount(
+        commercial_price=batch_offer,
+        price="5.00",
+    )
+
+    monkeypatch.setattr(
+        "business.selectors.orderable_quantity_by_product_id",
+        lambda: {
+            product.id: 10,
+        },
+    )
+
+    monkeypatch.setattr(
+        "business.selectors.orderable_quantity_by_batch_pk",
+        lambda *, batch_pks: {
+            batch.pk: 4,
+        },
+    )
+
+    (catalog_product,) = (
+        list_business_catalog_products()
+    )
+
+    (offer,) = catalog_product.offers
+
+    assert offer.kind == CatalogOfferKind.BATCH
+    assert offer.commercial_price_id == batch_offer.pk
+    assert offer.available_units == 4

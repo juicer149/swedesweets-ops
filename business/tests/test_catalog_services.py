@@ -812,9 +812,11 @@ def test_disabled_business_commercial_price_cannot_be_selected(
         price=Decimal("12.50"),
     )
 
+    # A disabled business standard offer removes the product from the B2B
+    # catalog, so selection is rejected at product level.
     with pytest.raises(
         InvalidOrderOperation,
-        match="business offer is not currently available",
+        match="product is not available in the business catalog",
     ):
         add_catalog_offer_to_draft_order(
             customer=customer,
