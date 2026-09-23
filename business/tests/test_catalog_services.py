@@ -84,6 +84,10 @@ def test_add_product_to_draft_order_creates_draft_and_line(
     apple,
     stocked_inventory,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     order = add_product_to_draft_order(
         customer=customer,
         product=apple,
@@ -105,6 +109,10 @@ def test_add_product_to_draft_order_increments_existing_product(
     apple,
     stocked_inventory,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     first_order = add_product_to_draft_order(
         customer=customer,
         product=apple,
@@ -131,6 +139,13 @@ def test_add_product_to_draft_order_preserves_other_products(
     banana,
     stocked_inventory,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+    standard_business_offer_factory(
+        product=banana,
+    )
+
     order = add_product_to_draft_order(
         customer=customer,
         product=apple,
@@ -197,6 +212,10 @@ def test_add_product_to_draft_order_rejects_unavailable_product(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     with pytest.raises(
         InvalidOrderOperation,
         match="only 0 units are currently available",
@@ -218,6 +237,10 @@ def test_add_product_to_draft_order_rejects_quantity_above_available_stock(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     create_batch(
         batch_id="A-001",
         product=apple,
@@ -250,6 +273,10 @@ def test_add_product_to_draft_order_rejects_quantity_above_order_limit(
     apple,
     monkeypatch,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     monkeypatch.setattr(
         "business.services.orderable_quantity_by_product_id",
         lambda: {

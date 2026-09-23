@@ -114,20 +114,19 @@ def _validate_commercial_offer(
     order: Order,
     line: ResolvedOrderLine,
 ) -> None:
-    """Protect the generic order-line invariant for explicit offers.
+    """Protect the generic order-line commercial identity invariant.
 
-    Channels decide *which* offer a line uses. Orders only checks that the
-    offer is persisted and actually belongs to this line's product and this
-    order's channel, so a broken selection fails as a domain error rather
-    than deeper down in the ORM.
-
-    The offer is optional while channels migrate to explicit offers.
+    Channels decide which offer a line uses. Orders verifies that the offer is
+    present, persisted, and belongs to both the line's product and the order's
+    sales channel.
     """
 
     offer = line.commercial_offer
 
     if offer is None:
-        return
+        raise InvalidOrderOperation(
+            "commercial offer is required"
+        )
 
     if offer.pk is None:
         raise InvalidOrderOperation(

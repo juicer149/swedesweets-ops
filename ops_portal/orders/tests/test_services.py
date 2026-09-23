@@ -18,13 +18,26 @@ from orders.models import (
     Order,
     OrderLine,
 )
-from reservations.models import Allocation
+from pricing.models import CommercialPrice
+from pricing.tests.factories import commercial_price_factory
 from products.tests.factories import product_factory
 from products.units import OrderUnit
+from reservations.models import Allocation
 
 
 TODAY = timezone.localdate()
 BEST_BEFORE = TODAY + timedelta(days=60)
+
+
+def _standard_business_offer(
+    *,
+    product,
+) -> CommercialPrice:
+    return commercial_price_factory(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
 
 
 def _place_order_with_line(
@@ -34,7 +47,9 @@ def _place_order_with_line(
     batch,
     quantity: int,
 ) -> tuple[Order, OrderLine, Allocation]:
-    order = Order.objects.create(customer=customer)
+    order = Order.objects.create(
+        customer=customer,
+    )
     order.mark_as_placed()
 
     order_line = OrderLine.objects.create(
@@ -107,14 +122,18 @@ def test_pack_order_and_clear_checklist_consumes_reservations_and_clears_marks()
 def test_pack_order_and_clear_checklist_rolls_back_on_pack_failure():
     customer = customer_factory()
 
-    order = Order.objects.create(customer=customer)
+    order = Order.objects.create(
+        customer=customer,
+    )
     order.mark_as_placed()
 
     # No Allocation rows exist for this order, so fulfillment.pack_order's
     # preparation step must raise before anything is persisted - including
     # any checklist mark cleanup, since the whole wrapper is one atomic
     # transaction.
-    with pytest.raises(InvalidOrderOperation):
+    with pytest.raises(
+        InvalidOrderOperation,
+    ):
         pack_order_and_clear_checklist(
             order=order,
         )
@@ -133,6 +152,10 @@ def test_update_placed_order_preserves_mark_for_unchanged_quantity():
         name="Apple",
         weight_per_unit=5000,
         internal_number=1,
+    )
+
+    _standard_business_offer(
+        product=apple,
     )
 
     batch = batch_factory(
@@ -190,6 +213,10 @@ def test_update_placed_order_clears_mark_when_quantity_changes():
         name="Apple",
         weight_per_unit=5000,
         internal_number=1,
+    )
+
+    _standard_business_offer(
+        product=apple,
     )
 
     batch = batch_factory(
@@ -252,6 +279,10 @@ def test_update_placed_order_clears_mark_when_product_is_removed():
         name="Pear",
         weight_per_unit=4000,
         internal_number=2,
+    )
+
+    _standard_business_offer(
+        product=pear,
     )
 
     apple_batch = batch_factory(
@@ -317,6 +348,10 @@ def test_update_placed_order_preserves_split_batch_marks_individually():
         internal_number=1,
     )
 
+    _standard_business_offer(
+        product=apple,
+    )
+
     # Two batches, exactly large enough that a 75-unit order deterministically
     # splits 50 from the first (earlier best_before, FEFO) and 25 from the
     # second - mirrors the two-batch checklist scenario directly.
@@ -338,7 +373,9 @@ def test_update_placed_order_preserves_split_batch_marks_individually():
         today=TODAY,
     )
 
-    order = Order.objects.create(customer=customer)
+    order = Order.objects.create(
+        customer=customer,
+    )
     order.mark_as_placed()
 
     order_line = OrderLine.objects.create(
@@ -387,7 +424,9 @@ def test_update_placed_order_preserves_split_batch_marks_individually():
         Allocation.objects.filter(
             order=updated_order,
             status=Allocation.Status.RESERVED,
-        ).select_related("batch")
+        ).select_related(
+            "batch"
+        )
     )
 
     assert len(new_allocations) == 2
@@ -406,6 +445,7 @@ def test_update_placed_order_preserves_split_batch_marks_individually():
     assert PickChecklistMark.objects.filter(
         allocation=new_allocation_a,
     ).exists()
+
     assert not PickChecklistMark.objects.filter(
         allocation=new_allocation_b,
     ).exists()
@@ -420,6 +460,10 @@ def test_update_placed_order_clears_all_split_batch_marks_on_quantity_change():
         name="Apple",
         weight_per_unit=5000,
         internal_number=1,
+    )
+
+    _standard_business_offer(
+        product=apple,
     )
 
     batch_a = batch_factory(
@@ -440,7 +484,9 @@ def test_update_placed_order_clears_all_split_batch_marks_on_quantity_change():
         today=TODAY,
     )
 
-    order = Order.objects.create(customer=customer)
+    order = Order.objects.create(
+        customer=customer,
+    )
     order.mark_as_placed()
 
     order_line = OrderLine.objects.create(

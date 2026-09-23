@@ -22,15 +22,15 @@ class ResolvedOrderLine:
 
     Those decisions must already have been made by the caller.
 
-    `commercial_offer` records which commercial alternative the line came
-    from. It is temporarily optional while channels migrate to explicit
-    offers; orders validates it whenever it is supplied.
+    Every resolved line carries the persistent commercial offer that represents
+    the customer's commercial selection. Price remains a snapshot concern and
+    may be absent independently of offer identity.
     """
 
     product: Product
     quantity_in_units: int
+    commercial_offer: CommercialPrice
     unit_price_snapshot: Decimal | None = None
-    commercial_offer: CommercialPrice | None = None
 
 
 @dataclass(frozen=True, slots=True)

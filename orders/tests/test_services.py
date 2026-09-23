@@ -25,6 +25,8 @@ from orders.services import (
     set_draft_order_line_quantity,
     update_placed_order,
 )
+from pricing.models import CommercialPrice
+from pricing.tests.factories import commercial_price_factory
 
 
 def _create_order_line(
@@ -557,6 +559,12 @@ def test_update_placed_order_runs_hooks_around_line_replacement(
         quantity=10,
     )
 
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
     events: list[
         tuple[str, list[int]]
     ] = []
@@ -599,6 +607,7 @@ def test_update_placed_order_runs_hooks_around_line_replacement(
             ResolvedOrderLine(
                 product=apple,
                 quantity_in_units=20,
+                commercial_offer=offer,
             ),
         ),
         before_replacement=before_replacement,
@@ -642,6 +651,12 @@ def test_update_placed_order_rejects_non_placed_before_running_hooks(
         quantity=10,
     )
 
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
     events: list[str] = []
 
     def before_replacement(
@@ -670,6 +685,7 @@ def test_update_placed_order_rejects_non_placed_before_running_hooks(
                 ResolvedOrderLine(
                     product=apple,
                     quantity_in_units=20,
+                    commercial_offer=offer,
                 ),
             ),
             before_replacement=before_replacement,
@@ -694,6 +710,12 @@ def test_update_placed_order_rolls_back_line_replacement_when_preparation_fails(
         order=order,
         product=apple,
         quantity=10,
+    )
+
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
     )
 
     before_called = False
@@ -723,6 +745,7 @@ def test_update_placed_order_rolls_back_line_replacement_when_preparation_fails(
                 ResolvedOrderLine(
                     product=apple,
                     quantity_in_units=20,
+                    commercial_offer=offer,
                 ),
             ),
             before_replacement=before_replacement,
@@ -894,7 +917,6 @@ def test_cancel_order_runs_injected_preparation_before_transition(
             Order.Status.PLACED,
         )
     ]
-
     assert (
         cancelled.status
         == Order.Status.CANCELLED
@@ -1034,6 +1056,12 @@ def test_create_draft_order_persists_resolved_order_data(
     customer,
     apple,
 ):
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
     order = create_draft_order(
         draft=OrderDraft(
             channel=Order.Channel.BUSINESS,
@@ -1052,6 +1080,7 @@ def test_create_draft_order_persists_resolved_order_data(
                 ResolvedOrderLine(
                     product=apple,
                     quantity_in_units=3,
+                    commercial_offer=offer,
                     unit_price_snapshot=Decimal("12.50"),
                 ),
             ),
@@ -1069,6 +1098,7 @@ def test_create_draft_order_persists_resolved_order_data(
     assert line.product == apple
     assert line.quantity == 3
     assert line.quantity_in_units == 3
+    assert line.commercial_offer == offer
     assert (
         line.unit_price_snapshot
         == Decimal("12.50")

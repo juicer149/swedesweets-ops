@@ -42,16 +42,13 @@ def buyer_from_customer(
 def resolve_standard_business_offer(
     *,
     product: Product,
-) -> CommercialPrice | None:
-    """Return the product's standard BUSINESS offer.
+) -> CommercialPrice:
+    """Return the product's persistent standard BUSINESS offer.
 
-    A disabled standard offer means the product is not available in the
-    business channel, so ordering it is rejected here rather than silently
-    bypassing the channel gate.
+    Missing standard identity is a catalog/configuration invariant violation.
 
-    Transitional: returns None when the product has no standard offer row at
-    all. Every production product has one; this keeps paths working until
-    `OrderLine.commercial_offer` becomes mandatory.
+    A disabled standard offer is different: the identity exists, but the
+    product is intentionally unavailable in the business channel.
     """
 
     offer = (
@@ -65,7 +62,11 @@ def resolve_standard_business_offer(
     )
 
     if offer is None:
-        return None
+        raise RuntimeError(
+            "business ordering invariant violated: "
+            "missing standard BUSINESS offer for "
+            f"{product.display_name}"
+        )
 
     if not offer.enabled:
         raise InvalidOrderOperation(
@@ -110,9 +111,9 @@ def resolve_business_order_lines(
 
     Duplicate product lines are merged after quantity conversion.
 
-    Each resolved line carries the product's standard BUSINESS offer as its
-    commercial selection: these ordinary product lines are exactly the
-    "normal business sale" the standard offer represents.
+    Each resolved line carries the product's persistent standard BUSINESS offer
+    as its commercial selection. Ordinary product ordering is therefore an
+    explicit commercial choice rather than an offer-less special case.
     """
 
     line_inputs = tuple(lines)
@@ -179,11 +180,9 @@ def resolve_business_order_lines(
                 product_id
             ],
             quantity_in_units=quantity,
-            commercial_offer=(
-                standard_offers_by_product_id.get(
-                    product_id
-                )
-            ),
+            commercial_offer=standard_offers_by_product_id[
+                product_id
+            ],
         )
         for product_id, quantity
         in quantity_by_product_id.items()
@@ -194,7 +193,11 @@ def _standard_business_offers_by_product_id(
     *,
     products: Iterable[Product],
 ) -> dict[int, CommercialPrice]:
-    """Resolve standard BUSINESS offers for several products in one query."""
+    """Resolve standard BUSINESS offers for several products in one query.
+
+    Every requested product must have a persistent standard BUSINESS offer.
+    Disabled offers are present identities but are not orderable.
+    """
 
     products_by_id = {
         product.id: product
@@ -215,6 +218,21 @@ def _standard_business_offers_by_product_id(
             )
         )
     }
+
+    missing_product_names = sorted(
+        products_by_id[product_id].display_name
+        for product_id in (
+            products_by_id.keys()
+            - offers_by_product_id.keys()
+        )
+    )
+
+    if missing_product_names:
+        raise RuntimeError(
+            "business ordering invariant violated: "
+            "missing standard BUSINESS offer for "
+            + ", ".join(missing_product_names)
+        )
 
     disabled_product_names = sorted(
         products_by_id[product_id].display_name

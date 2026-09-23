@@ -11,15 +11,8 @@ from orders.services import (
     create_draft_order,
 )
 from pricing.models import CommercialPrice
+from pricing.tests.factories import commercial_price_factory
 from products.tests.factories import product_factory
-
-
-def _offer(*, product, channel=CommercialPrice.Channel.BUSINESS):
-    return CommercialPrice.objects.create(
-        product=product,
-        channel=channel,
-        enabled=True,
-    )
 
 
 def _buyer(customer):
@@ -34,9 +27,18 @@ def _buyer(customer):
 
 
 @pytest.mark.django_db
-def test_explicit_offer_is_stored_on_the_order_line(customer, apple):
-    order = Order.objects.create(customer=customer)
-    offer = _offer(product=apple)
+def test_explicit_offer_is_stored_on_the_order_line(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        customer=customer,
+    )
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
 
     order_line = add_draft_order_line(
         order=order,
@@ -48,16 +50,33 @@ def test_explicit_offer_is_stored_on_the_order_line(customer, apple):
     )
 
     order_line.refresh_from_db()
+
     assert order_line.commercial_offer == offer
 
 
 @pytest.mark.django_db
-def test_offer_for_another_product_is_rejected(customer, apple):
-    order = Order.objects.create(customer=customer)
-    other_product = product_factory(name="Other", internal_number=99)
-    offer = _offer(product=other_product)
+def test_offer_for_another_product_is_rejected(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        customer=customer,
+    )
 
-    with pytest.raises(InvalidOrderOperation, match="belongs to product"):
+    other_product = product_factory(
+        name="Other",
+        internal_number=99,
+    )
+    offer = commercial_price_factory(
+        product=other_product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="belongs to product",
+    ):
         add_draft_order_line(
             order=order,
             line=ResolvedOrderLine(
@@ -71,14 +90,24 @@ def test_offer_for_another_product_is_rejected(customer, apple):
 
 
 @pytest.mark.django_db
-def test_offer_from_another_channel_is_rejected(customer, apple):
-    order = Order.objects.create(customer=customer)
-    retail_offer = _offer(
-        product=apple,
-        channel=CommercialPrice.Channel.RETAIL,
+def test_offer_from_another_channel_is_rejected(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        customer=customer,
     )
 
-    with pytest.raises(InvalidOrderOperation, match="is a retail offer"):
+    retail_offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.RETAIL,
+        enabled=True,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="is a retail offer",
+    ):
         add_draft_order_line(
             order=order,
             line=ResolvedOrderLine(
@@ -92,15 +121,24 @@ def test_offer_from_another_channel_is_rejected(customer, apple):
 
 
 @pytest.mark.django_db
-def test_unsaved_offer_is_rejected(customer, apple):
-    order = Order.objects.create(customer=customer)
+def test_unsaved_offer_is_rejected(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        customer=customer,
+    )
+
     unsaved_offer = CommercialPrice(
         product=apple,
         channel=CommercialPrice.Channel.BUSINESS,
         enabled=True,
     )
 
-    with pytest.raises(InvalidOrderOperation, match="must be persisted"):
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="must be persisted",
+    ):
         add_draft_order_line(
             order=order,
             line=ResolvedOrderLine(
@@ -114,28 +152,48 @@ def test_unsaved_offer_is_rejected(customer, apple):
 
 
 @pytest.mark.django_db
-def test_line_without_offer_is_still_accepted(customer, apple):
-    """Channels migrate to explicit offers one at a time; until then a line
-    without an offer remains valid."""
+def test_line_without_offer_is_rejected(
+    customer,
+    apple,
+):
+    """Runtime validation protects callers despite Python's non-enforced types."""
 
-    order = Order.objects.create(customer=customer)
-
-    order_line = add_draft_order_line(
-        order=order,
-        line=ResolvedOrderLine(
-            product=apple,
-            quantity_in_units=2,
-        ),
+    order = Order.objects.create(
+        customer=customer,
     )
 
-    order_line.refresh_from_db()
-    assert order_line.commercial_offer is None
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="commercial offer is required",
+    ):
+        add_draft_order_line(
+            order=order,
+            line=ResolvedOrderLine(
+                product=apple,
+                quantity_in_units=2,
+                commercial_offer=None,  # type: ignore[arg-type]
+            ),
+        )
+
+    assert not order.lines.exists()
 
 
 @pytest.mark.django_db
-def test_draft_creation_stores_offers_on_every_line(customer, apple, banana):
-    apple_offer = _offer(product=apple)
-    banana_offer = _offer(product=banana)
+def test_draft_creation_stores_offers_on_every_line(
+    customer,
+    apple,
+    banana,
+):
+    apple_offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+    banana_offer = commercial_price_factory(
+        product=banana,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
 
     order = create_draft_order(
         draft=OrderDraft(
@@ -159,10 +217,19 @@ def test_draft_creation_stores_offers_on_every_line(customer, apple, banana):
     )
 
     assert set(
-        order.lines.values_list("product_id", "commercial_offer_id")
+        order.lines.values_list(
+            "product_id",
+            "commercial_offer_id",
+        )
     ) == {
-        (apple.id, apple_offer.pk),
-        (banana.id, banana_offer.pk),
+        (
+            apple.id,
+            apple_offer.pk,
+        ),
+        (
+            banana.id,
+            banana_offer.pk,
+        ),
     }
 
 
@@ -174,11 +241,26 @@ def test_draft_creation_validates_every_line_before_persisting(
 ):
     """A bad offer on the second line must not leave the first line behind."""
 
-    apple_offer = _offer(product=apple)
-    unrelated_product = product_factory(name="Unrelated", internal_number=98)
-    wrong_offer = _offer(product=unrelated_product)
+    apple_offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
 
-    with pytest.raises(InvalidOrderOperation, match="belongs to product"):
+    unrelated_product = product_factory(
+        name="Unrelated",
+        internal_number=98,
+    )
+    wrong_offer = commercial_price_factory(
+        product=unrelated_product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="belongs to product",
+    ):
         create_draft_order(
             draft=OrderDraft(
                 channel=Order.Channel.BUSINESS,
@@ -200,4 +282,6 @@ def test_draft_creation_validates_every_line_before_persisting(
             ),
         )
 
-    assert not Order.objects.filter(customer=customer).exists()
+    assert not Order.objects.filter(
+        customer=customer,
+    ).exists()

@@ -66,6 +66,13 @@ def test_create_order_places_business_order_and_reserves_fefo(
     banana,
     stocked_inventory,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+    standard_business_offer_factory(
+        product=banana,
+    )
+
     order = create_order(
         customer=customer,
         lines=[
@@ -129,6 +136,10 @@ def test_create_order_rolls_back_when_stock_is_insufficient(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     create_batch(
         batch_id="A-001",
         product=apple,
@@ -176,6 +187,10 @@ def test_create_order_does_not_use_expired_stock(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     create_batch(
         batch_id="A-001",
         product=apple,
@@ -207,6 +222,10 @@ def test_create_draft_order_creates_business_draft_without_reservations(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     order = create_draft_order(
         customer=customer,
         lines=[
@@ -233,6 +252,10 @@ def test_create_draft_order_snapshots_business_customer(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     order = create_draft_order(
         customer=customer,
         lines=[
@@ -262,6 +285,10 @@ def test_create_draft_order_merges_duplicate_business_product_lines(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     order = create_draft_order(
         customer=customer,
         lines=[
@@ -304,6 +331,10 @@ def test_place_order_places_existing_business_draft(
     apple,
     stocked_inventory,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     order = create_draft_order(
         customer=customer,
         lines=[
@@ -337,6 +368,10 @@ def test_place_order_rejects_non_draft_business_order(
     apple,
     stocked_inventory,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     order = create_order(
         customer=customer,
         lines=[
@@ -387,6 +422,10 @@ def test_unexpired_retail_hold_reduces_business_availability(
     other_customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     batch = create_batch(
         batch_id="A-001",
         product=apple,
@@ -454,6 +493,10 @@ def test_expired_retail_hold_does_not_reduce_business_availability(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     batch = create_batch(
         batch_id="A-001",
         product=apple,
@@ -510,6 +553,10 @@ def test_cancelled_retail_hold_does_not_reduce_business_availability(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     batch = create_batch(
         batch_id="A-001",
         product=apple,
@@ -569,6 +616,13 @@ def test_update_placed_order_rebuilds_business_reservations(
     banana,
     stocked_inventory,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+    standard_business_offer_factory(
+        product=banana,
+    )
+
     order = create_order(
         customer=customer,
         lines=[
@@ -635,6 +689,10 @@ def test_update_placed_order_rejects_non_placed_order(
     customer,
     apple,
 ):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
     order = create_draft_order(
         customer=customer,
         lines=[
