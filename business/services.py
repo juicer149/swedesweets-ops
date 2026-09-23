@@ -8,6 +8,7 @@ from business.drafts import (
     build_business_order_draft,
     buyer_from_customer,
     resolve_business_order_lines,
+    resolve_standard_business_offer,
 )
 from business.models import BusinessOfferSelection
 from business.policies import (
@@ -46,6 +47,7 @@ from orders.services import (
     set_draft_order_line_quantity as set_shared_draft_order_line_quantity,
     update_placed_order as update_shared_placed_order,
 )
+from pricing.models import CommercialPrice
 from products.models import Product
 from reservations.policies import (
     clear_order_reservations_before_line_replacement,
@@ -173,6 +175,9 @@ def add_catalog_offer_to_draft_order(
             product=product,
             quantity_in_units=quantity,
             unit_price_snapshot=offer.price,
+            commercial_offer=_offer_instance(
+                commercial_price_id=offer.commercial_price_id,
+            ),
         ),
         user=user,
     )
@@ -198,6 +203,9 @@ def add_product_to_draft_order(
     This legacy product-level mutation remains available while portal callers
     migrate to explicit catalog-offer selection.
 
+    The line still records the product's standard BUSINESS offer as its
+    commercial selection; it is the ordinary business sale.
+
     Legacy lines intentionally have no BusinessOfferSelection.
     """
 
@@ -210,6 +218,10 @@ def add_product_to_draft_order(
         raise InvalidOrderOperation(
             "product is not available for business ordering"
         )
+
+    standard_offer = resolve_standard_business_offer(
+        product=product,
+    )
 
     order = get_or_create_customer_draft_order(
         customer=customer,
@@ -276,6 +288,7 @@ def add_product_to_draft_order(
         line=ResolvedOrderLine(
             product=product,
             quantity_in_units=quantity,
+            commercial_offer=standard_offer,
         ),
         user=user,
     )
@@ -634,6 +647,24 @@ def update_placed_order(
         ),
         preparation=prepare_business_order_for_placement,
         user=user,
+    )
+
+
+def _offer_instance(
+    *,
+    commercial_price_id: int | None,
+) -> CommercialPrice | None:
+    """Load the CommercialPrice a catalog offer refers to.
+
+    Transitional: a catalog standard offer may still carry no
+    CommercialPrice id for a product without a standard offer row.
+    """
+
+    if commercial_price_id is None:
+        return None
+
+    return CommercialPrice.objects.get(
+        pk=commercial_price_id,
     )
 
 
