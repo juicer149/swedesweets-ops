@@ -7,6 +7,9 @@ from accounts.tests.factories import (
     customer_user_factory,
 )
 from business.services import create_order
+from business.tests.factories import (
+    standard_business_offer_factory,
+)
 from customers.tests.factories import (
     customer_factory,
 )
@@ -27,6 +30,10 @@ def _create_source_order(
     product,
     quantity: int = 1,
 ):
+    standard_business_offer_factory(
+        product=product,
+    )
+
     batch_factory(
         product=product,
         today=TODAY,

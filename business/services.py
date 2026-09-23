@@ -78,16 +78,15 @@ def add_catalog_offer_to_draft_order(
     *,
     customer: Customer,
     product: Product,
-    commercial_price_id: int | None,
+    commercial_price_id: int,
     quantity: int = 1,
     user=None,
 ) -> Order:
     """Add one channel-approved catalog selection to a business draft.
 
-    CommercialPrice identity distinguishes offers for the same product.
-
-    `commercial_price_id=None` is valid only when the current business catalog
-    exposes an explicit standard selection without a CommercialPrice.
+    Every current business catalog offer has a persistent CommercialPrice
+    identity. That identity distinguishes commercial alternatives for the
+    same product.
     """
 
     if quantity <= 0:
@@ -652,16 +651,9 @@ def update_placed_order(
 
 def _offer_instance(
     *,
-    commercial_price_id: int | None,
-) -> CommercialPrice | None:
-    """Load the CommercialPrice a catalog offer refers to.
-
-    Transitional: a catalog standard offer may still carry no
-    CommercialPrice id for a product without a standard offer row.
-    """
-
-    if commercial_price_id is None:
-        return None
+    commercial_price_id: int,
+) -> CommercialPrice:
+    """Load the persistent CommercialPrice for a current catalog offer."""
 
     return CommercialPrice.objects.get(
         pk=commercial_price_id,
@@ -686,7 +678,7 @@ def _get_catalog_product(
 def _get_catalog_offer(
     *,
     catalog_product: CatalogProduct,
-    commercial_price_id: int | None,
+    commercial_price_id: int,
 ) -> CatalogOffer:
     for offer in catalog_product.offers:
         if (
@@ -704,7 +696,7 @@ def _find_line_for_offer(
     *,
     order: Order,
     product: Product,
-    commercial_price_id: int | None,
+    commercial_price_id: int,
 ) -> OrderLine | None:
     lines = (
         order.lines

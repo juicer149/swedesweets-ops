@@ -31,6 +31,7 @@ from business_portal.catalog.viewmodels import (
 from business_portal.selectors import (
     get_portal_customer_for_user,
 )
+from common.catalog.contracts import CatalogOfferKind
 from orders.errors import InvalidOrderOperation
 from products.models import Product
 
@@ -48,9 +49,9 @@ def _wants_json(request) -> bool:
 def _parse_commercial_price_id(
     raw_value: str | None,
 ) -> int | None:
-    """Parse one catalog selection from form input.
+    """Parse an optional catalog selection from form input.
 
-    Empty means the explicit unpriced standard Business offer.
+    Empty input requests the current standard BUSINESS offer.
 
     Any non-empty value must be a positive integer CommercialPrice id.
     """
@@ -76,6 +77,39 @@ def _parse_commercial_price_id(
         )
 
     return commercial_price_id
+
+
+def _resolve_catalog_offer_id(
+    *,
+    product: Product,
+    commercial_price_id: int | None,
+) -> int:
+    """Resolve transport-level selection to a persistent offer identity.
+
+    A missing id is a portal shorthand for the product's current standard
+    BUSINESS offer. The business service itself only accepts persistent
+    CommercialPrice identities.
+    """
+
+    if commercial_price_id is not None:
+        return commercial_price_id
+
+    catalog_product = get_business_catalog_product(
+        product_id=product.id,
+    )
+
+    if catalog_product is None:
+        raise InvalidOrderOperation(
+            "product is not available in the business catalog"
+        )
+
+    for offer in catalog_product.offers:
+        if offer.kind == CatalogOfferKind.STANDARD:
+            return offer.commercial_price_id
+
+    raise InvalidOrderOperation(
+        "standard business offer is not currently available"
+    )
 
 
 def _parse_quantity(
@@ -130,7 +164,7 @@ def add_product(
     )
 
     try:
-        commercial_price_id = (
+        requested_commercial_price_id = (
             _parse_commercial_price_id(
                 request.POST.get(
                     "commercial_price_id"
@@ -142,6 +176,13 @@ def add_product(
             request.POST.get(
                 "quantity"
             )
+        )
+
+        commercial_price_id = _resolve_catalog_offer_id(
+            product=product,
+            commercial_price_id=(
+                requested_commercial_price_id
+            ),
         )
 
         add_catalog_offer_to_draft_order(

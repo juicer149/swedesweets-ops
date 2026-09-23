@@ -11,6 +11,9 @@ from business.services import (
     add_product_to_draft_order,
 )
 from business.tests.conftest import TODAY
+from business.tests.factories import (
+    standard_business_offer_factory,
+)
 from common.catalog.contracts import (
     CatalogOffer,
     CatalogOfferKind,
@@ -43,13 +46,13 @@ def _catalog_product(
 
 def _standard_offer(
     *,
+    commercial_price: CommercialPrice,
     available_units: int,
-    commercial_price_id: int | None = None,
     price: Decimal | None = None,
 ) -> CatalogOffer:
     return CatalogOffer(
         kind=CatalogOfferKind.STANDARD,
-        commercial_price_id=commercial_price_id,
+        commercial_price_id=commercial_price.pk,
         batch_id=None,
         reason=None,
         price=price,
@@ -305,11 +308,16 @@ def test_add_unpriced_standard_catalog_offer_creates_explicit_selection(
     apple,
     monkeypatch,
 ):
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+
     catalog_product = _catalog_product(
         product=apple,
         available_units=10,
         offers=(
             _standard_offer(
+                commercial_price=standard_offer,
                 available_units=10,
             ),
         ),
@@ -325,7 +333,7 @@ def test_add_unpriced_standard_catalog_offer_creates_explicit_selection(
     order = add_catalog_offer_to_draft_order(
         customer=customer,
         product=apple,
-        commercial_price_id=None,
+        commercial_price_id=standard_offer.pk,
         quantity=2,
     )
 
@@ -341,7 +349,10 @@ def test_add_unpriced_standard_catalog_offer_creates_explicit_selection(
         selection,
         BusinessOfferSelection,
     )
-    assert selection.commercial_price_id is None
+    assert (
+        selection.commercial_price
+        == standard_offer
+    )
 
 
 @pytest.mark.django_db
@@ -364,8 +375,8 @@ def test_add_priced_standard_catalog_offer_snapshots_price(
         available_units=10,
         offers=(
             _standard_offer(
+                commercial_price=commercial_price,
                 available_units=10,
-                commercial_price_id=commercial_price.pk,
                 price=amount,
             ),
         ),
@@ -462,11 +473,16 @@ def test_adding_same_catalog_offer_again_increments_existing_line(
     apple,
     monkeypatch,
 ):
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+
     catalog_product = _catalog_product(
         product=apple,
         available_units=10,
         offers=(
             _standard_offer(
+                commercial_price=standard_offer,
                 available_units=10,
             ),
         ),
@@ -482,7 +498,7 @@ def test_adding_same_catalog_offer_again_increments_existing_line(
     first_order = add_catalog_offer_to_draft_order(
         customer=customer,
         product=apple,
-        commercial_price_id=None,
+        commercial_price_id=standard_offer.pk,
         quantity=2,
     )
 
@@ -491,7 +507,7 @@ def test_adding_same_catalog_offer_again_increments_existing_line(
     second_order = add_catalog_offer_to_draft_order(
         customer=customer,
         product=apple,
-        commercial_price_id=None,
+        commercial_price_id=standard_offer.pk,
         quantity=3,
     )
 
@@ -502,7 +518,10 @@ def test_adding_same_catalog_offer_again_increments_existing_line(
 
     assert line.pk == first_line.pk
     assert line.quantity_in_units == 5
-    assert line.business_offer_selection.commercial_price_id is None
+    assert (
+        line.business_offer_selection.commercial_price
+        == standard_offer
+    )
 
 
 @pytest.mark.django_db
@@ -528,9 +547,17 @@ def test_same_product_different_catalog_offers_create_separate_lines(
         reason=CommercialPrice.Reason.SHORT_DATED,
     )
 
+    standard_commercial_price = (
+        standard_business_offer_factory(
+            product=apple,
+        )
+    )
+
     standard_offer = _standard_offer(
+        commercial_price=standard_commercial_price,
         available_units=6,
     )
+
     special_offer = _batch_offer(
         commercial_price=commercial_price,
         available_units=4,
@@ -556,7 +583,7 @@ def test_same_product_different_catalog_offers_create_separate_lines(
     order = add_catalog_offer_to_draft_order(
         customer=customer,
         product=apple,
-        commercial_price_id=None,
+        commercial_price_id=standard_commercial_price.pk,
         quantity=2,
     )
 
@@ -584,7 +611,7 @@ def test_same_product_different_catalog_offers_create_separate_lines(
     assert standard_line.quantity_in_units == 2
     assert (
         standard_line.business_offer_selection.commercial_price_id
-        is None
+        == standard_commercial_price.pk
     )
 
     assert special_line.product == apple
@@ -602,6 +629,10 @@ def test_explicit_standard_offer_does_not_merge_with_legacy_product_line(
     stocked_inventory,
     monkeypatch,
 ):
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+
     order = add_product_to_draft_order(
         customer=customer,
         product=apple,
@@ -615,6 +646,7 @@ def test_explicit_standard_offer_does_not_merge_with_legacy_product_line(
         available_units=10,
         offers=(
             _standard_offer(
+                commercial_price=standard_offer,
                 available_units=10,
             ),
         ),
@@ -630,7 +662,7 @@ def test_explicit_standard_offer_does_not_merge_with_legacy_product_line(
     updated = add_catalog_offer_to_draft_order(
         customer=customer,
         product=apple,
-        commercial_price_id=None,
+        commercial_price_id=standard_offer.pk,
         quantity=1,
     )
 
@@ -652,7 +684,7 @@ def test_explicit_standard_offer_does_not_merge_with_legacy_product_line(
     assert explicit_line.quantity_in_units == 1
     assert (
         explicit_line.business_offer_selection.commercial_price_id
-        is None
+        == standard_offer.pk
     )
 
 
@@ -662,11 +694,16 @@ def test_add_catalog_offer_rejects_quantity_above_offer_availability(
     apple,
     monkeypatch,
 ):
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+
     catalog_product = _catalog_product(
         product=apple,
         available_units=3,
         offers=(
             _standard_offer(
+                commercial_price=standard_offer,
                 available_units=3,
             ),
         ),
@@ -686,7 +723,7 @@ def test_add_catalog_offer_rejects_quantity_above_offer_availability(
         add_catalog_offer_to_draft_order(
             customer=customer,
             product=apple,
-            commercial_price_id=None,
+            commercial_price_id=standard_offer.pk,
             quantity=4,
         )
 
@@ -697,11 +734,16 @@ def test_add_catalog_offer_rejects_offer_not_in_business_catalog(
     apple,
     monkeypatch,
 ):
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+
     catalog_product = _catalog_product(
         product=apple,
         available_units=10,
         offers=(
             _standard_offer(
+                commercial_price=standard_offer,
                 available_units=10,
             ),
         ),
@@ -743,7 +785,7 @@ def test_add_catalog_offer_rejects_product_not_in_business_catalog(
         add_catalog_offer_to_draft_order(
             customer=customer,
             product=apple,
-            commercial_price_id=None,
+            commercial_price_id=999_999,
         )
 
 
@@ -759,6 +801,10 @@ def test_retail_commercial_price_cannot_be_selected_for_business(
         best_before=TODAY + timedelta(days=60),
         location="Shelf A1",
         today=TODAY,
+    )
+
+    standard_business_offer_factory(
+        product=apple,
     )
 
     retail_price = CommercialPrice.objects.create(

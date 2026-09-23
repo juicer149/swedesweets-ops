@@ -51,10 +51,15 @@ def list_business_catalog_products(
         business price policy     standard offer: price optional
                                   batch offer: EUR price required
 
-    The product-level BUSINESS CommercialPrice is the standard offer's
-    identity. When it is enabled the standard offer carries its id, priced
-    only if an EUR amount exists. When it is disabled the product has no
-    standard offer in the business channel.
+    Every active catalog product must have a persistent product-level BUSINESS
+    CommercialPrice. That row is the standard offer's durable identity.
+
+    An enabled standard offer may be unpriced. Missing price therefore does
+    not remove the standard offer; only its displayed price is absent.
+
+    A disabled standard offer removes the standard selection from the
+    business channel, but valid batch-specific BUSINESS offers may still make
+    the product orderable.
 
     Enabled batch-specific BUSINESS offers with an EUR amount become explicit
     offers and their stock is removed from the standard pool, so the same
@@ -62,10 +67,8 @@ def list_business_catalog_products(
     not orderable (disabled or unpriced) leaves its batch in the standard
     pool.
 
-    Transitional: a product with no product-level BUSINESS row at all still
-    gets a synthetic unpriced standard offer (`commercial_price_id=None`).
-    After the 2b data migration every product has the row; this fallback is
-    removed when order lines require an explicit offer (2c).
+    A missing standard BUSINESS offer is an invalid catalog configuration.
+    Synthetic standard offers are no longer created.
     """
 
     available_units_by_product_id = (
@@ -133,6 +136,24 @@ def list_business_catalog_products(
                 commercial_price,
                 amount,
             )
+        )
+
+    missing_standard_offer_products = [
+        product
+        for product in products
+        if product.id not in standard_offer_by_product_id
+    ]
+
+    if missing_standard_offer_products:
+        missing_products = ", ".join(
+            product.display_name
+            for product in missing_standard_offer_products
+        )
+
+        raise RuntimeError(
+            "business catalog invariant violated: "
+            "missing standard BUSINESS offer for "
+            f"{missing_products}"
         )
 
     available_units_by_batch_pk = (
@@ -226,21 +247,16 @@ def list_business_catalog_products(
         )
 
         standard_offer = (
-            standard_offer_by_product_id.get(
+            standard_offer_by_product_id[
                 product.id
-            )
-        )
-
-        standard_offer_is_enabled = (
-            standard_offer is None
-            or standard_offer.enabled
+            ]
         )
 
         offers: list[CatalogOffer] = []
 
         if (
             standard_available_units > 0
-            and standard_offer_is_enabled
+            and standard_offer.enabled
         ):
             offers.append(
                 _build_standard_offer(
@@ -404,20 +420,8 @@ def _list_catalog_products(
 def _build_standard_offer(
     *,
     available_units: int,
-    standard_offer: CommercialPrice | None,
+    standard_offer: CommercialPrice,
 ) -> CatalogOffer:
-    if standard_offer is None:
-        # Transitional fallback: product has no business standard offer row.
-        return CatalogOffer(
-            kind=CatalogOfferKind.STANDARD,
-            commercial_price_id=None,
-            batch_id=None,
-            reason=None,
-            price=None,
-            currency=PriceAmount.Currency.EUR,
-            available_units=available_units,
-        )
-
     amount = _find_amount(
         commercial_price=standard_offer,
         currency=PriceAmount.Currency.EUR,

@@ -6,7 +6,6 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
-from business.models import BusinessOfferSelection
 from business.policies import (
     prepare_business_order_for_placement,
 )
@@ -18,6 +17,9 @@ from business.services import (
     update_placed_order,
 )
 from business.tests.conftest import TODAY
+from business.tests.factories import (
+    standard_business_offer_factory,
+)
 from inventory.errors import InsufficientStockError
 from inventory.services import create_batch
 from orders.datatypes import OrderLineInput
@@ -26,11 +28,11 @@ from orders.models import (
     Order,
     OrderLine,
 )
-from reservations.models import Allocation
 from pricing.models import (
     CommercialPrice,
     PriceAmount,
 )
+from reservations.models import Allocation
 
 
 def _business_price(
@@ -681,6 +683,10 @@ def test_explicit_standard_offer_excludes_special_batch_from_reservation(
         today=TODAY,
     )
 
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+
     _business_price(
         product=apple,
         batch=special_batch,
@@ -691,15 +697,15 @@ def test_explicit_standard_offer_excludes_special_batch_from_reservation(
     order = add_catalog_offer_to_draft_order(
         customer=customer,
         product=apple,
-        commercial_price_id=None,
+        commercial_price_id=standard_offer.pk,
         quantity=5,
     )
 
     line = order.lines.get()
 
     assert (
-        line.business_offer_selection.commercial_price_id
-        is None
+        line.business_offer_selection.commercial_price
+        == standard_offer
     )
 
     placed = place_order(
@@ -741,6 +747,10 @@ def test_batch_offer_reserves_exact_selected_batch(
         best_before=TODAY + timedelta(days=60),
         location="Shelf A2",
         today=TODAY,
+    )
+
+    standard_business_offer_factory(
+        product=apple,
     )
 
     special_price = _business_price(
@@ -803,6 +813,10 @@ def test_standard_and_batch_offer_for_same_product_reserve_disjoint_pools(
         today=TODAY,
     )
 
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+
     special_price = _business_price(
         product=apple,
         batch=special_batch,
@@ -813,7 +827,7 @@ def test_standard_and_batch_offer_for_same_product_reserve_disjoint_pools(
     order = add_catalog_offer_to_draft_order(
         customer=customer,
         product=apple,
-        commercial_price_id=None,
+        commercial_price_id=standard_offer.pk,
         quantity=5,
     )
 
@@ -859,7 +873,7 @@ def test_standard_and_batch_offer_for_same_product_reserve_disjoint_pools(
     standard_line = (
         placed.lines
         .filter(
-            business_offer_selection__commercial_price__isnull=True,
+            business_offer_selection__commercial_price=standard_offer,
         )
         .get()
     )
@@ -874,5 +888,4 @@ def test_standard_and_batch_offer_for_same_product_reserve_disjoint_pools(
 
     assert standard_line.product == apple
     assert special_line.product == apple
-
     assert standard_line.pk != special_line.pk

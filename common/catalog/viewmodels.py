@@ -9,7 +9,7 @@ from common.ui import UiText
 class CatalogOfferVM:
     """Presentation contract for one selectable catalog offer."""
 
-    commercial_price_id: int | None
+    commercial_price_id: int
     batch_id: int | None
     kind: str
     label: str

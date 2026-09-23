@@ -10,6 +10,9 @@ from accounts.tests.factories import (
     customer_user_factory,
 )
 from business.models import BusinessOfferSelection
+from business.tests.factories import (
+    standard_business_offer_factory,
+)
 from customers.tests.factories import (
     customer_factory,
 )
@@ -72,6 +75,11 @@ def test_customer_can_add_catalog_product_to_draft(
         name="Apple",
         weight_per_unit=5000,
     )
+
+    standard_offer = standard_business_offer_factory(
+        product=product,
+    )
+
     batch_factory(
         product=product,
         today=TODAY,
@@ -117,7 +125,10 @@ def test_customer_can_add_catalog_product_to_draft(
         selection,
         BusinessOfferSelection,
     )
-    assert selection.commercial_price_id is None
+    assert (
+        selection.commercial_price
+        == standard_offer
+    )
 
 
 @pytest.mark.django_db
@@ -128,6 +139,10 @@ def test_catalog_add_product_defaults_missing_quantity_to_one(
     product = product_factory(
         name="Apple",
         weight_per_unit=5000,
+    )
+
+    standard_business_offer_factory(
+        product=product,
     )
 
     batch_factory(
@@ -178,6 +193,10 @@ def test_catalog_add_product_accepts_explicit_quantity(
         weight_per_unit=5000,
     )
 
+    standard_offer = standard_business_offer_factory(
+        product=product,
+    )
+
     batch_factory(
         product=product,
         today=TODAY,
@@ -221,8 +240,8 @@ def test_catalog_add_product_accepts_explicit_quantity(
     assert line.quantity_in_units == 4
     assert line.unit_price_snapshot is None
     assert (
-        line.business_offer_selection.commercial_price_id
-        is None
+        line.business_offer_selection.commercial_price
+        == standard_offer
     )
 
 
@@ -234,6 +253,10 @@ def test_catalog_add_product_accepts_explicit_quantity_for_batch_offer(
     product = product_factory(
         name="Apple",
         weight_per_unit=5000,
+    )
+
+    standard_business_offer_factory(
+        product=product,
     )
 
     batch = batch_factory(
@@ -299,6 +322,11 @@ def test_customer_adding_same_catalog_product_increments_quantity(
         name="Apple",
         weight_per_unit=5000,
     )
+
+    standard_offer = standard_business_offer_factory(
+        product=product,
+    )
+
     batch_factory(
         product=product,
         today=TODAY,
@@ -350,8 +378,8 @@ def test_customer_adding_same_catalog_product_increments_quantity(
     assert line.product == product
     assert line.quantity_in_units == 5
     assert (
-        line.business_offer_selection.commercial_price_id
-        is None
+        line.business_offer_selection.commercial_price
+        == standard_offer
     )
 
 
@@ -598,6 +626,11 @@ def test_catalog_add_product_accepts_explicit_standard_selection(
         name="Apple",
         weight_per_unit=5000,
     )
+
+    standard_offer = standard_business_offer_factory(
+        product=product,
+    )
+
     batch_factory(
         product=product,
         today=TODAY,
@@ -619,7 +652,9 @@ def test_catalog_add_product_accepts_explicit_standard_selection(
             },
         ),
         {
-            "commercial_price_id": "",
+            "commercial_price_id": str(
+                standard_offer.pk
+            ),
         },
     )
 
@@ -637,8 +672,8 @@ def test_catalog_add_product_accepts_explicit_standard_selection(
     assert line.quantity_in_units == 1
     assert line.unit_price_snapshot is None
     assert (
-        line.business_offer_selection.commercial_price_id
-        is None
+        line.business_offer_selection.commercial_price
+        == standard_offer
     )
 
 
@@ -650,6 +685,10 @@ def test_catalog_add_product_accepts_business_batch_offer(
     product = product_factory(
         name="Apple",
         weight_per_unit=5000,
+    )
+
+    standard_business_offer_factory(
+        product=product,
     )
 
     batch = batch_factory(
@@ -726,6 +765,7 @@ def test_catalog_add_product_rejects_invalid_offer_id(
         name="Apple",
         weight_per_unit=5000,
     )
+
     batch_factory(
         product=product,
         today=TODAY,
@@ -778,6 +818,11 @@ def test_catalog_add_product_rejects_unknown_offer_id(
         name="Apple",
         weight_per_unit=5000,
     )
+
+    standard_business_offer_factory(
+        product=product,
+    )
+
     batch_factory(
         product=product,
         today=TODAY,
@@ -826,6 +871,10 @@ def test_catalog_add_product_rejects_retail_price(
     product = product_factory(
         name="Apple",
         weight_per_unit=5000,
+    )
+
+    standard_business_offer_factory(
+        product=product,
     )
 
     batch_factory(
@@ -952,6 +1001,10 @@ def test_catalog_add_product_returns_json_success(
         brand="Generic",
         name="Apple",
         weight_per_unit=5000,
+    )
+
+    standard_business_offer_factory(
+        product=product,
     )
 
     batch_factory(
@@ -1096,7 +1149,6 @@ def test_catalog_add_product_returns_404_for_unknown_product(
     )
 
     assert response.status_code == 404
-
     assert not Order.objects.filter(
         channel=Order.Channel.BUSINESS,
         customer=customer,
@@ -1114,6 +1166,11 @@ def test_catalog_add_product_shows_success_message(
         name="Apple",
         weight_per_unit=5000,
     )
+
+    standard_business_offer_factory(
+        product=product,
+    )
+
     batch_factory(
         product=product,
         today=TODAY,

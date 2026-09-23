@@ -7,6 +7,9 @@ import pytest
 
 from business.models import BusinessOfferSelection
 from business.services import create_order
+from business.tests.factories import (
+    standard_business_offer_factory,
+)
 from business_portal.orders.repeat_services import (
     RepeatOrderSkipReason,
     repeat_order_into_draft,
@@ -67,6 +70,7 @@ def _stock(
 def _standard_catalog_product(
     *,
     product,
+    commercial_price: CommercialPrice,
     available_units: int,
 ) -> CatalogProduct:
     return CatalogProduct(
@@ -75,7 +79,7 @@ def _standard_catalog_product(
         offers=(
             CatalogOffer(
                 kind=CatalogOfferKind.STANDARD,
-                commercial_price_id=None,
+                commercial_price_id=commercial_price.pk,
                 batch_id=None,
                 reason=None,
                 price=None,
@@ -95,7 +99,12 @@ def test_repeat_order_adds_standard_line_to_draft(
         name="Apple",
         internal_number=101,
     )
+
     _stock(
+        product=apple,
+    )
+
+    standard_offer = standard_business_offer_factory(
         product=apple,
     )
 
@@ -111,6 +120,7 @@ def test_repeat_order_adds_standard_line_to_draft(
 
     catalog_product = _standard_catalog_product(
         product=apple,
+        commercial_price=standard_offer,
         available_units=98,
     )
 
@@ -136,8 +146,8 @@ def test_repeat_order_adds_standard_line_to_draft(
     assert line.product == apple
     assert line.quantity_in_units == 2
     assert (
-        line.business_offer_selection.commercial_price_id
-        is None
+        line.business_offer_selection.commercial_price
+        == standard_offer
     )
 
 
@@ -149,6 +159,10 @@ def test_repeat_order_preserves_original_special_offer(
     apple = _product(
         name="Apple",
         internal_number=102,
+    )
+
+    standard_business_offer_factory(
+        product=apple,
     )
 
     batch = create_batch(
@@ -242,7 +256,12 @@ def test_repeat_order_skips_product_not_in_catalog(
         name="Apple",
         internal_number=103,
     )
+
     _stock(
+        product=apple,
+    )
+
+    standard_business_offer_factory(
         product=apple,
     )
 
@@ -289,13 +308,18 @@ def test_repeat_order_skips_special_offer_that_no_longer_exists(
         name="Apple",
         internal_number=104,
     )
-    _stock(
+
+    batch = _stock(
         product=apple,
     )
 
-    commercial_price = CommercialPrice.objects.create(
+    standard_offer = standard_business_offer_factory(
         product=apple,
-        batch=None,
+    )
+
+    historical_special_offer = CommercialPrice.objects.create(
+        product=apple,
+        batch=batch,
         channel=CommercialPrice.Channel.BUSINESS,
         enabled=True,
         reason=CommercialPrice.Reason.PROMOTION,
@@ -315,11 +339,12 @@ def test_repeat_order_skips_special_offer_that_no_longer_exists(
 
     BusinessOfferSelection.objects.create(
         order_line=source_line,
-        commercial_price=commercial_price,
+        commercial_price=historical_special_offer,
     )
 
     catalog_product = _standard_catalog_product(
         product=apple,
+        commercial_price=standard_offer,
         available_units=98,
     )
 
@@ -357,7 +382,12 @@ def test_repeat_order_skips_line_when_original_quantity_is_unavailable(
         name="Apple",
         internal_number=105,
     )
+
     _stock(
+        product=apple,
+    )
+
+    standard_offer = standard_business_offer_factory(
         product=apple,
     )
 
@@ -373,6 +403,7 @@ def test_repeat_order_skips_line_when_original_quantity_is_unavailable(
 
     catalog_product = _standard_catalog_product(
         product=apple,
+        commercial_price=standard_offer,
         available_units=2,
     )
 
@@ -424,6 +455,15 @@ def test_repeat_order_keeps_successful_lines_when_another_line_is_skipped(
         product=banana,
     )
 
+    apple_standard_offer = (
+        standard_business_offer_factory(
+            product=apple,
+        )
+    )
+    standard_business_offer_factory(
+        product=banana,
+    )
+
     source_order = create_order(
         customer=customer,
         lines=[
@@ -440,6 +480,7 @@ def test_repeat_order_keeps_successful_lines_when_another_line_is_skipped(
 
     apple_catalog_product = _standard_catalog_product(
         product=apple,
+        commercial_price=apple_standard_offer,
         available_units=98,
     )
 

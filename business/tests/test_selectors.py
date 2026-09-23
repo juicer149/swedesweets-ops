@@ -10,6 +10,9 @@ from business.selectors import (
     list_business_catalog_entries,
     list_business_catalog_products,
 )
+from business.tests.factories import (
+    standard_business_offer_factory,
+)
 from common.catalog.contracts import (
     CatalogOfferKind,
 )
@@ -197,6 +200,12 @@ def test_business_catalog_product_has_unpriced_standard_offer(
         name="Ordinary",
     )
 
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
+    )
+
     monkeypatch.setattr(
         "business.selectors.orderable_quantity_by_product_id",
         lambda: {
@@ -221,12 +230,38 @@ def test_business_catalog_product_has_unpriced_standard_offer(
     (offer,) = catalog_product.offers
 
     assert offer.kind == CatalogOfferKind.STANDARD
-    assert offer.commercial_price_id is None
+    assert (
+        offer.commercial_price_id
+        == standard_offer.pk
+    )
     assert offer.batch_id is None
     assert offer.reason is None
     assert offer.price is None
     assert offer.currency == PriceAmount.Currency.EUR
     assert offer.available_units == 8
+
+
+@pytest.mark.django_db
+def test_business_catalog_rejects_product_without_standard_offer(
+    monkeypatch,
+):
+    product = _product(
+        internal_number=1,
+        name="Broken configuration",
+    )
+
+    monkeypatch.setattr(
+        "business.selectors.orderable_quantity_by_product_id",
+        lambda: {
+            product.id: 8,
+        },
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="missing standard BUSINESS offer",
+    ):
+        list_business_catalog_products()
 
 
 @pytest.mark.django_db
@@ -238,13 +273,14 @@ def test_business_catalog_standard_offer_uses_enabled_business_price(
         name="Priced",
     )
 
-    commercial_price = _commercial_price(
-        product=product,
-        channel=CommercialPrice.Channel.BUSINESS,
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
     )
 
     amount = _price_amount(
-        commercial_price=commercial_price,
+        commercial_price=standard_offer,
         price="12.50",
     )
 
@@ -269,7 +305,7 @@ def test_business_catalog_standard_offer_uses_enabled_business_price(
     assert offer.kind == CatalogOfferKind.STANDARD
     assert (
         offer.commercial_price_id
-        == commercial_price.pk
+        == standard_offer.pk
     )
     assert offer.batch_id is None
     assert offer.price == amount.price
@@ -284,6 +320,12 @@ def test_business_catalog_adds_enabled_business_batch_offer(
     product = _product(
         internal_number=1,
         name="Batch offer",
+    )
+
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
     )
 
     batch = _batch(
@@ -325,15 +367,19 @@ def test_business_catalog_adds_enabled_business_batch_offer(
     assert catalog_product.available_units == 10
     assert len(catalog_product.offers) == 2
 
-    standard_offer, batch_offer = (
+    standard_catalog_offer, batch_offer = (
         catalog_product.offers
     )
 
     assert (
-        standard_offer.kind
+        standard_catalog_offer.kind
         == CatalogOfferKind.STANDARD
     )
-    assert standard_offer.available_units == 6
+    assert (
+        standard_catalog_offer.commercial_price_id
+        == standard_offer.pk
+    )
+    assert standard_catalog_offer.available_units == 6
 
     assert (
         batch_offer.kind
@@ -363,6 +409,12 @@ def test_business_catalog_ignores_retail_batch_offer(
     product = _product(
         internal_number=1,
         name="Retail only offer",
+    )
+
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
     )
 
     batch = _batch(
@@ -404,6 +456,10 @@ def test_business_catalog_ignores_retail_batch_offer(
     (offer,) = catalog_product.offers
 
     assert offer.kind == CatalogOfferKind.STANDARD
+    assert (
+        offer.commercial_price_id
+        == standard_offer.pk
+    )
     assert offer.available_units == 10
 
 
@@ -414,6 +470,12 @@ def test_business_catalog_ignores_disabled_business_batch_offer(
     product = _product(
         internal_number=1,
         name="Disabled offer",
+    )
+
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
     )
 
     batch = _batch(
@@ -456,6 +518,10 @@ def test_business_catalog_ignores_disabled_business_batch_offer(
     (offer,) = catalog_product.offers
 
     assert offer.kind == CatalogOfferKind.STANDARD
+    assert (
+        offer.commercial_price_id
+        == standard_offer.pk
+    )
     assert offer.available_units == 10
 
 
@@ -466,6 +532,12 @@ def test_business_catalog_ignores_batch_offer_without_eur_amount(
     product = _product(
         internal_number=1,
         name="SEK only",
+    )
+
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
     )
 
     batch = _batch(
@@ -508,6 +580,10 @@ def test_business_catalog_ignores_batch_offer_without_eur_amount(
     (offer,) = catalog_product.offers
 
     assert offer.kind == CatalogOfferKind.STANDARD
+    assert (
+        offer.commercial_price_id
+        == standard_offer.pk
+    )
     assert offer.available_units == 10
 
 
@@ -518,6 +594,10 @@ def test_business_batch_offer_uses_available_not_physical_quantity(
     product = _product(
         internal_number=1,
         name="Reserved stock",
+    )
+
+    standard_business_offer_factory(
+        product=product,
     )
 
     batch = _batch(
@@ -573,6 +653,12 @@ def test_business_catalog_excludes_batch_offer_without_available_stock(
         name="Sold out offer",
     )
 
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
+    )
+
     batch = _batch(
         product=product,
         batch_id="BATCH-006",
@@ -614,6 +700,10 @@ def test_business_catalog_excludes_batch_offer_without_available_stock(
     (offer,) = catalog_product.offers
 
     assert offer.kind == CatalogOfferKind.STANDARD
+    assert (
+        offer.commercial_price_id
+        == standard_offer.pk
+    )
     assert offer.available_units == 10
 
 
@@ -624,6 +714,10 @@ def test_business_catalog_can_expose_only_batch_offer(
     product = _product(
         internal_number=1,
         name="Special stock only",
+    )
+
+    standard_business_offer_factory(
+        product=product,
     )
 
     batch = _batch(
@@ -681,9 +775,10 @@ def test_business_catalog_standard_offer_uses_enabled_unpriced_row(
         name="Explicit unpriced",
     )
 
-    standard_offer = _commercial_price(
-        product=product,
-        channel=CommercialPrice.Channel.BUSINESS,
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+        )
     )
 
     monkeypatch.setattr(
@@ -720,10 +815,11 @@ def test_business_catalog_disabled_standard_offer_hides_product(
         name="Not sold in B2B",
     )
 
-    standard_offer = _commercial_price(
-        product=product,
-        channel=CommercialPrice.Channel.BUSINESS,
-        enabled=False,
+    standard_offer = (
+        standard_business_offer_factory(
+            product=product,
+            enabled=False,
+        )
     )
 
     _price_amount(
@@ -755,9 +851,8 @@ def test_business_catalog_disabled_standard_offer_keeps_batch_offer(
         name="Only special stock in B2B",
     )
 
-    _commercial_price(
+    standard_business_offer_factory(
         product=product,
-        channel=CommercialPrice.Channel.BUSINESS,
         enabled=False,
     )
 
