@@ -335,6 +335,7 @@ def create_pending_retail_order(
             unit=OrderLine.Unit.STOCK_UNIT,
             quantity_in_units=resolved_line.quantity,
             unit_price_snapshot=resolved_line.unit_price,
+            commercial_offer=resolved_line.commercial_price
         )
 
         RetailOfferSelection.objects.create(
