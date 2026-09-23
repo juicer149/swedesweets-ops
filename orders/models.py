@@ -6,6 +6,9 @@ Order owns the order lifecycle and the commercial snapshot of the purchase.
 OrderLine owns the product quantity requested by the order. External input may
 currently use different units, but services normalize fulfillment to whole
 product stock units.
+
+OrderLine also records which commercial offer the line came from. That is
+selection identity, not price history and not reservation truth.
 """
 
 from __future__ import annotations
@@ -483,6 +486,23 @@ class OrderLine(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
+    )
+
+    # Which commercial alternative this line came from.
+    #
+    # This is selection identity, not price history and not reservation
+    # truth: historical price lives in `unit_price_snapshot`, and actually
+    # reserved stock lives in `reservations.Allocation`. An offer that points
+    # at a batch does not by itself mean that batch was picked.
+    #
+    # Temporarily nullable while existing lines are backfilled; it becomes
+    # NOT NULL once every line has an explicit offer.
+    commercial_offer = models.ForeignKey(
+        "pricing.CommercialPrice",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="order_lines",
     )
 
     class Meta:
