@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from customers.models import Customer
 from orders.datatypes import BuyerInput
+from pricing.models import CommercialPrice
 from products.models import Product
 
 
@@ -20,11 +21,16 @@ class ResolvedOrderLine:
     - how external quantity units were converted
 
     Those decisions must already have been made by the caller.
+
+    `commercial_offer` records which commercial alternative the line came
+    from. It is temporarily optional while channels migrate to explicit
+    offers; orders validates it whenever it is supplied.
     """
 
     product: Product
     quantity_in_units: int
     unit_price_snapshot: Decimal | None = None
+    commercial_offer: CommercialPrice | None = None
 
 
 @dataclass(frozen=True, slots=True)

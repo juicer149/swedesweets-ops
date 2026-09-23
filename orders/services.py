@@ -109,6 +109,44 @@ def _require_positive_quantity(
         )
 
 
+def _validate_commercial_offer(
+    *,
+    order: Order,
+    line: ResolvedOrderLine,
+) -> None:
+    """Protect the generic order-line invariant for explicit offers.
+
+    Channels decide *which* offer a line uses. Orders only checks that the
+    offer is persisted and actually belongs to this line's product and this
+    order's channel, so a broken selection fails as a domain error rather
+    than deeper down in the ORM.
+
+    The offer is optional while channels migrate to explicit offers.
+    """
+
+    offer = line.commercial_offer
+
+    if offer is None:
+        return
+
+    if offer.pk is None:
+        raise InvalidOrderOperation(
+            "commercial offer must be persisted before creating an order line"
+        )
+
+    if offer.product_id != line.product.pk:
+        raise InvalidOrderOperation(
+            f"commercial offer {offer.pk} belongs to product "
+            f"{offer.product_id}, not {line.product.pk}"
+        )
+
+    if offer.channel != order.channel:
+        raise InvalidOrderOperation(
+            f"commercial offer {offer.pk} is a {offer.channel} offer; "
+            f"order is {order.channel}"
+        )
+
+
 @transaction.atomic
 def create_draft_order(
     *,
@@ -160,6 +198,11 @@ def add_draft_order_line(
         quantity_in_units=line.quantity_in_units,
     )
 
+    _validate_commercial_offer(
+        order=order,
+        line=line,
+    )
+
     order_line = OrderLine.objects.create(
         order=order,
         product=line.product,
@@ -167,6 +210,7 @@ def add_draft_order_line(
         unit=OrderLine.Unit.STOCK_UNIT,
         quantity_in_units=line.quantity_in_units,
         unit_price_snapshot=line.unit_price_snapshot,
+        commercial_offer=line.commercial_offer,
     )
 
     order.updated_at = timezone.now()
@@ -449,6 +493,16 @@ def _create_order_lines(
     order: Order,
     lines: Iterable[ResolvedOrderLine],
 ) -> None:
+    resolved_lines = tuple(
+        lines
+    )
+
+    for line in resolved_lines:
+        _validate_commercial_offer(
+            order=order,
+            line=line,
+        )
+
     OrderLine.objects.bulk_create(
         [
             OrderLine(
@@ -458,7 +512,8 @@ def _create_order_lines(
                 unit=OrderLine.Unit.STOCK_UNIT,
                 quantity_in_units=line.quantity_in_units,
                 unit_price_snapshot=line.unit_price_snapshot,
+                commercial_offer=line.commercial_offer,
             )
-            for line in lines
+            for line in resolved_lines
         ]
     )
