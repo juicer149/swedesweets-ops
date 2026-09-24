@@ -16,6 +16,7 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from orders.tests.factories import order_line_factory
 from reservations.models import Allocation
 
 
@@ -25,12 +26,10 @@ def _create_order_line(
     product,
     quantity: int,
 ) -> OrderLine:
-    return OrderLine.objects.create(
+    return order_line_factory(
         order=order,
         product=product,
         quantity=quantity,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=quantity,
     )
 
 

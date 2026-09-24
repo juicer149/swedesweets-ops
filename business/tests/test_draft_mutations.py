@@ -22,6 +22,7 @@ from orders.models import (
 from orders.order_limits import (
     MAX_QUANTITY_PER_PRODUCT_PER_ORDER,
 )
+from orders.tests.factories import order_line_factory
 from pricing.models import PriceAmount
 
 
@@ -31,12 +32,10 @@ def _create_line(
     product,
     quantity: int,
 ) -> OrderLine:
-    return OrderLine.objects.create(
+    return order_line_factory(
         order=order,
         product=product,
         quantity=quantity,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=quantity,
     )
 
 

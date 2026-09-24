@@ -5,7 +5,8 @@ from decimal import Decimal
 import pytest
 
 from customers.tests.factories import customer_factory
-from orders.models import Order, OrderLine
+from orders.models import Order
+from orders.tests.factories import order_line_factory
 from payments.contracts import HostedPaymentSession
 from payments.models import PaymentAttempt
 from payments.services import (
@@ -33,12 +34,10 @@ def _create_priced_order(
         status=Order.Status.DRAFT,
     )
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=product,
         quantity=1,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=1,
         unit_price_snapshot=amount,
     )
 
@@ -143,12 +142,10 @@ def test_create_payment_attempt_rejects_unpriced_order():
         status=Order.Status.DRAFT,
     )
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=product,
         quantity=1,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=1,
         unit_price_snapshot=None,
     )
 

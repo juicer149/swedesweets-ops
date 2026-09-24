@@ -25,6 +25,7 @@ from orders.services import (
     set_draft_order_line_quantity,
     update_placed_order,
 )
+from orders.tests.factories import order_line_factory
 from pricing.models import CommercialPrice
 from pricing.tests.factories import commercial_price_factory
 
@@ -34,13 +35,15 @@ def _create_order_line(
     order: Order,
     product,
     quantity: int,
+    commercial_offer: CommercialPrice | None = None,
+    unit_price_snapshot: Decimal | None = None,
 ) -> OrderLine:
-    return OrderLine.objects.create(
+    return order_line_factory(
         order=order,
         product=product,
         quantity=quantity,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=quantity,
+        commercial_offer=commercial_offer,
+        unit_price_snapshot=unit_price_snapshot,
     )
 
 
@@ -120,12 +123,10 @@ def test_set_draft_order_line_quantity_preserves_line_identity_and_price(
         customer=customer,
         status=Order.Status.DRAFT,
     )
-    line = OrderLine.objects.create(
+    line = _create_order_line(
         order=order,
         product=apple,
         quantity=2,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=2,
         unit_price_snapshot=Decimal("12.50"),
     )
 
@@ -553,16 +554,18 @@ def test_update_placed_order_runs_hooks_around_line_replacement(
         status=Order.Status.PLACED,
         placed_at=timezone.now(),
     )
-    _create_order_line(
-        order=order,
-        product=apple,
-        quantity=10,
-    )
 
     offer = commercial_price_factory(
         product=apple,
         channel=CommercialPrice.Channel.BUSINESS,
         enabled=True,
+    )
+
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=offer,
     )
 
     events: list[
@@ -645,16 +648,18 @@ def test_update_placed_order_rejects_non_placed_before_running_hooks(
         customer=customer,
         status=Order.Status.DRAFT,
     )
-    _create_order_line(
-        order=order,
-        product=apple,
-        quantity=10,
-    )
 
     offer = commercial_price_factory(
         product=apple,
         channel=CommercialPrice.Channel.BUSINESS,
         enabled=True,
+    )
+
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=offer,
     )
 
     events: list[str] = []
@@ -706,16 +711,18 @@ def test_update_placed_order_rolls_back_line_replacement_when_preparation_fails(
         status=Order.Status.PLACED,
         placed_at=timezone.now(),
     )
-    original_line = _create_order_line(
-        order=order,
-        product=apple,
-        quantity=10,
-    )
 
     offer = commercial_price_factory(
         product=apple,
         channel=CommercialPrice.Channel.BUSINESS,
         enabled=True,
+    )
+
+    original_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=offer,
     )
 
     before_called = False

@@ -9,13 +9,11 @@ from customers.tests.factories import customer_factory
 from inventory.models import InventoryBatch
 from inventory.services import create_batch
 from inventory.tests.factories import batch_factory
-from orders.models import (
-    Order,
-    OrderLine,
-)
-from reservations.models import Allocation
+from orders.models import Order
 from orders.product_choices import build_product_choice_context
+from orders.tests.factories import order_line_factory
 from products.tests.factories import product_factory
+from reservations.models import Allocation
 
 
 TODAY = timezone.localdate()
@@ -166,11 +164,10 @@ def test_build_product_choice_context_includes_existing_order_product_even_if_in
         customer=customer,
         status=Order.Status.DRAFT,
     )
-    order.lines.create(
+    order_line_factory(
+        order=order,
         product=inactive_product,
         quantity=1,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=1,
     )
 
     context = build_product_choice_context(
@@ -210,12 +207,10 @@ def test_build_product_choice_context_does_not_add_draft_quantity_to_available_s
         status=Order.Status.DRAFT,
     )
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=draft,
         product=apple,
         quantity=13,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=13,
     )
 
     context = build_product_choice_context(
@@ -264,12 +259,10 @@ def test_build_product_choice_context_adds_placed_order_quantity_back():
     )
     order.mark_as_placed()
 
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
 
     batch = (

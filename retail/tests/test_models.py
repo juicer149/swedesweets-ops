@@ -215,6 +215,7 @@ def test_retail_offer_selection_references_commercial_price():
         unit=OrderLine.Unit.STOCK_UNIT,
         quantity_in_units=2,
         unit_price_snapshot=Decimal("12.50"),
+        commercial_offer=commercial_price,
     )
 
     selection = RetailOfferSelection.objects.create(
@@ -243,6 +244,7 @@ def test_retail_offer_selection_requires_commercial_price():
         quantity=1,
         unit=OrderLine.Unit.STOCK_UNIT,
         quantity_in_units=1,
+        commercial_offer=commercial_price,
     )
 
     with pytest.raises(IntegrityError):

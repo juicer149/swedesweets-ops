@@ -6,12 +6,10 @@ import pytest
 from django.utils import timezone
 
 from inventory.services import create_batch
-from orders.models import (
-    Order,
-    OrderLine,
-)
-from reservations.models import Allocation
+from orders.models import Order
+from orders.tests.factories import order_line_factory
 from products.models import Product
+from reservations.models import Allocation
 from reservations.selectors import (
     active_reserved_quantities_by_batch_pk,
     active_reserved_quantity_for_batch_pk,
@@ -54,12 +52,10 @@ def test_unexpired_temporary_allocation_is_active(
         channel=Order.Channel.RETAIL,
         customer=None,
     )
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=7,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=7,
     )
 
     Allocation.objects.create(
@@ -94,12 +90,10 @@ def test_expired_temporary_allocation_is_not_active(
         channel=Order.Channel.RETAIL,
         customer=None,
     )
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=7,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=7,
     )
 
     Allocation.objects.create(
@@ -134,12 +128,10 @@ def test_non_expiring_reserved_allocation_is_active(
         channel=Order.Channel.RETAIL,
         customer=None,
     )
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=4,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=4,
     )
 
     Allocation.objects.create(
@@ -174,12 +166,10 @@ def test_cancelled_allocation_is_not_active(
         channel=Order.Channel.RETAIL,
         customer=None,
     )
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=4,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=4,
     )
 
     allocation = Allocation.objects.create(
@@ -221,12 +211,10 @@ def test_active_reserved_quantities_are_grouped_by_batch(
         channel=Order.Channel.RETAIL,
         customer=None,
     )
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=5,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=5,
     )
 
     Allocation.objects.create(

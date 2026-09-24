@@ -18,6 +18,7 @@ from orders.models import (
     OrderLine,
 )
 from orders.tests.conftest import TODAY
+from orders.tests.factories import order_line_factory
 from products.tests.factories import (
     product_factory,
 )
@@ -35,12 +36,10 @@ def _create_draft_line(
         status=Order.Status.DRAFT,
     )
 
-    return OrderLine.objects.create(
+    return order_line_factory(
         order=order,
         product=product,
         quantity=quantity,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=quantity,
     )
 
 

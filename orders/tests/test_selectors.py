@@ -15,6 +15,7 @@ from orders.selectors import (
     list_packed_orders_for_dashboard,
     list_placed_orders_for_dashboard,
 )
+from orders.tests.factories import order_line_factory
 
 
 def _create_line(
@@ -23,12 +24,10 @@ def _create_line(
     product,
     quantity: int,
 ) -> OrderLine:
-    return OrderLine.objects.create(
+    return order_line_factory(
         order=order,
         product=product,
         quantity=quantity,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=quantity,
     )
 
 

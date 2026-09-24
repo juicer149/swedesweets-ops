@@ -18,6 +18,7 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from orders.tests.factories import order_line_factory
 from pricing.models import CommercialPrice
 from pricing.tests.factories import commercial_price_factory
 from products.tests.factories import product_factory
@@ -52,12 +53,10 @@ def _place_order_with_line(
     )
     order.mark_as_placed()
 
-    order_line = OrderLine.objects.create(
+    order_line = order_line_factory(
         order=order,
         product=product,
         quantity=quantity,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=quantity,
     )
 
     allocation = Allocation.objects.create(
@@ -378,12 +377,10 @@ def test_update_placed_order_preserves_split_batch_marks_individually():
     )
     order.mark_as_placed()
 
-    order_line = OrderLine.objects.create(
+    order_line = order_line_factory(
         order=order,
         product=apple,
         quantity=75,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=75,
     )
 
     allocation_a = Allocation.objects.create(
@@ -489,12 +486,10 @@ def test_update_placed_order_clears_all_split_batch_marks_on_quantity_change():
     )
     order.mark_as_placed()
 
-    order_line = OrderLine.objects.create(
+    order_line = order_line_factory(
         order=order,
         product=apple,
         quantity=75,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=75,
     )
 
     allocation_a = Allocation.objects.create(

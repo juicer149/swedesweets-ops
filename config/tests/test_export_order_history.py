@@ -12,7 +12,8 @@ from django.utils import timezone
 from business.models import BusinessOfferSelection
 from customers.tests.factories import customer_factory
 from inventory.tests.factories import batch_factory
-from orders.models import Order, OrderLine
+from orders.models import Order
+from orders.tests.factories import order_line_factory
 from pricing.models import CommercialPrice
 from products.tests.factories import product_factory
 from retail.models import RetailOfferSelection
@@ -30,14 +31,20 @@ def _read(output_dir):
     return json.loads((output_dir / "orders.json").read_text())
 
 
-def _line(order, product, *, quantity=10, unit_price=None):
-    return OrderLine.objects.create(
+def _line(
+    order,
+    product,
+    *,
+    quantity=10,
+    unit_price=None,
+    commercial_offer=None,
+):
+    return order_line_factory(
         order=order,
         product=product,
         quantity=quantity,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=quantity,
         unit_price_snapshot=unit_price,
+        commercial_offer=commercial_offer,
     )
 
 
@@ -75,12 +82,18 @@ def test_export_covers_legacy_explicit_retail_and_cancelled_orders(
     # 2. B2B line with an explicit batch-specific offer and a price snapshot
     explicit = Order.objects.create(customer=customer)
     explicit.mark_as_placed(user=user)
-    explicit_line = _line(explicit, apple, quantity=4, unit_price="2.50")
     batch_offer = CommercialPrice.objects.create(
         product=apple,
         batch=batch,
         channel=CommercialPrice.Channel.BUSINESS,
         enabled=True,
+    )
+    explicit_line = _line(
+        explicit,
+        apple,
+        quantity=4,
+        unit_price="2.50",
+        commercial_offer=batch_offer,
     )
     BusinessOfferSelection.objects.create(
         order_line=explicit_line,
@@ -94,11 +107,17 @@ def test_export_covers_legacy_explicit_retail_and_cancelled_orders(
         buyer_name_snapshot="Anna Buyer",
         buyer_email_snapshot="anna@example.com",
     )
-    retail_line = _line(retail, apple, quantity=2, unit_price="3.00")
     retail_offer = CommercialPrice.objects.create(
         product=apple,
         channel=CommercialPrice.Channel.RETAIL,
         enabled=True,
+    )
+    retail_line = _line(
+        retail,
+        apple,
+        quantity=2,
+        unit_price="3.00",
+        commercial_offer=retail_offer,
     )
     RetailOfferSelection.objects.create(
         order_line=retail_line,

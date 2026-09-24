@@ -18,10 +18,8 @@ from ops_portal.orders.forms import (
     build_order_line_initial_data,
     build_order_line_inputs,
 )
-from orders.models import (
-    Order,
-    OrderLine,
-)
+from orders.models import Order
+from orders.tests.factories import order_line_factory
 from products.tests.factories import product_factory
 from products.units import OrderUnit
 
@@ -584,12 +582,10 @@ def test_build_order_line_initial_data():
     )
     order.mark_as_placed()
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
 
     assert (

@@ -12,6 +12,7 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from orders.tests.factories import order_line_factory
 
 
 @pytest.mark.django_db
@@ -305,14 +306,26 @@ def test_customer_with_order_is_protected_from_delete_but_buyer_snapshot_remains
 
 
 @pytest.mark.django_db
+def test_order_line_requires_commercial_offer(customer, apple):
+    order = Order.objects.create(customer=customer)
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        OrderLine.objects.create(
+            order=order,
+            product=apple,
+            quantity=1,
+            unit=OrderLine.Unit.STOCK_UNIT,
+            quantity_in_units=1,
+        )
+
+
+@pytest.mark.django_db
 def test_order_line_without_price_has_no_commercial_total(customer, apple):
     order = Order.objects.create(customer=customer)
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=apple,
         quantity=3,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=3,
     )
 
     assert line.unit_price_snapshot is None
@@ -323,12 +336,10 @@ def test_order_line_without_price_has_no_commercial_total(customer, apple):
 @pytest.mark.django_db
 def test_order_line_total_is_unit_price_times_normalized_quantity(customer, apple):
     order = Order.objects.create(customer=customer)
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=apple,
         quantity=3,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=3,
         unit_price_snapshot=Decimal("8.50"),
     )
 
@@ -339,20 +350,16 @@ def test_order_line_total_is_unit_price_times_normalized_quantity(customer, appl
 def test_order_total_is_sum_of_priced_lines(customer, apple, banana):
     order = Order.objects.create(customer=customer)
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=apple,
         quantity=3,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=3,
         unit_price_snapshot=Decimal("8.50"),
     )
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=banana,
         quantity=2,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=2,
         unit_price_snapshot=Decimal("4.25"),
     )
 
@@ -363,20 +370,16 @@ def test_order_total_is_sum_of_priced_lines(customer, apple, banana):
 def test_order_total_is_none_when_any_line_is_unpriced(customer, apple, banana):
     order = Order.objects.create(customer=customer)
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=apple,
         quantity=3,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=3,
         unit_price_snapshot=Decimal("8.50"),
     )
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=banana,
         quantity=2,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=2,
     )
 
     assert order.total is None
@@ -394,12 +397,10 @@ def test_order_line_price_must_be_positive_when_present(customer, apple):
     order = Order.objects.create(customer=customer)
 
     with pytest.raises(IntegrityError), transaction.atomic():
-        OrderLine.objects.create(
+        order_line_factory(
             order=order,
             product=apple,
             quantity=1,
-            unit=OrderLine.Unit.STOCK_UNIT,
-            quantity_in_units=1,
             unit_price_snapshot=Decimal("0.00"),
         )
 
@@ -486,12 +487,10 @@ def test_order_string_uses_primary_key(customer):
 @pytest.mark.django_db
 def test_order_line_string_uses_product_sku_quantity_and_unit(customer, apple):
     order = Order.objects.create(customer=customer)
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
 
     assert str(line) == "SS-001: 10 stock_unit"
@@ -506,21 +505,17 @@ def test_order_can_have_multiple_lines_for_same_product(
         customer=customer,
     )
 
-    first = OrderLine.objects.create(
+    first = order_line_factory(
         order=order,
         product=apple,
         quantity=2,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=2,
         unit_price_snapshot=Decimal("8.50"),
     )
 
-    second = OrderLine.objects.create(
+    second = order_line_factory(
         order=order,
         product=apple,
         quantity=1,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=1,
         unit_price_snapshot=Decimal("5.00"),
     )
 
@@ -538,21 +533,17 @@ def test_order_total_includes_multiple_lines_for_same_product(
         customer=customer,
     )
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=apple,
         quantity=2,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=2,
         unit_price_snapshot=Decimal("8.50"),
     )
 
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=apple,
         quantity=1,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=1,
         unit_price_snapshot=Decimal("5.00"),
     )
 

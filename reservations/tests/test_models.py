@@ -6,12 +6,11 @@ import pytest
 from django.utils import timezone
 
 from inventory.services import create_batch
+from orders.models import Order
+from orders.tests.factories import order_line_factory
 from reservations.errors import InvalidAllocationStatusTransition
-from orders.models import (
-    Order,
-    OrderLine,
-)
 from reservations.models import Allocation
+
 
 TODAY = timezone.localdate()
 FUTURE_BEST_BEFORE = TODAY + timedelta(days=60)
@@ -31,12 +30,10 @@ def test_allocation_may_have_temporary_expiry(product):
         channel=Order.Channel.RETAIL,
         customer=None,
     )
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=5,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=5,
     )
 
     reserved_until = timezone.now() + timedelta(minutes=35)
@@ -66,12 +63,10 @@ def test_allocation_can_be_consumed(customer, product):
         today=TODAY,
     )
     order = Order.objects.create(customer=customer)
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,
@@ -97,12 +92,10 @@ def test_allocation_can_be_cancelled(customer, product):
         today=TODAY,
     )
     order = Order.objects.create(customer=customer)
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,
@@ -128,12 +121,10 @@ def test_consumed_allocation_cannot_be_cancelled(customer, product):
         today=TODAY,
     )
     order = Order.objects.create(customer=customer)
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,
@@ -144,12 +135,18 @@ def test_consumed_allocation_cannot_be_cancelled(customer, product):
 
     allocation.consume()
 
-    with pytest.raises(InvalidAllocationStatusTransition, match="Cannot transition"):
+    with pytest.raises(
+        InvalidAllocationStatusTransition,
+        match="Cannot transition",
+    ):
         allocation.cancel()
 
 
 @pytest.mark.django_db
-def test_allocation_string_contains_order_batch_and_quantity(customer, product):
+def test_allocation_string_contains_order_batch_and_quantity(
+    customer,
+    product,
+):
     batch = create_batch(
         batch_id="A-001",
         product=product,
@@ -159,12 +156,10 @@ def test_allocation_string_contains_order_batch_and_quantity(customer, product):
         today=TODAY,
     )
     order = Order.objects.create(customer=customer)
-    line = OrderLine.objects.create(
+    line = order_line_factory(
         order=order,
         product=product,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
     allocation = Allocation.objects.create(
         order=order,

@@ -28,6 +28,7 @@ from orders.models import (
     Order,
     OrderLine,
 )
+from orders.tests.factories import order_line_factory
 from pricing.models import (
     CommercialPrice,
     PriceAmount,
@@ -400,12 +401,10 @@ def test_business_policy_rejects_retail_order(
         customer=None,
         status=Order.Status.DRAFT,
     )
-    OrderLine.objects.create(
+    order_line_factory(
         order=order,
         product=apple,
         quantity=1,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=1,
     )
 
     with pytest.raises(
@@ -442,12 +441,10 @@ def test_unexpired_retail_hold_reduces_business_availability(
         customer=None,
         status=Order.Status.DRAFT,
     )
-    retail_line = OrderLine.objects.create(
+    retail_line = order_line_factory(
         order=retail_order,
         product=apple,
         quantity=7,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=7,
     )
 
     Allocation.objects.create(
@@ -513,12 +510,10 @@ def test_expired_retail_hold_does_not_reduce_business_availability(
         customer=None,
         status=Order.Status.DRAFT,
     )
-    retail_line = OrderLine.objects.create(
+    retail_line = order_line_factory(
         order=retail_order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
 
     Allocation.objects.create(
@@ -573,12 +568,10 @@ def test_cancelled_retail_hold_does_not_reduce_business_availability(
         customer=None,
         status=Order.Status.DRAFT,
     )
-    retail_line = OrderLine.objects.create(
+    retail_line = order_line_factory(
         order=retail_order,
         product=apple,
         quantity=10,
-        unit=OrderLine.Unit.STOCK_UNIT,
-        quantity_in_units=10,
     )
 
     allocation = Allocation.objects.create(
