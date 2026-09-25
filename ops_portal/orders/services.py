@@ -10,7 +10,7 @@ from ops_portal.orders.drafts import (
     build_ops_order_draft,
     resolve_ops_order_lines,
 )
-from ops_portal.orders.policies import prepare_ops_order_for_placement
+from business.policies import prepare_business_order_for_placement
 from orders.datatypes import OrderLineInput
 from orders.models import Order
 from reservations.models import Allocation
@@ -32,10 +32,9 @@ def create_order(
 ) -> Order:
     """Create and immediately place an order from the ops portal.
 
-    Mirrors business.create_order's two-step shape (build draft, then
-    place it) without importing from business - draft-building and
-    placement preparation both use ops_portal's own, catalog-offer-free
-    equivalents.
+    Ops owns the staff-facing workflow and draft adaptation. Business owns
+    BUSINESS placement semantics, including the stock pool represented by
+    each commercial offer.
     """
 
     draft = build_ops_order_draft(
@@ -49,7 +48,7 @@ def create_order(
 
     return place_shared_order(
         order=order,
-        preparation=prepare_ops_order_for_placement,
+        preparation=prepare_business_order_for_placement,
         user=user,
     )
 
@@ -103,9 +102,9 @@ def update_placed_order_and_preserve_checklist(
     reservation rebuild and distinguishes separate commercial offers for
     the same product.
 
-    Calls the shared, channel-neutral orders.update_placed_order directly -
-    never business.update_placed_order - so ops_portal has no dependency
-    on the business app.
+    The shared order service performs the line replacement so ops can preserve
+    its checklist workflow. BUSINESS placement semantics are delegated to the
+    business policy when reservations are rebuilt.
     """
 
     resolved_lines = resolve_ops_order_lines(
@@ -154,7 +153,7 @@ def update_placed_order_and_preserve_checklist(
         order=order,
         lines=resolved_lines,
         before_replacement=clear_order_reservations_before_line_replacement,
-        preparation=prepare_ops_order_for_placement,
+        preparation=prepare_business_order_for_placement,
         user=user,
     )
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.utils import timezone
@@ -9,6 +10,7 @@ from customers.tests.factories import customer_factory
 from inventory.tests.factories import batch_factory
 from ops_portal.models import PickChecklistMark
 from ops_portal.orders.services import (
+    create_order,
     pack_order_and_clear_checklist,
     update_placed_order_and_preserve_checklist,
 )
@@ -19,7 +21,10 @@ from orders.models import (
     OrderLine,
 )
 from orders.tests.factories import order_line_factory
-from pricing.models import CommercialPrice
+from pricing.models import (
+    CommercialPrice,
+    PriceAmount,
+)
 from pricing.tests.factories import commercial_price_factory
 from products.tests.factories import product_factory
 from products.units import OrderUnit
@@ -68,6 +73,70 @@ def _place_order_with_line(
     )
 
     return order, order_line, allocation
+
+
+@pytest.mark.django_db
+def test_create_order_uses_business_offer_stock_pool():
+    customer = customer_factory()
+
+    apple = product_factory(
+        brand="Generic",
+        name="Apple",
+        weight_per_unit=5000,
+        internal_number=1,
+    )
+
+    _standard_business_offer(
+        product=apple,
+    )
+
+    special_batch = batch_factory(
+        product=apple,
+        quantity=5,
+        batch_id="A-SPECIAL",
+        best_before=BEST_BEFORE,
+        location="Shelf A1",
+        today=TODAY,
+    )
+    ordinary_batch = batch_factory(
+        product=apple,
+        quantity=10,
+        batch_id="A-ORDINARY",
+        best_before=BEST_BEFORE + timedelta(days=10),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    special_offer = CommercialPrice.objects.create(
+        product=apple,
+        batch=special_batch,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+        reason=CommercialPrice.Reason.PROMOTION,
+    )
+    PriceAmount.objects.create(
+        commercial_price=special_offer,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("8.50"),
+    )
+
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=3,
+            ),
+        ],
+    )
+
+    allocation = order.allocations.get()
+
+    assert allocation.batch == ordinary_batch
+    assert allocation.quantity == 3
+    assert not order.allocations.filter(
+        batch=special_batch,
+    ).exists()
 
 
 @pytest.mark.django_db
