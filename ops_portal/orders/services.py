@@ -4,14 +4,12 @@ from collections.abc import Iterable
 
 from django.db import transaction
 
+from business.datatypes import BusinessOfferLineInput
+from business.drafts import resolve_business_offer_lines
+from business.policies import prepare_business_order_for_placement
 from fulfillment.services import pack_order as pack_order_with_reservations
 from ops_portal.models import PickChecklistMark
-from ops_portal.orders.drafts import (
-    build_ops_order_draft,
-    resolve_ops_order_lines,
-)
-from business.policies import prepare_business_order_for_placement
-from orders.datatypes import OrderLineInput
+from ops_portal.orders.drafts import build_ops_order_draft
 from orders.models import Order
 from reservations.models import Allocation
 from orders.services import (
@@ -27,7 +25,7 @@ from reservations.policies import (
 def create_order(
     *,
     customer,
-    lines: Iterable[OrderLineInput],
+    lines: Iterable[BusinessOfferLineInput],
     user=None,
 ) -> Order:
     """Create and immediately place an order from the ops portal.
@@ -85,7 +83,7 @@ def pack_order_and_clear_checklist(
 def update_placed_order_and_preserve_checklist(
     *,
     order: Order,
-    lines: Iterable[OrderLineInput],
+    lines: Iterable[BusinessOfferLineInput],
     user=None,
 ) -> Order:
     """Edit a placed order, preserving marks for untouched order lines.
@@ -107,7 +105,7 @@ def update_placed_order_and_preserve_checklist(
     business policy when reservations are rebuilt.
     """
 
-    resolved_lines = resolve_ops_order_lines(
+    resolved_lines = resolve_business_offer_lines(
         lines=lines,
     )
 

@@ -8,14 +8,15 @@ from django import forms
 from django.forms import BaseFormSet, formset_factory
 from django.utils.translation import gettext as _
 
+from business.datatypes import BusinessOfferLineInput
+from business.offer_choices import build_business_offer_choice_context
 from customers.models import Customer
-from orders.datatypes import OrderLineInput
 from orders.models import Order, OrderLine
 from orders.order_limits import (
     MAX_QUANTITY_PER_PRODUCT_PER_ORDER,
     is_unusually_large_order_line,
 )
-from orders.product_choices import build_product_choice_context
+from pricing.models import CommercialPrice
 from products.models import Product
 from ops_portal.products.presentation import (
     translated_product_catalog_label,
@@ -76,29 +77,45 @@ class CustomerChoiceField(forms.ModelChoiceField):
         return customer.name
 
 
-class ProductChoiceField(forms.ModelChoiceField):
+class BusinessOfferChoiceField(forms.ModelChoiceField):
     def __init__(
         self,
         *args,
-        available_units_by_product_id: dict[int, int] | None = None,
+        available_units_by_offer_id: dict[int, int] | None = None,
         language_code: str | None = None,
         show_available_units: bool = True,
         **kwargs,
     ) -> None:
-        self.available_units_by_product_id = available_units_by_product_id or {}
+        self.available_units_by_offer_id = (
+            available_units_by_offer_id or {}
+        )
         self.language_code = language_code
         self.show_available_units = show_available_units
         super().__init__(*args, **kwargs)
 
-    def label_from_instance(self, product: Product) -> str:
-        available_units = self.available_units_by_product_id.get(product.id)
-        product_label = self._product_label(product)
+    def label_from_instance(
+        self,
+        offer: CommercialPrice,
+    ) -> str:
+        available_units = (
+            self.available_units_by_offer_id.get(
+                offer.id
+            )
+        )
+        offer_label = self._offer_label(
+            offer
+        )
 
-        if available_units is None or not self.show_available_units:
-            return product_label
+        if (
+            available_units is None
+            or not self.show_available_units
+        ):
+            return offer_label
 
-        return _("%(product_label)s · %(available_quantity)s left") % {
-            "product_label": product_label,
+        return _(
+            "%(offer_label)s · %(available_quantity)s left"
+        ) % {
+            "offer_label": offer_label,
             "available_quantity": available_units,
         }
 
@@ -125,35 +142,71 @@ class ProductChoiceField(forms.ModelChoiceField):
         if not value:
             return option
 
-        product = value.instance
-        available_units = self.available_units_by_product_id.get(product.id, 0)
-        product_name = self._product_name(product)
-        product_label = self._product_label(product)
+        offer = value.instance
+        product = offer.product
 
         option["attrs"].update(
             {
                 "data-code": product.code_label,
                 "data-brand": product.brand,
-                "data-name": product_name,
+                "data-name": self._product_name(
+                    product
+                ),
                 "data-weight": product.unit_weight_label,
-                "data-available-units": str(available_units),
-                "data-available-quantity": str(available_units),
+                "data-offer-detail": _offer_detail(
+                    offer
+                ),
+                "data-available-units": str(
+                    self.available_units_by_offer_id.get(
+                        offer.id,
+                        0,
+                    )
+                ),
+                "data-available-quantity": str(
+                    self.available_units_by_offer_id.get(
+                        offer.id,
+                        0,
+                    )
+                ),
                 "search": (
                     f"{product.code_label} "
                     f"{product.internal_number or ''} "
                     f"{product.brand} "
                     f"{product.name} "
                     f"{product.display_name} "
-                    f"{product_name} "
-                    f"{product_label} "
-                    f"{product.sku}"
+                    f"{self._product_name(product)} "
+                    f"{self._product_label(product)} "
+                    f"{product.sku} "
+                    f"{_offer_detail(offer)}"
                 ),
             }
         )
 
         return option
 
-    def _product_label(self, product: Product) -> str:
+    def _offer_label(
+        self,
+        offer: CommercialPrice,
+    ) -> str:
+        product_label = self._product_label(
+            offer.product
+        )
+        offer_detail = _offer_detail(
+            offer
+        )
+
+        if not offer_detail:
+            return product_label
+
+        return (
+            f"{product_label} · "
+            f"{offer_detail}"
+        )
+
+    def _product_label(
+        self,
+        product: Product,
+    ) -> str:
         if self.language_code:
             return translated_product_catalog_label(
                 product,
@@ -166,7 +219,10 @@ class ProductChoiceField(forms.ModelChoiceField):
             f"{product.unit_weight_label}"
         )
 
-    def _product_name(self, product: Product) -> str:
+    def _product_name(
+        self,
+        product: Product,
+    ) -> str:
         if self.language_code:
             return translated_product_name(
                 product,
@@ -195,22 +251,20 @@ class OrderCreateForm(forms.Form):
 
 
 class AddOrderLineProductForm(forms.Form):
-    """Standalone product picker that drives client-side line creation.
+    """Standalone BUSINESS offer picker used to create formset lines.
 
-    This form's `product` field is never part of OrderLineFormSet - its
-    selection is read entirely by order_lines.js, which creates a new
-    formset line or increments an existing one in response. The form is
-    never bound to a POST and its own submitted value, if any, is
-    ignored server-side.
+    The selected value is a CommercialPrice id. The field is not itself
+    submitted as an order line; order_lines.js copies the selected offer id
+    into the hidden field of a newly created OrderLineForm.
     """
 
-    product = ProductChoiceField(
-        queryset=Product.objects.none(),
+    commercial_offer = BusinessOfferChoiceField(
+        queryset=CommercialPrice.objects.none(),
         required=False,
-        label="Add product",
-        empty_label="Choose a product to add",
+        label="Add product offer",
+        empty_label="Choose a product offer to add",
         error_messages={
-            "invalid_choice": "Choose a valid available product.",
+            "invalid_choice": "Choose a valid available offer.",
         },
         widget=forms.Select(
             attrs={
@@ -224,33 +278,34 @@ class AddOrderLineProductForm(forms.Form):
     def __init__(
         self,
         *args,
-        product_queryset=None,
-        available_units_by_product_id: dict[int, int] | None = None,
+        offer_queryset=None,
+        available_units_by_offer_id: dict[int, int] | None = None,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
-        product_field = self.fields["product"]
-        product_field.queryset = product_queryset or Product.objects.none()
-        product_field.available_units_by_product_id = (
-            available_units_by_product_id or {}
+        offer_field = self.fields["commercial_offer"]
+        offer_field.queryset = (
+            offer_queryset
+            if offer_queryset is not None
+            else CommercialPrice.objects.none()
+        )
+        offer_field.available_units_by_offer_id = (
+            available_units_by_offer_id or {}
         )
 
 
 class OrderLineForm(forms.Form):
-    product = ProductChoiceField(
-        queryset=Product.objects.filter(active=True).order_by(
-            "internal_number",
-            "brand",
-            "name",
-            "weight_per_unit",
-        ),
+    commercial_offer = BusinessOfferChoiceField(
+        queryset=CommercialPrice.objects.none(),
         required=False,
         error_messages={
-            "invalid_choice": "Choose a valid available product.",
+            "invalid_choice": "Choose a valid available offer.",
         },
         widget=forms.HiddenInput(
-            attrs={"data-order-line-product-input": "true"}
+            attrs={
+                "data-order-line-offer-input": "true",
+            }
         ),
     )
 
@@ -288,54 +343,70 @@ class OrderLineForm(forms.Form):
     def __init__(
         self,
         *args,
-        product_queryset=None,
-        available_units_by_product_id: dict[int, int] | None = None,
+        offer_queryset=None,
+        available_units_by_offer_id: dict[int, int] | None = None,
         **kwargs,
     ) -> None:
-        self.available_units_by_product_id = available_units_by_product_id or {}
+        self.available_units_by_offer_id = (
+            available_units_by_offer_id or {}
+        )
 
         super().__init__(*args, **kwargs)
 
-        product_field = self.fields["product"]
-        product_field.queryset = product_queryset or Product.objects.none()
+        offer_field = self.fields["commercial_offer"]
+        offer_field.queryset = (
+            offer_queryset
+            if offer_queryset is not None
+            else CommercialPrice.objects.none()
+        )
 
-        if isinstance(product_field, ProductChoiceField):
-            product_field.available_units_by_product_id = (
-                self.available_units_by_product_id
+        if isinstance(
+            offer_field,
+            BusinessOfferChoiceField,
+        ):
+            offer_field.available_units_by_offer_id = (
+                self.available_units_by_offer_id
             )
 
-        # DecimalField.widget_attrs() overwrites any step/min we set on the
-        # widget above with values derived from decimal_places (e.g.
-        # step="0.001") during Field.__init__, after the widget's own attrs
-        # are already applied. decimal_places stays at 3 (kg/gram remain
-        # valid domain input server-side), so the override happens here,
-        # after that point, forcing the rendered widget back to whole-unit
-        # stepper behavior - the only path the current UI drives.
         self.fields["quantity"].widget.attrs["step"] = "1"
         self.fields["quantity"].widget.attrs["min"] = "1"
 
     def clean(self) -> dict:
         cleaned_data = super().clean()
 
-        product = cleaned_data.get("product")
-        quantity = cleaned_data.get("quantity")
-        unit = cleaned_data.get("unit")
+        offer = cleaned_data.get(
+            "commercial_offer"
+        )
+        quantity = cleaned_data.get(
+            "quantity"
+        )
+        unit = cleaned_data.get(
+            "unit"
+        )
 
-        if not product and quantity is None:
+        if offer is None and quantity is None:
             return cleaned_data
 
-        if product is None:
-            self.add_error("product", "Choose a product for this line.")
+        if offer is None:
+            self.add_error(
+                "commercial_offer",
+                "Choose an offer for this line.",
+            )
 
         if quantity is None:
-            self.add_error("quantity", "Enter a quantity for this line.")
+            self.add_error(
+                "quantity",
+                "Enter a quantity for this line.",
+            )
 
         if not unit:
             unit = ORDER_LINE_STOCK_UNIT_VALUE
             cleaned_data["unit"] = unit
 
-        if product is None or quantity is None:
+        if offer is None or quantity is None:
             return cleaned_data
+
+        product = offer.product
 
         quantity_in_units = _quantity_to_units_for_form(
             product=product,
@@ -343,9 +414,15 @@ class OrderLineForm(forms.Form):
             unit=unit,
         )
 
-        cleaned_data["quantity_in_units"] = quantity_in_units
+        cleaned_data[
+            "quantity_in_units"
+        ] = quantity_in_units
 
-        available_units = self.available_units_by_product_id.get(product.id)
+        available_units = (
+            self.available_units_by_offer_id.get(
+                offer.id
+            )
+        )
 
         if is_unusually_large_order_line(
             quantity=quantity_in_units
@@ -357,7 +434,8 @@ class OrderLineForm(forms.Form):
                 "quantity",
                 (
                     "This line is unusually large. "
-                    f"Maximum is {product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
+                    f"Maximum is "
+                    f"{product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
                     "per product."
                 ),
             )
@@ -366,19 +444,36 @@ class OrderLineForm(forms.Form):
 
     @property
     def has_line_data(self) -> bool:
-        if not hasattr(self, "cleaned_data"):
+        if not hasattr(
+            self,
+            "cleaned_data",
+        ):
             return False
 
         return bool(
-            self.cleaned_data.get("product")
-            or self.cleaned_data.get("quantity") is not None
+            self.cleaned_data.get(
+                "commercial_offer"
+            )
+            or self.cleaned_data.get(
+                "quantity"
+            ) is not None
         )
 
-    def to_order_line_input(self) -> OrderLineInput:
-        return OrderLineInput(
-            product=self.cleaned_data["product"],
-            quantity=self.cleaned_data["quantity"],
-            unit=self.cleaned_data["unit"],
+    def to_business_offer_line_input(
+        self,
+    ) -> BusinessOfferLineInput:
+        offer = self.cleaned_data[
+            "commercial_offer"
+        ]
+
+        return BusinessOfferLineInput(
+            commercial_offer_id=offer.pk,
+            quantity=self.cleaned_data[
+                "quantity"
+            ],
+            unit=self.cleaned_data[
+                "unit"
+            ],
         )
 
 
@@ -390,17 +485,32 @@ class BaseOrderLineFormSet(BaseFormSet):
         **kwargs,
     ) -> None:
         self.order = order
-        self.product_choice_context = build_product_choice_context(order=order)
-        super().__init__(*args, **kwargs)
+        self.offer_choice_context = (
+            build_business_offer_choice_context(
+                order=order,
+            )
+        )
+        super().__init__(
+            *args,
+            **kwargs,
+        )
 
-    def get_form_kwargs(self, index: int | None) -> dict[str, Any]:
-        kwargs = super().get_form_kwargs(index)
+    def get_form_kwargs(
+        self,
+        index: int | None,
+    ) -> dict[str, Any]:
+        kwargs = super().get_form_kwargs(
+            index
+        )
 
         kwargs.update(
             {
-                "product_queryset": self.product_choice_context.queryset,
-                "available_units_by_product_id": (
-                    self.product_choice_context.available_units_by_product_id
+                "offer_queryset": (
+                    self.offer_choice_context.queryset
+                ),
+                "available_units_by_offer_id": (
+                    self.offer_choice_context
+                    .available_units_by_offer_id
                 ),
             }
         )
@@ -410,54 +520,123 @@ class BaseOrderLineFormSet(BaseFormSet):
     def clean(self) -> None:
         super().clean()
 
-        if any(form.errors for form in self.forms):
+        if any(
+            form.errors
+            for form in self.forms
+        ):
             return
 
         if not self.order_line_forms:
-            raise forms.ValidationError("Add at least one order line.")
+            raise forms.ValidationError(
+                "Add at least one order line."
+            )
 
-        requested_quantity_by_product_id: dict[int, int] = defaultdict(int)
-        product_names_by_id: dict[int, str] = {}
-        products_by_id: dict[int, Product] = {}
+        requested_quantity_by_offer_id: dict[
+            int,
+            int,
+        ] = defaultdict(int)
+        requested_quantity_by_product_id: dict[
+            int,
+            int,
+        ] = defaultdict(int)
+        offers_by_id: dict[
+            int,
+            CommercialPrice,
+        ] = {}
+        products_by_id: dict[
+            int,
+            Product,
+        ] = {}
 
         for form in self.order_line_forms:
-            product = form.cleaned_data["product"]
-            quantity = form.cleaned_data["quantity_in_units"]
+            offer = form.cleaned_data[
+                "commercial_offer"
+            ]
+            quantity = form.cleaned_data[
+                "quantity_in_units"
+            ]
+            product = offer.product
 
-            requested_quantity_by_product_id[product.id] += quantity
-            product_names_by_id[product.id] = product.display_name
-            products_by_id[product.id] = product
+            requested_quantity_by_offer_id[
+                offer.id
+            ] += quantity
+            requested_quantity_by_product_id[
+                product.id
+            ] += quantity
 
-        for product_id, requested_quantity in requested_quantity_by_product_id.items():
+            offers_by_id[
+                offer.id
+            ] = offer
+            products_by_id[
+                product.id
+            ] = product
+
+        for (
+            offer_id,
+            requested_quantity,
+        ) in requested_quantity_by_offer_id.items():
             available_quantity = (
-                self.product_choice_context.available_units_by_product_id.get(
-                    product_id,
+                self.offer_choice_context
+                .available_units_by_offer_id
+                .get(
+                    offer_id,
                     0,
                 )
             )
 
-            product = products_by_id[product_id]
+            if (
+                requested_quantity
+                > available_quantity
+            ):
+                offer = offers_by_id[
+                    offer_id
+                ]
+                product = offer.product
 
-            if requested_quantity > available_quantity:
-                product_name = product_names_by_id[product_id]
-
-                raise forms.ValidationError(
-                    f"Only {product.stock_quantity_label(available_quantity)} "
-                    f"available for {product_name}."
+                offer_detail = _offer_detail(
+                    offer
+                )
+                offer_description = (
+                    f" ({offer_detail})"
+                    if offer_detail
+                    else ""
                 )
 
-            if is_unusually_large_order_line(quantity=requested_quantity):
-                product_name = product_names_by_id[product_id]
+                raise forms.ValidationError(
+                    f"Only "
+                    f"{product.stock_quantity_label(available_quantity)} "
+                    f"available for "
+                    f"{product.display_name}"
+                    f"{offer_description}."
+                )
+
+        for (
+            product_id,
+            requested_quantity,
+        ) in requested_quantity_by_product_id.items():
+            if is_unusually_large_order_line(
+                quantity=requested_quantity
+            ):
+                product = products_by_id[
+                    product_id
+                ]
 
                 raise forms.ValidationError(
-                    f"{product_name} is unusually large. "
-                    f"Maximum is {product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
+                    f"{product.display_name} is unusually large. "
+                    f"Maximum is "
+                    f"{product.stock_quantity_label(MAX_QUANTITY_PER_PRODUCT_PER_ORDER)} "
                     "per order."
                 )
 
     @property
-    def order_line_forms(self) -> list[OrderLineForm]:
-        return [form for form in self.forms if form.has_line_data]
+    def order_line_forms(
+        self,
+    ) -> list[OrderLineForm]:
+        return [
+            form
+            for form in self.forms
+            if form.has_line_data
+        ]
 
 
 OrderLineFormSet = formset_factory(
@@ -495,33 +674,91 @@ def build_add_order_line_product_form(
     line_formset: OrderLineFormSet,
 ) -> AddOrderLineProductForm:
     return AddOrderLineProductForm(
-        product_queryset=line_formset.product_choice_context.queryset,
-        available_units_by_product_id=(
-            line_formset.product_choice_context.available_units_by_product_id
+        offer_queryset=(
+            line_formset.offer_choice_context.queryset
+        ),
+        available_units_by_offer_id=(
+            line_formset.offer_choice_context
+            .available_units_by_offer_id
         ),
     )
 
 
 def build_order_line_inputs(
     formset: BaseFormSet,
-) -> list[OrderLineInput]:
-    return [form.to_order_line_input() for form in formset.order_line_forms]
+) -> list[BusinessOfferLineInput]:
+    return [
+        form.to_business_offer_line_input()
+        for form in formset.order_line_forms
+    ]
 
 
-def build_order_line_initial_data(order: Order) -> list[dict[str, object]]:
+def build_order_line_initial_data(
+    order: Order,
+) -> list[dict[str, object]]:
     return [
         {
-            "product": line.product_id,
+            "commercial_offer": (
+                line.commercial_offer_id
+            ),
             "unit": line.unit,
             "quantity": line.quantity_in_units,
-            "product_label": (
-                f"{line.product.code_label} · "
-                f"{line.product.display_name} · "
-                f"{line.product.unit_weight_label}"
+            "offer_label": _order_line_offer_label(
+                product=line.product,
+                offer=line.commercial_offer,
             ),
         }
-        for line in order.lines.select_related("product").order_by("id")
+        for line in (
+            order.lines
+            .select_related(
+                "product",
+                "commercial_offer",
+                "commercial_offer__batch",
+            )
+            .order_by("id")
+        )
     ]
+
+
+def _offer_detail(
+    offer: CommercialPrice,
+) -> str:
+    # Ops is choosing a commercial offer, so show the commercial reason,
+    # not the physical batch identity behind it. Standard is the normal
+    # case and stays unlabeled to keep the picker visually quiet.
+    if offer.batch_id is None:
+        return ""
+
+    if offer.reason:
+        return str(
+            offer.get_reason_display()
+        )
+
+    # Defensive fallback for legacy/incomplete batch offers.
+    return f"Batch {offer.batch.batch_id}"
+
+
+def _order_line_offer_label(
+    *,
+    product: Product,
+    offer: CommercialPrice,
+) -> str:
+    product_label = (
+        f"{product.code_label} · "
+        f"{product.display_name} · "
+        f"{product.unit_weight_label}"
+    )
+    offer_detail = _offer_detail(
+        offer
+    )
+
+    if not offer_detail:
+        return product_label
+
+    return (
+        f"{product_label} · "
+        f"{offer_detail}"
+    )
 
 
 def _quantity_to_units_for_form(

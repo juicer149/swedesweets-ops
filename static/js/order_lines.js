@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const emptyFormTemplate = document.getElementById(
     "order-line-empty-form-template"
   );
-  const addProductSelect = document.querySelector(
+  const addOfferSelect = document.querySelector(
     "[data-add-order-line-select]"
   );
   const totalFormsInput = document.querySelector(
@@ -17,19 +17,21 @@ document.addEventListener("DOMContentLoaded", () => {
   if (
     !orderLinesList ||
     !emptyFormTemplate ||
-    !addProductSelect ||
+    !addOfferSelect ||
     !totalFormsInput
   ) {
     return;
   }
 
   function getOrderLines() {
-    return Array.from(orderLinesList.querySelectorAll("[data-order-line]"));
+    return Array.from(
+      orderLinesList.querySelectorAll("[data-order-line]")
+    );
   }
 
-  function findOrderLineByProductId(productId) {
+  function findOrderLineByOfferId(offerId) {
     return orderLinesList.querySelector(
-      `[data-order-line][data-product-id="${productId}"]`
+      `[data-order-line][data-commercial-offer-id="${offerId}"]`
     );
   }
 
@@ -115,26 +117,30 @@ document.addEventListener("DOMContentLoaded", () => {
     input.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  function clearAddProductSelect() {
-    const tomSelect = addProductSelect.tomselect;
+  function clearAddOfferSelect() {
+    const tomSelect = addOfferSelect.tomselect;
 
     if (tomSelect) {
       tomSelect.clear(true);
       return;
     }
 
-    addProductSelect.value = "";
+    addOfferSelect.value = "";
   }
 
-  /*
-   * Reads the currently selected product straight from the TomSelect
-   * instance's own option data (already fully loaded client-side by
-   * enhanced_selects.js at init - no fetch needed). Falls back to the
-   * native <option> element if TomSelect never initialized (e.g. the
-   * library failed to load).
-   */
-  function readSelectedProduct(value) {
-    const tomSelect = addProductSelect.tomselect;
+  function buildOfferLabel(data) {
+    const parts = [
+      data.code,
+      data.name,
+      data.weight,
+      data.offerDetail,
+    ].filter(Boolean);
+
+    return parts.length ? parts.join(" · ") : data.text;
+  }
+
+  function readSelectedOffer(value) {
+    const tomSelect = addOfferSelect.tomselect;
 
     if (tomSelect) {
       const data = tomSelect.options[value];
@@ -143,60 +149,64 @@ document.addEventListener("DOMContentLoaded", () => {
         return null;
       }
 
-      const label = data.name
-        ? `${data.code} · ${data.name} · ${data.weight}`.trim()
-        : data.text;
-
-      return { value, label };
+      return {
+        value,
+        label: buildOfferLabel(data),
+      };
     }
 
-    const option = addProductSelect.selectedOptions[0];
+    const option = addOfferSelect.selectedOptions[0];
 
     if (!option || !option.value) {
       return null;
     }
 
-    const label = option.dataset.name
-      ? `${option.dataset.code} · ${option.dataset.name} · ${option.dataset.weight}`
-      : option.textContent.trim();
-
-    return { value: option.value, label };
+    return {
+      value: option.value,
+      label: buildOfferLabel({
+        code: option.dataset.code || "",
+        name: option.dataset.name || "",
+        weight: option.dataset.weight || "",
+        offerDetail: option.dataset.offerDetail || "",
+        text: option.textContent.trim(),
+      }),
+    };
   }
 
-  function addOrIncrementLine(product) {
-    if (!product || !product.value) {
+  function addOrIncrementLine(offer) {
+    if (!offer || !offer.value) {
       return;
     }
 
-    const existingLine = findOrderLineByProductId(product.value);
+    const existingLine = findOrderLineByOfferId(offer.value);
 
     if (existingLine) {
       incrementQuantity(existingLine);
-      clearAddProductSelect();
+      clearAddOfferSelect();
       return;
     }
 
     const index = getOrderLines().length;
     const orderLine = buildOrderLine(index);
 
-    orderLine.dataset.productId = product.value;
+    orderLine.dataset.commercialOfferId = offer.value;
 
-    const productInput = orderLine.querySelector(
-      "[data-order-line-product-input]"
+    const offerInput = orderLine.querySelector(
+      "[data-order-line-offer-input]"
     );
     const labelElement = orderLine.querySelector(
-      "[data-order-line-product-label]"
+      "[data-order-line-offer-label]"
     );
     const quantityInput = orderLine.querySelector(
       "[data-quantity-input]"
     );
 
-    if (productInput) {
-      productInput.value = product.value;
+    if (offerInput) {
+      offerInput.value = offer.value;
     }
 
     if (labelElement) {
-      labelElement.textContent = product.label;
+      labelElement.textContent = offer.label;
     }
 
     if (quantityInput) {
@@ -206,33 +216,35 @@ document.addEventListener("DOMContentLoaded", () => {
     orderLinesList.appendChild(orderLine);
     totalFormsInput.value = String(index + 1);
 
-    clearAddProductSelect();
+    clearAddOfferSelect();
     updateEmptyState();
     scrollOrderLineIntoView(orderLine);
   }
 
-  function handleProductSelected(value) {
+  function handleOfferSelected(value) {
     if (!value) {
       return;
     }
 
-    addOrIncrementLine(readSelectedProduct(value));
+    addOrIncrementLine(
+      readSelectedOffer(value)
+    );
   }
 
-  /*
-   * enhanced_selects.js initializes TomSelect on DOMContentLoaded too,
-   * and its script tag loads before this one, so addProductSelect.tomselect
-   * is already available here. Prefer TomSelect's own change event
-   * (fires with the new value directly) over the native <select> change
-   * event, since TomSelect's internal option sync is the source of truth
-   * this file should read from.
-   */
-  if (addProductSelect.tomselect) {
-    addProductSelect.tomselect.on("change", handleProductSelected);
+  if (addOfferSelect.tomselect) {
+    addOfferSelect.tomselect.on(
+      "change",
+      handleOfferSelected
+    );
   } else {
-    addProductSelect.addEventListener("change", () => {
-      handleProductSelected(addProductSelect.value);
-    });
+    addOfferSelect.addEventListener(
+      "change",
+      () => {
+        handleOfferSelected(
+          addOfferSelect.value
+        );
+      }
+    );
   }
 
   orderLinesList.addEventListener("click", (event) => {
@@ -244,7 +256,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const orderLine = removeButton.closest("[data-order-line]");
+    const orderLine = removeButton.closest(
+      "[data-order-line]"
+    );
 
     if (!orderLine) {
       return;

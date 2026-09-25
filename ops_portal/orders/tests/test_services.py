@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
+from business.datatypes import BusinessOfferLineInput
 from customers.tests.factories import customer_factory
 from inventory.tests.factories import batch_factory
 from ops_portal.models import PickChecklistMark
@@ -14,7 +15,6 @@ from ops_portal.orders.services import (
     pack_order_and_clear_checklist,
     update_placed_order_and_preserve_checklist,
 )
-from orders.datatypes import OrderLineInput
 from orders.errors import InvalidOrderOperation
 from orders.models import (
     Order,
@@ -43,6 +43,24 @@ def _standard_business_offer(
         product=product,
         channel=CommercialPrice.Channel.BUSINESS,
         enabled=True,
+    )
+
+
+def _standard_business_offer_line_input(
+    *,
+    product,
+    quantity: int,
+) -> BusinessOfferLineInput:
+    offer = CommercialPrice.objects.get(
+        product=product,
+        channel=CommercialPrice.Channel.BUSINESS,
+        batch__isnull=True,
+    )
+
+    return BusinessOfferLineInput(
+        commercial_offer_id=offer.pk,
+        quantity=quantity,
+        unit=OrderUnit.STOCK,
     )
 
 
@@ -123,7 +141,7 @@ def test_create_order_uses_business_offer_stock_pool():
     order = create_order(
         customer=customer,
         lines=[
-            OrderLineInput.units(
+            _standard_business_offer_line_input(
                 product=apple,
                 quantity=3,
             ),
@@ -254,9 +272,9 @@ def test_update_placed_order_preserves_mark_for_unchanged_quantity():
     updated_order = update_placed_order_and_preserve_checklist(
         order=order,
         lines=[
-            OrderLineInput.units(
-                quantity=3,
+            _standard_business_offer_line_input(
                 product=apple,
+                quantity=3,
             ),
         ],
     )
@@ -314,9 +332,9 @@ def test_update_placed_order_clears_mark_when_quantity_changes():
     updated_order = update_placed_order_and_preserve_checklist(
         order=order,
         lines=[
-            OrderLineInput.units(
-                quantity=5,
+            _standard_business_offer_line_input(
                 product=apple,
+                quantity=5,
             ),
         ],
     )
@@ -389,9 +407,9 @@ def test_update_placed_order_clears_mark_when_product_is_removed():
     updated_order = update_placed_order_and_preserve_checklist(
         order=order,
         lines=[
-            OrderLineInput.units(
-                quantity=2,
+            _standard_business_offer_line_input(
                 product=pear,
+                quantity=2,
             ),
         ],
     )
@@ -480,9 +498,9 @@ def test_update_placed_order_preserves_split_batch_marks_individually():
     updated_order = update_placed_order_and_preserve_checklist(
         order=order,
         lines=[
-            OrderLineInput.units(
-                quantity=75,
+            _standard_business_offer_line_input(
                 product=apple,
+                quantity=75,
             ),
         ],
     )
@@ -590,9 +608,9 @@ def test_update_placed_order_clears_all_split_batch_marks_on_quantity_change():
     updated_order = update_placed_order_and_preserve_checklist(
         order=order,
         lines=[
-            OrderLineInput.units(
-                quantity=90,
+            _standard_business_offer_line_input(
                 product=apple,
+                quantity=90,
             ),
         ],
     )

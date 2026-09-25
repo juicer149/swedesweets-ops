@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
+from business.tests.factories import standard_business_offer_factory
 from customers.tests.factories import customer_factory
 from inventory.tests.factories import batch_factory
 from ops_portal.orders.forms import (
@@ -14,12 +15,13 @@ from ops_portal.orders.forms import (
     OrderCreateForm,
     OrderLineForm,
     OrderLineFormSet,
-    ProductChoiceField,
+    BusinessOfferChoiceField,
     build_order_line_initial_data,
     build_order_line_inputs,
 )
 from orders.models import Order
 from orders.tests.factories import order_line_factory
+from pricing.models import CommercialPrice, PriceAmount
 from products.tests.factories import product_factory
 from products.units import OrderUnit
 
@@ -55,6 +57,35 @@ def _stock_apple(
     )
 
 
+def _standard_business_offer(
+    product,
+) -> CommercialPrice:
+    return standard_business_offer_factory(
+        product=product,
+    )
+
+
+def _business_batch_offer(
+    *,
+    product,
+    batch,
+) -> CommercialPrice:
+    offer = CommercialPrice.objects.create(
+        product=product,
+        batch=batch,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    PriceAmount.objects.create(
+        commercial_price=offer,
+        currency=PriceAmount.Currency.EUR,
+        price=Decimal("8.50"),
+    )
+
+    return offer
+
+
 @pytest.mark.django_db
 def test_order_create_form_accepts_customer():
     customer = customer_factory()
@@ -86,26 +117,29 @@ def test_order_create_form_rejects_missing_customer():
 
 
 @pytest.mark.django_db
-def test_product_choice_field_label_includes_internal_number_weight_and_stock():
+def test_business_offer_choice_field_label_includes_product_offer_and_stock():
     apple = product_factory(
         brand="Generic",
         name="Apple",
         weight_per_unit=5000,
         internal_number=1,
     )
+    offer = _standard_business_offer(
+        apple,
+    )
 
-    field = ProductChoiceField(
-        queryset=type(
-            apple
-        ).objects.all(),
-        available_units_by_product_id={
-            apple.id: 12,
+    field = BusinessOfferChoiceField(
+        queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
+        ),
+        available_units_by_offer_id={
+            offer.id: 12,
         },
     )
 
     assert (
         field.label_from_instance(
-            apple
+            offer
         )
         == "#1 · Generic — Apple · 5000 g / Box · 12 left"
     )
@@ -120,31 +154,31 @@ def test_order_line_form_accepts_valid_line():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": str(
-                apple.pk
+            "commercial_offer": str(
+                offer.pk
             ),
             "unit": OrderUnit.STOCK,
             "quantity": "10",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
-        available_units_by_product_id={
-            apple.id: 100,
+        available_units_by_offer_id={
+            offer.id: 100,
         },
     )
 
     assert form.is_valid(), form.errors
 
     assert (
-        form.cleaned_data["product"]
-        == apple
+        form.cleaned_data["commercial_offer"]
+        == offer
     )
     assert (
         form.cleaned_data["quantity"]
@@ -172,18 +206,18 @@ def test_order_line_form_allows_empty_line():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": "",
+            "commercial_offer": "",
             "unit": "",
             "quantity": "",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
     )
 
@@ -192,7 +226,7 @@ def test_order_line_form_allows_empty_line():
 
 
 @pytest.mark.django_db
-def test_order_line_form_requires_product_when_quantity_is_present():
+def test_order_line_form_requires_offer_when_quantity_is_present():
     apple = product_factory(
         brand="Generic",
         name="Apple",
@@ -200,23 +234,23 @@ def test_order_line_form_requires_product_when_quantity_is_present():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": "",
+            "commercial_offer": "",
             "unit": OrderUnit.STOCK,
             "quantity": "10",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
     )
 
     assert not form.is_valid()
-    assert "product" in form.errors
+    assert "commercial_offer" in form.errors
 
 
 @pytest.mark.django_db
@@ -228,20 +262,20 @@ def test_order_line_form_requires_quantity_when_product_is_present():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": str(
-                apple.pk
+            "commercial_offer": str(
+                offer.pk
             ),
             "unit": OrderUnit.STOCK,
             "quantity": "",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
     )
 
@@ -258,23 +292,23 @@ def test_order_line_form_defaults_missing_unit_to_stock_unit():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": str(
-                apple.pk
+            "commercial_offer": str(
+                offer.pk
             ),
             "unit": "",
             "quantity": "5",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
-        available_units_by_product_id={
-            apple.id: 100,
+        available_units_by_offer_id={
+            offer.id: 100,
         },
     )
 
@@ -295,23 +329,23 @@ def test_order_line_form_accepts_kg_quantity():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": str(
-                apple.pk
+            "commercial_offer": str(
+                offer.pk
             ),
             "unit": OrderUnit.KG,
             "quantity": "12.5",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
-        available_units_by_product_id={
-            apple.id: 100,
+        available_units_by_offer_id={
+            offer.id: 100,
         },
     )
 
@@ -342,23 +376,23 @@ def test_order_line_form_accepts_grams_quantity():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": str(
-                apple.pk
+            "commercial_offer": str(
+                offer.pk
             ),
             "unit": OrderUnit.GRAMS,
             "quantity": "12000",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
-        available_units_by_product_id={
-            apple.id: 100,
+        available_units_by_offer_id={
+            offer.id: 100,
         },
     )
 
@@ -389,23 +423,23 @@ def test_order_line_form_accepts_line_before_formset_stock_validation():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": str(
-                apple.pk
+            "commercial_offer": str(
+                offer.pk
             ),
             "unit": OrderUnit.STOCK,
             "quantity": "11",
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
-        available_units_by_product_id={
-            apple.id: 10,
+        available_units_by_offer_id={
+            offer.id: 10,
         },
     )
 
@@ -428,10 +462,14 @@ def test_order_line_form_rejects_unusually_large_line():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     form = OrderLineForm(
         data={
-            "product": str(
-                apple.pk
+            "commercial_offer": str(
+                offer.pk
             ),
             "unit": OrderUnit.STOCK,
             "quantity": str(
@@ -439,15 +477,11 @@ def test_order_line_form_rejects_unusually_large_line():
                 + 1
             ),
         },
-        product_queryset=(
-            type(apple)
-            .objects
-            .filter(
-                pk=apple.pk,
-            )
+        offer_queryset=CommercialPrice.objects.filter(
+            pk=offer.pk,
         ),
-        available_units_by_product_id={
-            apple.id: (
+        available_units_by_offer_id={
+            offer.id: (
                 MAX_UNITS_PER_PRODUCT_PER_ORDER
                 + 10
             ),
@@ -466,7 +500,7 @@ def test_order_line_formset_requires_at_least_one_line():
             "form-INITIAL_FORMS": "0",
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
-            "form-0-product": "",
+            "form-0-commercial_offer": "",
             "form-0-unit": "",
             "form-0-quantity": "",
         },
@@ -492,6 +526,9 @@ def test_order_line_formset_rejects_more_than_available_stock():
     _stock_apple(
         apple,
     )
+    offer = _standard_business_offer(
+        apple,
+    )
 
     formset = OrderLineFormSet(
         data={
@@ -499,8 +536,8 @@ def test_order_line_formset_rejects_more_than_available_stock():
             "form-INITIAL_FORMS": "0",
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
-            "form-0-product": str(
-                apple.pk
+            "form-0-commercial_offer": str(
+                offer.pk
             ),
             "form-0-unit": (
                 OrderUnit.STOCK
@@ -529,6 +566,9 @@ def test_order_line_formset_accepts_available_stock():
     _stock_apple(
         apple,
     )
+    offer = _standard_business_offer(
+        apple,
+    )
 
     formset = OrderLineFormSet(
         data={
@@ -536,8 +576,8 @@ def test_order_line_formset_accepts_available_stock():
             "form-INITIAL_FORMS": "0",
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
-            "form-0-product": str(
-                apple.pk
+            "form-0-commercial_offer": str(
+                offer.pk
             ),
             "form-0-unit": (
                 OrderUnit.STOCK
@@ -555,7 +595,10 @@ def test_order_line_formset_accepts_available_stock():
     )
 
     assert len(inputs) == 1
-    assert inputs[0].product == apple
+    assert (
+        inputs[0].commercial_offer_id
+        == offer.pk
+    )
     assert (
         inputs[0].quantity
         == Decimal("150")
@@ -563,6 +606,130 @@ def test_order_line_formset_accepts_available_stock():
     assert (
         inputs[0].unit
         == OrderUnit.STOCK
+    )
+
+
+@pytest.mark.django_db
+def test_order_line_formset_validates_availability_per_offer():
+    apple = product_factory(
+        brand="Generic",
+        name="Apple",
+        weight_per_unit=5000,
+        internal_number=1,
+    )
+
+    batch_factory(
+        product=apple,
+        quantity=5,
+        batch_id="A-ORDINARY",
+        best_before=STOCK_LATE_BEST_BEFORE,
+        location="Shelf A1",
+        today=TODAY,
+    )
+    special_batch = batch_factory(
+        product=apple,
+        quantity=5,
+        batch_id="A-SPECIAL",
+        best_before=STOCK_EARLY_BEST_BEFORE,
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    standard_offer = _standard_business_offer(
+        apple,
+    )
+    special_offer = _business_batch_offer(
+        product=apple,
+        batch=special_batch,
+    )
+
+    formset = OrderLineFormSet(
+        data={
+            "form-TOTAL_FORMS": "2",
+            "form-INITIAL_FORMS": "0",
+            "form-MIN_NUM_FORMS": "0",
+            "form-MAX_NUM_FORMS": "1000",
+            "form-0-commercial_offer": str(
+                standard_offer.pk
+            ),
+            "form-0-unit": OrderUnit.STOCK,
+            "form-0-quantity": "6",
+            "form-1-commercial_offer": str(
+                special_offer.pk
+            ),
+            "form-1-unit": OrderUnit.STOCK,
+            "form-1-quantity": "1",
+        },
+    )
+
+    assert not formset.is_valid()
+
+    assert (
+        "Only 5 boxes available for Generic — Apple."
+        in formset.non_form_errors()
+    )
+
+
+@pytest.mark.django_db
+def test_order_line_formset_applies_order_limit_across_offers_for_same_product():
+    apple = product_factory(
+        brand="Generic",
+        name="Apple",
+        weight_per_unit=5000,
+        internal_number=1,
+    )
+
+    batch_factory(
+        product=apple,
+        quantity=MAX_UNITS_PER_PRODUCT_PER_ORDER,
+        batch_id="A-ORDINARY",
+        best_before=STOCK_LATE_BEST_BEFORE,
+        location="Shelf A1",
+        today=TODAY,
+    )
+    special_batch = batch_factory(
+        product=apple,
+        quantity=10,
+        batch_id="A-SPECIAL",
+        best_before=STOCK_EARLY_BEST_BEFORE,
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    standard_offer = _standard_business_offer(
+        apple,
+    )
+    special_offer = _business_batch_offer(
+        product=apple,
+        batch=special_batch,
+    )
+
+    formset = OrderLineFormSet(
+        data={
+            "form-TOTAL_FORMS": "2",
+            "form-INITIAL_FORMS": "0",
+            "form-MIN_NUM_FORMS": "0",
+            "form-MAX_NUM_FORMS": "1000",
+            "form-0-commercial_offer": str(
+                standard_offer.pk
+            ),
+            "form-0-unit": OrderUnit.STOCK,
+            "form-0-quantity": str(
+                MAX_UNITS_PER_PRODUCT_PER_ORDER
+            ),
+            "form-1-commercial_offer": str(
+                special_offer.pk
+            ),
+            "form-1-unit": OrderUnit.STOCK,
+            "form-1-quantity": "1",
+        },
+    )
+
+    assert not formset.is_valid()
+
+    assert (
+        "Generic — Apple is unusually large."
+        in formset.non_form_errors()[0]
     )
 
 
@@ -577,6 +744,10 @@ def test_build_order_line_initial_data():
         internal_number=1,
     )
 
+    offer = _standard_business_offer(
+        apple,
+    )
+
     order = Order.objects.create(
         customer=customer,
     )
@@ -585,6 +756,7 @@ def test_build_order_line_initial_data():
     order_line_factory(
         order=order,
         product=apple,
+        commercial_offer=offer,
         quantity=10,
     )
 
@@ -594,10 +766,10 @@ def test_build_order_line_initial_data():
         )
         == [
             {
-                "product": apple.id,
+                "commercial_offer": offer.id,
                 "unit": OrderUnit.STOCK,
                 "quantity": 10,
-                "product_label": (
+                "offer_label": (
                     "#1 · Generic — Apple · 5000 g / Box"
                 ),
             }

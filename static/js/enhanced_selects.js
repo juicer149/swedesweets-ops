@@ -11,7 +11,11 @@
   }
 
   function optionSearchText(option) {
-    return option.getAttribute("search") || option.dataset.search || optionText(option);
+    return (
+      option.getAttribute("search") ||
+      option.dataset.search ||
+      optionText(option)
+    );
   }
 
   function buildOptionData(option) {
@@ -21,6 +25,7 @@
       code: option.dataset.code || "",
       name: option.dataset.name || "",
       weight: option.dataset.weight || "",
+      offerDetail: option.dataset.offerDetail || "",
       search: optionSearchText(option),
     };
   }
@@ -34,7 +39,12 @@
   }
 
   function hasProductData(data) {
-    return Boolean(data.code || data.name || data.weight);
+    return Boolean(
+      data.code ||
+      data.name ||
+      data.weight ||
+      data.offerDetail
+    );
   }
 
   function productTitle(data, escape) {
@@ -50,8 +60,19 @@
 
   function renderOption(data, escape) {
     if (!hasProductData(data)) {
-      return `<div class="enhanced-select-option">${escape(data.text)}</div>`;
+      return `
+        <div class="enhanced-select-option">
+          ${escape(data.text)}
+        </div>
+      `;
     }
+
+    const meta = [
+      data.weight,
+      data.offerDetail,
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
     return `
       <div class="enhanced-product-option">
@@ -60,8 +81,12 @@
         </div>
 
         ${
-          data.weight
-            ? `<div class="enhanced-product-option__meta">${escape(data.weight)}</div>`
+          meta
+            ? `
+              <div class="enhanced-product-option__meta">
+                ${escape(meta)}
+              </div>
+            `
             : ""
         }
       </div>
@@ -73,9 +98,15 @@
       return `<div>${escape(data.text)}</div>`;
     }
 
+    const offerDetail = data.offerDetail
+      ? ` · ${escape(data.offerDetail)}`
+      : "";
+
     return `
       <div class="enhanced-product-selected">
-        <span>${productTitle(data, escape)}</span>
+        <span>
+          ${productTitle(data, escape)}${offerDetail}
+        </span>
       </div>
     `;
   }
@@ -85,15 +116,20 @@
       return;
     }
 
-    const shouldOpenAfterEnhance = options.openAfterEnhance === true;
-    const selects = root.querySelectorAll("select[data-enhanced-select]");
+    const shouldOpenAfterEnhance =
+      options.openAfterEnhance === true;
+
+    const selects = root.querySelectorAll(
+      "select[data-enhanced-select]"
+    );
 
     selects.forEach((select) => {
       if (select.tomselect) {
         return;
       }
 
-      const hasSearch = select.dataset.enhancedSelectSearch !== "false";
+      const hasSearch =
+        select.dataset.enhancedSelectSearch !== "false";
 
       const tomSelect = new TomSelect(select, {
         options: buildOptions(select),
@@ -102,12 +138,23 @@
         allowEmptyOption: true,
         closeAfterSelect: true,
         maxOptions: 500,
-        placeholder: select.getAttribute("placeholder") || "",
+        placeholder:
+          select.getAttribute("placeholder") || "",
         controlInput: hasSearch
-          ? '<input type="text" autocomplete="off" autocapitalize="none" spellcheck="false" />'
+          ? (
+              '<input type="text" ' +
+              'autocomplete="off" ' +
+              'autocapitalize="none" ' +
+              'spellcheck="false" />'
+            )
           : null,
         searchField: ["search"],
-        sortField: [{ field: "$order", direction: "asc" }],
+        sortField: [
+          {
+            field: "$order",
+            direction: "asc",
+          },
+        ],
         render: {
           option: renderOption,
           item: renderItem,
@@ -132,7 +179,10 @@
 
   window.enhanceSelects = enhanceSelects;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    enhanceSelects();
-  });
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      enhanceSelects();
+    }
+  );
 })();

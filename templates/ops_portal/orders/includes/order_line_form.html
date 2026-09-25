@@ -4,18 +4,38 @@
 <article
   class="portal-cart-line"
   data-order-line
-  data-product-id="{{ line_form.initial.product|default_if_none:'' }}"
+  data-commercial-offer-id="{{ line_form.commercial_offer.value|default_if_none:'' }}"
 >
-  {{ line_form.product }}
+  {{ line_form.commercial_offer }}
   {{ line_form.unit }}
 
   <div class="portal-cart-line__product">
     <span
       class="portal-cart-line__product-label"
-      data-order-line-product-label
+      data-order-line-offer-label
     >
-      {{ line_form.initial.product_label }}
+      {{ line_form.initial.offer_label }}
     </span>
+
+    {% if line_form.non_field_errors or line_form.commercial_offer.errors or line_form.unit.errors or line_form.quantity.errors %}
+      <div
+        class="form-errors"
+        role="alert"
+      >
+        {% for error in line_form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+        {% for error in line_form.commercial_offer.errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+        {% for error in line_form.unit.errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+        {% for error in line_form.quantity.errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
 
   <div class="portal-cart-line__quantity">
@@ -53,7 +73,7 @@
     <button
       class="portal-cart-line__remove-button"
       type="button"
-      aria-label="{% trans 'Remove product' %}"
+      aria-label="{% trans 'Remove offer' %}"
       data-remove-order-line
     >
       {% include "includes/ui/icon_block.html" with name="trash" size="sm" only %}
