@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Iterable
 
+from business.datatypes import BusinessOfferLineInput
 from customers.models import Customer
 from orders.datatypes import (
     BuyerInput,
@@ -14,7 +15,10 @@ from orders.drafts import (
 )
 from orders.errors import InvalidOrderOperation
 from orders.models import Order
-from pricing.models import CommercialPrice
+from pricing.models import (
+    CommercialPrice,
+    PriceAmount,
+)
 from products.models import Product
 from products.units import (
     normalize_order_unit,
@@ -100,6 +104,138 @@ def build_business_order_draft(
             customer=customer,
         ),
         lines=resolved_lines,
+    )
+
+
+def resolve_business_offer_lines(
+    *,
+    lines: Iterable[BusinessOfferLineInput],
+) -> tuple[ResolvedOrderLine, ...]:
+    """Resolve explicit BUSINESS offer selections into order lines.
+
+    Product identity is derived from the selected CommercialPrice rather than
+    supplied independently by the caller.
+
+    Duplicate selections of the same offer are merged after quantity
+    conversion. Different offers for the same product remain distinct lines.
+    """
+
+    line_inputs = tuple(lines)
+
+    if not line_inputs:
+        return ()
+
+    offer_ids = {
+        line_input.commercial_offer_id
+        for line_input in line_inputs
+    }
+
+    offers_by_id = (
+        CommercialPrice.objects
+        .select_related(
+            "product",
+        )
+        .prefetch_related(
+            "amounts",
+        )
+        .in_bulk(
+            offer_ids,
+        )
+    )
+
+    missing_offer_ids = sorted(
+        offer_ids - offers_by_id.keys()
+    )
+
+    if missing_offer_ids:
+        raise InvalidOrderOperation(
+            "Business offer does not exist: "
+            + ", ".join(
+                str(offer_id)
+                for offer_id in missing_offer_ids
+            )
+        )
+
+    price_by_offer_id: dict[
+        int,
+        Decimal | None,
+    ] = {}
+
+    for offer_id, offer in offers_by_id.items():
+        if (
+            offer.channel
+            != CommercialPrice.Channel.BUSINESS
+        ):
+            raise InvalidOrderOperation(
+                "commercial offer does not belong "
+                "to the business channel"
+            )
+
+        if not offer.product.active or not offer.enabled:
+            raise InvalidOrderOperation(
+                "selected business offer "
+                "is not currently available"
+            )
+
+        amount = next(
+            (
+                candidate
+                for candidate in offer.amounts.all()
+                if (
+                    candidate.currency
+                    == PriceAmount.Currency.EUR
+                )
+            ),
+            None,
+        )
+
+        if (
+            offer.batch_id is not None
+            and amount is None
+        ):
+            raise InvalidOrderOperation(
+                "business batch offer requires an EUR price"
+            )
+
+        price_by_offer_id[offer_id] = (
+            amount.price
+            if amount is not None
+            else None
+        )
+
+    quantity_by_offer_id: dict[int, int] = defaultdict(int)
+
+    for line_input in line_inputs:
+        offer = offers_by_id[
+            line_input.commercial_offer_id
+        ]
+
+        quantity_in_units = quantity_to_units(
+            product=offer.product,
+            quantity=line_input.quantity,
+            unit=line_input.unit,
+        )
+
+        if quantity_in_units <= 0:
+            raise InvalidOrderOperation(
+                "order line quantity must be positive"
+            )
+
+        quantity_by_offer_id[
+            offer.pk
+        ] += quantity_in_units
+
+    return tuple(
+        ResolvedOrderLine(
+            product=offers_by_id[offer_id].product,
+            quantity_in_units=quantity,
+            commercial_offer=offers_by_id[offer_id],
+            unit_price_snapshot=price_by_offer_id[
+                offer_id
+            ],
+        )
+        for offer_id, quantity
+        in quantity_by_offer_id.items()
     )
 
 
