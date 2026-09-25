@@ -763,6 +763,133 @@ def test_update_placed_order_rejects_non_placed_order(
 
 
 @pytest.mark.django_db
+def test_business_policy_uses_standard_commercial_offer_without_selection(
+    customer,
+    apple,
+):
+    ordinary_batch = create_batch(
+        batch_id="A-ORDINARY",
+        product=apple,
+        quantity=6,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A1",
+        today=TODAY,
+    )
+    special_batch = create_batch(
+        batch_id="A-SPECIAL",
+        product=apple,
+        quantity=4,
+        best_before=TODAY + timedelta(days=30),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    standard_offer = standard_business_offer_factory(
+        product=apple,
+    )
+    _business_price(
+        product=apple,
+        batch=special_batch,
+        price="8.50",
+        reason=CommercialPrice.Reason.SHORT_DATED,
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    line = order_line_factory(
+        order=order,
+        product=apple,
+        quantity=5,
+        commercial_offer=standard_offer,
+    )
+
+    prepare_business_order_for_placement(
+        order=order,
+    )
+
+    allocations = list(
+        Allocation.objects
+        .filter(order=order)
+        .order_by("id")
+    )
+
+    assert len(allocations) == 1
+    assert allocations[0].order_line == line
+    assert allocations[0].batch == ordinary_batch
+    assert allocations[0].quantity == 5
+
+    assert not Allocation.objects.filter(
+        order=order,
+        batch=special_batch,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_business_policy_uses_batch_commercial_offer_without_selection(
+    customer,
+    apple,
+):
+    ordinary_batch = create_batch(
+        batch_id="A-ORDINARY",
+        product=apple,
+        quantity=10,
+        best_before=TODAY + timedelta(days=20),
+        location="Shelf A1",
+        today=TODAY,
+    )
+    special_batch = create_batch(
+        batch_id="A-SPECIAL",
+        product=apple,
+        quantity=5,
+        best_before=TODAY + timedelta(days=60),
+        location="Shelf A2",
+        today=TODAY,
+    )
+
+    standard_business_offer_factory(
+        product=apple,
+    )
+    special_offer = _business_price(
+        product=apple,
+        batch=special_batch,
+        price="8.50",
+        reason=CommercialPrice.Reason.PROMOTION,
+    )
+
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.DRAFT,
+    )
+    line = order_line_factory(
+        order=order,
+        product=apple,
+        quantity=3,
+        commercial_offer=special_offer,
+    )
+
+    prepare_business_order_for_placement(
+        order=order,
+    )
+
+    allocation = Allocation.objects.get(
+        order=order,
+    )
+
+    assert allocation.order_line == line
+    assert allocation.batch == special_batch
+    assert allocation.quantity == 3
+
+    assert not Allocation.objects.filter(
+        order=order,
+        batch=ordinary_batch,
+    ).exists()
+
+
+@pytest.mark.django_db
 def test_explicit_standard_offer_excludes_special_batch_from_reservation(
     customer,
     apple,

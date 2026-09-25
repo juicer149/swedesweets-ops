@@ -6,7 +6,11 @@ from decimal import Decimal
 import pytest
 
 from business.models import BusinessOfferSelection
-from business.services import create_order
+from business.services import (
+    add_catalog_offer_to_draft_order,
+    create_order,
+    place_order,
+)
 from business.tests.factories import (
     standard_business_offer_factory,
 )
@@ -188,21 +192,23 @@ def test_repeat_order_preserves_original_special_offer(
         price=Decimal("8.50"),
     )
 
-    source_order = create_order(
+    source_order = add_catalog_offer_to_draft_order(
         customer=customer,
-        lines=[
-            OrderLineInput.units(
-                product=apple,
-                quantity=2,
-            ),
-        ],
+        product=apple,
+        commercial_price_id=commercial_price.pk,
+        quantity=2,
+    )
+
+    source_order = place_order(
+        order=source_order,
     )
 
     source_line = source_order.lines.get()
 
-    BusinessOfferSelection.objects.create(
-        order_line=source_line,
-        commercial_price=commercial_price,
+    assert source_line.commercial_offer_id == commercial_price.pk
+    assert (
+        source_line.business_offer_selection.commercial_price_id
+        == commercial_price.pk
     )
 
     catalog_product = CatalogProduct(
