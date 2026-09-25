@@ -166,7 +166,7 @@ def test_update_placed_order_preserves_mark_for_unchanged_quantity():
         today=TODAY,
     )
 
-    order, _order_line, old_allocation = _place_order_with_line(
+    order, order_line, old_allocation = _place_order_with_line(
         customer=customer,
         product=apple,
         batch=batch,
@@ -197,6 +197,7 @@ def test_update_placed_order_preserves_mark_for_unchanged_quantity():
         status=Allocation.Status.RESERVED,
     )
 
+    assert new_allocation.order_line_id == order_line.id
     assert new_allocation.pk != old_allocation.pk
     assert PickChecklistMark.objects.filter(
         allocation=new_allocation,

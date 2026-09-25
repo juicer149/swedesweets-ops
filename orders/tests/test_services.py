@@ -5,6 +5,7 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
+from inventory.tests.factories import batch_factory
 from orders.datatypes import BuyerInput
 from orders.drafts import (
     OrderDraft,
@@ -45,6 +46,13 @@ def _create_order_line(
         commercial_offer=commercial_offer,
         unit_price_snapshot=unit_price_snapshot,
     )
+
+
+def _no_op_preparation(
+    *,
+    order: Order,
+) -> None:
+    _ = order
 
 
 @pytest.mark.django_db
@@ -544,7 +552,7 @@ def test_place_order_rolls_back_preparation_when_transition_fails(
 
 
 @pytest.mark.django_db
-def test_update_placed_order_runs_hooks_around_line_replacement(
+def test_update_placed_order_runs_hooks_around_line_update(
     customer,
     apple,
 ):
@@ -639,6 +647,374 @@ def test_update_placed_order_runs_hooks_around_line_replacement(
 
 
 @pytest.mark.django_db
+def test_update_placed_order_preserves_line_for_unchanged_offer(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    original_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=offer,
+        unit_price_snapshot=Decimal("2.50"),
+    )
+
+    updated = update_placed_order(
+        order=order,
+        lines=(
+            ResolvedOrderLine(
+                product=apple,
+                quantity_in_units=10,
+                commercial_offer=offer,
+                unit_price_snapshot=Decimal("9.99"),
+            ),
+        ),
+        before_replacement=_no_op_preparation,
+        preparation=_no_op_preparation,
+    )
+
+    updated_line = updated.lines.get(
+        commercial_offer=offer,
+    )
+
+    assert updated_line.pk == original_line.pk
+    assert updated_line.quantity_in_units == 10
+    assert (
+        updated_line.unit_price_snapshot
+        == Decimal("2.50")
+    )
+
+
+@pytest.mark.django_db
+def test_update_placed_order_preserves_line_when_quantity_changes(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    original_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=offer,
+        unit_price_snapshot=Decimal("2.50"),
+    )
+
+    updated = update_placed_order(
+        order=order,
+        lines=(
+            ResolvedOrderLine(
+                product=apple,
+                quantity_in_units=20,
+                commercial_offer=offer,
+                unit_price_snapshot=Decimal("9.99"),
+            ),
+        ),
+        before_replacement=_no_op_preparation,
+        preparation=_no_op_preparation,
+    )
+
+    updated_line = updated.lines.get(
+        commercial_offer=offer,
+    )
+
+    assert updated_line.pk == original_line.pk
+    assert updated_line.quantity == 20
+    assert updated_line.quantity_in_units == 20
+    assert (
+        updated_line.unit_price_snapshot
+        == Decimal("2.50")
+    )
+
+
+@pytest.mark.django_db
+def test_update_placed_order_replaces_line_for_new_offer(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    original_offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    batch = batch_factory(
+        product=apple,
+        today=timezone.localdate(),
+    )
+
+    replacement_offer = commercial_price_factory(
+        product=apple,
+        batch=batch,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    original_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=original_offer,
+        unit_price_snapshot=Decimal("2.50"),
+    )
+
+    updated = update_placed_order(
+        order=order,
+        lines=(
+            ResolvedOrderLine(
+                product=apple,
+                quantity_in_units=10,
+                commercial_offer=replacement_offer,
+                unit_price_snapshot=Decimal("4.75"),
+            ),
+        ),
+        before_replacement=_no_op_preparation,
+        preparation=_no_op_preparation,
+    )
+
+    assert not updated.lines.filter(
+        pk=original_line.pk,
+    ).exists()
+
+    replacement_line = updated.lines.get(
+        commercial_offer=replacement_offer,
+    )
+
+    assert replacement_line.pk != original_line.pk
+    assert (
+        replacement_line.unit_price_snapshot
+        == Decimal("4.75")
+    )
+
+
+@pytest.mark.django_db
+def test_update_placed_order_preserves_retained_line_when_offer_is_removed(
+    customer,
+    apple,
+    banana,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    apple_offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+    banana_offer = commercial_price_factory(
+        product=banana,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    apple_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=apple_offer,
+    )
+    banana_line = _create_order_line(
+        order=order,
+        product=banana,
+        quantity=5,
+        commercial_offer=banana_offer,
+    )
+
+    updated = update_placed_order(
+        order=order,
+        lines=(
+            ResolvedOrderLine(
+                product=apple,
+                quantity_in_units=10,
+                commercial_offer=apple_offer,
+            ),
+        ),
+        before_replacement=_no_op_preparation,
+        preparation=_no_op_preparation,
+    )
+
+    retained_line = updated.lines.get(
+        commercial_offer=apple_offer,
+    )
+
+    assert retained_line.pk == apple_line.pk
+    assert not updated.lines.filter(
+        pk=banana_line.pk,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_update_placed_order_rejects_duplicate_incoming_offer_before_hooks(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    original_line = _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=offer,
+    )
+
+    events: list[str] = []
+
+    def before_replacement(
+        *,
+        order: Order,
+    ) -> None:
+        events.append("before")
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        events.append("prepare")
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="duplicate commercial offer",
+    ):
+        update_placed_order(
+            order=order,
+            lines=(
+                ResolvedOrderLine(
+                    product=apple,
+                    quantity_in_units=10,
+                    commercial_offer=offer,
+                ),
+                ResolvedOrderLine(
+                    product=apple,
+                    quantity_in_units=20,
+                    commercial_offer=offer,
+                ),
+            ),
+            before_replacement=before_replacement,
+            preparation=preparation,
+        )
+
+    assert events == []
+    assert OrderLine.objects.filter(
+        pk=original_line.pk,
+        quantity_in_units=10,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_update_placed_order_rejects_duplicate_existing_offer_before_hooks(
+    customer,
+    apple,
+):
+    order = Order.objects.create(
+        channel=Order.Channel.BUSINESS,
+        customer=customer,
+        status=Order.Status.PLACED,
+        placed_at=timezone.now(),
+    )
+
+    offer = commercial_price_factory(
+        product=apple,
+        channel=CommercialPrice.Channel.BUSINESS,
+        enabled=True,
+    )
+
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=10,
+        commercial_offer=offer,
+    )
+    _create_order_line(
+        order=order,
+        product=apple,
+        quantity=5,
+        commercial_offer=offer,
+    )
+
+    events: list[str] = []
+
+    def before_replacement(
+        *,
+        order: Order,
+    ) -> None:
+        events.append("before")
+
+    def preparation(
+        *,
+        order: Order,
+    ) -> None:
+        events.append("prepare")
+
+    with pytest.raises(
+        InvalidOrderOperation,
+        match="duplicate commercial offer",
+    ):
+        update_placed_order(
+            order=order,
+            lines=(
+                ResolvedOrderLine(
+                    product=apple,
+                    quantity_in_units=15,
+                    commercial_offer=offer,
+                ),
+            ),
+            before_replacement=before_replacement,
+            preparation=preparation,
+        )
+
+    assert events == []
+    assert order.lines.filter(
+        commercial_offer=offer,
+    ).count() == 2
+
+
+@pytest.mark.django_db
 def test_update_placed_order_rejects_non_placed_before_running_hooks(
     customer,
     apple,
@@ -701,7 +1077,7 @@ def test_update_placed_order_rejects_non_placed_before_running_hooks(
 
 
 @pytest.mark.django_db
-def test_update_placed_order_rolls_back_line_replacement_when_preparation_fails(
+def test_update_placed_order_rolls_back_line_update_when_preparation_fails(
     customer,
     apple,
 ):

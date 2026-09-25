@@ -603,6 +603,57 @@ def test_cancelled_retail_hold_does_not_reduce_business_availability(
 
 
 @pytest.mark.django_db
+def test_update_placed_order_preserves_line_and_rebuilds_reservations_for_same_offer(
+    customer,
+    apple,
+    stocked_inventory,
+):
+    standard_business_offer_factory(
+        product=apple,
+    )
+
+    order = create_order(
+        customer=customer,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=10,
+            ),
+        ],
+    )
+
+    original_line = order.lines.get()
+
+    previous_allocation_ids = set(
+        order.allocations.values_list(
+            "id",
+            flat=True,
+        )
+    )
+
+    updated = update_placed_order(
+        order=order,
+        lines=[
+            OrderLineInput.units(
+                product=apple,
+                quantity=20,
+            ),
+        ],
+    )
+
+    updated_line = updated.lines.get()
+
+    assert updated_line.pk == original_line.pk
+    assert updated_line.quantity_in_units == 20
+
+    assert not Allocation.objects.filter(
+        id__in=previous_allocation_ids,
+    ).exists()
+
+    assert updated.allocations.exists()
+
+
+@pytest.mark.django_db
 def test_update_placed_order_rebuilds_business_reservations(
     customer,
     apple,

@@ -89,49 +89,51 @@ def update_placed_order_and_preserve_checklist(
     lines: Iterable[OrderLineInput],
     user=None,
 ) -> Order:
-    """Edit a placed order, preserving checklist marks for untouched lines.
+    """Edit a placed order, preserving marks for untouched order lines.
 
-    orders.update_placed_order deletes every OrderLine and every
-    Allocation before rebuilding them, regardless of whether a given
-    line actually changed - so Allocation ids are never stable across
-    an edit, and PickChecklistMark's CASCADE delete would otherwise wipe
-    every mark unconditionally.
+    The shared order service preserves an OrderLine when its commercial
+    offer remains part of the order. Reservations are still rebuilt, so
+    Allocation ids are not stable across an edit.
 
-    A checklist mark is only carried over for a product whose total
-    quantity is EXACTLY unchanged by this edit. Any product that was
-    added, removed, or had its quantity changed loses its mark - staff
-    have not yet physically verified the new quantity, so a stale
-    checkmark would be misleading. Among unchanged-quantity products,
-    (product_id, batch_id) is used as a stable identity across the
-    rebuild, since batch assignment is deterministic (FEFO) and an
-    untouched line almost always lands on the same batch again.
+    A checklist mark is carried over only when the exact durable order
+    line keeps the same quantity. Quantity changes invalidate the mark:
+    staff have not physically verified the new amount.
 
-    Calls the shared, channel-neutral orders.update_placed_order
-    directly - never business.update_placed_order - so ops_portal has
-    no dependency on the business app.
+    For unchanged lines, (order_line_id, batch_id) is stable across the
+    reservation rebuild and distinguishes separate commercial offers for
+    the same product.
+
+    Calls the shared, channel-neutral orders.update_placed_order directly -
+    never business.update_placed_order - so ops_portal has no dependency
+    on the business app.
     """
 
     resolved_lines = resolve_ops_order_lines(
         lines=lines,
     )
 
-    old_quantity_by_product_id = dict(
-        order.lines
-        .values_list(
-            "product_id",
-            "quantity_in_units",
-        )
-    )
-
-    new_quantity_by_product_id = {
-        resolved_line.product.id: resolved_line.quantity_in_units
+    incoming_quantity_by_offer_id = {
+        resolved_line.commercial_offer.pk:
+        resolved_line.quantity_in_units
         for resolved_line in resolved_lines
     }
 
-    unchanged_product_ids = {
-        product_id
-        for product_id, old_quantity in old_quantity_by_product_id.items()
-        if new_quantity_by_product_id.get(product_id) == old_quantity
+    unchanged_line_ids = {
+        line.id
+        for line in (
+            order.lines
+            .only(
+                "id",
+                "commercial_offer_id",
+                "quantity_in_units",
+            )
+        )
+        if (
+            incoming_quantity_by_offer_id.get(
+                line.commercial_offer_id
+            )
+            == line.quantity_in_units
+        )
     }
 
     checked_keys = set(
@@ -140,10 +142,10 @@ def update_placed_order_and_preserve_checklist(
             order=order,
             status=Allocation.Status.RESERVED,
             pick_checklist_mark__isnull=False,
-            batch__product_id__in=unchanged_product_ids,
+            order_line_id__in=unchanged_line_ids,
         )
         .values_list(
-            "batch__product_id",
+            "order_line_id",
             "batch_id",
         )
     )
@@ -163,15 +165,16 @@ def update_placed_order_and_preserve_checklist(
                 order=updated_order,
                 status=Allocation.Status.RESERVED,
             )
-            .select_related("batch")
         )
 
         PickChecklistMark.objects.bulk_create(
             [
-                PickChecklistMark(allocation=allocation)
+                PickChecklistMark(
+                    allocation=allocation
+                )
                 for allocation in new_allocations
                 if (
-                    allocation.batch.product_id,
+                    allocation.order_line_id,
                     allocation.batch_id,
                 ) in checked_keys
             ]

@@ -113,7 +113,7 @@ def _validate_commercial_offer(
     *,
     order: Order,
     line: ResolvedOrderLine,
-) -> None:
+) -> int:
     """Protect the generic order-line commercial identity invariant.
 
     Channels decide which offer a line uses. Orders verifies that the offer is
@@ -144,6 +144,8 @@ def _validate_commercial_offer(
             f"commercial offer {offer.pk} is a {offer.channel} offer; "
             f"order is {order.channel}"
         )
+
+    return offer.pk
 
 
 @transaction.atomic
@@ -391,7 +393,7 @@ def update_placed_order(
     preparation: OrderMutationPreparation,
     user=None,
 ) -> Order:
-    """Replace resolved lines and rebuild mutation prerequisites."""
+    """Diff resolved lines by commercial offer and rebuild prerequisites."""
 
     resolved_lines = tuple(
         lines
@@ -402,16 +404,120 @@ def update_placed_order(
             "order must contain at least one line"
         )
 
+    incoming_by_offer_id: dict[
+        int,
+        ResolvedOrderLine,
+    ] = {}
+
+    for line in resolved_lines:
+        offer_id = _validate_commercial_offer(
+            order=order,
+            line=line,
+        )
+
+        if offer_id in incoming_by_offer_id:
+            raise InvalidOrderOperation(
+                f"duplicate commercial offer {offer_id} in order update"
+            )
+
+        incoming_by_offer_id[
+            offer_id
+        ] = line
+
+    existing_lines = list(
+        order.lines
+        .all()
+        .order_by("id")
+    )
+
+    existing_by_offer_id: dict[
+        int,
+        OrderLine,
+    ] = {}
+
+    for line in existing_lines:
+        offer_id = line.commercial_offer_id
+
+        if offer_id in existing_by_offer_id:
+            raise InvalidOrderOperation(
+                f"duplicate commercial offer {offer_id} on existing order"
+            )
+
+        existing_by_offer_id[
+            offer_id
+        ] = line
+
     before_replacement(
         order=order,
     )
 
-    order.lines.all().delete()
+    retained_lines: list[
+        OrderLine
+    ] = []
+    new_lines: list[
+        ResolvedOrderLine
+    ] = []
 
-    _create_order_lines(
-        order=order,
-        lines=resolved_lines,
-    )
+    for (
+        offer_id,
+        resolved_line,
+    ) in incoming_by_offer_id.items():
+        existing_line = (
+            existing_by_offer_id.get(
+                offer_id
+            )
+        )
+
+        if existing_line is None:
+            new_lines.append(
+                resolved_line
+            )
+            continue
+
+        existing_line.quantity = (
+            resolved_line.quantity_in_units
+        )
+        existing_line.unit = (
+            OrderLine.Unit.STOCK_UNIT
+        )
+        existing_line.quantity_in_units = (
+            resolved_line.quantity_in_units
+        )
+
+        retained_lines.append(
+            existing_line
+        )
+
+    if retained_lines:
+        OrderLine.objects.bulk_update(
+            retained_lines,
+            [
+                "quantity",
+                "unit",
+                "quantity_in_units",
+            ],
+            batch_size=500,
+        )
+
+    removed_line_ids = [
+        line.pk
+        for (
+            offer_id,
+            line,
+        ) in existing_by_offer_id.items()
+        if offer_id not in incoming_by_offer_id
+    ]
+
+    if removed_line_ids:
+        OrderLine.objects.filter(
+            pk__in=removed_line_ids,
+        ).delete()
+
+    if new_lines:
+        _create_order_lines(
+            order=order,
+            lines=new_lines,
+        )
 
     preparation(
         order=order,

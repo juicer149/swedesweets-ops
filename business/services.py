@@ -628,7 +628,7 @@ def update_placed_order(
     lines: Iterable[OrderLineInput],
     user=None,
 ) -> Order:
-    """Replace ordinary lines and rebuild a business reservation.
+    """Update ordinary lines and rebuild the business reservation.
 
     Offer-aware placed-order editing requires a separate explicit use-case;
     this legacy API must not silently reinterpret commercial selections.
